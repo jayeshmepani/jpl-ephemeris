@@ -1,0 +1,7 @@
+E:/project/astrology/JPL-Moshier-Ephemeris/build/CMakeFiles/jme.dir
+E:/project/astrology/JPL-Moshier-Ephemeris/build/CMakeFiles/test_julian.dir
+E:/project/astrology/JPL-Moshier-Ephemeris/build/CMakeFiles/test_api_contract.dir
+E:/project/astrology/JPL-Moshier-Ephemeris/build/CMakeFiles/test_jpl_runtime.dir
+E:/project/astrology/JPL-Moshier-Ephemeris/build/CMakeFiles/RUN_TESTS.dir
+E:/project/astrology/JPL-Moshier-Ephemeris/build/CMakeFiles/ALL_BUILD.dir
+E:/project/astrology/JPL-Moshier-Ephemeris/build/CMakeFiles/ZERO_CHECK.dir

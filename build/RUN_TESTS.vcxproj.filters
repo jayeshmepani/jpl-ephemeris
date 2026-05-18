@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="E:\project\astrology\JPL-Moshier-Ephemeris\build\CMakeFiles\746609e5fef43883f001fd1958ecb494\RUN_TESTS_force.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{3142224F-F8BA-3BC5-B192-9EE6D5BC2771}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

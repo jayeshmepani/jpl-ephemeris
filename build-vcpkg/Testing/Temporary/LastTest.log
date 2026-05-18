@@ -1,0 +1,85 @@
+Start testing: May 18 22:41 India Standard Time
+----------------------------------------------------------
+1/5 Testing: julian
+1/5 Test: julian
+Command: "E:/project/astrology/JPL-Moshier-Ephemeris/build-vcpkg/Debug/test_julian.exe"
+Directory: E:/project/astrology/JPL-Moshier-Ephemeris/build-vcpkg
+"julian" start time: May 18 22:41 India Standard Time
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"julian" end time: May 18 22:41 India Standard Time
+"julian" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/5 Testing: api_contract
+2/5 Test: api_contract
+Command: "E:/project/astrology/JPL-Moshier-Ephemeris/build-vcpkg/Debug/test_api_contract.exe"
+Directory: E:/project/astrology/JPL-Moshier-Ephemeris/build-vcpkg
+"api_contract" start time: May 18 22:41 India Standard Time
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"api_contract" end time: May 18 22:41 India Standard Time
+"api_contract" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/5 Testing: jpl_runtime
+3/5 Test: jpl_runtime
+Command: "E:/project/astrology/JPL-Moshier-Ephemeris/build-vcpkg/Debug/test_jpl_runtime.exe"
+Directory: E:/project/astrology/JPL-Moshier-Ephemeris/build-vcpkg
+"jpl_runtime" start time: May 18 22:41 India Standard Time
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.06 sec
+----------------------------------------------------------
+Test Passed.
+"jpl_runtime" end time: May 18 22:41 India Standard Time
+"jpl_runtime" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/5 Testing: api_inventory
+4/5 Test: api_inventory
+Command: "C:/Program Files/PowerShell/7/pwsh.exe" "-NoProfile" "-ExecutionPolicy" "Bypass" "-File" "E:/project/astrology/JPL-Moshier-Ephemeris/tests/test_inventory.ps1"
+Directory: E:/project/astrology/JPL-Moshier-Ephemeris/build-vcpkg
+"api_inventory" start time: May 18 22:41 India Standard Time
+Output:
+----------------------------------------------------------
+reference_constants=348
+jme_functions=110
+jme_constants=447
+<end of output>
+Test time =   0.91 sec
+----------------------------------------------------------
+Test Passed.
+"api_inventory" end time: May 18 22:41 India Standard Time
+"api_inventory" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/5 Testing: symbol_coverage
+5/5 Test: symbol_coverage
+Command: "C:/Program Files/PowerShell/7/pwsh.exe" "-NoProfile" "-ExecutionPolicy" "Bypass" "-File" "E:/project/astrology/JPL-Moshier-Ephemeris/tests/test_symbol_coverage.ps1"
+Directory: E:/project/astrology/JPL-Moshier-Ephemeris/build-vcpkg
+"symbol_coverage" start time: May 18 22:41 India Standard Time
+Output:
+----------------------------------------------------------
+jme_functions_total=110
+jme_functions_defined=110
+jme_constants_total=447
+reference_constants_total=348
+<end of output>
+Test time =   1.13 sec
+----------------------------------------------------------
+Test Passed.
+"symbol_coverage" end time: May 18 22:41 India Standard Time
+"symbol_coverage" time elapsed: 00:00:01
+----------------------------------------------------------
+
+End testing: May 18 22:41 India Standard Time

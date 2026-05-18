@@ -1,0 +1,10 @@
+^E:\PROJECT\ASTROLOGY\JPL-MOSHIER-EPHEMERIS\BUILD\CMAKEFILES\746609E5FEF43883F001FD1958ECB494\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SE:/project/astrology/JPL-Moshier-Ephemeris -BE:/project/astrology/JPL-Moshier-Ephemeris/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file E:/project/astrology/JPL-Moshier-Ephemeris/build/jme.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
