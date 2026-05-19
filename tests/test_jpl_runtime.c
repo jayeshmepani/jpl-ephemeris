@@ -17,6 +17,19 @@ static int finite_state(const double *state)
     return 1;
 }
 
+static int finite_values(const double *values, int count)
+{
+    int i;
+
+    for (i = 0; i < count; i++) {
+        if (!isfinite(values[i])) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
 int main(void)
 {
     const char *kernel = getenv("JME_TEST_JPL_KERNEL");
@@ -215,7 +228,7 @@ int main(void)
             return 1;
         }
 
-        if (!finite_state(order_state)) {
+        if (!finite_values(order_state, 6)) {
             fprintf(stderr, "orientation order state is non-finite\n");
             return 1;
         }
@@ -354,8 +367,27 @@ int main(void)
         return 1;
     }
 
-    if (!finite_state(order_state)) {
+    if (!finite_values(order_state, 6)) {
         fprintf(stderr, "body order state is non-finite\n");
+        return 1;
+    }
+
+    if (jme_jpl_body_state_order_naif(
+            2451545.0,
+            0.0,
+            301,
+            399,
+            JME_VECTOR_AU_PER_DAY,
+            3,
+            order_state,
+            error
+        ) != JME_OK) {
+        fprintf(stderr, "body third-order state failed: %s\n", error);
+        return 1;
+    }
+
+    if (!finite_values(order_state, 12)) {
+        fprintf(stderr, "body third-order state is non-finite\n");
         return 1;
     }
 
@@ -373,7 +405,7 @@ int main(void)
         return 1;
     }
 
-    if (!finite_state(order_state)) {
+    if (!finite_values(order_state, 6)) {
         fprintf(stderr, "body enum order state is non-finite\n");
         return 1;
     }

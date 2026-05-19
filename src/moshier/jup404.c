@@ -19,6 +19,10 @@ Days per record = 131.0
   3000.0 to   3000.4:  0.526  0.023  0.190 
 */
 #include "plantbl.h"
+#define jup_args jup_jup_args
+#define jup_tabb jup_jup_tabb
+#define jup_tabl jup_jup_tabl
+#define jup_tabr jup_jup_tabr
 double FAR jup_jup_tabl[] = {
       153429.13855,      130818.16897,       18120.42948,       -8463.12663,
        -5058.91447,  1092566021.02148,      123671.25097,

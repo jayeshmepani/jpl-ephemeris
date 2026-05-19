@@ -1,0 +1,131 @@
+Start testing: May 19 20:57 India Standard Time
+----------------------------------------------------------
+1/7 Testing: julian
+1/7 Test: julian
+Command: "E:/project/astrology/JPL-Moshier-Ephemeris/build-local/Debug/test_julian.exe"
+Directory: E:/project/astrology/JPL-Moshier-Ephemeris/build-local
+"julian" start time: May 19 20:57 India Standard Time
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.42 sec
+----------------------------------------------------------
+Test Passed.
+"julian" end time: May 19 20:57 India Standard Time
+"julian" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/7 Testing: api_contract
+2/7 Test: api_contract
+Command: "E:/project/astrology/JPL-Moshier-Ephemeris/build-local/Debug/test_api_contract.exe"
+Directory: E:/project/astrology/JPL-Moshier-Ephemeris/build-local
+"api_contract" start time: May 19 20:57 India Standard Time
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.13 sec
+----------------------------------------------------------
+Test Passed.
+"api_contract" end time: May 19 20:57 India Standard Time
+"api_contract" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/7 Testing: jpl_runtime
+3/7 Test: jpl_runtime
+Command: "E:/project/astrology/JPL-Moshier-Ephemeris/build-local/Debug/test_jpl_runtime.exe"
+Directory: E:/project/astrology/JPL-Moshier-Ephemeris/build-local
+"jpl_runtime" start time: May 19 20:57 India Standard Time
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"jpl_runtime" end time: May 19 20:57 India Standard Time
+"jpl_runtime" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/7 Testing: all_constants
+4/7 Test: all_constants
+Command: "E:/project/astrology/JPL-Moshier-Ephemeris/build-local/Debug/test_all_constants.exe"
+Directory: E:/project/astrology/JPL-Moshier-Ephemeris/build-local
+"all_constants" start time: May 19 20:57 India Standard Time
+Output:
+----------------------------------------------------------
+All constants verified successfully.
+<end of output>
+Test time =   0.03 sec
+----------------------------------------------------------
+Test Passed.
+"all_constants" end time: May 19 20:57 India Standard Time
+"all_constants" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/7 Testing: all_functions
+5/7 Test: all_functions
+Command: "E:/project/astrology/JPL-Moshier-Ephemeris/build-local/Debug/test_all_functions.exe"
+Directory: E:/project/astrology/JPL-Moshier-Ephemeris/build-local
+"all_functions" start time: May 19 20:57 India Standard Time
+Output:
+----------------------------------------------------------
+Testing metadata and paths...
+Testing utility math functions...
+Testing time and calendar functions...
+Testing coordinate transformations...
+Testing matrix operations...
+Testing body info functions...
+Testing state operations...
+Testing ayanamsa and sidereal functions...
+Testing astro models and parameters...
+Testing ephemeris and catalog functions...
+Testing event function contracts...
+Testing jpl_* functions (may return JME_ERR)...
+Testing extended functions...
+
+All functions tested successfully!
+<end of output>
+Test time =   1.58 sec
+----------------------------------------------------------
+Test Passed.
+"all_functions" end time: May 19 20:57 India Standard Time
+"all_functions" time elapsed: 00:00:01
+----------------------------------------------------------
+
+6/7 Testing: api_inventory
+6/7 Test: api_inventory
+Command: "C:/Program Files/PowerShell/7/pwsh.exe" "-NoProfile" "-ExecutionPolicy" "Bypass" "-File" "E:/project/astrology/JPL-Moshier-Ephemeris/tests/test_inventory.ps1"
+Directory: E:/project/astrology/JPL-Moshier-Ephemeris/build-local
+"api_inventory" start time: May 19 20:57 India Standard Time
+Output:
+----------------------------------------------------------
+reference_constants=348
+jme_functions=191
+jme_constants=460
+<end of output>
+Test time =   1.04 sec
+----------------------------------------------------------
+Test Passed.
+"api_inventory" end time: May 19 20:57 India Standard Time
+"api_inventory" time elapsed: 00:00:01
+----------------------------------------------------------
+
+7/7 Testing: symbol_coverage
+7/7 Test: symbol_coverage
+Command: "C:/Program Files/PowerShell/7/pwsh.exe" "-NoProfile" "-ExecutionPolicy" "Bypass" "-File" "E:/project/astrology/JPL-Moshier-Ephemeris/tests/test_symbol_coverage.ps1"
+Directory: E:/project/astrology/JPL-Moshier-Ephemeris/build-local
+"symbol_coverage" start time: May 19 20:57 India Standard Time
+Output:
+----------------------------------------------------------
+jme_functions_total=191
+jme_functions_defined=191
+jme_constants_total=460
+reference_constants_total=348
+<end of output>
+Test time =   1.81 sec
+----------------------------------------------------------
+Test Passed.
+"symbol_coverage" end time: May 19 20:57 India Standard Time
+"symbol_coverage" time elapsed: 00:00:01
+----------------------------------------------------------
+
+End testing: May 19 20:57 India Standard Time

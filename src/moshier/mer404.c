@@ -16,6 +16,10 @@ Days per record = 4.0
   3000.0 to   3000.8:  0.252  0.087  0.115 
 */
 #include "plantbl.h"
+#define mer_args mer_mer_args
+#define mer_tabb mer_mer_tabb
+#define mer_tabl mer_mer_tabl
+#define mer_tabr mer_mer_tabr
 double FAR mer_mer_tabl[] = {
           35.85255,        -163.26379, 53810162857.56026,      908082.18475,
 

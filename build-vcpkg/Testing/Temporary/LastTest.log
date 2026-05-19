@@ -1,85 +1,135 @@
-Start testing: May 18 22:41 India Standard Time
+Start testing: May 19 20:57 India Standard Time
 ----------------------------------------------------------
-1/5 Testing: julian
-1/5 Test: julian
+1/7 Testing: julian
+1/7 Test: julian
 Command: "E:/project/astrology/JPL-Moshier-Ephemeris/build-vcpkg/Debug/test_julian.exe"
 Directory: E:/project/astrology/JPL-Moshier-Ephemeris/build-vcpkg
-"julian" start time: May 18 22:41 India Standard Time
+"julian" start time: May 19 20:57 India Standard Time
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.05 sec
+----------------------------------------------------------
+Test Passed.
+"julian" end time: May 19 20:57 India Standard Time
+"julian" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/7 Testing: api_contract
+2/7 Test: api_contract
+Command: "E:/project/astrology/JPL-Moshier-Ephemeris/build-vcpkg/Debug/test_api_contract.exe"
+Directory: E:/project/astrology/JPL-Moshier-Ephemeris/build-vcpkg
+"api_contract" start time: May 19 20:57 India Standard Time
 Output:
 ----------------------------------------------------------
 <end of output>
 Test time =   0.02 sec
 ----------------------------------------------------------
 Test Passed.
-"julian" end time: May 18 22:41 India Standard Time
-"julian" time elapsed: 00:00:00
-----------------------------------------------------------
-
-2/5 Testing: api_contract
-2/5 Test: api_contract
-Command: "E:/project/astrology/JPL-Moshier-Ephemeris/build-vcpkg/Debug/test_api_contract.exe"
-Directory: E:/project/astrology/JPL-Moshier-Ephemeris/build-vcpkg
-"api_contract" start time: May 18 22:41 India Standard Time
-Output:
-----------------------------------------------------------
-<end of output>
-Test time =   0.03 sec
-----------------------------------------------------------
-Test Passed.
-"api_contract" end time: May 18 22:41 India Standard Time
+"api_contract" end time: May 19 20:57 India Standard Time
 "api_contract" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-3/5 Testing: jpl_runtime
-3/5 Test: jpl_runtime
+3/7 Testing: jpl_runtime
+3/7 Test: jpl_runtime
 Command: "E:/project/astrology/JPL-Moshier-Ephemeris/build-vcpkg/Debug/test_jpl_runtime.exe"
 Directory: E:/project/astrology/JPL-Moshier-Ephemeris/build-vcpkg
-"jpl_runtime" start time: May 18 22:41 India Standard Time
+"jpl_runtime" start time: May 19 20:57 India Standard Time
 Output:
 ----------------------------------------------------------
 <end of output>
-Test time =   0.06 sec
+Test time =   0.04 sec
 ----------------------------------------------------------
 Test Passed.
-"jpl_runtime" end time: May 18 22:41 India Standard Time
+"jpl_runtime" end time: May 19 20:57 India Standard Time
 "jpl_runtime" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-4/5 Testing: api_inventory
-4/5 Test: api_inventory
+4/7 Testing: all_constants
+4/7 Test: all_constants
+Command: "E:/project/astrology/JPL-Moshier-Ephemeris/build-vcpkg/Debug/test_all_constants.exe"
+Directory: E:/project/astrology/JPL-Moshier-Ephemeris/build-vcpkg
+"all_constants" start time: May 19 20:57 India Standard Time
+Output:
+----------------------------------------------------------
+All constants verified successfully.
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"all_constants" end time: May 19 20:57 India Standard Time
+"all_constants" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/7 Testing: all_functions
+5/7 Test: all_functions
+Command: "E:/project/astrology/JPL-Moshier-Ephemeris/build-vcpkg/Debug/test_all_functions.exe"
+Directory: E:/project/astrology/JPL-Moshier-Ephemeris/build-vcpkg
+"all_functions" start time: May 19 20:57 India Standard Time
+Output:
+----------------------------------------------------------
+Testing metadata and paths...
+CALCEPH ERROR : Unable to open ephemeris file: '/non/existent/path'
+System error : 'No such file or directory'
+CALCEPH ERROR : Unable to open ephemeris file: '/invalid1'
+System error : 'No such file or directory'
+Testing utility math functions...
+Testing time and calendar functions...
+Testing coordinate transformations...
+Testing matrix operations...
+Testing body info functions...
+Testing state operations...
+Testing ayanamsa and sidereal functions...
+Testing astro models and parameters...
+Testing ephemeris and catalog functions...
+Testing event function contracts...
+Testing jpl_* functions (may return JME_ERR)...
+Testing extended functions...
+
+All functions tested successfully!
+<end of output>
+Test time =   0.49 sec
+----------------------------------------------------------
+Test Passed.
+"all_functions" end time: May 19 20:57 India Standard Time
+"all_functions" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/7 Testing: api_inventory
+6/7 Test: api_inventory
 Command: "C:/Program Files/PowerShell/7/pwsh.exe" "-NoProfile" "-ExecutionPolicy" "Bypass" "-File" "E:/project/astrology/JPL-Moshier-Ephemeris/tests/test_inventory.ps1"
 Directory: E:/project/astrology/JPL-Moshier-Ephemeris/build-vcpkg
-"api_inventory" start time: May 18 22:41 India Standard Time
+"api_inventory" start time: May 19 20:57 India Standard Time
 Output:
 ----------------------------------------------------------
 reference_constants=348
-jme_functions=110
-jme_constants=447
+jme_functions=191
+jme_constants=460
 <end of output>
-Test time =   0.91 sec
+Test time =   0.64 sec
 ----------------------------------------------------------
 Test Passed.
-"api_inventory" end time: May 18 22:41 India Standard Time
+"api_inventory" end time: May 19 20:57 India Standard Time
 "api_inventory" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-5/5 Testing: symbol_coverage
-5/5 Test: symbol_coverage
+7/7 Testing: symbol_coverage
+7/7 Test: symbol_coverage
 Command: "C:/Program Files/PowerShell/7/pwsh.exe" "-NoProfile" "-ExecutionPolicy" "Bypass" "-File" "E:/project/astrology/JPL-Moshier-Ephemeris/tests/test_symbol_coverage.ps1"
 Directory: E:/project/astrology/JPL-Moshier-Ephemeris/build-vcpkg
-"symbol_coverage" start time: May 18 22:41 India Standard Time
+"symbol_coverage" start time: May 19 20:57 India Standard Time
 Output:
 ----------------------------------------------------------
-jme_functions_total=110
-jme_functions_defined=110
-jme_constants_total=447
+jme_functions_total=191
+jme_functions_defined=191
+jme_constants_total=460
 reference_constants_total=348
 <end of output>
-Test time =   1.13 sec
+Test time =   1.07 sec
 ----------------------------------------------------------
 Test Passed.
-"symbol_coverage" end time: May 18 22:41 India Standard Time
+"symbol_coverage" end time: May 19 20:58 India Standard Time
 "symbol_coverage" time elapsed: 00:00:01
 ----------------------------------------------------------
 
-End testing: May 18 22:41 India Standard Time
+End testing: May 19 20:58 India Standard Time

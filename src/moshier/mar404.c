@@ -17,6 +17,10 @@ Days per record = 4.0
 */
 
 #include "plantbl.h"
+#define mar_args mar_mar_args
+#define mar_tabb mar_mar_tabb
+#define mar_tabl mar_mar_tabl
+#define mar_tabr mar_mar_tabr
 double FAR mar_mar_tabl[] = {
        43471.66140,       21291.11063,        2033.37848,  6890507597.78366,
      1279543.73631,

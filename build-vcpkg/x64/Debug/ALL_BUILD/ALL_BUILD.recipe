@@ -5,6 +5,12 @@
       <FullPath>E:\project\astrology\JPL-Moshier-Ephemeris\build-vcpkg\x64\Debug\ZERO_CHECK</FullPath>
     </ProjectOutput>
     <ProjectOutput>
+      <FullPath>E:\project\astrology\JPL-Moshier-Ephemeris\build-vcpkg\Debug\test_all_constants.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>E:\project\astrology\JPL-Moshier-Ephemeris\build-vcpkg\Debug\test_all_functions.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
       <FullPath>E:\project\astrology\JPL-Moshier-Ephemeris\build-vcpkg\Debug\test_api_contract.exe</FullPath>
     </ProjectOutput>
     <ProjectOutput>

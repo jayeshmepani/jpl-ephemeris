@@ -18,6 +18,10 @@ Days per record = 131.0
   3000.0 to   3000.4:  0.871  0.395  0.051 
 */
 #include "plantbl.h"
+#define plu_args plu_plu_args
+#define plu_tabb plu_plu_tabb
+#define plu_tabl plu_plu_tabl
+#define plu_tabr plu_plu_tabr
 double FAR plu_plu_tabl[] = {
     74986469.33577,   100898343.73690,    48199471.54076,     9520076.03177,
       690431.67340,     -427355.12716,    52266623.77862,      860190.70714,

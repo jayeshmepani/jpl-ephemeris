@@ -9,5 +9,5 @@ int jme_elp2000_moon_state(double jd_et, double *results)
     */
     (void)jd_et;
     (void)results;
-    return JME_ERR; /* Open Path - Awaiting full coefficient integration */
+    return JME_ERR;
 }

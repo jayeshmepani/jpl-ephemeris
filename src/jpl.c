@@ -148,6 +148,7 @@ int jme_jpl_open(const char *path, char *error)
 int jme_jpl_open_array(int path_count, const char *const *paths, char *error)
 {
 #ifdef JME_HAVE_CALCEPH
+    jme_context *ctx = jme_get_context();
     int i;
 
     if (path_count <= 0 || paths == 0) {
@@ -172,6 +173,7 @@ int jme_jpl_open_array(int path_count, const char *const *paths, char *error)
     }
 
     jme_set_string(g_kernel_path, sizeof(g_kernel_path), paths[0]);
+    jme_set_string(ctx->jpl_file, sizeof(ctx->jpl_file), paths[0]);
     return JME_OK;
 #else
     (void)path_count;
@@ -836,6 +838,31 @@ static int jme_order_is_valid(int order)
     return order >= 0 && order <= 3;
 }
 
+static int jme_utc_to_jpl_jd(
+    int year,
+    int month,
+    int day,
+    int hour,
+    int minute,
+    double second,
+    int calendar,
+    double *jd_time
+)
+{
+    double jd_utc = 0.0;
+
+    if (jd_time == 0) {
+        return JME_ERR;
+    }
+
+    if (jme_utc_to_jd(year, month, day, hour, minute, second, calendar, &jd_utc) != JME_OK) {
+        return JME_ERR;
+    }
+
+    *jd_time = jd_utc + jme_delta_t(jd_utc) / JME_SECONDS_PER_DAY;
+    return JME_OK;
+}
+
 static void jme_convert_order_state_from_km(double *state, int order, int output_unit)
 {
     int i;
@@ -984,7 +1011,7 @@ int jme_jpl_orientation_state_utc_naif(
 {
     double jd = 0.0;
 
-    if (jme_utc_to_jd(year, month, day, hour, minute, second, calendar, &jd) != JME_OK) {
+    if (jme_utc_to_jpl_jd(year, month, day, hour, minute, second, calendar, &jd) != JME_OK) {
         jme_zero_state(state);
         jme_set_error(error, "UTC calendar date is invalid");
         return JME_ERR;
@@ -1023,7 +1050,7 @@ int jme_jpl_rotational_angular_momentum_state_utc_naif(
 {
     double jd = 0.0;
 
-    if (jme_utc_to_jd(year, month, day, hour, minute, second, calendar, &jd) != JME_OK) {
+    if (jme_utc_to_jpl_jd(year, month, day, hour, minute, second, calendar, &jd) != JME_OK) {
         jme_zero_state(state);
         jme_set_error(error, "UTC calendar date is invalid");
         return JME_ERR;
@@ -1389,7 +1416,7 @@ int jme_jpl_body_state_utc_naif(
 {
     double jd = 0.0;
 
-    if (jme_utc_to_jd(year, month, day, hour, minute, second, calendar, &jd) != JME_OK) {
+    if (jme_utc_to_jpl_jd(year, month, day, hour, minute, second, calendar, &jd) != JME_OK) {
         jme_zero_state(state);
         jme_set_error(error, "UTC calendar date is invalid");
         return JME_ERR;
@@ -1547,7 +1574,7 @@ int jme_jpl_ecliptic_state_utc_naif(
 {
     double jd = 0.0;
 
-    if (jme_utc_to_jd(year, month, day, hour, minute, second, calendar, &jd) != JME_OK) {
+    if (jme_utc_to_jpl_jd(year, month, day, hour, minute, second, calendar, &jd) != JME_OK) {
         jme_zero_state(state);
         jme_set_error(error, "UTC calendar date is invalid");
         return JME_ERR;

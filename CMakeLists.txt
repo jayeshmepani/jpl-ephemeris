@@ -30,10 +30,21 @@ add_library(jme
     src/jpl.c
     src/metadata.c
     src/meeus.c
-    src/moshier_full.c
+    src/moshier.c
+    src/moshier/ear404.c
+    src/moshier/gplan.c
+    src/moshier/jup404.c
+    src/moshier/mar404.c
+    src/moshier/mer404.c
+    src/moshier/nep404.c
+    src/moshier/plu404.c
+    src/moshier/sat404.c
+    src/moshier/ura404.c
+    src/moshier/ven404.c
     src/sidereal.c
     src/time.c
     src/vsop87.c
+    src/vsop87d_full.c
 )
 
 target_include_directories(jme
@@ -42,6 +53,7 @@ target_include_directories(jme
         $<INSTALL_INTERFACE:include>
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/moshier
 )
 
 if (calceph_FOUND)

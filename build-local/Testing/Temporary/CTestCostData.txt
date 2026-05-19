@@ -1,0 +1,8 @@
+julian 8 0.052523
+api_contract 8 0.0161772
+jpl_runtime 8 0.00242439
+all_constants 8 0.00426725
+all_functions 7 0.225668
+api_inventory 8 0.130495
+symbol_coverage 8 0.226499
+---

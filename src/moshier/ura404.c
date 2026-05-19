@@ -18,6 +18,9 @@ Days per record = 131.0
   3000.0 to   3000.4:  0.406  0.035  0.172 
 */
 #include "plantbl.h"
+#define ura_args ura_ura_args
+#define ura_tabb ura_ura_tabb
+#define ura_tabl ura_ura_tabl
 double FAR ura_ura_tabl[] = {
           21.56000,       -4652.06828,   154246324.90417,     1130486.05080,
 

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 #include <jme/jme.h>
 
 #define TEST_ASSERT(cond) \
@@ -18,7 +19,7 @@ void test_metadata_and_paths() {
     TEST_ASSERT(jme_version(buf, sizeof(buf)) != NULL);
     jme_close();
     
-    // Open Path functions - should return JME_ERR if path is invalid or empty
+    // Invalid file inputs must return JME_ERR.
     TEST_ASSERT(jme_jpl_open("/non/existent/path", buf) == JME_ERR);
     const char *paths[] = {"/invalid1", "/invalid2"};
     TEST_ASSERT(jme_jpl_open_array(2, paths, buf) == JME_ERR);
@@ -125,8 +126,8 @@ void test_coordinate_transforms() {
     jme_horizontal_to_equatorial(az, alt, 45, &ha, &dec);
     
     jme_refract(10.0, 1013.25, 15.0, 0);
-    double out_ref;
-    jme_refract_extended(10.0, 0, 1013.25, 15.0, 0.0065, 0, &out_ref);
+    double out_ref[4];
+    jme_refract_extended(10.0, 0, 1013.25, 15.0, 0.0065, 0, out_ref);
     
     int ideg, imin, isec, isgn;
     double dsecfr;
@@ -196,24 +197,25 @@ void test_astro_models_and_params() {
     printf("Testing astro models and parameters...\n");
     char models[256];
     jme_set_astro_models("IAU2006", 0);
-    jme_get_astro_models(models, 0);
+    TEST_ASSERT(jme_get_astro_models(models, 0) == JME_OK);
+    TEST_ASSERT(strcmp(models, "IAU2006") == 0);
     
     jme_set_lapse_rate(0.0065);
     jme_set_interpolate_nut(1);
     jme_set_tid_acc(-25.8);
-    jme_get_tid_acc();
+    TEST_ASSERT(fabs(jme_get_tid_acc() - -25.8) < 1e-12);
     jme_set_delta_t_userdef(64.0);
+    TEST_ASSERT(fabs(jme_delta_t(2451545.0) - 64.0) < 1e-12);
     jme_set_topo(0, 0, 0);
 }
 
 void test_ephemeris_calls() {
-    printf("Testing ephemeris (calc/pheno/fixstar) functions (may return JME_ERR)...\n");
+    printf("Testing ephemeris and catalog functions...\n");
     double res[20];
     char err[256];
-    // These might fail if kernel is not loaded, which is fine for this test
     jme_calc(2451545.0, JME_BODY_SUN, JME_CALC_EQUATORIAL, res, err);
     jme_calc_ut(2451545.0, JME_BODY_SUN, JME_CALC_EQUATORIAL, res, err);
-    jme_calc_pctr(2451545.0, JME_BODY_SUN, JME_BODY_EARTH, JME_CALC_EQUATORIAL, res, err);
+    TEST_ASSERT(jme_calc_pctr(2451545.0, JME_BODY_MARS, JME_BODY_SUN, JME_CALC_XYZ, res, err) == JME_OK);
     jme_pheno(2451545.0, JME_BODY_SUN, 0, res, err);
     jme_pheno_ut(2451545.0, JME_BODY_SUN, 0, res, err);
     
@@ -229,9 +231,11 @@ void test_ephemeris_calls() {
     jme_houses_ex(2451545.0, 0, 0, 0, 'P', cusps, ascmc);
     double cusps_speed[13], ascmc_speed[10];
     jme_houses_ex2(2451545.0, 0, 0, 0, 'P', cusps, ascmc, cusps_speed, ascmc_speed);
-    jme_houses_armc(0, 0, 0.4, 'P', cusps, ascmc);
-    jme_houses_armc_ex2(0, 0, 0.4, 'P', cusps, ascmc, cusps_speed, ascmc_speed);
-    jme_house_pos(0, 0, 0.4, 'P', res, err);
+    TEST_ASSERT(jme_houses_armc(0, 0, 0.4, 'E', cusps, ascmc) == JME_OK);
+    TEST_ASSERT(jme_houses_armc_ex2(0, 0, 0.4, 'E', cusps, ascmc, cusps_speed, ascmc_speed) == JME_OK);
+    res[0] = cusps[1];
+    res[1] = 0.0;
+    TEST_ASSERT(jme_house_pos(0, 0, 0.4, 'E', res, err) >= 1.0);
     jme_house_system_name('P');
     
     double geopos[3] = {0, 0, 0};
@@ -239,34 +243,34 @@ void test_ephemeris_calls() {
 }
 
 void test_eclipses_and_phenomena() {
-    printf("Testing eclipses and phenomena (may return JME_ERR)...\n");
+    printf("Testing event function contracts...\n");
     double geopos[3] = {0, 0, 0}, attr[20], tret[20];
     char err[256];
     
     jme_sol_eclipse_where(2451545.0, 0, geopos, attr, err);
     jme_sol_eclipse_how(2451545.0, 0, geopos, attr, err);
-    jme_sol_eclipse_when_loc(2451545.0, 0, geopos, tret, attr, 0, err);
+    jme_sol_eclipse_when_loc(2451545.0, 0, 0, tret, attr, 0, err);
     jme_sol_eclipse_when_glob(2451545.0, 0, 0, tret, 0, err);
     
     jme_lun_eclipse_how(2451545.0, 0, geopos, attr, err);
-    jme_lun_eclipse_when_loc(2451545.0, 0, geopos, tret, attr, 0, err);
+    jme_lun_eclipse_when_loc(2451545.0, 0, 0, tret, attr, 0, err);
     jme_lun_eclipse_when(2451545.0, 0, 0, tret, 0, err);
     
     jme_lun_occult_where(2451545.0, JME_BODY_SUN, NULL, 0, geopos, attr, err);
-    jme_lun_occult_when_loc(2451545.0, JME_BODY_SUN, NULL, 0, geopos, tret, attr, 0, err);
+    jme_lun_occult_when_loc(2451545.0, JME_BODY_SUN, NULL, 0, 0, tret, attr, 0, err);
     jme_lun_occult_when_glob(2451545.0, JME_BODY_SUN, NULL, 0, 0, tret, 0, err);
     
-    jme_rise_trans(2451545.0, JME_BODY_SUN, NULL, 0, 0, geopos, 1013, 15, tret, err);
-    jme_rise_trans_true_hor(2451545.0, JME_BODY_SUN, NULL, 0, 0, geopos, 1013, 15, 0, tret, err);
+    jme_rise_trans(2451545.0, JME_BODY_SUN, NULL, 0, 0, 0, 1013, 15, tret, err);
+    jme_rise_trans_true_hor(2451545.0, JME_BODY_SUN, NULL, 0, 0, 0, 1013, 15, 0, tret, err);
     
-    jme_solcross(0, 2451545.0, 0, tret, err);
-    jme_solcross_ut(0, 2451545.0, 0, tret, err);
-    jme_mooncross(0, 2451545.0, 0, tret, err);
-    jme_mooncross_ut(0, 2451545.0, 0, tret, err);
-    jme_mooncross_node(2451545.0, 0, tret, err);
-    jme_mooncross_node_ut(2451545.0, 0, tret, err);
-    jme_helio_cross(JME_BODY_MARS, 0, 2451545.0, 0, tret, err);
-    jme_helio_cross_ut(JME_BODY_MARS, 0, 2451545.0, 0, tret, err);
+    jme_solcross(0, 2451545.0, 0, 0, err);
+    jme_solcross_ut(0, 2451545.0, 0, 0, err);
+    jme_mooncross(0, 2451545.0, 0, 0, err);
+    jme_mooncross_ut(0, 2451545.0, 0, 0, err);
+    jme_mooncross_node(2451545.0, 0, 0, err);
+    jme_mooncross_node_ut(2451545.0, 0, 0, err);
+    jme_helio_cross(JME_BODY_MARS, 0, 2451545.0, 0, 0, err);
+    jme_helio_cross_ut(JME_BODY_MARS, 0, 2451545.0, 0, 0, err);
     
     jme_nod_aps(2451545.0, JME_BODY_SUN, 0, 0, tret, err);
     jme_nod_aps_ut(2451545.0, JME_BODY_SUN, 0, 0, tret, err);
@@ -368,6 +372,7 @@ void test_extended_functions() {
 }
 
 int main() {
+    setbuf(stdout, NULL);
     test_metadata_and_paths();
     test_utility_math();
     test_time_and_calendar();

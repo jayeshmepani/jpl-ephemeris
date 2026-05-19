@@ -7,10 +7,28 @@
     <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\angle.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\astrometry.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\calc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\context.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\coordinates.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\elp2000.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\events.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\fixstar.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\houses.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\julian.c">
@@ -22,10 +40,52 @@
     <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\metadata.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\meeus.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\moshier.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\moshier\ear404.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\moshier\gplan.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\moshier\jup404.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\moshier\mar404.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\moshier\mer404.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\moshier\nep404.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\moshier\plu404.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\moshier\sat404.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\moshier\ura404.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\moshier\ven404.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\sidereal.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\time.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\vsop87.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\project\astrology\JPL-Moshier-Ephemeris\src\vsop87d_full.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

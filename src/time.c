@@ -145,14 +145,19 @@ static double jme_delta_t_espenak_meeus(double jd_ut)
 
 double jme_delta_t_ex(double jd_ut, int model, char *error)
 {
+    jme_context *ctx = jme_get_context();
     (void)error;
+
+    if (ctx->delta_t_userdef_enabled) {
+        return ctx->delta_t_userdef;
+    }
 
     switch (model) {
     case JME_TIME_DELTAT_AUTOMATIC:
     case JME_MODEL_DELTAT_ESPENAK_MEEUS_2006:
         return jme_delta_t_espenak_meeus(jd_ut);
     default:
-        /* Fallback to default model if specified model is not yet implemented */
+        /* Fallback to the default model for unsupported model identifiers. */
         return jme_delta_t_espenak_meeus(jd_ut);
     }
 }

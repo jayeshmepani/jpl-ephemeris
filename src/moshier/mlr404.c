@@ -11,14 +11,14 @@
               Residuals against JPL ephemeris DE404 (arc seconds)
 
 First date in file = 1221000.5
-Number of samples = 1053099
+Number of source rows = 1053099
 Sampling interval = 1.515625 days
 
 Peak excursions from these mostly different test points
 were consolidated with the above.  They added .01" to a few
 of the peak readings.
 First date in file = 1221000.50
-Number of samples = 524290.0
+Number of source rows = 524290.0
 Sampling interval = 3.0 days
 
 

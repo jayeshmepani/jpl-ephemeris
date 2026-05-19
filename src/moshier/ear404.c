@@ -17,6 +17,10 @@ Days per record = 6.0
 */
 
 #include "plantbl.h"
+#define ear_args ear_ear_args
+#define ear_tabb ear_ear_tabb
+#define ear_tabl ear_ear_tabl
+#define ear_tabr ear_ear_tabr
 double FAR ear_ear_tabl[] = {
          -65.54655,        -232.74963, 12959774227.57587,      361678.59587,
 

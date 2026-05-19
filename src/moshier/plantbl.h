@@ -1,3 +1,6 @@
+#ifndef JME_MOSHIER_PLANTBL_DEFINED
+#define JME_MOSHIER_PLANTBL_DEFINED
+
 // define "far" if require by your compiler
 #ifdef _MSC_VER
 #define FAR
@@ -22,4 +25,5 @@ static double DTR = 1.7453292519943295769e-2;
 static double RTD = 5.7295779513082320877e1;
 static double RTS = 2.0626480624709635516e5;	/* arc seconds per radian */
 
+#endif
 

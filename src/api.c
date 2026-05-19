@@ -80,36 +80,45 @@ void jme_set_topo(double lon, double lat, double altitude)
 
 void jme_set_astro_models(const char *models, int flags)
 {
-    (void)models; (void)flags;
+    jme_context *ctx = jme_get_context();
+    (void)flags;
+    jme_set_string(ctx->astro_models, sizeof(ctx->astro_models), models);
 }
 
 int jme_get_astro_models(char *models, int flags)
 {
-    (void)models; (void)flags;
-    return JME_ERR; /* Open Path */
+    jme_context *ctx = jme_get_context();
+    (void)flags;
+    if (models == 0) {
+        return JME_ERR;
+    }
+    jme_set_string(models, 256, ctx->astro_models);
+    return JME_OK;
 }
 
 void jme_set_lapse_rate(double lapse_rate)
 {
-    (void)lapse_rate;
+    jme_get_context()->lapse_rate = lapse_rate;
 }
 
 void jme_set_interpolate_nut(int on)
 {
-    (void)on;
+    jme_get_context()->interpolate_nut = on != 0 ? 1 : 0;
 }
 
 double jme_get_tid_acc(void)
 {
-    return 0.0;
+    return jme_get_context()->tidal_acceleration;
 }
 
 void jme_set_tid_acc(double t_acc)
 {
-    (void)t_acc;
+    jme_get_context()->tidal_acceleration = t_acc;
 }
 
 void jme_set_delta_t_userdef(double dt)
 {
-    (void)dt;
+    jme_context *ctx = jme_get_context();
+    ctx->delta_t_userdef = dt;
+    ctx->delta_t_userdef_enabled = 1;
 }

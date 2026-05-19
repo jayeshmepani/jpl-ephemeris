@@ -14,6 +14,12 @@ typedef struct jme_context {
     double topo_lon;
     double topo_lat;
     double topo_alt;
+    char astro_models[256];
+    double lapse_rate;
+    int interpolate_nut;
+    double tidal_acceleration;
+    int delta_t_userdef_enabled;
+    double delta_t_userdef;
 } jme_context;
 
 jme_context *jme_get_context(void);

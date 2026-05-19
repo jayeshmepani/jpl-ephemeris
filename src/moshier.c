@@ -4,7 +4,7 @@
 /* Forward declarations for Moshier tables and driver in moshier_full.c */
 struct plantbl;
 extern struct plantbl mer404, ven404, ear404, mar404, jup404, sat404, ura404, nep404, plu404, mlr404, mlat404;
-extern int jme_moshier_gplan(double J, struct plantbl *plan, double pobj[]);
+extern int gplan(double J, struct plantbl *plan, double pobj[]);
 
 int jme_moshier_planet_state(double jd_et, int body, double *results)
 {
@@ -31,7 +31,7 @@ int jme_moshier_planet_state(double jd_et, int body, double *results)
         return JME_ERR;
     }
 
-    res = jme_moshier_gplan(jd_et, table, pobj);
+    res = gplan(jd_et, table, pobj);
     if (res != 0) {
         return JME_ERR;
     }

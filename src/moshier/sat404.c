@@ -19,6 +19,10 @@ Days per record = 131.0
   3000.0 to   3000.4:  0.047  0.073  0.086 
 */
 #include "plantbl.h"
+#define sat_args sat_sat_args
+#define sat_tabb sat_sat_tabb
+#define sat_tabl sat_sat_tabl
+#define sat_tabr sat_sat_tabr
 double FAR sat_sat_tabl[] = {
      1788381.26240,     2460423.68044,     1370113.15868,      415406.99187,
        72040.39885,       12669.58806,   439960754.85333,      180256.80433,

@@ -14,6 +14,7 @@ struct plantbl {
   double FAR *rad_tbl;
   double distance;
 };
+#define JME_MOSHIER_PLANTBL_DEFINED
 
 double jme_moshier_J2000 = 2451545.0;
 double jme_moshier_STR = 4.8481368110953599359e-6;	/* radians per arc second */
@@ -10667,7 +10668,6 @@ static double cc[9][24];
 
 static int sscc (int,double,int);
 
-int 
 int
 jme_moshier_gplan(double J, struct plantbl *plan, double pobj[])
 {

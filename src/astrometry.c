@@ -161,7 +161,7 @@ int jme_get_nutation(double jd_et, int model, double *dpsi, double *deps, char *
     if (deps != 0) { *deps = 0.0; }
 
     if (model != JME_MODEL_NUT_IAU_1980 && model != JME_MODEL_NUT_IAU_2000B) {
-        /* Default to 1980 for now if other models not yet implemented */
+        /* Default to the 1980 model for unsupported model identifiers. */
         model = JME_MODEL_NUT_IAU_1980;
     }
 

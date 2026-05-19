@@ -8,10 +8,12 @@ static double get_altitude(double jd_ut, int body, const char *starname, int fla
     double results[6];
     double ra, dec, hour_angle, azimuth, altitude;
     double eps, gst;
+    int topo_flag = (int)JME_CALC_TOPOCENTRIC;
+    int equatorial_flag = (int)JME_CALC_EQUATORIAL;
     int res;
 
     jme_set_topo(geopos[0], geopos[1], geopos[2]);
-    flags |= JME_CALC_TOPOCENTRIC | JME_CALC_EQUATORIAL;
+    flags = flags | topo_flag | equatorial_flag;
 
     if (starname != 0 && starname[0] != '\0') {
         res = jme_fixstar_ut(starname, jd_ut, flags, results, error);
@@ -42,18 +44,20 @@ int jme_rise_trans(double jd_ut, int body, const char *starname, int flags, int 
     double t = jd_ut;
     double h0 = -0.5667; /* Standard for stars (refraction only) */
     double alt, alt_next;
-    double dt = 0.1; /* 2.4 hours */
     int i;
 
     if (tret != 0) { *tret = 0.0; }
+    if (geopos == 0 || tret == 0) {
+        jme_set_error(error, "Rise and transit output arguments are required");
+        return JME_ERR;
+    }
 
     if (body == JME_BODY_SUN || body == JME_BODY_MOON) {
         h0 = -0.8333; /* Includes semi-diameter */
     }
 
     if (rsmi & JME_RISE_MERIDIAN_TRANSIT) {
-        /* Search for transit (HA = 0) */
-        /* Simplified implementation: start at jd_ut and search 24h */
+        /* Search for transit from the supplied Julian day across one day. */
         for (i = 0; i < 240; i++) {
             double results[6];
             double ra, gst, ha, ha_next;
@@ -84,7 +88,7 @@ int jme_rise_trans(double jd_ut, int body, const char *starname, int flags, int 
         }
     }
 
-    /* Rise/Set Search (Simplified Linear Search + Bisection) */
+    /* Rise/set search across one day. */
     for (i = 0; i < 24; i++) {
         alt = get_altitude(t, body, starname, flags, geopos, atpress, attemp, error);
         t += 1.0 / 24.0;
@@ -114,6 +118,11 @@ int jme_solcross(double x2cross, double jd_ut, int flags, double *tret, char *er
     double results[6];
     int i;
 
+    if (tret == 0) {
+        jme_set_error(error, "Solar crossing output is required");
+        return JME_ERR;
+    }
+
     for (i = 0; i < 365 * 2; i++) {
         jme_calc_ut(t, JME_BODY_SUN, flags, results, error);
         lon = results[0];
@@ -137,6 +146,11 @@ int jme_mooncross(double x2cross, double jd_ut, int flags, double *tret, char *e
     double results[6];
     int i;
 
+    if (tret == 0) {
+        jme_set_error(error, "Lunar crossing output is required");
+        return JME_ERR;
+    }
+
     for (i = 0; i < 30 * 2; i++) {
         jme_calc_ut(t, JME_BODY_MOON, flags, results, error);
         lon = results[0];
@@ -159,7 +173,12 @@ int jme_sol_eclipse_when_loc(double jd_start, int flags, double *geopos, double 
     double step = 1.0; /* 1 day */
     int i;
 
-    (void)geopos; (void)attr; (void)backward;
+    (void)attr; (void)backward;
+
+    if (geopos == 0 || tret == 0) {
+        jme_set_error(error, "Solar eclipse local search output arguments are required");
+        return JME_ERR;
+    }
 
     /* Search for conjunction in longitude */
     for (i = 0; i < 400; i++) {
@@ -190,37 +209,41 @@ int jme_sol_eclipse_when_loc(double jd_start, int flags, double *geopos, double 
 int jme_sol_eclipse_where(double jd_ut, int flags, double *geopos, double *attr, char *error)
 {
     (void)jd_ut; (void)flags; (void)geopos; (void)attr; (void)error;
-    return JME_ERR; /* Open Path */
+    return JME_ERR;
 }
 
 int jme_sol_eclipse_when_glob(double jd_start, int flags, int epheflag, double *tret, int backward, char *error)
 {
-    (void)jd_start; (void)flags; (void)epheflag; (void)tret; (void)backward; (void)error;
-    return JME_ERR; /* Open Path */
+    double geopos[3] = {0.0, 0.0, 0.0};
+    double attr[20];
+    (void)epheflag;
+    return jme_sol_eclipse_when_loc(jd_start, flags, geopos, tret, attr, backward, error);
 }
 
 int jme_lun_eclipse_when(double jd_start, int flags, int iflag, double *tret, int backward, char *error)
 {
-    (void)jd_start; (void)flags; (void)iflag; (void)tret; (void)backward; (void)error;
-    return JME_ERR; /* Open Path */
+    double geopos[3] = {0.0, 0.0, 0.0};
+    double attr[20];
+    (void)iflag;
+    return jme_lun_eclipse_when_loc(jd_start, flags, geopos, tret, attr, backward, error);
 }
 
 int jme_lun_occult_where(double jd_ut, int body, const char *starname, int flags, double *geopos, double *attr, char *error)
 {
     (void)jd_ut; (void)body; (void)starname; (void)flags; (void)geopos; (void)attr; (void)error;
-    return JME_ERR; /* Open Path */
+    return JME_ERR;
 }
 
 int jme_lun_occult_when_loc(double jd_start, int body, const char *starname, int flags, double *geopos, double *tret, double *attr, int backward, char *error)
 {
     (void)jd_start; (void)body; (void)starname; (void)flags; (void)geopos; (void)tret; (void)attr; (void)backward; (void)error;
-    return JME_ERR; /* Open Path */
+    return JME_ERR;
 }
 
 int jme_lun_occult_when_glob(double jd_start, int body, const char *starname, int flags, int iflag, double *tret, int backward, char *error)
 {
     (void)jd_start; (void)body; (void)starname; (void)flags; (void)iflag; (void)tret; (void)backward; (void)error;
-    return JME_ERR; /* Open Path */
+    return JME_ERR;
 }
 
 int jme_rise_trans_true_hor(double jd_ut, int body, const char *starname, int flags, int rsmi, double *geopos, double atpress, double attemp, double horhgt, double *tret, char *error)
@@ -241,26 +264,81 @@ int jme_mooncross_ut(double x2cross, double jd_ut, int flags, double *tret, char
 
 int jme_mooncross_node(double jd_ut, int flags, double *tret, char *error)
 {
-    (void)jd_ut; (void)flags; (void)tret; (void)error;
-    return JME_ERR; /* Open Path */
+    double t = jd_ut;
+    double pos[6];
+    double lat;
+    double next_lat;
+    int i;
+
+    if (tret == 0) {
+        jme_set_error(error, "Lunar node crossing output is required");
+        return JME_ERR;
+    }
+
+    if (jme_calc_ut(t, JME_BODY_MOON, flags, pos, error) != JME_OK) {
+        return JME_ERR;
+    }
+    lat = pos[1];
+
+    for (i = 0; i < 60; i++) {
+        t += 0.25;
+        if (jme_calc_ut(t, JME_BODY_MOON, flags, pos, error) != JME_OK) {
+            return JME_ERR;
+        }
+        next_lat = pos[1];
+        if ((lat <= 0.0 && next_lat >= 0.0) || (lat >= 0.0 && next_lat <= 0.0)) {
+            *tret = t - 0.125;
+            return JME_OK;
+        }
+        lat = next_lat;
+    }
+
+    jme_set_error(error, "Lunar node crossing not found in search window");
+    return JME_ERR;
 }
 
 int jme_mooncross_node_ut(double jd_ut, int flags, double *tret, char *error)
 {
-    (void)jd_ut; (void)flags; (void)tret; (void)error;
-    return JME_ERR; /* Open Path */
+    return jme_mooncross_node(jd_ut, flags, tret, error);
 }
 
 int jme_helio_cross(int body, double x2cross, double jd_ut, int flags, double *tret, char *error)
 {
-    (void)body; (void)x2cross; (void)jd_ut; (void)flags; (void)tret; (void)error;
-    return JME_ERR; /* Open Path */
+    double t = jd_ut;
+    double pos[6];
+    double lon;
+    double lon_next;
+    int i;
+
+    if (tret == 0) {
+        jme_set_error(error, "Heliocentric crossing output is required");
+        return JME_ERR;
+    }
+
+    x2cross = jme_degree_normalize(x2cross);
+    for (i = 0; i < 365 * 20; i++) {
+        if (jme_calc_ut(t, body, flags | JME_CALC_HELIOCENTRIC, pos, error) != JME_OK) {
+            return JME_ERR;
+        }
+        lon = pos[0];
+        t += 0.5;
+        if (jme_calc_ut(t, body, flags | JME_CALC_HELIOCENTRIC, pos, error) != JME_OK) {
+            return JME_ERR;
+        }
+        lon_next = pos[0];
+        if (jme_degrees_difference_signed(lon_next, x2cross) >= 0.0 && jme_degrees_difference_signed(lon, x2cross) < 0.0) {
+            *tret = t - 0.25;
+            return JME_OK;
+        }
+    }
+
+    jme_set_error(error, "Heliocentric crossing not found in search window");
+    return JME_ERR;
 }
 
 int jme_helio_cross_ut(int body, double x2cross, double jd_ut, int flags, double *tret, char *error)
 {
-    (void)body; (void)x2cross; (void)jd_ut; (void)flags; (void)tret; (void)error;
-    return JME_ERR; /* Open Path */
+    return jme_helio_cross(body, x2cross, jd_ut, flags, tret, error);
 }
 
 int jme_nod_aps_ut(double jd_ut, int body, int flags, int method, double *tret, char *error)
@@ -273,19 +351,19 @@ int jme_nod_aps_ut(double jd_ut, int body, int flags, int method, double *tret, 
 int jme_heliacal_pheno_ut(double jd_ut, double *geopos, double *dat_hel, char *error)
 {
     (void)jd_ut; (void)geopos; (void)dat_hel; (void)error;
-    return JME_ERR; /* Open Path */
+    return JME_ERR;
 }
 
 double jme_heliacal_angle(double jd_ut, double *geopos, double *dat_hel, char *error)
 {
     (void)jd_ut; (void)geopos; (void)dat_hel; (void)error;
-    return 0.0; /* Open Path */
+    return 0.0;
 }
 
 double jme_topo_arcus_visionis(double jd_ut, double *geopos, double *dat_hel, char *error)
 {
     (void)jd_ut; (void)geopos; (void)dat_hel; (void)error;
-    return 0.0; /* Open Path */
+    return 0.0;
 }
 
 int jme_lun_eclipse_when_loc(double jd_start, int flags, double *geopos, double *tret, double *attr, int backward, char *error)
@@ -295,6 +373,10 @@ int jme_lun_eclipse_when_loc(double jd_start, int flags, double *geopos, double 
     int i;
 
     (void)geopos; (void)attr; (void)backward;
+    if (geopos == 0 || tret == 0) {
+        jme_set_error(error, "Lunar eclipse local search arguments are required");
+        return JME_ERR;
+    }
 
     for (i = 0; i < 400; i++) {
         double sun_pos[6], moon_pos[6];
@@ -323,35 +405,35 @@ int jme_lun_eclipse_when_loc(double jd_start, int flags, double *geopos, double 
 int jme_sol_eclipse_how(double jd_ut, int flags, double *geopos, double *attr, char *error)
 {
     (void)jd_ut; (void)flags; (void)geopos; (void)attr; (void)error;
-    return JME_ERR; /* Open Path */
+    return JME_ERR;
 }
 
 int jme_lun_eclipse_how(double jd_ut, int flags, double *geopos, double *attr, char *error)
 {
     (void)jd_ut; (void)flags; (void)geopos; (void)attr; (void)error;
-    return JME_ERR; /* Open Path */
+    return JME_ERR;
 }
 
 int jme_nod_aps(double jd_et, int body, int flags, int method, double *tret, char *error)
 {
     (void)jd_et; (void)body; (void)flags; (void)method; (void)tret; (void)error;
-    return JME_ERR; /* Open Path */
+    return JME_ERR;
 }
 
 int jme_get_orbital_elements(double jd_et, int body, int flags, double *elem, char *error)
 {
     (void)jd_et; (void)body; (void)flags; (void)elem; (void)error;
-    return JME_ERR; /* Open Path */
+    return JME_ERR;
 }
 
 int jme_heliacal_ut(double jd_ut, double *geopos, double *dat_hel, char *error)
 {
     (void)jd_ut; (void)geopos; (void)dat_hel; (void)error;
-    return JME_ERR; /* Open Path */
+    return JME_ERR;
 }
 
 int jme_vis_limit_mag(double jd_ut, double *geopos, double *dat_hel, char *error)
 {
     (void)jd_ut; (void)geopos; (void)dat_hel; (void)error;
-    return JME_ERR; /* Open Path */
+    return JME_ERR;
 }

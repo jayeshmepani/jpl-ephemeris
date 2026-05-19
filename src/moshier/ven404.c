@@ -16,6 +16,10 @@ Days per record = 4.0
   3000.0 to   3000.8:  0.116  0.062  0.058 
 */
 #include "plantbl.h"
+#define ven_args ven_ven_args
+#define ven_tabb ven_ven_tabb
+#define ven_tabl ven_ven_tabl
+#define ven_tabr ven_ven_tabr
 double FAR ven_ven_tabl[] = {
            9.08078,          55.42416, 21066413644.98911,      655127.20186,
 

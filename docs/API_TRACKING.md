@@ -6,9 +6,9 @@ This file tracks the project-owned public API. The product surface is `jme_*` fu
 
 | Area | Count | Source |
 |---|---:|---|
-| JME public functions | 110 | `include/jme/jme.h`, `include/jme/jme_extended.h` |
-| JME public constants | 447 | `include/jme/jme.h`, `include/jme/jme_extended.h` |
-| Reference constants | 348 | parity audit header |
+| JME public functions | 191 | `include/jme/jme.h`, `include/jme/jme_extended.h` |
+| JME public constants | 460 | `include/jme/jme.h`, `include/jme/jme_extended.h` |
+| Reference constants | 348 | `include/jme_compat/swephexp.h` |
 
 Function count and reference behavior coverage are separate checks. The full reference behavior matrix is in `docs/REFERENCE_FUNCTION_COVERAGE.md`.
 
@@ -16,922 +16,1012 @@ Function count and reference behavior coverage are separate checks. The full ref
 
 | # | Function | Status |
 |---:|---|---|
-| 1 | `jme_body_id_from_name` | Implemented |
-| 2 | `jme_body_naif_id` | Implemented |
-| 3 | `jme_calendar_is_leap_year` | Implemented |
-| 4 | `jme_centiseconds_difference` | Implemented |
-| 5 | `jme_centiseconds_difference_signed` | Implemented |
-| 6 | `jme_centiseconds_normalize` | Implemented |
-| 7 | `jme_centiseconds_round_second` | Implemented |
-| 8 | `jme_close` | Implemented |
-| 9 | `jme_date_is_valid` | Implemented |
-| 10 | `jme_day_of_week` | Implemented |
-| 11 | `jme_day_of_year` | Implemented |
-| 12 | `jme_days_in_month` | Implemented |
-| 13 | `jme_decimal_hour` | Implemented |
-| 14 | `jme_degree_midpoint` | Implemented |
-| 15 | `jme_degree_normalize` | Implemented |
-| 16 | `jme_degrees_difference` | Implemented |
-| 17 | `jme_degrees_difference_signed` | Implemented |
-| 18 | `jme_degrees_to_hours` | Implemented |
-| 19 | `jme_degrees_to_radians` | Implemented |
-| 20 | `jme_double_to_long` | Implemented |
-| 21 | `jme_ecliptic_to_equatorial` | Implemented |
-| 22 | `jme_equatorial_to_ecliptic` | Implemented |
-| 23 | `jme_equatorial_to_horizontal` | Implemented |
-| 24 | `jme_horizontal_to_equatorial` | Implemented |
-| 25 | `jme_hours_normalize` | Implemented |
-| 26 | `jme_hours_to_degrees` | Implemented |
-| 27 | `jme_jd_add_seconds` | Implemented |
-| 28 | `jme_jd_difference_seconds` | Implemented |
-| 29 | `jme_jd_to_utc` | Implemented |
-| 30 | `jme_jpl_body_state` | Implemented |
-| 31 | `jme_jpl_body_state_naif` | Implemented |
-| 32 | `jme_jpl_body_state_native` | Implemented |
-| 33 | `jme_jpl_body_state_native_naif` | Implemented |
-| 34 | `jme_jpl_body_state_native_split` | Implemented |
-| 35 | `jme_jpl_body_state_native_split_naif` | Implemented |
-| 36 | `jme_jpl_body_state_order` | Implemented |
-| 37 | `jme_jpl_body_state_order_naif` | Implemented |
-| 38 | `jme_jpl_body_state_split` | Implemented |
-| 39 | `jme_jpl_body_state_split_naif` | Implemented |
-| 40 | `jme_jpl_body_state_utc` | Implemented |
-| 41 | `jme_jpl_body_state_utc_naif` | Implemented |
-| 42 | `jme_jpl_close` | Implemented |
-| 43 | `jme_jpl_constant` | Implemented |
-| 44 | `jme_jpl_constant_count` | Implemented |
-| 45 | `jme_jpl_constant_index` | Implemented |
-| 46 | `jme_jpl_constant_string` | Implemented |
-| 47 | `jme_jpl_constant_string_vector` | Implemented |
-| 48 | `jme_jpl_constant_vector` | Implemented |
-| 49 | `jme_jpl_coverage` | Implemented |
-| 50 | `jme_jpl_ecliptic_state` | Implemented |
-| 51 | `jme_jpl_ecliptic_state_naif` | Implemented |
-| 52 | `jme_jpl_ecliptic_state_split` | Implemented |
-| 53 | `jme_jpl_ecliptic_state_split_naif` | Implemented |
-| 54 | `jme_jpl_ecliptic_state_utc` | Implemented |
-| 55 | `jme_jpl_ecliptic_state_utc_naif` | Implemented |
-| 56 | `jme_jpl_file_version` | Implemented |
-| 57 | `jme_jpl_id_by_name` | Implemented |
-| 58 | `jme_jpl_is_available` | Implemented |
-| 59 | `jme_jpl_is_open` | Implemented |
-| 60 | `jme_jpl_is_thread_safe` | Implemented |
-| 61 | `jme_jpl_max_supported_order` | Implemented |
-| 62 | `jme_jpl_name_by_id` | Implemented |
-| 63 | `jme_jpl_open` | Implemented |
-| 64 | `jme_jpl_open_array` | Implemented |
-| 65 | `jme_jpl_orientation_record_count` | Implemented |
-| 66 | `jme_jpl_orientation_record_index` | Implemented |
-| 67 | `jme_jpl_orientation_state_naif` | Implemented |
-| 68 | `jme_jpl_orientation_state_order_naif` | Implemented |
-| 69 | `jme_jpl_orientation_state_split_naif` | Implemented |
-| 70 | `jme_jpl_orientation_state_utc_naif` | Implemented |
-| 71 | `jme_jpl_position_record_count` | Implemented |
-| 72 | `jme_jpl_position_record_index` | Implemented |
-| 73 | `jme_jpl_prefetch` | Implemented |
-| 74 | `jme_jpl_rotational_angular_momentum_state_naif` | Implemented |
-| 75 | `jme_jpl_rotational_angular_momentum_state_order_naif` | Implemented |
-| 76 | `jme_jpl_rotational_angular_momentum_state_split_naif` | Implemented |
-| 77 | `jme_jpl_rotational_angular_momentum_state_utc_naif` | Implemented |
-| 78 | `jme_jpl_timescale` | Implemented |
-| 79 | `jme_julian_day` | Implemented |
-| 80 | `jme_radian_midpoint` | Implemented |
-| 81 | `jme_radian_normalize` | Implemented |
-| 82 | `jme_radians_difference_signed` | Implemented |
-| 83 | `jme_radians_to_degrees` | Implemented |
-| 84 | `jme_rectangular_to_spherical_state` | Implemented |
-| 85 | `jme_refract` | Implemented |
-| 86 | `jme_refract_extended` | Implemented |
-| 87 | `jme_reverse_julian_day` | Implemented |
-| 88 | `jme_set_ephemeris_path` | Implemented |
-| 89 | `jme_set_jpl_file` | Implemented |
-| 90 | `jme_set_sidereal_mode` | Implemented |
-| 91 | `jme_sidereal_time` | Implemented |
-| 92 | `jme_sidereal_time0` | Implemented |
-| 93 | `jme_spherical_angular_separation` | Implemented |
-| 94 | `jme_spherical_position_angle` | Implemented |
-| 95 | `jme_spherical_to_rectangular_state` | Implemented |
-| 96 | `jme_split_degree` | Implemented |
-| 97 | `jme_state_add` | Implemented |
-| 98 | `jme_state_convert_units` | Implemented |
-| 99 | `jme_state_distance` | Implemented |
-| 100 | `jme_state_light_time_days` | Implemented |
-| 101 | `jme_state_position_velocity_dot` | Implemented |
-| 102 | `jme_state_scale` | Implemented |
-| 103 | `jme_state_speed` | Implemented |
-| 104 | `jme_state_subtract` | Implemented |
-| 105 | `jme_utc_time_zone` | Implemented |
-| 106 | `jme_utc_to_jd` | Implemented |
-| 107 | `jme_ecliptic_to_equatorial_rectangular_state` | Implemented |
-| 108 | `jme_equatorial_to_ecliptic_rectangular_state` | Implemented |
-| 109 | `jme_get_sidereal_mode` | Implemented |
-| 110 | `jme_jpl_current_file_data` | Implemented |
+| 1 | `jme_body_id_from_name` | Declared and defined |
+| 2 | `jme_body_naif_id` | Declared and defined |
+| 3 | `jme_calc` | Declared and defined |
+| 4 | `jme_calc_pctr` | Declared and defined |
+| 5 | `jme_calc_ut` | Declared and defined |
+| 6 | `jme_calendar_is_leap_year` | Declared and defined |
+| 7 | `jme_centiseconds_difference` | Declared and defined |
+| 8 | `jme_centiseconds_difference_signed` | Declared and defined |
+| 9 | `jme_centiseconds_normalize` | Declared and defined |
+| 10 | `jme_centiseconds_round_second` | Declared and defined |
+| 11 | `jme_close` | Declared and defined |
+| 12 | `jme_date_is_valid` | Declared and defined |
+| 13 | `jme_day_of_week` | Declared and defined |
+| 14 | `jme_day_of_year` | Declared and defined |
+| 15 | `jme_days_in_month` | Declared and defined |
+| 16 | `jme_decimal_hour` | Declared and defined |
+| 17 | `jme_degree_midpoint` | Declared and defined |
+| 18 | `jme_degree_normalize` | Declared and defined |
+| 19 | `jme_degrees_difference` | Declared and defined |
+| 20 | `jme_degrees_difference_signed` | Declared and defined |
+| 21 | `jme_degrees_to_hours` | Declared and defined |
+| 22 | `jme_degrees_to_radians` | Declared and defined |
+| 23 | `jme_delta_t` | Declared and defined |
+| 24 | `jme_delta_t_ex` | Declared and defined |
+| 25 | `jme_double_to_long` | Declared and defined |
+| 26 | `jme_ecliptic_to_equatorial` | Declared and defined |
+| 27 | `jme_ecliptic_to_equatorial_rectangular_state` | Declared and defined |
+| 28 | `jme_elp2000_moon_state` | Declared and defined |
+| 29 | `jme_equatorial_to_ecliptic` | Declared and defined |
+| 30 | `jme_equatorial_to_ecliptic_rectangular_state` | Declared and defined |
+| 31 | `jme_equatorial_to_horizontal` | Declared and defined |
+| 32 | `jme_fixstar` | Declared and defined |
+| 33 | `jme_fixstar_mag` | Declared and defined |
+| 34 | `jme_fixstar_ut` | Declared and defined |
+| 35 | `jme_fixstar2` | Declared and defined |
+| 36 | `jme_fixstar2_mag` | Declared and defined |
+| 37 | `jme_fixstar2_ut` | Declared and defined |
+| 38 | `jme_gauquelin_sector` | Declared and defined |
+| 39 | `jme_get_astro_models` | Declared and defined |
+| 40 | `jme_get_ayanamsa` | Declared and defined |
+| 41 | `jme_get_ayanamsa_ex` | Declared and defined |
+| 42 | `jme_get_ayanamsa_ex_ut` | Declared and defined |
+| 43 | `jme_get_ayanamsa_ut` | Declared and defined |
+| 44 | `jme_get_nutation` | Declared and defined |
+| 45 | `jme_get_nutation_matrix` | Declared and defined |
+| 46 | `jme_get_obliquity` | Declared and defined |
+| 47 | `jme_get_orbital_elements` | Declared and defined |
+| 48 | `jme_get_precession_matrix` | Declared and defined |
+| 49 | `jme_get_sidereal_mode` | Declared and defined |
+| 50 | `jme_get_tid_acc` | Declared and defined |
+| 51 | `jme_get_topo_pos` | Declared and defined |
+| 52 | `jme_heliacal_angle` | Declared and defined |
+| 53 | `jme_heliacal_pheno_ut` | Declared and defined |
+| 54 | `jme_heliacal_ut` | Declared and defined |
+| 55 | `jme_helio_cross` | Declared and defined |
+| 56 | `jme_helio_cross_ut` | Declared and defined |
+| 57 | `jme_horizontal_to_equatorial` | Declared and defined |
+| 58 | `jme_hours_normalize` | Declared and defined |
+| 59 | `jme_hours_to_degrees` | Declared and defined |
+| 60 | `jme_house_pos` | Declared and defined |
+| 61 | `jme_houses` | Declared and defined |
+| 62 | `jme_houses_armc` | Declared and defined |
+| 63 | `jme_houses_armc_ex2` | Declared and defined |
+| 64 | `jme_houses_ex` | Declared and defined |
+| 65 | `jme_houses_ex2` | Declared and defined |
+| 66 | `jme_jd_add_seconds` | Declared and defined |
+| 67 | `jme_jd_difference_seconds` | Declared and defined |
+| 68 | `jme_jd_to_utc` | Declared and defined |
+| 69 | `jme_jpl_body_state` | Declared and defined |
+| 70 | `jme_jpl_body_state_naif` | Declared and defined |
+| 71 | `jme_jpl_body_state_native` | Declared and defined |
+| 72 | `jme_jpl_body_state_native_naif` | Declared and defined |
+| 73 | `jme_jpl_body_state_native_split` | Declared and defined |
+| 74 | `jme_jpl_body_state_native_split_naif` | Declared and defined |
+| 75 | `jme_jpl_body_state_order` | Declared and defined |
+| 76 | `jme_jpl_body_state_order_naif` | Declared and defined |
+| 77 | `jme_jpl_body_state_split` | Declared and defined |
+| 78 | `jme_jpl_body_state_split_naif` | Declared and defined |
+| 79 | `jme_jpl_body_state_utc` | Declared and defined |
+| 80 | `jme_jpl_body_state_utc_naif` | Declared and defined |
+| 81 | `jme_jpl_close` | Declared and defined |
+| 82 | `jme_jpl_constant` | Declared and defined |
+| 83 | `jme_jpl_constant_count` | Declared and defined |
+| 84 | `jme_jpl_constant_index` | Declared and defined |
+| 85 | `jme_jpl_constant_string` | Declared and defined |
+| 86 | `jme_jpl_constant_string_vector` | Declared and defined |
+| 87 | `jme_jpl_constant_vector` | Declared and defined |
+| 88 | `jme_jpl_coverage` | Declared and defined |
+| 89 | `jme_jpl_current_file_data` | Declared and defined |
+| 90 | `jme_jpl_ecliptic_state` | Declared and defined |
+| 91 | `jme_jpl_ecliptic_state_naif` | Declared and defined |
+| 92 | `jme_jpl_ecliptic_state_split` | Declared and defined |
+| 93 | `jme_jpl_ecliptic_state_split_naif` | Declared and defined |
+| 94 | `jme_jpl_ecliptic_state_utc` | Declared and defined |
+| 95 | `jme_jpl_ecliptic_state_utc_naif` | Declared and defined |
+| 96 | `jme_jpl_file_version` | Declared and defined |
+| 97 | `jme_jpl_id_by_name` | Declared and defined |
+| 98 | `jme_jpl_is_available` | Declared and defined |
+| 99 | `jme_jpl_is_open` | Declared and defined |
+| 100 | `jme_jpl_is_thread_safe` | Declared and defined |
+| 101 | `jme_jpl_max_supported_order` | Declared and defined |
+| 102 | `jme_jpl_name_by_id` | Declared and defined |
+| 103 | `jme_jpl_open` | Declared and defined |
+| 104 | `jme_jpl_open_array` | Declared and defined |
+| 105 | `jme_jpl_orientation_record_count` | Declared and defined |
+| 106 | `jme_jpl_orientation_record_index` | Declared and defined |
+| 107 | `jme_jpl_orientation_state_naif` | Declared and defined |
+| 108 | `jme_jpl_orientation_state_order_naif` | Declared and defined |
+| 109 | `jme_jpl_orientation_state_split_naif` | Declared and defined |
+| 110 | `jme_jpl_orientation_state_utc_naif` | Declared and defined |
+| 111 | `jme_jpl_position_record_count` | Declared and defined |
+| 112 | `jme_jpl_position_record_index` | Declared and defined |
+| 113 | `jme_jpl_prefetch` | Declared and defined |
+| 114 | `jme_jpl_rotational_angular_momentum_state_naif` | Declared and defined |
+| 115 | `jme_jpl_rotational_angular_momentum_state_order_naif` | Declared and defined |
+| 116 | `jme_jpl_rotational_angular_momentum_state_split_naif` | Declared and defined |
+| 117 | `jme_jpl_rotational_angular_momentum_state_utc_naif` | Declared and defined |
+| 118 | `jme_jpl_timescale` | Declared and defined |
+| 119 | `jme_julian_day` | Declared and defined |
+| 120 | `jme_lat_to_lmt` | Declared and defined |
+| 121 | `jme_lmt_to_lat` | Declared and defined |
+| 122 | `jme_lun_eclipse_how` | Declared and defined |
+| 123 | `jme_lun_eclipse_when` | Declared and defined |
+| 124 | `jme_lun_eclipse_when_loc` | Declared and defined |
+| 125 | `jme_lun_occult_when_glob` | Declared and defined |
+| 126 | `jme_lun_occult_when_loc` | Declared and defined |
+| 127 | `jme_lun_occult_where` | Declared and defined |
+| 128 | `jme_matrix_identity` | Declared and defined |
+| 129 | `jme_matrix_multiply` | Declared and defined |
+| 130 | `jme_matrix_rotate_x` | Declared and defined |
+| 131 | `jme_matrix_rotate_y` | Declared and defined |
+| 132 | `jme_matrix_rotate_z` | Declared and defined |
+| 133 | `jme_matrix_transform_state` | Declared and defined |
+| 134 | `jme_meeus_moon_state` | Declared and defined |
+| 135 | `jme_meeus_planet_state` | Declared and defined |
+| 136 | `jme_meeus_sun_state` | Declared and defined |
+| 137 | `jme_mooncross` | Declared and defined |
+| 138 | `jme_mooncross_node` | Declared and defined |
+| 139 | `jme_mooncross_node_ut` | Declared and defined |
+| 140 | `jme_mooncross_ut` | Declared and defined |
+| 141 | `jme_moshier_planet_state` | Declared and defined |
+| 142 | `jme_nod_aps` | Declared and defined |
+| 143 | `jme_nod_aps_ut` | Declared and defined |
+| 144 | `jme_orbit_max_min_true_distance` | Declared and defined |
+| 145 | `jme_pheno` | Declared and defined |
+| 146 | `jme_pheno_ut` | Declared and defined |
+| 147 | `jme_radian_midpoint` | Declared and defined |
+| 148 | `jme_radian_normalize` | Declared and defined |
+| 149 | `jme_radians_difference_signed` | Declared and defined |
+| 150 | `jme_radians_to_degrees` | Declared and defined |
+| 151 | `jme_rectangular_to_spherical_state` | Declared and defined |
+| 152 | `jme_refract` | Declared and defined |
+| 153 | `jme_refract_extended` | Declared and defined |
+| 154 | `jme_reverse_julian_day` | Declared and defined |
+| 155 | `jme_rise_trans` | Declared and defined |
+| 156 | `jme_rise_trans_true_hor` | Declared and defined |
+| 157 | `jme_set_astro_models` | Declared and defined |
+| 158 | `jme_set_delta_t_userdef` | Declared and defined |
+| 159 | `jme_set_ephemeris_path` | Declared and defined |
+| 160 | `jme_set_interpolate_nut` | Declared and defined |
+| 161 | `jme_set_jpl_file` | Declared and defined |
+| 162 | `jme_set_lapse_rate` | Declared and defined |
+| 163 | `jme_set_sidereal_mode` | Declared and defined |
+| 164 | `jme_set_tid_acc` | Declared and defined |
+| 165 | `jme_set_topo` | Declared and defined |
+| 166 | `jme_sidereal_time` | Declared and defined |
+| 167 | `jme_sidereal_time0` | Declared and defined |
+| 168 | `jme_sol_eclipse_how` | Declared and defined |
+| 169 | `jme_sol_eclipse_when_glob` | Declared and defined |
+| 170 | `jme_sol_eclipse_when_loc` | Declared and defined |
+| 171 | `jme_sol_eclipse_where` | Declared and defined |
+| 172 | `jme_solcross` | Declared and defined |
+| 173 | `jme_solcross_ut` | Declared and defined |
+| 174 | `jme_spherical_angular_separation` | Declared and defined |
+| 175 | `jme_spherical_position_angle` | Declared and defined |
+| 176 | `jme_spherical_to_rectangular_state` | Declared and defined |
+| 177 | `jme_split_degree` | Declared and defined |
+| 178 | `jme_state_add` | Declared and defined |
+| 179 | `jme_state_convert_units` | Declared and defined |
+| 180 | `jme_state_distance` | Declared and defined |
+| 181 | `jme_state_light_time_days` | Declared and defined |
+| 182 | `jme_state_position_velocity_dot` | Declared and defined |
+| 183 | `jme_state_scale` | Declared and defined |
+| 184 | `jme_state_speed` | Declared and defined |
+| 185 | `jme_state_subtract` | Declared and defined |
+| 186 | `jme_time_equ` | Declared and defined |
+| 187 | `jme_topo_arcus_visionis` | Declared and defined |
+| 188 | `jme_utc_time_zone` | Declared and defined |
+| 189 | `jme_utc_to_jd` | Declared and defined |
+| 190 | `jme_vis_limit_mag` | Declared and defined |
+| 191 | `jme_vsop87_planet_state` | Declared and defined |
 
 ## JME Public Constants
 
-| # | Constant | Value |
-|---:|---|---|
-| 1 | `JME_ANGLE_FORMAT_KEEP_DEG` | `0` |
-| 2 | `JME_ANGLE_FORMAT_KEEP_SIGN` | `1` |
-| 3 | `JME_ANGLE_FORMAT_NAKSHATRA` | `2` |
-| 4 | `JME_ANGLE_FORMAT_ROUND_DEG` | `3` |
-| 5 | `JME_ANGLE_FORMAT_ROUND_MIN` | `4` |
-| 6 | `JME_ANGLE_FORMAT_ROUND_SEC` | `5` |
-| 7 | `JME_ANGLE_FORMAT_ZODIACAL` | `6` |
-| 8 | `JME_AU_KM` | `149597870.700` |
-| 9 | `JME_BODY_ALTJIRA` | `7` |
-| 10 | `JME_BODY_AMYCUS` | `8` |
-| 11 | `JME_BODY_ARROKOTH` | `9` |
-| 12 | `JME_BODY_ASBOLUS` | `10` |
-| 13 | `JME_BODY_ASTEROID_001` | `11` |
-| 14 | `JME_BODY_ASTEROID_002` | `12` |
-| 15 | `JME_BODY_ASTEROID_003` | `13` |
-| 16 | `JME_BODY_ASTEROID_004` | `14` |
-| 17 | `JME_BODY_ASTEROID_005` | `15` |
-| 18 | `JME_BODY_ASTEROID_006` | `16` |
-| 19 | `JME_BODY_ASTEROID_007` | `17` |
-| 20 | `JME_BODY_ASTEROID_008` | `18` |
-| 21 | `JME_BODY_ASTEROID_009` | `19` |
-| 22 | `JME_BODY_ASTEROID_010` | `20` |
-| 23 | `JME_BODY_ASTEROID_011` | `21` |
-| 24 | `JME_BODY_ASTEROID_012` | `22` |
-| 25 | `JME_BODY_ASTEROID_013` | `23` |
-| 26 | `JME_BODY_ASTEROID_014` | `24` |
-| 27 | `JME_BODY_ASTEROID_015` | `25` |
-| 28 | `JME_BODY_ASTEROID_016` | `26` |
-| 29 | `JME_BODY_ASTEROID_017` | `27` |
-| 30 | `JME_BODY_ASTEROID_018` | `28` |
-| 31 | `JME_BODY_ASTEROID_019` | `29` |
-| 32 | `JME_BODY_ASTEROID_020` | `30` |
-| 33 | `JME_BODY_ASTEROID_021` | `31` |
-| 34 | `JME_BODY_ASTEROID_022` | `32` |
-| 35 | `JME_BODY_ASTEROID_023` | `33` |
-| 36 | `JME_BODY_ASTEROID_024` | `34` |
-| 37 | `JME_BODY_ASTEROID_025` | `35` |
-| 38 | `JME_BODY_ASTEROID_026` | `36` |
-| 39 | `JME_BODY_ASTEROID_027` | `37` |
-| 40 | `JME_BODY_ASTEROID_028` | `38` |
-| 41 | `JME_BODY_ASTEROID_029` | `39` |
-| 42 | `JME_BODY_ASTEROID_030` | `40` |
-| 43 | `JME_BODY_ASTEROID_031` | `41` |
-| 44 | `JME_BODY_ASTEROID_032` | `42` |
-| 45 | `JME_BODY_ASTEROID_033` | `43` |
-| 46 | `JME_BODY_ASTEROID_034` | `44` |
-| 47 | `JME_BODY_ASTEROID_035` | `45` |
-| 48 | `JME_BODY_ASTEROID_036` | `46` |
-| 49 | `JME_BODY_ASTEROID_037` | `47` |
-| 50 | `JME_BODY_ASTEROID_038` | `48` |
-| 51 | `JME_BODY_ASTEROID_039` | `49` |
-| 52 | `JME_BODY_ASTEROID_040` | `50` |
-| 53 | `JME_BODY_ASTEROID_041` | `51` |
-| 54 | `JME_BODY_ASTEROID_042` | `52` |
-| 55 | `JME_BODY_ASTEROID_043` | `53` |
-| 56 | `JME_BODY_ASTEROID_044` | `54` |
-| 57 | `JME_BODY_ASTEROID_045` | `55` |
-| 58 | `JME_BODY_ASTEROID_046` | `56` |
-| 59 | `JME_BODY_ASTEROID_047` | `57` |
-| 60 | `JME_BODY_ASTEROID_048` | `58` |
-| 61 | `JME_BODY_ASTEROID_049` | `59` |
-| 62 | `JME_BODY_ASTEROID_050` | `60` |
-| 63 | `JME_BODY_ASTEROID_051` | `61` |
-| 64 | `JME_BODY_ASTEROID_052` | `62` |
-| 65 | `JME_BODY_ASTEROID_053` | `63` |
-| 66 | `JME_BODY_ASTEROID_054` | `64` |
-| 67 | `JME_BODY_ASTEROID_055` | `65` |
-| 68 | `JME_BODY_ASTEROID_056` | `66` |
-| 69 | `JME_BODY_ASTEROID_057` | `67` |
-| 70 | `JME_BODY_ASTEROID_058` | `68` |
-| 71 | `JME_BODY_ASTEROID_059` | `69` |
-| 72 | `JME_BODY_ASTEROID_060` | `70` |
-| 73 | `JME_BODY_ASTEROID_061` | `71` |
-| 74 | `JME_BODY_ASTEROID_062` | `72` |
-| 75 | `JME_BODY_ASTEROID_063` | `73` |
-| 76 | `JME_BODY_ASTEROID_064` | `74` |
-| 77 | `JME_BODY_ASTEROID_065` | `75` |
-| 78 | `JME_BODY_ASTEROID_066` | `76` |
-| 79 | `JME_BODY_ASTEROID_067` | `77` |
-| 80 | `JME_BODY_ASTEROID_068` | `78` |
-| 81 | `JME_BODY_ASTEROID_069` | `79` |
-| 82 | `JME_BODY_ASTEROID_070` | `80` |
-| 83 | `JME_BODY_ASTEROID_071` | `81` |
-| 84 | `JME_BODY_ASTEROID_072` | `82` |
-| 85 | `JME_BODY_ASTEROID_073` | `83` |
-| 86 | `JME_BODY_ASTEROID_074` | `84` |
-| 87 | `JME_BODY_ASTEROID_075` | `85` |
-| 88 | `JME_BODY_ASTEROID_076` | `86` |
-| 89 | `JME_BODY_ASTEROID_077` | `87` |
-| 90 | `JME_BODY_ASTEROID_078` | `88` |
-| 91 | `JME_BODY_ASTEROID_079` | `89` |
-| 92 | `JME_BODY_ASTEROID_080` | `90` |
-| 93 | `JME_BODY_ASTEROID_081` | `91` |
-| 94 | `JME_BODY_ASTEROID_082` | `92` |
-| 95 | `JME_BODY_ASTEROID_083` | `93` |
-| 96 | `JME_BODY_ASTEROID_084` | `94` |
-| 97 | `JME_BODY_ASTEROID_085` | `95` |
-| 98 | `JME_BODY_ASTEROID_086` | `96` |
-| 99 | `JME_BODY_ASTEROID_087` | `97` |
-| 100 | `JME_BODY_ASTEROID_088` | `98` |
-| 101 | `JME_BODY_ASTEROID_089` | `99` |
-| 102 | `JME_BODY_ASTEROID_090` | `100` |
-| 103 | `JME_BODY_ASTEROID_091` | `101` |
-| 104 | `JME_BODY_ASTEROID_092` | `102` |
-| 105 | `JME_BODY_ASTEROID_093` | `103` |
-| 106 | `JME_BODY_ASTEROID_094` | `104` |
-| 107 | `JME_BODY_ASTEROID_095` | `105` |
-| 108 | `JME_BODY_ASTEROID_096` | `106` |
-| 109 | `JME_BODY_ASTEROID_097` | `107` |
-| 110 | `JME_BODY_ASTEROID_098` | `108` |
-| 111 | `JME_BODY_ASTEROID_099` | `109` |
-| 112 | `JME_BODY_ASTEROID_100` | `110` |
-| 113 | `JME_BODY_ASTEROID_101` | `111` |
-| 114 | `JME_BODY_ASTEROID_102` | `112` |
-| 115 | `JME_BODY_ASTEROID_103` | `113` |
-| 116 | `JME_BODY_ASTEROID_104` | `114` |
-| 117 | `JME_BODY_ASTEROID_105` | `115` |
-| 118 | `JME_BODY_ASTEROID_106` | `116` |
-| 119 | `JME_BODY_ASTEROID_107` | `117` |
-| 120 | `JME_BODY_ASTEROID_108` | `118` |
-| 121 | `JME_BODY_ASTEROID_109` | `119` |
-| 122 | `JME_BODY_ASTEROID_110` | `120` |
-| 123 | `JME_BODY_BIENOR` | `121` |
-| 124 | `JME_BODY_BORASISI` | `122` |
-| 125 | `JME_BODY_CERES` | `123` |
-| 126 | `JME_BODY_CHARIKLO` | `124` |
-| 127 | `JME_BODY_CHIRON` | `125` |
-| 128 | `JME_BODY_COMET_001` | `126` |
-| 129 | `JME_BODY_COMET_002` | `127` |
-| 130 | `JME_BODY_COMET_003` | `128` |
-| 131 | `JME_BODY_COMET_004` | `129` |
-| 132 | `JME_BODY_COMET_005` | `130` |
-| 133 | `JME_BODY_COMET_006` | `131` |
-| 134 | `JME_BODY_COMET_007` | `132` |
-| 135 | `JME_BODY_COMET_008` | `133` |
-| 136 | `JME_BODY_COMET_009` | `134` |
-| 137 | `JME_BODY_COMET_010` | `135` |
-| 138 | `JME_BODY_COMET_011` | `136` |
-| 139 | `JME_BODY_COMET_012` | `137` |
-| 140 | `JME_BODY_COMET_013` | `138` |
-| 141 | `JME_BODY_COMET_014` | `139` |
-| 142 | `JME_BODY_COMET_015` | `140` |
-| 143 | `JME_BODY_COMET_016` | `141` |
-| 144 | `JME_BODY_COMET_017` | `142` |
-| 145 | `JME_BODY_COMET_018` | `143` |
-| 146 | `JME_BODY_COMET_019` | `144` |
-| 147 | `JME_BODY_COMET_020` | `145` |
-| 148 | `JME_BODY_COMET_021` | `146` |
-| 149 | `JME_BODY_COMET_022` | `147` |
-| 150 | `JME_BODY_COMET_023` | `148` |
-| 151 | `JME_BODY_COMET_024` | `149` |
-| 152 | `JME_BODY_COMET_025` | `150` |
-| 153 | `JME_BODY_COMET_026` | `151` |
-| 154 | `JME_BODY_COMET_027` | `152` |
-| 155 | `JME_BODY_COMET_028` | `153` |
-| 156 | `JME_BODY_COMET_029` | `154` |
-| 157 | `JME_BODY_COMET_030` | `155` |
-| 158 | `JME_BODY_COMET_031` | `156` |
-| 159 | `JME_BODY_COMET_032` | `157` |
-| 160 | `JME_BODY_COMET_033` | `158` |
-| 161 | `JME_BODY_COMET_034` | `159` |
-| 162 | `JME_BODY_COMET_035` | `160` |
-| 163 | `JME_BODY_COMET_036` | `161` |
-| 164 | `JME_BODY_COMET_037` | `162` |
-| 165 | `JME_BODY_COMET_038` | `163` |
-| 166 | `JME_BODY_COMET_039` | `164` |
-| 167 | `JME_BODY_COMET_040` | `165` |
-| 168 | `JME_BODY_COMET_041` | `166` |
-| 169 | `JME_BODY_COMET_042` | `167` |
-| 170 | `JME_BODY_COMET_043` | `168` |
-| 171 | `JME_BODY_COMET_044` | `169` |
-| 172 | `JME_BODY_COMET_045` | `170` |
-| 173 | `JME_BODY_COMET_046` | `171` |
-| 174 | `JME_BODY_COMET_047` | `172` |
-| 175 | `JME_BODY_COMET_048` | `173` |
-| 176 | `JME_BODY_COMET_049` | `174` |
-| 177 | `JME_BODY_COMET_050` | `175` |
-| 178 | `JME_BODY_COMET_051` | `176` |
-| 179 | `JME_BODY_COMET_052` | `177` |
-| 180 | `JME_BODY_COMET_053` | `178` |
-| 181 | `JME_BODY_COMET_054` | `179` |
-| 182 | `JME_BODY_COMET_055` | `180` |
-| 183 | `JME_BODY_COMET_056` | `181` |
-| 184 | `JME_BODY_COMET_057` | `182` |
-| 185 | `JME_BODY_COMET_058` | `183` |
-| 186 | `JME_BODY_COMET_059` | `184` |
-| 187 | `JME_BODY_COMET_060` | `185` |
-| 188 | `JME_BODY_CRANTOR` | `186` |
-| 189 | `JME_BODY_CYLLARUS` | `187` |
-| 190 | `JME_BODY_DEUCALION` | `188` |
-| 191 | `JME_BODY_EARTH` | `10` |
-| 192 | `JME_BODY_EARTH_MOON_BARYCENTER` | `14` |
-| 193 | `JME_BODY_ECHECLUS` | `189` |
-| 194 | `JME_BODY_ELATUS` | `190` |
-| 195 | `JME_BODY_ERIS` | `191` |
-| 196 | `JME_BODY_GONGGONG` | `192` |
-| 197 | `JME_BODY_HAUMEA` | `193` |
-| 198 | `JME_BODY_HUYA` | `194` |
-| 199 | `JME_BODY_HYLONOME` | `195` |
-| 200 | `JME_BODY_IXION` | `196` |
-| 201 | `JME_BODY_JUNO` | `197` |
-| 202 | `JME_BODY_JUPITER` | `5` |
-| 203 | `JME_BODY_JUPITER_BARYCENTER` | `16` |
-| 204 | `JME_BODY_MAKEMAKE` | `198` |
-| 205 | `JME_BODY_MARS` | `4` |
-| 206 | `JME_BODY_MARS_BARYCENTER` | `15` |
-| 207 | `JME_BODY_MERCURY` | `2` |
-| 208 | `JME_BODY_MERCURY_BARYCENTER` | `12` |
-| 209 | `JME_BODY_MINOR_PLANET_001` | `199` |
-| 210 | `JME_BODY_MINOR_PLANET_002` | `200` |
-| 211 | `JME_BODY_MINOR_PLANET_003` | `201` |
-| 212 | `JME_BODY_MINOR_PLANET_004` | `202` |
-| 213 | `JME_BODY_MINOR_PLANET_005` | `203` |
-| 214 | `JME_BODY_MINOR_PLANET_006` | `204` |
-| 215 | `JME_BODY_MINOR_PLANET_007` | `205` |
-| 216 | `JME_BODY_MINOR_PLANET_008` | `206` |
-| 217 | `JME_BODY_MINOR_PLANET_009` | `207` |
-| 218 | `JME_BODY_MINOR_PLANET_010` | `208` |
-| 219 | `JME_BODY_MINOR_PLANET_011` | `209` |
-| 220 | `JME_BODY_MINOR_PLANET_012` | `210` |
-| 221 | `JME_BODY_MINOR_PLANET_013` | `211` |
-| 222 | `JME_BODY_MINOR_PLANET_014` | `212` |
-| 223 | `JME_BODY_MINOR_PLANET_015` | `213` |
-| 224 | `JME_BODY_MINOR_PLANET_016` | `214` |
-| 225 | `JME_BODY_MINOR_PLANET_017` | `215` |
-| 226 | `JME_BODY_MINOR_PLANET_018` | `216` |
-| 227 | `JME_BODY_MINOR_PLANET_019` | `217` |
-| 228 | `JME_BODY_MINOR_PLANET_020` | `218` |
-| 229 | `JME_BODY_MINOR_PLANET_021` | `219` |
-| 230 | `JME_BODY_MINOR_PLANET_022` | `220` |
-| 231 | `JME_BODY_MINOR_PLANET_023` | `221` |
-| 232 | `JME_BODY_MINOR_PLANET_024` | `222` |
-| 233 | `JME_BODY_MINOR_PLANET_025` | `223` |
-| 234 | `JME_BODY_MINOR_PLANET_026` | `224` |
-| 235 | `JME_BODY_MINOR_PLANET_027` | `225` |
-| 236 | `JME_BODY_MINOR_PLANET_028` | `226` |
-| 237 | `JME_BODY_MINOR_PLANET_029` | `227` |
-| 238 | `JME_BODY_MINOR_PLANET_030` | `228` |
-| 239 | `JME_BODY_MINOR_PLANET_031` | `229` |
-| 240 | `JME_BODY_MINOR_PLANET_032` | `230` |
-| 241 | `JME_BODY_MINOR_PLANET_033` | `231` |
-| 242 | `JME_BODY_MINOR_PLANET_034` | `232` |
-| 243 | `JME_BODY_MINOR_PLANET_035` | `233` |
-| 244 | `JME_BODY_MINOR_PLANET_036` | `234` |
-| 245 | `JME_BODY_MINOR_PLANET_037` | `235` |
-| 246 | `JME_BODY_MINOR_PLANET_038` | `236` |
-| 247 | `JME_BODY_MINOR_PLANET_039` | `237` |
-| 248 | `JME_BODY_MINOR_PLANET_040` | `238` |
-| 249 | `JME_BODY_MINOR_PLANET_041` | `239` |
-| 250 | `JME_BODY_MINOR_PLANET_042` | `240` |
-| 251 | `JME_BODY_MINOR_PLANET_043` | `241` |
-| 252 | `JME_BODY_MINOR_PLANET_044` | `242` |
-| 253 | `JME_BODY_MINOR_PLANET_045` | `243` |
-| 254 | `JME_BODY_MINOR_PLANET_046` | `244` |
-| 255 | `JME_BODY_MINOR_PLANET_047` | `245` |
-| 256 | `JME_BODY_MINOR_PLANET_048` | `246` |
-| 257 | `JME_BODY_MINOR_PLANET_049` | `247` |
-| 258 | `JME_BODY_MINOR_PLANET_050` | `248` |
-| 259 | `JME_BODY_MINOR_PLANET_051` | `249` |
-| 260 | `JME_BODY_MINOR_PLANET_052` | `250` |
-| 261 | `JME_BODY_MINOR_PLANET_053` | `251` |
-| 262 | `JME_BODY_MINOR_PLANET_054` | `252` |
-| 263 | `JME_BODY_MINOR_PLANET_055` | `253` |
-| 264 | `JME_BODY_MINOR_PLANET_056` | `254` |
-| 265 | `JME_BODY_MINOR_PLANET_057` | `255` |
-| 266 | `JME_BODY_MINOR_PLANET_058` | `256` |
-| 267 | `JME_BODY_MINOR_PLANET_059` | `257` |
-| 268 | `JME_BODY_MINOR_PLANET_060` | `258` |
-| 269 | `JME_BODY_MOON` | `1` |
-| 270 | `JME_BODY_NEPTUNE` | `8` |
-| 271 | `JME_BODY_NEPTUNE_BARYCENTER` | `19` |
-| 272 | `JME_BODY_NESSUS` | `259` |
-| 273 | `JME_BODY_OKYRHOE` | `260` |
-| 274 | `JME_BODY_ORCUS` | `261` |
-| 275 | `JME_BODY_PALLAS` | `262` |
-| 276 | `JME_BODY_PELOPS` | `263` |
-| 277 | `JME_BODY_PHOLUS` | `264` |
-| 278 | `JME_BODY_PLUTO` | `9` |
-| 279 | `JME_BODY_PLUTO_BARYCENTER` | `20` |
-| 280 | `JME_BODY_QUAOAR` | `265` |
-| 281 | `JME_BODY_RHADAMANTHUS` | `266` |
-| 282 | `JME_BODY_SALACIA` | `267` |
-| 283 | `JME_BODY_SATURN` | `6` |
-| 284 | `JME_BODY_SATURN_BARYCENTER` | `17` |
-| 285 | `JME_BODY_SEDNA` | `268` |
-| 286 | `JME_BODY_SOLAR_SYSTEM_BARYCENTER` | `11` |
-| 287 | `JME_BODY_SUN` | `0` |
-| 288 | `JME_BODY_THEREUS` | `269` |
-| 289 | `JME_BODY_TYTHONUS` | `270` |
-| 290 | `JME_BODY_URANUS` | `7` |
-| 291 | `JME_BODY_URANUS_BARYCENTER` | `18` |
-| 292 | `JME_BODY_VARUNA` | `271` |
-| 293 | `JME_BODY_VENUS` | `3` |
-| 294 | `JME_BODY_VENUS_BARYCENTER` | `13` |
-| 295 | `JME_BODY_VESTA` | `272` |
-| 296 | `JME_CALC_APPARENT_POSITION` | `273` |
-| 297 | `JME_CALC_ASTROMETRIC` | `274` |
-| 298 | `JME_CALC_BARYCENTRIC` | `1 << 4` |
-| 299 | `JME_CALC_CENTER_BODY` | `275` |
-| 300 | `JME_CALC_DISTANCE_AU` | `276` |
-| 301 | `JME_CALC_DISTANCE_KM` | `277` |
-| 302 | `JME_CALC_EQUATORIAL` | `1 << 1` |
-| 303 | `JME_CALC_HELIOCENTRIC` | `1 << 5` |
-| 304 | `JME_CALC_HIGH_PRECISION` | `278` |
-| 305 | `JME_CALC_ICRS` | `279` |
-| 306 | `JME_CALC_J2000` | `1 << 7` |
-| 307 | `JME_CALC_NO_ABERRATION` | `280` |
-| 308 | `JME_CALC_NO_LIGHT_DEFLECTION` | `281` |
-| 309 | `JME_CALC_NO_NUTATION` | `1 << 8` |
-| 310 | `JME_CALC_NONE` | `0` |
-| 311 | `JME_CALC_RADIANS` | `1 << 3` |
-| 312 | `JME_CALC_RAW_VECTOR` | `282` |
-| 313 | `JME_CALC_RECTANGULAR` | `283` |
-| 314 | `JME_CALC_SIDEREAL` | `1 << 9` |
-| 315 | `JME_CALC_SPEED` | `1 << 0` |
-| 316 | `JME_CALC_SPHERICAL` | `284` |
-| 317 | `JME_CALC_STRICT` | `285` |
-| 318 | `JME_CALC_TOPOCENTRIC` | `286` |
-| 319 | `JME_CALC_TRUE_POSITION` | `1 << 6` |
-| 320 | `JME_CALC_VELOCITY_PER_DAY` | `287` |
-| 321 | `JME_CALC_VELOCITY_PER_SECOND` | `288` |
-| 322 | `JME_CALC_XYZ` | `1 << 2` |
-| 323 | `JME_CALENDAR_GREGORIAN` | `1` |
-| 324 | `JME_CALENDAR_JULIAN` | `0` |
-| 325 | `JME_COORD_APPARENT_TO_TRUE` | `289` |
-| 326 | `JME_COORD_ECLIPTIC_TO_HORIZONTAL` | `290` |
-| 327 | `JME_COORD_EQUATORIAL_TO_HORIZONTAL` | `291` |
-| 328 | `JME_COORD_HORIZONTAL_TO_ECLIPTIC` | `292` |
-| 329 | `JME_COORD_HORIZONTAL_TO_EQUATORIAL` | `293` |
-| 330 | `JME_COORD_TRUE_TO_APPARENT` | `294` |
-| 331 | `JME_ECLIPSE_FIRST_CONTACT` | `295` |
-| 332 | `JME_ECLIPSE_FOURTH_CONTACT` | `296` |
-| 333 | `JME_ECLIPSE_LUNAR_PARTIAL` | `297` |
-| 334 | `JME_ECLIPSE_LUNAR_PENUMBRAL` | `298` |
-| 335 | `JME_ECLIPSE_LUNAR_TOTAL` | `299` |
-| 336 | `JME_ECLIPSE_MAX_VISIBLE` | `300` |
-| 337 | `JME_ECLIPSE_PENUMBRAL_BEGIN` | `301` |
-| 338 | `JME_ECLIPSE_PENUMBRAL_END` | `302` |
-| 339 | `JME_ECLIPSE_SECOND_CONTACT` | `303` |
-| 340 | `JME_ECLIPSE_SOLAR_ANNULAR` | `304` |
-| 341 | `JME_ECLIPSE_SOLAR_CENTRAL` | `305` |
-| 342 | `JME_ECLIPSE_SOLAR_HYBRID` | `306` |
-| 343 | `JME_ECLIPSE_SOLAR_NONCENTRAL` | `307` |
-| 344 | `JME_ECLIPSE_SOLAR_PARTIAL` | `308` |
-| 345 | `JME_ECLIPSE_SOLAR_TOTAL` | `309` |
-| 346 | `JME_ECLIPSE_THIRD_CONTACT` | `310` |
-| 347 | `JME_ECLIPSE_VISIBLE` | `311` |
-| 348 | `JME_ERR` | `-1` |
-| 349 | `JME_HOUSE_ALCABITIUS` | `312` |
-| 350 | `JME_HOUSE_APC` | `313` |
-| 351 | `JME_HOUSE_AZIMUTHAL` | `314` |
-| 352 | `JME_HOUSE_CAMPANUS` | `315` |
-| 353 | `JME_HOUSE_EQUAL` | `316` |
-| 354 | `JME_HOUSE_GAUQUELIN` | `317` |
-| 355 | `JME_HOUSE_HORIZONTAL` | `318` |
-| 356 | `JME_HOUSE_KOCH` | `319` |
-| 357 | `JME_HOUSE_KRUSINSKI` | `320` |
-| 358 | `JME_HOUSE_MERIDIAN` | `321` |
-| 359 | `JME_HOUSE_MORINUS` | `322` |
-| 360 | `JME_HOUSE_PLACIDUS` | `323` |
-| 361 | `JME_HOUSE_POLICH_PAGE` | `324` |
-| 362 | `JME_HOUSE_PORPHYRIUS` | `325` |
-| 363 | `JME_HOUSE_REGIOMONTANUS` | `326` |
-| 364 | `JME_HOUSE_SUNSHINE` | `327` |
-| 365 | `JME_HOUSE_VEHLOW_EQUAL` | `328` |
-| 366 | `JME_HOUSE_WHOLE_SIGN` | `329` |
-| 367 | `JME_JPL_TIMESCALE_TCB` | `2` |
-| 368 | `JME_JPL_TIMESCALE_TDB` | `1` |
-| 369 | `JME_JPL_TIMESCALE_UNKNOWN` | `0` |
-| 370 | `JME_MODEL_BIAS_IAU2000` | `330` |
-| 371 | `JME_MODEL_BIAS_IAU2006` | `331` |
-| 372 | `JME_MODEL_BIAS_NONE` | `332` |
-| 373 | `JME_MODEL_NUT_IAU_1980` | `333` |
-| 374 | `JME_MODEL_NUT_IAU_2000A` | `334` |
-| 375 | `JME_MODEL_NUT_IAU_2000B` | `335` |
-| 376 | `JME_MODEL_PREC_IAU_1976` | `336` |
-| 377 | `JME_MODEL_PREC_IAU_2000` | `337` |
-| 378 | `JME_MODEL_PREC_IAU_2006` | `338` |
-| 379 | `JME_MODEL_PREC_LASKAR_1986` | `339` |
-| 380 | `JME_MODEL_PREC_VONDRAK_2011` | `340` |
-| 381 | `JME_MODEL_SIDT_IAU_1976` | `341` |
-| 382 | `JME_MODEL_SIDT_IAU_2006` | `342` |
-| 383 | `JME_OK` | `0` |
-| 384 | `JME_ORIENTATION_RAD_PER_DAY` | `0` |
-| 385 | `JME_ORIENTATION_RAD_PER_SECOND` | `1` |
-| 386 | `JME_RISE_ANTI_MERIDIAN_TRANSIT` | `343` |
-| 387 | `JME_RISE_ASTRONOMICAL_TWILIGHT` | `344` |
-| 388 | `JME_RISE_CIVIL_TWILIGHT` | `345` |
-| 389 | `JME_RISE_DISC_BOTTOM` | `346` |
-| 390 | `JME_RISE_DISC_CENTER` | `347` |
-| 391 | `JME_RISE_FIXED_DISC_SIZE` | `348` |
-| 392 | `JME_RISE_HINDU_RISING` | `349` |
-| 393 | `JME_RISE_MERIDIAN_TRANSIT` | `350` |
-| 394 | `JME_RISE_NAUTICAL_TWILIGHT` | `351` |
-| 395 | `JME_RISE_NO_REFRACTION` | `352` |
-| 396 | `JME_RISE_RISE` | `353` |
-| 397 | `JME_RISE_SET` | `354` |
-| 398 | `JME_SECONDS_PER_DAY` | `86400.0` |
-| 399 | `JME_SIDEREAL_ALDEBARAN_15TAU` | `355` |
-| 400 | `JME_SIDEREAL_ARYABHATA` | `356` |
-| 401 | `JME_SIDEREAL_B1950` | `357` |
-| 402 | `JME_SIDEREAL_BABYL_ETPSC` | `358` |
-| 403 | `JME_SIDEREAL_BABYL_HUBER` | `359` |
-| 404 | `JME_SIDEREAL_BABYL_KUGLER1` | `360` |
-| 405 | `JME_SIDEREAL_BABYL_KUGLER2` | `361` |
-| 406 | `JME_SIDEREAL_BABYL_KUGLER3` | `362` |
-| 407 | `JME_SIDEREAL_DELUCE` | `363` |
-| 408 | `JME_SIDEREAL_FAGAN_BRADLEY` | `0` |
-| 409 | `JME_SIDEREAL_GALCENT_0SAG` | `364` |
-| 410 | `JME_SIDEREAL_HIPPARCHOS` | `365` |
-| 411 | `JME_SIDEREAL_J1900` | `366` |
-| 412 | `JME_SIDEREAL_J2000` | `367` |
-| 413 | `JME_SIDEREAL_JN_BHASIN` | `368` |
-| 414 | `JME_SIDEREAL_KRISHNAMURTI` | `369` |
-| 415 | `JME_SIDEREAL_LAHIRI` | `1` |
-| 416 | `JME_SIDEREAL_RAMAN` | `370` |
-| 417 | `JME_SIDEREAL_SASSANIAN` | `371` |
-| 418 | `JME_SIDEREAL_SS_CITRA` | `372` |
-| 419 | `JME_SIDEREAL_SS_REVATI` | `373` |
-| 420 | `JME_SIDEREAL_SURYASIDDHANTA` | `374` |
-| 421 | `JME_SIDEREAL_TRUE_CITRA` | `375` |
-| 422 | `JME_SIDEREAL_TRUE_MULA` | `376` |
-| 423 | `JME_SIDEREAL_TRUE_PUSHYA` | `377` |
-| 424 | `JME_SIDEREAL_TRUE_REVATI` | `378` |
-| 425 | `JME_SIDEREAL_USER` | `255` |
-| 426 | `JME_SIDEREAL_USHASHASHI` | `379` |
-| 427 | `JME_SIDEREAL_YUKTESHWAR` | `380` |
-| 428 | `JME_SPEED_OF_LIGHT_KM_PER_SEC` | `299792.458` |
-| 429 | `JME_TIME_DELTAT_AUTOMATIC` | `381` |
-| 430 | `JME_TIME_TIDAL_AUTOMATIC` | `382` |
-| 431 | `JME_TIME_TIDAL_DE200` | `383` |
-| 432 | `JME_TIME_TIDAL_DE403` | `384` |
-| 433 | `JME_TIME_TIDAL_DE404` | `385` |
-| 434 | `JME_TIME_TIDAL_DE405` | `386` |
-| 435 | `JME_TIME_TIDAL_DE406` | `387` |
-| 436 | `JME_TIME_TIDAL_DE421` | `388` |
-| 437 | `JME_TIME_TIDAL_DE430` | `389` |
-| 438 | `JME_TIME_TIDAL_DE431` | `390` |
-| 439 | `JME_TIME_TIDAL_DE441` | `391` |
-| 440 | `JME_VECTOR_AU_PER_DAY` | `0` |
-| 441 | `JME_VECTOR_AU_PER_SECOND` | `2` |
-| 442 | `JME_VECTOR_KM_PER_DAY` | `1` |
-| 443 | `JME_VECTOR_KM_PER_SECOND` | `3` |
-| 444 | `JME_VERSION` | `"0.1.0"` |
-| 445 | `JME_VERSION_ID` | `392` |
+| # | Constant |
+|---:|---|
+| 1 | `JME_ANGLE_FORMAT_KEEP_DEG` |
+| 2 | `JME_ANGLE_FORMAT_KEEP_SIGN` |
+| 3 | `JME_ANGLE_FORMAT_NAKSHATRA` |
+| 4 | `JME_ANGLE_FORMAT_ROUND_DEG` |
+| 5 | `JME_ANGLE_FORMAT_ROUND_MIN` |
+| 6 | `JME_ANGLE_FORMAT_ROUND_SEC` |
+| 7 | `JME_ANGLE_FORMAT_ZODIACAL` |
+| 8 | `JME_AU_KM` |
+| 9 | `JME_BODY_ALTJIRA` |
+| 10 | `JME_BODY_AMYCUS` |
+| 11 | `JME_BODY_ARROKOTH` |
+| 12 | `JME_BODY_ASBOLUS` |
+| 13 | `JME_BODY_ASTEROID_001` |
+| 14 | `JME_BODY_ASTEROID_002` |
+| 15 | `JME_BODY_ASTEROID_003` |
+| 16 | `JME_BODY_ASTEROID_004` |
+| 17 | `JME_BODY_ASTEROID_005` |
+| 18 | `JME_BODY_ASTEROID_006` |
+| 19 | `JME_BODY_ASTEROID_007` |
+| 20 | `JME_BODY_ASTEROID_008` |
+| 21 | `JME_BODY_ASTEROID_009` |
+| 22 | `JME_BODY_ASTEROID_010` |
+| 23 | `JME_BODY_ASTEROID_011` |
+| 24 | `JME_BODY_ASTEROID_012` |
+| 25 | `JME_BODY_ASTEROID_013` |
+| 26 | `JME_BODY_ASTEROID_014` |
+| 27 | `JME_BODY_ASTEROID_015` |
+| 28 | `JME_BODY_ASTEROID_016` |
+| 29 | `JME_BODY_ASTEROID_017` |
+| 30 | `JME_BODY_ASTEROID_018` |
+| 31 | `JME_BODY_ASTEROID_019` |
+| 32 | `JME_BODY_ASTEROID_020` |
+| 33 | `JME_BODY_ASTEROID_021` |
+| 34 | `JME_BODY_ASTEROID_022` |
+| 35 | `JME_BODY_ASTEROID_023` |
+| 36 | `JME_BODY_ASTEROID_024` |
+| 37 | `JME_BODY_ASTEROID_025` |
+| 38 | `JME_BODY_ASTEROID_026` |
+| 39 | `JME_BODY_ASTEROID_027` |
+| 40 | `JME_BODY_ASTEROID_028` |
+| 41 | `JME_BODY_ASTEROID_029` |
+| 42 | `JME_BODY_ASTEROID_030` |
+| 43 | `JME_BODY_ASTEROID_031` |
+| 44 | `JME_BODY_ASTEROID_032` |
+| 45 | `JME_BODY_ASTEROID_033` |
+| 46 | `JME_BODY_ASTEROID_034` |
+| 47 | `JME_BODY_ASTEROID_035` |
+| 48 | `JME_BODY_ASTEROID_036` |
+| 49 | `JME_BODY_ASTEROID_037` |
+| 50 | `JME_BODY_ASTEROID_038` |
+| 51 | `JME_BODY_ASTEROID_039` |
+| 52 | `JME_BODY_ASTEROID_040` |
+| 53 | `JME_BODY_ASTEROID_041` |
+| 54 | `JME_BODY_ASTEROID_042` |
+| 55 | `JME_BODY_ASTEROID_043` |
+| 56 | `JME_BODY_ASTEROID_044` |
+| 57 | `JME_BODY_ASTEROID_045` |
+| 58 | `JME_BODY_ASTEROID_046` |
+| 59 | `JME_BODY_ASTEROID_047` |
+| 60 | `JME_BODY_ASTEROID_048` |
+| 61 | `JME_BODY_ASTEROID_049` |
+| 62 | `JME_BODY_ASTEROID_050` |
+| 63 | `JME_BODY_ASTEROID_051` |
+| 64 | `JME_BODY_ASTEROID_052` |
+| 65 | `JME_BODY_ASTEROID_053` |
+| 66 | `JME_BODY_ASTEROID_054` |
+| 67 | `JME_BODY_ASTEROID_055` |
+| 68 | `JME_BODY_ASTEROID_056` |
+| 69 | `JME_BODY_ASTEROID_057` |
+| 70 | `JME_BODY_ASTEROID_058` |
+| 71 | `JME_BODY_ASTEROID_059` |
+| 72 | `JME_BODY_ASTEROID_060` |
+| 73 | `JME_BODY_ASTEROID_061` |
+| 74 | `JME_BODY_ASTEROID_062` |
+| 75 | `JME_BODY_ASTEROID_063` |
+| 76 | `JME_BODY_ASTEROID_064` |
+| 77 | `JME_BODY_ASTEROID_065` |
+| 78 | `JME_BODY_ASTEROID_066` |
+| 79 | `JME_BODY_ASTEROID_067` |
+| 80 | `JME_BODY_ASTEROID_068` |
+| 81 | `JME_BODY_ASTEROID_069` |
+| 82 | `JME_BODY_ASTEROID_070` |
+| 83 | `JME_BODY_ASTEROID_071` |
+| 84 | `JME_BODY_ASTEROID_072` |
+| 85 | `JME_BODY_ASTEROID_073` |
+| 86 | `JME_BODY_ASTEROID_074` |
+| 87 | `JME_BODY_ASTEROID_075` |
+| 88 | `JME_BODY_ASTEROID_076` |
+| 89 | `JME_BODY_ASTEROID_077` |
+| 90 | `JME_BODY_ASTEROID_078` |
+| 91 | `JME_BODY_ASTEROID_079` |
+| 92 | `JME_BODY_ASTEROID_080` |
+| 93 | `JME_BODY_ASTEROID_081` |
+| 94 | `JME_BODY_ASTEROID_082` |
+| 95 | `JME_BODY_ASTEROID_083` |
+| 96 | `JME_BODY_ASTEROID_084` |
+| 97 | `JME_BODY_ASTEROID_085` |
+| 98 | `JME_BODY_ASTEROID_086` |
+| 99 | `JME_BODY_ASTEROID_087` |
+| 100 | `JME_BODY_ASTEROID_088` |
+| 101 | `JME_BODY_ASTEROID_089` |
+| 102 | `JME_BODY_ASTEROID_090` |
+| 103 | `JME_BODY_ASTEROID_091` |
+| 104 | `JME_BODY_ASTEROID_092` |
+| 105 | `JME_BODY_ASTEROID_093` |
+| 106 | `JME_BODY_ASTEROID_094` |
+| 107 | `JME_BODY_ASTEROID_095` |
+| 108 | `JME_BODY_ASTEROID_096` |
+| 109 | `JME_BODY_ASTEROID_097` |
+| 110 | `JME_BODY_ASTEROID_098` |
+| 111 | `JME_BODY_ASTEROID_099` |
+| 112 | `JME_BODY_ASTEROID_100` |
+| 113 | `JME_BODY_ASTEROID_101` |
+| 114 | `JME_BODY_ASTEROID_102` |
+| 115 | `JME_BODY_ASTEROID_103` |
+| 116 | `JME_BODY_ASTEROID_104` |
+| 117 | `JME_BODY_ASTEROID_105` |
+| 118 | `JME_BODY_ASTEROID_106` |
+| 119 | `JME_BODY_ASTEROID_107` |
+| 120 | `JME_BODY_ASTEROID_108` |
+| 121 | `JME_BODY_ASTEROID_109` |
+| 122 | `JME_BODY_ASTEROID_110` |
+| 123 | `JME_BODY_BIENOR` |
+| 124 | `JME_BODY_BORASISI` |
+| 125 | `JME_BODY_CERES` |
+| 126 | `JME_BODY_CHARIKLO` |
+| 127 | `JME_BODY_CHIRON` |
+| 128 | `JME_BODY_COMET_001` |
+| 129 | `JME_BODY_COMET_002` |
+| 130 | `JME_BODY_COMET_003` |
+| 131 | `JME_BODY_COMET_004` |
+| 132 | `JME_BODY_COMET_005` |
+| 133 | `JME_BODY_COMET_006` |
+| 134 | `JME_BODY_COMET_007` |
+| 135 | `JME_BODY_COMET_008` |
+| 136 | `JME_BODY_COMET_009` |
+| 137 | `JME_BODY_COMET_010` |
+| 138 | `JME_BODY_COMET_011` |
+| 139 | `JME_BODY_COMET_012` |
+| 140 | `JME_BODY_COMET_013` |
+| 141 | `JME_BODY_COMET_014` |
+| 142 | `JME_BODY_COMET_015` |
+| 143 | `JME_BODY_COMET_016` |
+| 144 | `JME_BODY_COMET_017` |
+| 145 | `JME_BODY_COMET_018` |
+| 146 | `JME_BODY_COMET_019` |
+| 147 | `JME_BODY_COMET_020` |
+| 148 | `JME_BODY_COMET_021` |
+| 149 | `JME_BODY_COMET_022` |
+| 150 | `JME_BODY_COMET_023` |
+| 151 | `JME_BODY_COMET_024` |
+| 152 | `JME_BODY_COMET_025` |
+| 153 | `JME_BODY_COMET_026` |
+| 154 | `JME_BODY_COMET_027` |
+| 155 | `JME_BODY_COMET_028` |
+| 156 | `JME_BODY_COMET_029` |
+| 157 | `JME_BODY_COMET_030` |
+| 158 | `JME_BODY_COMET_031` |
+| 159 | `JME_BODY_COMET_032` |
+| 160 | `JME_BODY_COMET_033` |
+| 161 | `JME_BODY_COMET_034` |
+| 162 | `JME_BODY_COMET_035` |
+| 163 | `JME_BODY_COMET_036` |
+| 164 | `JME_BODY_COMET_037` |
+| 165 | `JME_BODY_COMET_038` |
+| 166 | `JME_BODY_COMET_039` |
+| 167 | `JME_BODY_COMET_040` |
+| 168 | `JME_BODY_COMET_041` |
+| 169 | `JME_BODY_COMET_042` |
+| 170 | `JME_BODY_COMET_043` |
+| 171 | `JME_BODY_COMET_044` |
+| 172 | `JME_BODY_COMET_045` |
+| 173 | `JME_BODY_COMET_046` |
+| 174 | `JME_BODY_COMET_047` |
+| 175 | `JME_BODY_COMET_048` |
+| 176 | `JME_BODY_COMET_049` |
+| 177 | `JME_BODY_COMET_050` |
+| 178 | `JME_BODY_COMET_051` |
+| 179 | `JME_BODY_COMET_052` |
+| 180 | `JME_BODY_COMET_053` |
+| 181 | `JME_BODY_COMET_054` |
+| 182 | `JME_BODY_COMET_055` |
+| 183 | `JME_BODY_COMET_056` |
+| 184 | `JME_BODY_COMET_057` |
+| 185 | `JME_BODY_COMET_058` |
+| 186 | `JME_BODY_COMET_059` |
+| 187 | `JME_BODY_COMET_060` |
+| 188 | `JME_BODY_CRANTOR` |
+| 189 | `JME_BODY_CYLLARUS` |
+| 190 | `JME_BODY_DEUCALION` |
+| 191 | `JME_BODY_EARTH` |
+| 192 | `JME_BODY_EARTH_MOON_BARYCENTER` |
+| 193 | `JME_BODY_ECHECLUS` |
+| 194 | `JME_BODY_ELATUS` |
+| 195 | `JME_BODY_ERIS` |
+| 196 | `JME_BODY_GONGGONG` |
+| 197 | `JME_BODY_HAUMEA` |
+| 198 | `JME_BODY_HUYA` |
+| 199 | `JME_BODY_HYLONOME` |
+| 200 | `JME_BODY_IXION` |
+| 201 | `JME_BODY_JUNO` |
+| 202 | `JME_BODY_JUPITER` |
+| 203 | `JME_BODY_JUPITER_BARYCENTER` |
+| 204 | `JME_BODY_MAKEMAKE` |
+| 205 | `JME_BODY_MARS` |
+| 206 | `JME_BODY_MARS_BARYCENTER` |
+| 207 | `JME_BODY_MERCURY` |
+| 208 | `JME_BODY_MERCURY_BARYCENTER` |
+| 209 | `JME_BODY_MINOR_PLANET_001` |
+| 210 | `JME_BODY_MINOR_PLANET_002` |
+| 211 | `JME_BODY_MINOR_PLANET_003` |
+| 212 | `JME_BODY_MINOR_PLANET_004` |
+| 213 | `JME_BODY_MINOR_PLANET_005` |
+| 214 | `JME_BODY_MINOR_PLANET_006` |
+| 215 | `JME_BODY_MINOR_PLANET_007` |
+| 216 | `JME_BODY_MINOR_PLANET_008` |
+| 217 | `JME_BODY_MINOR_PLANET_009` |
+| 218 | `JME_BODY_MINOR_PLANET_010` |
+| 219 | `JME_BODY_MINOR_PLANET_011` |
+| 220 | `JME_BODY_MINOR_PLANET_012` |
+| 221 | `JME_BODY_MINOR_PLANET_013` |
+| 222 | `JME_BODY_MINOR_PLANET_014` |
+| 223 | `JME_BODY_MINOR_PLANET_015` |
+| 224 | `JME_BODY_MINOR_PLANET_016` |
+| 225 | `JME_BODY_MINOR_PLANET_017` |
+| 226 | `JME_BODY_MINOR_PLANET_018` |
+| 227 | `JME_BODY_MINOR_PLANET_019` |
+| 228 | `JME_BODY_MINOR_PLANET_020` |
+| 229 | `JME_BODY_MINOR_PLANET_021` |
+| 230 | `JME_BODY_MINOR_PLANET_022` |
+| 231 | `JME_BODY_MINOR_PLANET_023` |
+| 232 | `JME_BODY_MINOR_PLANET_024` |
+| 233 | `JME_BODY_MINOR_PLANET_025` |
+| 234 | `JME_BODY_MINOR_PLANET_026` |
+| 235 | `JME_BODY_MINOR_PLANET_027` |
+| 236 | `JME_BODY_MINOR_PLANET_028` |
+| 237 | `JME_BODY_MINOR_PLANET_029` |
+| 238 | `JME_BODY_MINOR_PLANET_030` |
+| 239 | `JME_BODY_MINOR_PLANET_031` |
+| 240 | `JME_BODY_MINOR_PLANET_032` |
+| 241 | `JME_BODY_MINOR_PLANET_033` |
+| 242 | `JME_BODY_MINOR_PLANET_034` |
+| 243 | `JME_BODY_MINOR_PLANET_035` |
+| 244 | `JME_BODY_MINOR_PLANET_036` |
+| 245 | `JME_BODY_MINOR_PLANET_037` |
+| 246 | `JME_BODY_MINOR_PLANET_038` |
+| 247 | `JME_BODY_MINOR_PLANET_039` |
+| 248 | `JME_BODY_MINOR_PLANET_040` |
+| 249 | `JME_BODY_MINOR_PLANET_041` |
+| 250 | `JME_BODY_MINOR_PLANET_042` |
+| 251 | `JME_BODY_MINOR_PLANET_043` |
+| 252 | `JME_BODY_MINOR_PLANET_044` |
+| 253 | `JME_BODY_MINOR_PLANET_045` |
+| 254 | `JME_BODY_MINOR_PLANET_046` |
+| 255 | `JME_BODY_MINOR_PLANET_047` |
+| 256 | `JME_BODY_MINOR_PLANET_048` |
+| 257 | `JME_BODY_MINOR_PLANET_049` |
+| 258 | `JME_BODY_MINOR_PLANET_050` |
+| 259 | `JME_BODY_MINOR_PLANET_051` |
+| 260 | `JME_BODY_MINOR_PLANET_052` |
+| 261 | `JME_BODY_MINOR_PLANET_053` |
+| 262 | `JME_BODY_MINOR_PLANET_054` |
+| 263 | `JME_BODY_MINOR_PLANET_055` |
+| 264 | `JME_BODY_MINOR_PLANET_056` |
+| 265 | `JME_BODY_MINOR_PLANET_057` |
+| 266 | `JME_BODY_MINOR_PLANET_058` |
+| 267 | `JME_BODY_MINOR_PLANET_059` |
+| 268 | `JME_BODY_MINOR_PLANET_060` |
+| 269 | `JME_BODY_MOON` |
+| 270 | `JME_BODY_NEPTUNE` |
+| 271 | `JME_BODY_NEPTUNE_BARYCENTER` |
+| 272 | `JME_BODY_NESSUS` |
+| 273 | `JME_BODY_OKYRHOE` |
+| 274 | `JME_BODY_ORCUS` |
+| 275 | `JME_BODY_PALLAS` |
+| 276 | `JME_BODY_PELOPS` |
+| 277 | `JME_BODY_PHOLUS` |
+| 278 | `JME_BODY_PLUTO` |
+| 279 | `JME_BODY_PLUTO_BARYCENTER` |
+| 280 | `JME_BODY_QUAOAR` |
+| 281 | `JME_BODY_RHADAMANTHUS` |
+| 282 | `JME_BODY_SALACIA` |
+| 283 | `JME_BODY_SATURN` |
+| 284 | `JME_BODY_SATURN_BARYCENTER` |
+| 285 | `JME_BODY_SEDNA` |
+| 286 | `JME_BODY_SOLAR_SYSTEM_BARYCENTER` |
+| 287 | `JME_BODY_SUN` |
+| 288 | `JME_BODY_THEREUS` |
+| 289 | `JME_BODY_TYTHONUS` |
+| 290 | `JME_BODY_URANUS` |
+| 291 | `JME_BODY_URANUS_BARYCENTER` |
+| 292 | `JME_BODY_VARUNA` |
+| 293 | `JME_BODY_VENUS` |
+| 294 | `JME_BODY_VENUS_BARYCENTER` |
+| 295 | `JME_BODY_VESTA` |
+| 296 | `JME_CALC_APPARENT_POSITION` |
+| 297 | `JME_CALC_ASTROMETRIC` |
+| 298 | `JME_CALC_BARYCENTRIC` |
+| 299 | `JME_CALC_CENTER_BODY` |
+| 300 | `JME_CALC_DISTANCE_AU` |
+| 301 | `JME_CALC_DISTANCE_KM` |
+| 302 | `JME_CALC_EQUATORIAL` |
+| 303 | `JME_CALC_HELIOCENTRIC` |
+| 304 | `JME_CALC_HIGH_PRECISION` |
+| 305 | `JME_CALC_ICRS` |
+| 306 | `JME_CALC_J2000` |
+| 307 | `JME_CALC_NO_ABERRATION` |
+| 308 | `JME_CALC_NO_LIGHT_DEFLECTION` |
+| 309 | `JME_CALC_NO_NUTATION` |
+| 310 | `JME_CALC_NONE` |
+| 311 | `JME_CALC_RADIANS` |
+| 312 | `JME_CALC_RAW_VECTOR` |
+| 313 | `JME_CALC_RECTANGULAR` |
+| 314 | `JME_CALC_SIDEREAL` |
+| 315 | `JME_CALC_SPEED` |
+| 316 | `JME_CALC_SPHERICAL` |
+| 317 | `JME_CALC_STRICT` |
+| 318 | `JME_CALC_TOPOCENTRIC` |
+| 319 | `JME_CALC_TRUE_POSITION` |
+| 320 | `JME_CALC_VELOCITY_PER_DAY` |
+| 321 | `JME_CALC_VELOCITY_PER_SECOND` |
+| 322 | `JME_CALC_XYZ` |
+| 323 | `JME_CALENDAR_GREGORIAN` |
+| 324 | `JME_CALENDAR_JULIAN` |
+| 325 | `JME_COORD_APPARENT_TO_TRUE` |
+| 326 | `JME_COORD_ECLIPTIC_TO_HORIZONTAL` |
+| 327 | `JME_COORD_EQUATORIAL_TO_HORIZONTAL` |
+| 328 | `JME_COORD_HORIZONTAL_TO_ECLIPTIC` |
+| 329 | `JME_COORD_HORIZONTAL_TO_EQUATORIAL` |
+| 330 | `JME_COORD_TRUE_TO_APPARENT` |
+| 331 | `JME_ECLIPSE_FIRST_CONTACT` |
+| 332 | `JME_ECLIPSE_FOURTH_CONTACT` |
+| 333 | `JME_ECLIPSE_LUNAR_PARTIAL` |
+| 334 | `JME_ECLIPSE_LUNAR_PENUMBRAL` |
+| 335 | `JME_ECLIPSE_LUNAR_TOTAL` |
+| 336 | `JME_ECLIPSE_MAX_VISIBLE` |
+| 337 | `JME_ECLIPSE_PENUMBRAL_BEGIN` |
+| 338 | `JME_ECLIPSE_PENUMBRAL_END` |
+| 339 | `JME_ECLIPSE_SECOND_CONTACT` |
+| 340 | `JME_ECLIPSE_SOLAR_ANNULAR` |
+| 341 | `JME_ECLIPSE_SOLAR_CENTRAL` |
+| 342 | `JME_ECLIPSE_SOLAR_HYBRID` |
+| 343 | `JME_ECLIPSE_SOLAR_NONCENTRAL` |
+| 344 | `JME_ECLIPSE_SOLAR_PARTIAL` |
+| 345 | `JME_ECLIPSE_SOLAR_TOTAL` |
+| 346 | `JME_ECLIPSE_THIRD_CONTACT` |
+| 347 | `JME_ECLIPSE_VISIBLE` |
+| 348 | `JME_ERR` |
+| 349 | `JME_EXTENDED_H` |
+| 350 | `JME_HOUSE_ALCABITIUS` |
+| 351 | `JME_HOUSE_APC` |
+| 352 | `JME_HOUSE_AZIMUTHAL` |
+| 353 | `JME_HOUSE_CAMPANUS` |
+| 354 | `JME_HOUSE_EQUAL` |
+| 355 | `JME_HOUSE_GAUQUELIN` |
+| 356 | `JME_HOUSE_HORIZONTAL` |
+| 357 | `JME_HOUSE_KOCH` |
+| 358 | `JME_HOUSE_KRUSINSKI` |
+| 359 | `JME_HOUSE_MERIDIAN` |
+| 360 | `JME_HOUSE_MORINUS` |
+| 361 | `JME_HOUSE_PLACIDUS` |
+| 362 | `JME_HOUSE_POLICH_PAGE` |
+| 363 | `JME_HOUSE_PORPHYRIUS` |
+| 364 | `JME_HOUSE_REGIOMONTANUS` |
+| 365 | `JME_HOUSE_SUNSHINE` |
+| 366 | `JME_HOUSE_VEHLOW_EQUAL` |
+| 367 | `JME_HOUSE_WHOLE_SIGN` |
+| 368 | `JME_JME_H` |
+| 369 | `JME_JPL_TIMESCALE_TCB` |
+| 370 | `JME_JPL_TIMESCALE_TDB` |
+| 371 | `JME_JPL_TIMESCALE_UNKNOWN` |
+| 372 | `JME_MODEL_BIAS_IAU2000` |
+| 373 | `JME_MODEL_BIAS_IAU2006` |
+| 374 | `JME_MODEL_BIAS_NONE` |
+| 375 | `JME_MODEL_DELTAT_ESPENAK_MEEUS_2006` |
+| 376 | `JME_MODEL_DELTAT_STEPHENSON_1997` |
+| 377 | `JME_MODEL_DELTAT_STEPHENSON_ETC_2016` |
+| 378 | `JME_MODEL_DELTAT_STEPHENSON_MORRISON_1984` |
+| 379 | `JME_MODEL_DELTAT_STEPHENSON_MORRISON_2004` |
+| 380 | `JME_MODEL_NUT_IAU_1980` |
+| 381 | `JME_MODEL_NUT_IAU_2000A` |
+| 382 | `JME_MODEL_NUT_IAU_2000B` |
+| 383 | `JME_MODEL_OBL_IAU_1980` |
+| 384 | `JME_MODEL_OBL_IAU_2000` |
+| 385 | `JME_MODEL_OBL_IAU_2006` |
+| 386 | `JME_MODEL_PREC_IAU_1976` |
+| 387 | `JME_MODEL_PREC_IAU_2000` |
+| 388 | `JME_MODEL_PREC_IAU_2006` |
+| 389 | `JME_MODEL_PREC_LASKAR_1986` |
+| 390 | `JME_MODEL_PREC_VONDRAK_2011` |
+| 391 | `JME_MODEL_REVISED_IAU_2000` |
+| 392 | `JME_MODEL_REVISED_IAU_2006` |
+| 393 | `JME_MODEL_REVISED_PREC_LASKAR` |
+| 394 | `JME_MODEL_REVISED_PREC_LIESKE` |
+| 395 | `JME_MODEL_REVISED_PREC_VONDRAK` |
+| 396 | `JME_MODEL_SIDT_IAU_1976` |
+| 397 | `JME_MODEL_SIDT_IAU_2006` |
+| 398 | `JME_OK` |
+| 399 | `JME_ORIENTATION_RAD_PER_DAY` |
+| 400 | `JME_ORIENTATION_RAD_PER_SECOND` |
+| 401 | `JME_RISE_ANTI_MERIDIAN_TRANSIT` |
+| 402 | `JME_RISE_ASTRONOMICAL_TWILIGHT` |
+| 403 | `JME_RISE_CIVIL_TWILIGHT` |
+| 404 | `JME_RISE_DISC_BOTTOM` |
+| 405 | `JME_RISE_DISC_CENTER` |
+| 406 | `JME_RISE_FIXED_DISC_SIZE` |
+| 407 | `JME_RISE_HINDU_RISING` |
+| 408 | `JME_RISE_MERIDIAN_TRANSIT` |
+| 409 | `JME_RISE_NAUTICAL_TWILIGHT` |
+| 410 | `JME_RISE_NO_REFRACTION` |
+| 411 | `JME_RISE_RISE` |
+| 412 | `JME_RISE_SET` |
+| 413 | `JME_SECONDS_PER_DAY` |
+| 414 | `JME_SIDEREAL_ALDEBARAN_15TAU` |
+| 415 | `JME_SIDEREAL_ARYABHATA` |
+| 416 | `JME_SIDEREAL_B1950` |
+| 417 | `JME_SIDEREAL_BABYL_ETPSC` |
+| 418 | `JME_SIDEREAL_BABYL_HUBER` |
+| 419 | `JME_SIDEREAL_BABYL_KUGLER1` |
+| 420 | `JME_SIDEREAL_BABYL_KUGLER2` |
+| 421 | `JME_SIDEREAL_BABYL_KUGLER3` |
+| 422 | `JME_SIDEREAL_DELUCE` |
+| 423 | `JME_SIDEREAL_FAGAN_BRADLEY` |
+| 424 | `JME_SIDEREAL_GALCENT_0SAG` |
+| 425 | `JME_SIDEREAL_HIPPARCHOS` |
+| 426 | `JME_SIDEREAL_J1900` |
+| 427 | `JME_SIDEREAL_J2000` |
+| 428 | `JME_SIDEREAL_JN_BHASIN` |
+| 429 | `JME_SIDEREAL_KRISHNAMURTI` |
+| 430 | `JME_SIDEREAL_LAHIRI` |
+| 431 | `JME_SIDEREAL_RAMAN` |
+| 432 | `JME_SIDEREAL_SASSANIAN` |
+| 433 | `JME_SIDEREAL_SS_CITRA` |
+| 434 | `JME_SIDEREAL_SS_REVATI` |
+| 435 | `JME_SIDEREAL_SURYASIDDHANTA` |
+| 436 | `JME_SIDEREAL_TRUE_CITRA` |
+| 437 | `JME_SIDEREAL_TRUE_MULA` |
+| 438 | `JME_SIDEREAL_TRUE_PUSHYA` |
+| 439 | `JME_SIDEREAL_TRUE_REVATI` |
+| 440 | `JME_SIDEREAL_USER` |
+| 441 | `JME_SIDEREAL_USHASHASHI` |
+| 442 | `JME_SIDEREAL_YUKTESHWAR` |
+| 443 | `JME_SPEED_OF_LIGHT_KM_PER_SEC` |
+| 444 | `JME_TIME_DELTAT_AUTOMATIC` |
+| 445 | `JME_TIME_TIDAL_AUTOMATIC` |
+| 446 | `JME_TIME_TIDAL_DE200` |
+| 447 | `JME_TIME_TIDAL_DE403` |
+| 448 | `JME_TIME_TIDAL_DE404` |
+| 449 | `JME_TIME_TIDAL_DE405` |
+| 450 | `JME_TIME_TIDAL_DE406` |
+| 451 | `JME_TIME_TIDAL_DE421` |
+| 452 | `JME_TIME_TIDAL_DE430` |
+| 453 | `JME_TIME_TIDAL_DE431` |
+| 454 | `JME_TIME_TIDAL_DE441` |
+| 455 | `JME_VECTOR_AU_PER_DAY` |
+| 456 | `JME_VECTOR_AU_PER_SECOND` |
+| 457 | `JME_VECTOR_KM_PER_DAY` |
+| 458 | `JME_VECTOR_KM_PER_SECOND` |
+| 459 | `JME_VERSION` |
+| 460 | `JME_VERSION_ID` |
 
 ## Reference Parity Constants
 
-These names are kept for audit counting while the product API stays under `JME_*` names.
-
-| # | Constant | Value |
-|---:|---|---|
-| 1 | `ERR` | `(-1)` |
-| 2 | `OK` | `(0)` |
-| 3 | `SE_ACRONYCHAL_RISING` | `(5)` |
-| 4 | `SE_ACRONYCHAL_SETTING` | `(6)` |
-| 5 | `SE_ADMETOS` | `(45)` |
-| 6 | `SE_APOLLON` | `(44)` |
-| 7 | `SE_APP_TO_TRUE` | `(1)` |
-| 8 | `SE_ARMC` | `(2)` |
-| 9 | `SE_ASC` | `(0)` |
-| 10 | `SE_AST_OFFSET` | `(10000)` |
-| 11 | `SE_ASTNAMFILE` | `("seasnam.txt")` |
-| 12 | `SE_AUNIT_TO_KM` | `((149597870.700))` |
-| 13 | `SE_AUNIT_TO_LIGHTYEAR` | `((1.0 / 63241.07708427))` |
-| 14 | `SE_AUNIT_TO_PARSEC` | `((1.0 / 206264.8062471))` |
-| 15 | `SE_BIT_ASTRO_TWILIGHT` | `(4096)` |
-| 16 | `SE_BIT_CIVIL_TWILIGHT` | `(1024)` |
-| 17 | `SE_BIT_DISC_BOTTOM` | `(8192)` |
-| 18 | `SE_BIT_DISC_CENTER` | `(256)` |
-| 19 | `SE_BIT_FIXED_DISC_SIZE` | `(16384)` |
-| 20 | `SE_BIT_FORCE_SLOW_METHOD` | `(32768)` |
-| 21 | `SE_BIT_GEOCTR_NO_ECL_LAT` | `(128)` |
-| 22 | `SE_BIT_HINDU_RISING` | `((SE_BIT_DISC_CENTER \| SE_BIT_NO_REFRACTION \| SE_BIT_GEOCTR_NO_ECL_LAT))` |
-| 23 | `SE_BIT_NAUTIC_TWILIGHT` | `(2048)` |
-| 24 | `SE_BIT_NO_REFRACTION` | `(512)` |
-| 25 | `SE_CALC_ITRANSIT` | `(8)` |
-| 26 | `SE_CALC_MTRANSIT` | `(4)` |
-| 27 | `SE_CALC_RISE` | `(1)` |
-| 28 | `SE_CALC_SET` | `(2)` |
-| 29 | `SE_CERES` | `(17)` |
-| 30 | `SE_CHIRON` | `(15)` |
-| 31 | `SE_COASC1` | `(5)` |
-| 32 | `SE_COASC2` | `(6)` |
-| 33 | `SE_COMET_OFFSET` | `(1000)` |
-| 34 | `SE_COSMICAL_SETTING` | `(SE_ACRONYCHAL_SETTING)` |
-| 35 | `SE_CUPIDO` | `(40)` |
-| 36 | `SE_DE_NUMBER` | `(431)` |
-| 37 | `SE_DELTAT_AUTOMATIC` | `((-1e-10))` |
-| 38 | `SE_EARTH` | `(14)` |
-| 39 | `SE_ECL_1ST_VISIBLE` | `(512)` |
-| 40 | `SE_ECL_2ND_VISIBLE` | `(1024)` |
-| 41 | `SE_ECL_3RD_VISIBLE` | `(2048)` |
-| 42 | `SE_ECL_4TH_VISIBLE` | `(4096)` |
-| 43 | `SE_ECL_ALLTYPES_LUNAR` | `((SE_ECL_TOTAL \| SE_ECL_PARTIAL \| SE_ECL_PENUMBRAL))` |
-| 44 | `SE_ECL_ALLTYPES_SOLAR` | `((SE_ECL_CENTRAL \| SE_ECL_NONCENTRAL \| SE_ECL_TOTAL \| SE_ECL_ANNULAR \| SE_ECL_PARTIAL \| SE_ECL_ANNULAR_TOTAL))` |
-| 45 | `SE_ECL_ANNULAR` | `(8)` |
-| 46 | `SE_ECL_ANNULAR_TOTAL` | `(32)` |
-| 47 | `SE_ECL_CENTRAL` | `(1)` |
-| 48 | `SE_ECL_HYBRID` | `(32)` |
-| 49 | `SE_ECL_MAX_VISIBLE` | `(256)` |
-| 50 | `SE_ECL_NONCENTRAL` | `(2)` |
-| 51 | `SE_ECL_NUT` | `(-1)` |
-| 52 | `SE_ECL_OCC_BEG_DAYLIGHT` | `(8192)` |
-| 53 | `SE_ECL_OCC_END_DAYLIGHT` | `(16384)` |
-| 54 | `SE_ECL_ONE_TRY` | `((32 * 1024))` |
-| 55 | `SE_ECL_PARTBEG_VISIBLE` | `(512)` |
-| 56 | `SE_ECL_PARTEND_VISIBLE` | `(4096)` |
-| 57 | `SE_ECL_PARTIAL` | `(16)` |
-| 58 | `SE_ECL_PENUMBBEG_VISIBLE` | `(8192)` |
-| 59 | `SE_ECL_PENUMBEND_VISIBLE` | `(16384)` |
-| 60 | `SE_ECL_PENUMBRAL` | `(64)` |
-| 61 | `SE_ECL_TOTAL` | `(4)` |
-| 62 | `SE_ECL_TOTBEG_VISIBLE` | `(1024)` |
-| 63 | `SE_ECL_TOTEND_VISIBLE` | `(2048)` |
-| 64 | `SE_ECL_VISIBLE` | `(128)` |
-| 65 | `SE_ECL2HOR` | `(0)` |
-| 66 | `SE_EPHE_PATH` | `(".:/users/ephe2/:/users/ephe/")` |
-| 67 | `SE_EQU2HOR` | `(1)` |
-| 68 | `SE_EQUASC` | `(4)` |
-| 69 | `SE_EVENING_FIRST` | `(3)` |
-| 70 | `SE_EVENING_LAST` | `(SE_HELIACAL_SETTING)` |
-| 71 | `SE_FICT_MAX` | `(999)` |
-| 72 | `SE_FICT_OFFSET` | `(40)` |
-| 73 | `SE_FICT_OFFSET_1` | `(39)` |
-| 74 | `SE_FICTFILE` | `("seorbel.txt")` |
-| 75 | `SE_FIXSTAR` | `(-10)` |
-| 76 | `SE_FNAME_DE200` | `("de200.eph")` |
-| 77 | `SE_FNAME_DE403` | `("de403.eph")` |
-| 78 | `SE_FNAME_DE404` | `("de404.eph")` |
-| 79 | `SE_FNAME_DE405` | `("de405.eph")` |
-| 80 | `SE_FNAME_DE406` | `("de406.eph")` |
-| 81 | `SE_FNAME_DE431` | `("de431.eph")` |
-| 82 | `SE_FNAME_DFT` | `(SE_FNAME_DE431)` |
-| 83 | `SE_FNAME_DFT2` | `(SE_FNAME_DE406)` |
-| 84 | `SE_GREG_CAL` | `(1)` |
-| 85 | `SE_HADES` | `(41)` |
-| 86 | `SE_HARRINGTON` | `(50)` |
-| 87 | `SE_HELFLAG_AV` | `((1 << 16))` |
-| 88 | `SE_HELFLAG_AVKIND` | `((SE_HELFLAG_AVKIND_VR \| SE_HELFLAG_AVKIND_PTO \| SE_HELFLAG_AVKIND_MIN7 \| SE_HELFLAG_AVKIND_MIN9))` |
-| 89 | `SE_HELFLAG_AVKIND_MIN7` | `((1 << 18))` |
-| 90 | `SE_HELFLAG_AVKIND_MIN9` | `((1 << 19))` |
-| 91 | `SE_HELFLAG_AVKIND_PTO` | `((1 << 17))` |
-| 92 | `SE_HELFLAG_AVKIND_VR` | `((1 << 16))` |
-| 93 | `SE_HELFLAG_HIGH_PRECISION` | `(256)` |
-| 94 | `SE_HELFLAG_LONG_SEARCH` | `(128)` |
-| 95 | `SE_HELFLAG_NO_DETAILS` | `(1024)` |
-| 96 | `SE_HELFLAG_OPTICAL_PARAMS` | `(512)` |
-| 97 | `SE_HELFLAG_SEARCH_1_PERIOD` | `((1 << 11))` |
-| 98 | `SE_HELFLAG_VISLIM_DARK` | `((1 << 12))` |
-| 99 | `SE_HELFLAG_VISLIM_NOMOON` | `((1 << 13))` |
-| 100 | `SE_HELFLAG_VISLIM_PHOTOPIC` | `((1 << 14))` |
-| 101 | `SE_HELFLAG_VISLIM_SCOTOPIC` | `((1 << 15))` |
-| 102 | `SE_HELIACAL_AVKIND` | `((SE_HELFLAG_AVKIND_VR \| SE_HELFLAG_AVKIND_PTO \| SE_HELFLAG_AVKIND_MIN7 \| SE_HELFLAG_AVKIND_MIN9))` |
-| 103 | `SE_HELIACAL_AVKIND_MIN7` | `((1 << 17))` |
-| 104 | `SE_HELIACAL_AVKIND_MIN9` | `((1 << 18))` |
-| 105 | `SE_HELIACAL_AVKIND_PTO` | `((1 << 16))` |
-| 106 | `SE_HELIACAL_AVKIND_VR` | `((1 << 15))` |
-| 107 | `SE_HELIACAL_HIGH_PRECISION` | `(256)` |
-| 108 | `SE_HELIACAL_LONG_SEARCH` | `(128)` |
-| 109 | `SE_HELIACAL_NO_DETAILS` | `(1024)` |
-| 110 | `SE_HELIACAL_OPTICAL_PARAMS` | `(512)` |
-| 111 | `SE_HELIACAL_RISING` | `(1)` |
-| 112 | `SE_HELIACAL_SEARCH_1_PERIOD` | `((1 << 11))` |
-| 113 | `SE_HELIACAL_SETTING` | `(2)` |
-| 114 | `SE_HELIACAL_VISLIM_DARK` | `((1 << 12))` |
-| 115 | `SE_HELIACAL_VISLIM_NOMOON` | `((1 << 13))` |
-| 116 | `SE_HELIACAL_VISLIM_PHOTOPIC` | `((1 << 14))` |
-| 117 | `SE_HOR2ECL` | `(0)` |
-| 118 | `SE_HOR2EQU` | `(1)` |
-| 119 | `SE_HOUSES_ALCABITUS` | `('B')` |
-| 120 | `SE_HOUSES_CAMPANO` | `('C')` |
-| 121 | `SE_HOUSES_EQUAL` | `('E')` |
-| 122 | `SE_HOUSES_EQUAL_VEHIC` | `('V')` |
-| 123 | `SE_HOUSES_KOCH` | `('K')` |
-| 124 | `SE_HOUSES_KRUSINSKI` | `('U')` |
-| 125 | `SE_HOUSES_MORINUS` | `('M')` |
-| 126 | `SE_HOUSES_PLACIDUS` | `('P')` |
-| 127 | `SE_HOUSES_POLICH_PAGE` | `('T')` |
-| 128 | `SE_HOUSES_PORPHYRIUS` | `('O')` |
-| 129 | `SE_HOUSES_REGIOMONTANUS` | `('R')` |
-| 130 | `SE_INTP_APOG` | `(21)` |
-| 131 | `SE_INTP_PERG` | `(22)` |
-| 132 | `SE_ISIS` | `(48)` |
-| 133 | `SE_JUL_CAL` | `(0)` |
-| 134 | `SE_JUNO` | `(19)` |
-| 135 | `SE_JUPITER` | `(5)` |
-| 136 | `SE_KRONOS` | `(43)` |
-| 137 | `SE_MARS` | `(4)` |
-| 138 | `SE_MAX_STNAME` | `(256)` |
-| 139 | `SE_MC` | `(1)` |
-| 140 | `SE_MEAN_APOG` | `(12)` |
-| 141 | `SE_MEAN_NODE` | `(10)` |
-| 142 | `SE_MERCURY` | `(2)` |
-| 143 | `SE_MIXEDOPIC_FLAG` | `(2)` |
-| 144 | `SE_MODEL_BIAS` | `(4)` |
-| 145 | `SE_MODEL_DELTAT` | `(0)` |
-| 146 | `SE_MODEL_JPLHOR_MODE` | `(5)` |
-| 147 | `SE_MODEL_JPLHORA_MODE` | `(6)` |
-| 148 | `SE_MODEL_NUT` | `(3)` |
-| 149 | `SE_MODEL_PREC_LONGTERM` | `(1)` |
-| 150 | `SE_MODEL_PREC_SHORTTERM` | `(2)` |
-| 151 | `SE_MODEL_SIDT` | `(7)` |
-| 152 | `SE_MOON` | `(1)` |
-| 153 | `SE_MORNING_FIRST` | `(SE_HELIACAL_RISING)` |
-| 154 | `SE_MORNING_LAST` | `(4)` |
-| 155 | `SE_NALL_NAT_POINTS` | `((SE_NPLANETS + SE_NFICT_ELEM))` |
-| 156 | `SE_NASCMC` | `(8)` |
-| 157 | `SE_NEPTUNE` | `(8)` |
-| 158 | `SE_NEPTUNE_ADAMS` | `(52)` |
-| 159 | `SE_NEPTUNE_LEVERRIER` | `(51)` |
-| 160 | `SE_NFICT_ELEM` | `(15)` |
-| 161 | `SE_NIBIRU` | `(49)` |
-| 162 | `SE_NODBIT_FOPOINT` | `(256)` |
-| 163 | `SE_NODBIT_MEAN` | `(1)` |
-| 164 | `SE_NODBIT_OSCU` | `(2)` |
-| 165 | `SE_NODBIT_OSCU_BAR` | `(4)` |
-| 166 | `SE_NPLANETS` | `(23)` |
-| 167 | `SE_NSIDM_PREDEF` | `(47)` |
-| 168 | `SE_OSCU_APOG` | `(13)` |
-| 169 | `SE_PALLAS` | `(18)` |
-| 170 | `SE_PHOLUS` | `(16)` |
-| 171 | `SE_PHOTOPIC_FLAG` | `(0)` |
-| 172 | `SE_PLMOON_OFFSET` | `(9000)` |
-| 173 | `SE_PLUTO` | `(9)` |
-| 174 | `SE_PLUTO_LOWELL` | `(53)` |
-| 175 | `SE_PLUTO_PICKERING` | `(54)` |
-| 176 | `SE_POLASC` | `(7)` |
-| 177 | `SE_POSEIDON` | `(47)` |
-| 178 | `SE_PROSERPINA` | `(57)` |
-| 179 | `SE_SATURN` | `(6)` |
-| 180 | `SE_SCOTOPIC_FLAG` | `(1)` |
-| 181 | `SE_SIDBIT_ECL_DATE` | `(2048)` |
-| 182 | `SE_SIDBIT_ECL_T0` | `(256)` |
-| 183 | `SE_SIDBIT_NO_PREC_OFFSET` | `(4096)` |
-| 184 | `SE_SIDBIT_PREC_ORIG` | `(8192)` |
-| 185 | `SE_SIDBIT_SSY_PLANE` | `(512)` |
-| 186 | `SE_SIDBIT_USER_UT` | `(1024)` |
-| 187 | `SE_SIDBITS` | `(256)` |
-| 188 | `SE_SIDM_ALDEBARAN_15TAU` | `(14)` |
-| 189 | `SE_SIDM_ARYABHATA` | `(23)` |
-| 190 | `SE_SIDM_ARYABHATA_522` | `(37)` |
-| 191 | `SE_SIDM_ARYABHATA_MSUN` | `(24)` |
-| 192 | `SE_SIDM_B1950` | `(20)` |
-| 193 | `SE_SIDM_BABYL_BRITTON` | `(38)` |
-| 194 | `SE_SIDM_BABYL_ETPSC` | `(13)` |
-| 195 | `SE_SIDM_BABYL_HUBER` | `(12)` |
-| 196 | `SE_SIDM_BABYL_KUGLER1` | `(9)` |
-| 197 | `SE_SIDM_BABYL_KUGLER2` | `(10)` |
-| 198 | `SE_SIDM_BABYL_KUGLER3` | `(11)` |
-| 199 | `SE_SIDM_DELUCE` | `(2)` |
-| 200 | `SE_SIDM_DJWHAL_KHUL` | `(6)` |
-| 201 | `SE_SIDM_FAGAN_BRADLEY` | `(0)` |
-| 202 | `SE_SIDM_GALALIGN_MARDYKS` | `(34)` |
-| 203 | `SE_SIDM_GALCENT_0SAG` | `(17)` |
-| 204 | `SE_SIDM_GALCENT_COCHRANE` | `(40)` |
-| 205 | `SE_SIDM_GALCENT_MULA_WILHELM` | `(36)` |
-| 206 | `SE_SIDM_GALCENT_RGILBRAND` | `(30)` |
-| 207 | `SE_SIDM_GALEQU_FIORENZA` | `(41)` |
-| 208 | `SE_SIDM_GALEQU_IAU1958` | `(31)` |
-| 209 | `SE_SIDM_GALEQU_MULA` | `(33)` |
-| 210 | `SE_SIDM_GALEQU_TRUE` | `(32)` |
-| 211 | `SE_SIDM_HIPPARCHOS` | `(15)` |
-| 212 | `SE_SIDM_J1900` | `(19)` |
-| 213 | `SE_SIDM_J2000` | `(18)` |
-| 214 | `SE_SIDM_JN_BHASIN` | `(8)` |
-| 215 | `SE_SIDM_KRISHNAMURTI` | `(5)` |
-| 216 | `SE_SIDM_KRISHNAMURTI_VP291` | `(45)` |
-| 217 | `SE_SIDM_LAHIRI` | `(1)` |
-| 218 | `SE_SIDM_LAHIRI_1940` | `(43)` |
-| 219 | `SE_SIDM_LAHIRI_ICRC` | `(46)` |
-| 220 | `SE_SIDM_LAHIRI_VP285` | `(44)` |
-| 221 | `SE_SIDM_RAMAN` | `(3)` |
-| 222 | `SE_SIDM_SASSANIAN` | `(16)` |
-| 223 | `SE_SIDM_SS_CITRA` | `(26)` |
-| 224 | `SE_SIDM_SS_REVATI` | `(25)` |
-| 225 | `SE_SIDM_SURYASIDDHANTA` | `(21)` |
-| 226 | `SE_SIDM_SURYASIDDHANTA_MSUN` | `(22)` |
-| 227 | `SE_SIDM_TRUE_CITRA` | `(27)` |
-| 228 | `SE_SIDM_TRUE_MULA` | `(35)` |
-| 229 | `SE_SIDM_TRUE_PUSHYA` | `(29)` |
-| 230 | `SE_SIDM_TRUE_REVATI` | `(28)` |
-| 231 | `SE_SIDM_TRUE_SHEORAN` | `(39)` |
-| 232 | `SE_SIDM_USER` | `(255)` |
-| 233 | `SE_SIDM_USHASHASHI` | `(4)` |
-| 234 | `SE_SIDM_VALENS_MOON` | `(42)` |
-| 235 | `SE_SIDM_YUKTESHWAR` | `(7)` |
-| 236 | `SE_SPLIT_DEG_KEEP_DEG` | `(32)` |
-| 237 | `SE_SPLIT_DEG_KEEP_SIGN` | `(16)` |
-| 238 | `SE_SPLIT_DEG_NAKSHATRA` | `(1024)` |
-| 239 | `SE_SPLIT_DEG_ROUND_DEG` | `(4)` |
-| 240 | `SE_SPLIT_DEG_ROUND_MIN` | `(2)` |
-| 241 | `SE_SPLIT_DEG_ROUND_SEC` | `(1)` |
-| 242 | `SE_SPLIT_DEG_ZODIACAL` | `(8)` |
-| 243 | `SE_STARFILE` | `("sefstars.txt")` |
-| 244 | `SE_STARFILE_OLD` | `("fixstars.cat")` |
-| 245 | `SE_SUN` | `(0)` |
-| 246 | `SE_TIDAL_26` | `((-26.0))` |
-| 247 | `SE_TIDAL_AUTOMATIC` | `(999999)` |
-| 248 | `SE_TIDAL_DE200` | `((-23.8946))` |
-| 249 | `SE_TIDAL_DE403` | `((-25.580))` |
-| 250 | `SE_TIDAL_DE404` | `((-25.580))` |
-| 251 | `SE_TIDAL_DE405` | `((-25.826))` |
-| 252 | `SE_TIDAL_DE406` | `((-25.826))` |
-| 253 | `SE_TIDAL_DE421` | `((-25.85))` |
-| 254 | `SE_TIDAL_DE422` | `((-25.85))` |
-| 255 | `SE_TIDAL_DE430` | `((-25.82))` |
-| 256 | `SE_TIDAL_DE431` | `((-25.80))` |
-| 257 | `SE_TIDAL_DE441` | `((-25.936))` |
-| 258 | `SE_TIDAL_DEFAULT` | `(SE_TIDAL_DE431)` |
-| 259 | `SE_TIDAL_JPLEPH` | `(SE_TIDAL_DEFAULT)` |
-| 260 | `SE_TIDAL_MOSEPH` | `(SE_TIDAL_DE404)` |
-| 261 | `SE_TIDAL_STEPHENSON_2016` | `((-25.85))` |
-| 262 | `SE_TIDAL_SWIEPH` | `(SE_TIDAL_DEFAULT)` |
-| 263 | `SE_TRUE_NODE` | `(11)` |
-| 264 | `SE_TRUE_TO_APP` | `(0)` |
-| 265 | `SE_URANUS` | `(7)` |
-| 266 | `SE_VARUNA` | `((SE_AST_OFFSET + 20000))` |
-| 267 | `SE_VENUS` | `(3)` |
-| 268 | `SE_VERTEX` | `(3)` |
-| 269 | `SE_VESTA` | `(20)` |
-| 270 | `SE_VULCAN` | `(55)` |
-| 271 | `SE_VULKANUS` | `(46)` |
-| 272 | `SE_WALDEMATH` | `(58)` |
-| 273 | `SE_WHITE_MOON` | `(56)` |
-| 274 | `SE_ZEUS` | `(42)` |
-| 275 | `SEFLG_ASTROMETRIC` | `((SEFLG_NOABERR \| SEFLG_NOGDEFL))` |
-| 276 | `SEFLG_BARYCTR` | `((16 * 1024))` |
-| 277 | `SEFLG_CENTER_BODY` | `((1024 * 1024))` |
-| 278 | `SEFLG_DEFAULTEPH` | `(SEFLG_SWIEPH)` |
-| 279 | `SEFLG_DPSIDEPS_1980` | `((256 * 1024))` |
-| 280 | `SEFLG_EQUATORIAL` | `((2 * 1024))` |
-| 281 | `SEFLG_HELCTR` | `(8)` |
-| 282 | `SEFLG_ICRS` | `((128 * 1024))` |
-| 283 | `SEFLG_J2000` | `(32)` |
-| 284 | `SEFLG_JPLEPH` | `(1)` |
-| 285 | `SEFLG_JPLHOR` | `(SEFLG_DPSIDEPS_1980)` |
-| 286 | `SEFLG_JPLHOR_APPROX` | `((512 * 1024))` |
-| 287 | `SEFLG_MOSEPH` | `(4)` |
-| 288 | `SEFLG_NOABERR` | `(1024)` |
-| 289 | `SEFLG_NOGDEFL` | `(512)` |
-| 290 | `SEFLG_NONUT` | `(64)` |
-| 291 | `SEFLG_ORBEL_AA` | `(SEFLG_TOPOCTR)` |
-| 292 | `SEFLG_RADIANS` | `((8 * 1024))` |
-| 293 | `SEFLG_SIDEREAL` | `((64 * 1024))` |
-| 294 | `SEFLG_SPEED` | `(256)` |
-| 295 | `SEFLG_SPEED3` | `(128)` |
-| 296 | `SEFLG_SWIEPH` | `(2)` |
-| 297 | `SEFLG_TEST_PLMOON` | `((2 * 1024 * 1024 \| SEFLG_J2000 \| SEFLG_ICRS \| SEFLG_HELCTR \| SEFLG_TRUEPOS))` |
-| 298 | `SEFLG_TOPOCTR` | `((32 * 1024))` |
-| 299 | `SEFLG_TROPICAL` | `((0))` |
-| 300 | `SEFLG_TRUEPOS` | `(16)` |
-| 301 | `SEFLG_XYZ` | `((4 * 1024))` |
-| 302 | `SEMOD_BIAS_DEFAULT` | `(SEMOD_BIAS_IAU2006)` |
-| 303 | `SEMOD_BIAS_IAU2000` | `(2)` |
-| 304 | `SEMOD_BIAS_IAU2006` | `(3)` |
-| 305 | `SEMOD_BIAS_NONE` | `(1)` |
-| 306 | `SEMOD_DELTAT_DEFAULT` | `(SEMOD_DELTAT_STEPHENSON_ETC_2016)` |
-| 307 | `SEMOD_DELTAT_ESPENAK_MEEUS_2006` | `(4)` |
-| 308 | `SEMOD_DELTAT_STEPHENSON_1997` | `(2)` |
-| 309 | `SEMOD_DELTAT_STEPHENSON_ETC_2016` | `(5)` |
-| 310 | `SEMOD_DELTAT_STEPHENSON_MORRISON_1984` | `(1)` |
-| 311 | `SEMOD_DELTAT_STEPHENSON_MORRISON_2004` | `(3)` |
-| 312 | `SEMOD_JPLHOR_DEFAULT` | `(SEMOD_JPLHOR_LONG_AGREEMENT)` |
-| 313 | `SEMOD_JPLHOR_LONG_AGREEMENT` | `(1)` |
-| 314 | `SEMOD_JPLHORA_1` | `(1)` |
-| 315 | `SEMOD_JPLHORA_2` | `(2)` |
-| 316 | `SEMOD_JPLHORA_3` | `(3)` |
-| 317 | `SEMOD_JPLHORA_DEFAULT` | `(SEMOD_JPLHORA_3)` |
-| 318 | `SEMOD_NBIAS` | `(3)` |
-| 319 | `SEMOD_NDELTAT` | `(5)` |
-| 320 | `SEMOD_NJPLHOR` | `(2)` |
-| 321 | `SEMOD_NJPLHORA` | `(3)` |
-| 322 | `SEMOD_NNUT` | `(5)` |
-| 323 | `SEMOD_NPREC` | `(11)` |
-| 324 | `SEMOD_NSIDT` | `(4)` |
-| 325 | `SEMOD_NUT_DEFAULT` | `(SEMOD_NUT_IAU_2000B)` |
-| 326 | `SEMOD_NUT_IAU_1980` | `(1)` |
-| 327 | `SEMOD_NUT_IAU_2000A` | `(3)` |
-| 328 | `SEMOD_NUT_IAU_2000B` | `(4)` |
-| 329 | `SEMOD_NUT_IAU_CORR_1987` | `(2)` |
-| 330 | `SEMOD_NUT_WOOLARD` | `(5)` |
-| 331 | `SEMOD_PREC_BRETAGNON_2003` | `(7)` |
-| 332 | `SEMOD_PREC_DEFAULT` | `(SEMOD_PREC_VONDRAK_2011)` |
-| 333 | `SEMOD_PREC_DEFAULT_SHORT` | `(SEMOD_PREC_VONDRAK_2011)` |
-| 334 | `SEMOD_PREC_IAU_1976` | `(1)` |
-| 335 | `SEMOD_PREC_IAU_2000` | `(6)` |
-| 336 | `SEMOD_PREC_IAU_2006` | `(8)` |
-| 337 | `SEMOD_PREC_LASKAR_1986` | `(2)` |
-| 338 | `SEMOD_PREC_NEWCOMB` | `(11)` |
-| 339 | `SEMOD_PREC_OWEN_1990` | `(10)` |
-| 340 | `SEMOD_PREC_SIMON_1994` | `(5)` |
-| 341 | `SEMOD_PREC_VONDRAK_2011` | `(9)` |
-| 342 | `SEMOD_PREC_WILL_EPS_LASK` | `(3)` |
-| 343 | `SEMOD_PREC_WILLIAMS_1994` | `(4)` |
-| 344 | `SEMOD_SIDT_DEFAULT` | `(SEMOD_SIDT_LONGTERM)` |
-| 345 | `SEMOD_SIDT_IAU_1976` | `(1)` |
-| 346 | `SEMOD_SIDT_IAU_2006` | `(2)` |
-| 347 | `SEMOD_SIDT_IERS_CONV_2010` | `(3)` |
-| 348 | `SEMOD_SIDT_LONGTERM` | `(4)` |
-
-## Expansion Rule
-
-Every new function must be backed by real calculation, source-level tests, and runtime tests where the required data exists. Public names are project-owned names.
+| # | Reference constant |
+|---:|---|
+| 1 | `ERR` |
+| 2 | `OK` |
+| 3 | `SE_ACRONYCHAL_RISING` |
+| 4 | `SE_ACRONYCHAL_SETTING` |
+| 5 | `SE_ADMETOS` |
+| 6 | `SE_APOLLON` |
+| 7 | `SE_APP_TO_TRUE` |
+| 8 | `SE_ARMC` |
+| 9 | `SE_ASC` |
+| 10 | `SE_AST_OFFSET` |
+| 11 | `SE_ASTNAMFILE` |
+| 12 | `SE_AUNIT_TO_KM` |
+| 13 | `SE_AUNIT_TO_LIGHTYEAR` |
+| 14 | `SE_AUNIT_TO_PARSEC` |
+| 15 | `SE_BIT_ASTRO_TWILIGHT` |
+| 16 | `SE_BIT_CIVIL_TWILIGHT` |
+| 17 | `SE_BIT_DISC_BOTTOM` |
+| 18 | `SE_BIT_DISC_CENTER` |
+| 19 | `SE_BIT_FIXED_DISC_SIZE` |
+| 20 | `SE_BIT_FORCE_SLOW_METHOD` |
+| 21 | `SE_BIT_GEOCTR_NO_ECL_LAT` |
+| 22 | `SE_BIT_HINDU_RISING` |
+| 23 | `SE_BIT_NAUTIC_TWILIGHT` |
+| 24 | `SE_BIT_NO_REFRACTION` |
+| 25 | `SE_CALC_ITRANSIT` |
+| 26 | `SE_CALC_MTRANSIT` |
+| 27 | `SE_CALC_RISE` |
+| 28 | `SE_CALC_SET` |
+| 29 | `SE_CERES` |
+| 30 | `SE_CHIRON` |
+| 31 | `SE_COASC1` |
+| 32 | `SE_COASC2` |
+| 33 | `SE_COMET_OFFSET` |
+| 34 | `SE_COSMICAL_SETTING` |
+| 35 | `SE_CUPIDO` |
+| 36 | `SE_DE_NUMBER` |
+| 37 | `SE_DELTAT_AUTOMATIC` |
+| 38 | `SE_EARTH` |
+| 39 | `SE_ECL_1ST_VISIBLE` |
+| 40 | `SE_ECL_2ND_VISIBLE` |
+| 41 | `SE_ECL_3RD_VISIBLE` |
+| 42 | `SE_ECL_4TH_VISIBLE` |
+| 43 | `SE_ECL_ALLTYPES_LUNAR` |
+| 44 | `SE_ECL_ALLTYPES_SOLAR` |
+| 45 | `SE_ECL_ANNULAR` |
+| 46 | `SE_ECL_ANNULAR_TOTAL` |
+| 47 | `SE_ECL_CENTRAL` |
+| 48 | `SE_ECL_HYBRID` |
+| 49 | `SE_ECL_MAX_VISIBLE` |
+| 50 | `SE_ECL_NONCENTRAL` |
+| 51 | `SE_ECL_NUT` |
+| 52 | `SE_ECL_OCC_BEG_DAYLIGHT` |
+| 53 | `SE_ECL_OCC_END_DAYLIGHT` |
+| 54 | `SE_ECL_ONE_TRY` |
+| 55 | `SE_ECL_PARTBEG_VISIBLE` |
+| 56 | `SE_ECL_PARTEND_VISIBLE` |
+| 57 | `SE_ECL_PARTIAL` |
+| 58 | `SE_ECL_PENUMBBEG_VISIBLE` |
+| 59 | `SE_ECL_PENUMBEND_VISIBLE` |
+| 60 | `SE_ECL_PENUMBRAL` |
+| 61 | `SE_ECL_TOTAL` |
+| 62 | `SE_ECL_TOTBEG_VISIBLE` |
+| 63 | `SE_ECL_TOTEND_VISIBLE` |
+| 64 | `SE_ECL_VISIBLE` |
+| 65 | `SE_ECL2HOR` |
+| 66 | `SE_EPHE_PATH` |
+| 67 | `SE_EQU2HOR` |
+| 68 | `SE_EQUASC` |
+| 69 | `SE_EVENING_FIRST` |
+| 70 | `SE_EVENING_LAST` |
+| 71 | `SE_FICT_MAX` |
+| 72 | `SE_FICT_OFFSET` |
+| 73 | `SE_FICT_OFFSET_1` |
+| 74 | `SE_FICTFILE` |
+| 75 | `SE_FIXSTAR` |
+| 76 | `SE_FNAME_DE200` |
+| 77 | `SE_FNAME_DE403` |
+| 78 | `SE_FNAME_DE404` |
+| 79 | `SE_FNAME_DE405` |
+| 80 | `SE_FNAME_DE406` |
+| 81 | `SE_FNAME_DE431` |
+| 82 | `SE_FNAME_DFT` |
+| 83 | `SE_FNAME_DFT2` |
+| 84 | `SE_GREG_CAL` |
+| 85 | `SE_HADES` |
+| 86 | `SE_HARRINGTON` |
+| 87 | `SE_HELFLAG_AV` |
+| 88 | `SE_HELFLAG_AVKIND` |
+| 89 | `SE_HELFLAG_AVKIND_MIN7` |
+| 90 | `SE_HELFLAG_AVKIND_MIN9` |
+| 91 | `SE_HELFLAG_AVKIND_PTO` |
+| 92 | `SE_HELFLAG_AVKIND_VR` |
+| 93 | `SE_HELFLAG_HIGH_PRECISION` |
+| 94 | `SE_HELFLAG_LONG_SEARCH` |
+| 95 | `SE_HELFLAG_NO_DETAILS` |
+| 96 | `SE_HELFLAG_OPTICAL_PARAMS` |
+| 97 | `SE_HELFLAG_SEARCH_1_PERIOD` |
+| 98 | `SE_HELFLAG_VISLIM_DARK` |
+| 99 | `SE_HELFLAG_VISLIM_NOMOON` |
+| 100 | `SE_HELFLAG_VISLIM_PHOTOPIC` |
+| 101 | `SE_HELFLAG_VISLIM_SCOTOPIC` |
+| 102 | `SE_HELIACAL_AVKIND` |
+| 103 | `SE_HELIACAL_AVKIND_MIN7` |
+| 104 | `SE_HELIACAL_AVKIND_MIN9` |
+| 105 | `SE_HELIACAL_AVKIND_PTO` |
+| 106 | `SE_HELIACAL_AVKIND_VR` |
+| 107 | `SE_HELIACAL_HIGH_PRECISION` |
+| 108 | `SE_HELIACAL_LONG_SEARCH` |
+| 109 | `SE_HELIACAL_NO_DETAILS` |
+| 110 | `SE_HELIACAL_OPTICAL_PARAMS` |
+| 111 | `SE_HELIACAL_RISING` |
+| 112 | `SE_HELIACAL_SEARCH_1_PERIOD` |
+| 113 | `SE_HELIACAL_SETTING` |
+| 114 | `SE_HELIACAL_VISLIM_DARK` |
+| 115 | `SE_HELIACAL_VISLIM_NOMOON` |
+| 116 | `SE_HELIACAL_VISLIM_PHOTOPIC` |
+| 117 | `SE_HOR2ECL` |
+| 118 | `SE_HOR2EQU` |
+| 119 | `SE_HOUSES_ALCABITUS` |
+| 120 | `SE_HOUSES_CAMPANO` |
+| 121 | `SE_HOUSES_EQUAL` |
+| 122 | `SE_HOUSES_EQUAL_VEHIC` |
+| 123 | `SE_HOUSES_KOCH` |
+| 124 | `SE_HOUSES_KRUSINSKI` |
+| 125 | `SE_HOUSES_MORINUS` |
+| 126 | `SE_HOUSES_PLACIDUS` |
+| 127 | `SE_HOUSES_POLICH_PAGE` |
+| 128 | `SE_HOUSES_PORPHYRIUS` |
+| 129 | `SE_HOUSES_REGIOMONTANUS` |
+| 130 | `SE_INTP_APOG` |
+| 131 | `SE_INTP_PERG` |
+| 132 | `SE_ISIS` |
+| 133 | `SE_JUL_CAL` |
+| 134 | `SE_JUNO` |
+| 135 | `SE_JUPITER` |
+| 136 | `SE_KRONOS` |
+| 137 | `SE_MARS` |
+| 138 | `SE_MAX_STNAME` |
+| 139 | `SE_MC` |
+| 140 | `SE_MEAN_APOG` |
+| 141 | `SE_MEAN_NODE` |
+| 142 | `SE_MERCURY` |
+| 143 | `SE_MIXEDOPIC_FLAG` |
+| 144 | `SE_MODEL_BIAS` |
+| 145 | `SE_MODEL_DELTAT` |
+| 146 | `SE_MODEL_JPLHOR_MODE` |
+| 147 | `SE_MODEL_JPLHORA_MODE` |
+| 148 | `SE_MODEL_NUT` |
+| 149 | `SE_MODEL_PREC_LONGTERM` |
+| 150 | `SE_MODEL_PREC_SHORTTERM` |
+| 151 | `SE_MODEL_SIDT` |
+| 152 | `SE_MOON` |
+| 153 | `SE_MORNING_FIRST` |
+| 154 | `SE_MORNING_LAST` |
+| 155 | `SE_NALL_NAT_POINTS` |
+| 156 | `SE_NASCMC` |
+| 157 | `SE_NEPTUNE` |
+| 158 | `SE_NEPTUNE_ADAMS` |
+| 159 | `SE_NEPTUNE_LEVERRIER` |
+| 160 | `SE_NFICT_ELEM` |
+| 161 | `SE_NIBIRU` |
+| 162 | `SE_NODBIT_FOPOINT` |
+| 163 | `SE_NODBIT_MEAN` |
+| 164 | `SE_NODBIT_OSCU` |
+| 165 | `SE_NODBIT_OSCU_BAR` |
+| 166 | `SE_NPLANETS` |
+| 167 | `SE_NSIDM_PREDEF` |
+| 168 | `SE_OSCU_APOG` |
+| 169 | `SE_PALLAS` |
+| 170 | `SE_PHOLUS` |
+| 171 | `SE_PHOTOPIC_FLAG` |
+| 172 | `SE_PLMOON_OFFSET` |
+| 173 | `SE_PLUTO` |
+| 174 | `SE_PLUTO_LOWELL` |
+| 175 | `SE_PLUTO_PICKERING` |
+| 176 | `SE_POLASC` |
+| 177 | `SE_POSEIDON` |
+| 178 | `SE_PROSERPINA` |
+| 179 | `SE_SATURN` |
+| 180 | `SE_SCOTOPIC_FLAG` |
+| 181 | `SE_SIDBIT_ECL_DATE` |
+| 182 | `SE_SIDBIT_ECL_T0` |
+| 183 | `SE_SIDBIT_NO_PREC_OFFSET` |
+| 184 | `SE_SIDBIT_PREC_ORIG` |
+| 185 | `SE_SIDBIT_SSY_PLANE` |
+| 186 | `SE_SIDBIT_USER_UT` |
+| 187 | `SE_SIDBITS` |
+| 188 | `SE_SIDM_ALDEBARAN_15TAU` |
+| 189 | `SE_SIDM_ARYABHATA` |
+| 190 | `SE_SIDM_ARYABHATA_522` |
+| 191 | `SE_SIDM_ARYABHATA_MSUN` |
+| 192 | `SE_SIDM_B1950` |
+| 193 | `SE_SIDM_BABYL_BRITTON` |
+| 194 | `SE_SIDM_BABYL_ETPSC` |
+| 195 | `SE_SIDM_BABYL_HUBER` |
+| 196 | `SE_SIDM_BABYL_KUGLER1` |
+| 197 | `SE_SIDM_BABYL_KUGLER2` |
+| 198 | `SE_SIDM_BABYL_KUGLER3` |
+| 199 | `SE_SIDM_DELUCE` |
+| 200 | `SE_SIDM_DJWHAL_KHUL` |
+| 201 | `SE_SIDM_FAGAN_BRADLEY` |
+| 202 | `SE_SIDM_GALALIGN_MARDYKS` |
+| 203 | `SE_SIDM_GALCENT_0SAG` |
+| 204 | `SE_SIDM_GALCENT_COCHRANE` |
+| 205 | `SE_SIDM_GALCENT_MULA_WILHELM` |
+| 206 | `SE_SIDM_GALCENT_RGILBRAND` |
+| 207 | `SE_SIDM_GALEQU_FIORENZA` |
+| 208 | `SE_SIDM_GALEQU_IAU1958` |
+| 209 | `SE_SIDM_GALEQU_MULA` |
+| 210 | `SE_SIDM_GALEQU_TRUE` |
+| 211 | `SE_SIDM_HIPPARCHOS` |
+| 212 | `SE_SIDM_J1900` |
+| 213 | `SE_SIDM_J2000` |
+| 214 | `SE_SIDM_JN_BHASIN` |
+| 215 | `SE_SIDM_KRISHNAMURTI` |
+| 216 | `SE_SIDM_KRISHNAMURTI_VP291` |
+| 217 | `SE_SIDM_LAHIRI` |
+| 218 | `SE_SIDM_LAHIRI_1940` |
+| 219 | `SE_SIDM_LAHIRI_ICRC` |
+| 220 | `SE_SIDM_LAHIRI_VP285` |
+| 221 | `SE_SIDM_RAMAN` |
+| 222 | `SE_SIDM_SASSANIAN` |
+| 223 | `SE_SIDM_SS_CITRA` |
+| 224 | `SE_SIDM_SS_REVATI` |
+| 225 | `SE_SIDM_SURYASIDDHANTA` |
+| 226 | `SE_SIDM_SURYASIDDHANTA_MSUN` |
+| 227 | `SE_SIDM_TRUE_CITRA` |
+| 228 | `SE_SIDM_TRUE_MULA` |
+| 229 | `SE_SIDM_TRUE_PUSHYA` |
+| 230 | `SE_SIDM_TRUE_REVATI` |
+| 231 | `SE_SIDM_TRUE_SHEORAN` |
+| 232 | `SE_SIDM_USER` |
+| 233 | `SE_SIDM_USHASHASHI` |
+| 234 | `SE_SIDM_VALENS_MOON` |
+| 235 | `SE_SIDM_YUKTESHWAR` |
+| 236 | `SE_SPLIT_DEG_KEEP_DEG` |
+| 237 | `SE_SPLIT_DEG_KEEP_SIGN` |
+| 238 | `SE_SPLIT_DEG_NAKSHATRA` |
+| 239 | `SE_SPLIT_DEG_ROUND_DEG` |
+| 240 | `SE_SPLIT_DEG_ROUND_MIN` |
+| 241 | `SE_SPLIT_DEG_ROUND_SEC` |
+| 242 | `SE_SPLIT_DEG_ZODIACAL` |
+| 243 | `SE_STARFILE` |
+| 244 | `SE_STARFILE_OLD` |
+| 245 | `SE_SUN` |
+| 246 | `SE_TIDAL_26` |
+| 247 | `SE_TIDAL_AUTOMATIC` |
+| 248 | `SE_TIDAL_DE200` |
+| 249 | `SE_TIDAL_DE403` |
+| 250 | `SE_TIDAL_DE404` |
+| 251 | `SE_TIDAL_DE405` |
+| 252 | `SE_TIDAL_DE406` |
+| 253 | `SE_TIDAL_DE421` |
+| 254 | `SE_TIDAL_DE422` |
+| 255 | `SE_TIDAL_DE430` |
+| 256 | `SE_TIDAL_DE431` |
+| 257 | `SE_TIDAL_DE441` |
+| 258 | `SE_TIDAL_DEFAULT` |
+| 259 | `SE_TIDAL_JPLEPH` |
+| 260 | `SE_TIDAL_MOSEPH` |
+| 261 | `SE_TIDAL_STEPHENSON_2016` |
+| 262 | `SE_TIDAL_SWIEPH` |
+| 263 | `SE_TRUE_NODE` |
+| 264 | `SE_TRUE_TO_APP` |
+| 265 | `SE_URANUS` |
+| 266 | `SE_VARUNA` |
+| 267 | `SE_VENUS` |
+| 268 | `SE_VERTEX` |
+| 269 | `SE_VESTA` |
+| 270 | `SE_VULCAN` |
+| 271 | `SE_VULKANUS` |
+| 272 | `SE_WALDEMATH` |
+| 273 | `SE_WHITE_MOON` |
+| 274 | `SE_ZEUS` |
+| 275 | `SEFLG_ASTROMETRIC` |
+| 276 | `SEFLG_BARYCTR` |
+| 277 | `SEFLG_CENTER_BODY` |
+| 278 | `SEFLG_DEFAULTEPH` |
+| 279 | `SEFLG_DPSIDEPS_1980` |
+| 280 | `SEFLG_EQUATORIAL` |
+| 281 | `SEFLG_HELCTR` |
+| 282 | `SEFLG_ICRS` |
+| 283 | `SEFLG_J2000` |
+| 284 | `SEFLG_JPLEPH` |
+| 285 | `SEFLG_JPLHOR` |
+| 286 | `SEFLG_JPLHOR_APPROX` |
+| 287 | `SEFLG_MOSEPH` |
+| 288 | `SEFLG_NOABERR` |
+| 289 | `SEFLG_NOGDEFL` |
+| 290 | `SEFLG_NONUT` |
+| 291 | `SEFLG_ORBEL_AA` |
+| 292 | `SEFLG_RADIANS` |
+| 293 | `SEFLG_SIDEREAL` |
+| 294 | `SEFLG_SPEED` |
+| 295 | `SEFLG_SPEED3` |
+| 296 | `SEFLG_SWIEPH` |
+| 297 | `SEFLG_TEST_PLMOON` |
+| 298 | `SEFLG_TOPOCTR` |
+| 299 | `SEFLG_TROPICAL` |
+| 300 | `SEFLG_TRUEPOS` |
+| 301 | `SEFLG_XYZ` |
+| 302 | `SEMOD_BIAS_DEFAULT` |
+| 303 | `SEMOD_BIAS_IAU2000` |
+| 304 | `SEMOD_BIAS_IAU2006` |
+| 305 | `SEMOD_BIAS_NONE` |
+| 306 | `SEMOD_DELTAT_DEFAULT` |
+| 307 | `SEMOD_DELTAT_ESPENAK_MEEUS_2006` |
+| 308 | `SEMOD_DELTAT_STEPHENSON_1997` |
+| 309 | `SEMOD_DELTAT_STEPHENSON_ETC_2016` |
+| 310 | `SEMOD_DELTAT_STEPHENSON_MORRISON_1984` |
+| 311 | `SEMOD_DELTAT_STEPHENSON_MORRISON_2004` |
+| 312 | `SEMOD_JPLHOR_DEFAULT` |
+| 313 | `SEMOD_JPLHOR_LONG_AGREEMENT` |
+| 314 | `SEMOD_JPLHORA_1` |
+| 315 | `SEMOD_JPLHORA_2` |
+| 316 | `SEMOD_JPLHORA_3` |
+| 317 | `SEMOD_JPLHORA_DEFAULT` |
+| 318 | `SEMOD_NBIAS` |
+| 319 | `SEMOD_NDELTAT` |
+| 320 | `SEMOD_NJPLHOR` |
+| 321 | `SEMOD_NJPLHORA` |
+| 322 | `SEMOD_NNUT` |
+| 323 | `SEMOD_NPREC` |
+| 324 | `SEMOD_NSIDT` |
+| 325 | `SEMOD_NUT_DEFAULT` |
+| 326 | `SEMOD_NUT_IAU_1980` |
+| 327 | `SEMOD_NUT_IAU_2000A` |
+| 328 | `SEMOD_NUT_IAU_2000B` |
+| 329 | `SEMOD_NUT_IAU_CORR_1987` |
+| 330 | `SEMOD_NUT_WOOLARD` |
+| 331 | `SEMOD_PREC_BRETAGNON_2003` |
+| 332 | `SEMOD_PREC_DEFAULT` |
+| 333 | `SEMOD_PREC_DEFAULT_SHORT` |
+| 334 | `SEMOD_PREC_IAU_1976` |
+| 335 | `SEMOD_PREC_IAU_2000` |
+| 336 | `SEMOD_PREC_IAU_2006` |
+| 337 | `SEMOD_PREC_LASKAR_1986` |
+| 338 | `SEMOD_PREC_NEWCOMB` |
+| 339 | `SEMOD_PREC_OWEN_1990` |
+| 340 | `SEMOD_PREC_SIMON_1994` |
+| 341 | `SEMOD_PREC_VONDRAK_2011` |
+| 342 | `SEMOD_PREC_WILL_EPS_LASK` |
+| 343 | `SEMOD_PREC_WILLIAMS_1994` |
+| 344 | `SEMOD_SIDT_DEFAULT` |
+| 345 | `SEMOD_SIDT_IAU_1976` |
+| 346 | `SEMOD_SIDT_IAU_2006` |
+| 347 | `SEMOD_SIDT_IERS_CONV_2010` |
+| 348 | `SEMOD_SIDT_LONGTERM` |

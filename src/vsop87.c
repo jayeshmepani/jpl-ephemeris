@@ -1,67 +1,84 @@
-/*
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU Lesser General Public
- *  License as published by the Free Software Foundation; either
- *  version 2 of the License, or (at your option) any later version.
- *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  Lesser General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
- * 
- *  Some functions in this file use the VSOP87 solution by
- *  Messrs. Bretagnon and Francou.
- * 
- *  Copyright (C) 2000 - 2005 Liam Girdwood  
- */
-
+#include "jme/jme.h"
 
 #include <math.h>
-#include <libnova/vsop87.h>
-#include <libnova/utility.h>
 
-double ln_calc_series (const struct ln_vsop * data, int terms, double t)
+#define JME_RAD_TO_DEG 57.295779513082320876798154814105170332405472466565
+
+void vsop87d_full_getEarth(double t, double temp[]);
+void vsop87d_full_getJupiter(double t, double temp[]);
+void vsop87d_full_getMars(double t, double temp[]);
+void vsop87d_full_getMercury(double t, double temp[]);
+void vsop87d_full_getNeptune(double t, double temp[]);
+void vsop87d_full_getSaturn(double t, double temp[]);
+void vsop87d_full_getUranus(double t, double temp[]);
+void vsop87d_full_getVenus(double t, double temp[]);
+
+static int jme_vsop87_spherical(double jd_et, int body, double *spherical)
 {
-	double value = 0;
-	int i;
-	
-	for (i=0; i<terms; i++) {
-		value += data->A * cos(data->B + data->C * t);
-		data++;
-	}
-	
-	return value;
+    double t = (jd_et - 2451545.0) / 365250.0;
+    double raw[3] = {0.0, 0.0, 0.0};
+
+    if (spherical == 0) {
+        return JME_ERR;
+    }
+
+    switch (body) {
+    case JME_BODY_MERCURY:
+        vsop87d_full_getMercury(t, raw);
+        break;
+    case JME_BODY_VENUS:
+        vsop87d_full_getVenus(t, raw);
+        break;
+    case JME_BODY_EARTH:
+        vsop87d_full_getEarth(t, raw);
+        break;
+    case JME_BODY_MARS:
+        vsop87d_full_getMars(t, raw);
+        break;
+    case JME_BODY_JUPITER:
+        vsop87d_full_getJupiter(t, raw);
+        break;
+    case JME_BODY_SATURN:
+        vsop87d_full_getSaturn(t, raw);
+        break;
+    case JME_BODY_URANUS:
+        vsop87d_full_getUranus(t, raw);
+        break;
+    case JME_BODY_NEPTUNE:
+        vsop87d_full_getNeptune(t, raw);
+        break;
+    default:
+        return JME_ERR;
+    }
+
+    spherical[0] = jme_degree_normalize(raw[0] * JME_RAD_TO_DEG);
+    spherical[1] = raw[1] * JME_RAD_TO_DEG;
+    spherical[2] = raw[2];
+    spherical[3] = 0.0;
+    spherical[4] = 0.0;
+    spherical[5] = 0.0;
+
+    return isfinite(spherical[0]) && isfinite(spherical[1]) && isfinite(spherical[2]) ? JME_OK : JME_ERR;
 }
 
-
-/*! \fn void ln_vsop87_to_fk5 (struct ln_helio_posn * position, double JD)
-* \param position Position to transform. 
-* \param JD Julian day
-*
-* Transform from VSOP87 to FK5 reference frame. 
-*/
-/* Equation 31.3 Pg 207.         
-*/
-void ln_vsop87_to_fk5 (struct ln_helio_posn * position, double JD)
+int jme_vsop87_planet_state(double jd_et, int body, double *results)
 {
-	double LL, cos_LL, sin_LL, T, delta_L, delta_B, B;
-	
-	/* get julian centuries from 2000 */
-	T = (JD - 2451545.0)/ 36525.0;
-	
-	LL = position->L + ( - 1.397 - 0.00031 * T ) * T;
-	LL = ln_deg_to_rad (LL);
-	cos_LL = cos(LL);
-	sin_LL = sin(LL);
-	B = ln_deg_to_rad(position->B);
-	
-	delta_L = (-0.09033 / 3600.0) + (0.03916 / 3600.0) * (cos_LL + sin_LL) * tan (B);
-	delta_B = (0.03916 / 3600.0) * (cos_LL - sin_LL);
-	
-	position->L += delta_L;
-	position->B += delta_B;
+    double spherical[6];
+    int i;
+
+    if (results != 0) {
+        for (i = 0; i < 6; i++) {
+            results[i] = 0.0;
+        }
+    }
+
+    if (results == 0) {
+        return JME_ERR;
+    }
+
+    if (jme_vsop87_spherical(jd_et, body, spherical) != JME_OK) {
+        return JME_ERR;
+    }
+
+    return jme_spherical_to_rectangular_state(spherical, results);
 }

@@ -19,6 +19,10 @@ Days per record = 131.0
   3000.0 to   3000.4:  0.122  0.071  0.260 
 */
 #include "plantbl.h"
+#define nep_args nep_nep_args
+#define nep_tabb nep_nep_tabb
+#define nep_tabl nep_nep_tabl
+#define nep_tabr nep_nep_tabr
 double FAR nep_nep_tabl[] = {
        -1376.86480,         730.38970,    78655362.50948,     1095691.38676,
 
