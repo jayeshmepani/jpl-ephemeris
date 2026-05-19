@@ -1,0 +1,1 @@
+/usr/bin/cc -Wl,--dependency-file=CMakeFiles/test_julian.dir/link.d CMakeFiles/test_julian.dir/tests/test_julian.c.o -o test_julian  libjme.a -lm

@@ -1,0 +1,1 @@
+/usr/bin/cc -Wl,--dependency-file=CMakeFiles/test_all_constants.dir/link.d CMakeFiles/test_all_constants.dir/tests/test_all_constants.c.o -o test_all_constants  libjme.a -lm

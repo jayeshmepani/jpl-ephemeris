@@ -342,64 +342,105 @@ typedef enum jme_extended_constant {
     JME_MODEL_NUT_IAU_1980 = 333,
     JME_MODEL_NUT_IAU_2000A = 334,
     JME_MODEL_NUT_IAU_2000B = 335,
-    JME_MODEL_PREC_IAU_1976 = 336,
-    JME_MODEL_PREC_IAU_2000 = 337,
-    JME_MODEL_PREC_IAU_2006 = 338,
-    JME_MODEL_PREC_LASKAR_1986 = 339,
-    JME_MODEL_PREC_VONDRAK_2011 = 340,
-    JME_MODEL_SIDT_IAU_1976 = 341,
-    JME_MODEL_SIDT_IAU_2006 = 342,
-    JME_RISE_ANTI_MERIDIAN_TRANSIT = 343,
-    JME_RISE_ASTRONOMICAL_TWILIGHT = 344,
-    JME_RISE_CIVIL_TWILIGHT = 345,
-    JME_RISE_DISC_BOTTOM = 346,
-    JME_RISE_DISC_CENTER = 347,
-    JME_RISE_FIXED_DISC_SIZE = 348,
-    JME_RISE_HINDU_RISING = 349,
-    JME_RISE_MERIDIAN_TRANSIT = 350,
-    JME_RISE_NAUTICAL_TWILIGHT = 351,
-    JME_RISE_NO_REFRACTION = 352,
-    JME_RISE_RISE = 353,
-    JME_RISE_SET = 354,
-    JME_SIDEREAL_ALDEBARAN_15TAU = 355,
-    JME_SIDEREAL_ARYABHATA = 356,
-    JME_SIDEREAL_B1950 = 357,
-    JME_SIDEREAL_BABYL_ETPSC = 358,
-    JME_SIDEREAL_BABYL_HUBER = 359,
-    JME_SIDEREAL_BABYL_KUGLER1 = 360,
-    JME_SIDEREAL_BABYL_KUGLER2 = 361,
-    JME_SIDEREAL_BABYL_KUGLER3 = 362,
-    JME_SIDEREAL_DELUCE = 363,
-    JME_SIDEREAL_GALCENT_0SAG = 364,
-    JME_SIDEREAL_HIPPARCHOS = 365,
-    JME_SIDEREAL_J1900 = 366,
-    JME_SIDEREAL_J2000 = 367,
-    JME_SIDEREAL_JN_BHASIN = 368,
-    JME_SIDEREAL_KRISHNAMURTI = 369,
-    JME_SIDEREAL_RAMAN = 370,
-    JME_SIDEREAL_SASSANIAN = 371,
-    JME_SIDEREAL_SS_CITRA = 372,
-    JME_SIDEREAL_SS_REVATI = 373,
-    JME_SIDEREAL_SURYASIDDHANTA = 374,
-    JME_SIDEREAL_TRUE_CITRA = 375,
-    JME_SIDEREAL_TRUE_MULA = 376,
-    JME_SIDEREAL_TRUE_PUSHYA = 377,
-    JME_SIDEREAL_TRUE_REVATI = 378,
-    JME_SIDEREAL_USHASHASHI = 379,
-    JME_SIDEREAL_YUKTESHWAR = 380,
-    JME_TIME_DELTAT_AUTOMATIC = 381,
-    JME_TIME_TIDAL_AUTOMATIC = 382,
-    JME_TIME_TIDAL_DE200 = 383,
-    JME_TIME_TIDAL_DE403 = 384,
-    JME_TIME_TIDAL_DE404 = 385,
-    JME_TIME_TIDAL_DE405 = 386,
-    JME_TIME_TIDAL_DE406 = 387,
-    JME_TIME_TIDAL_DE421 = 388,
-    JME_TIME_TIDAL_DE430 = 389,
-    JME_TIME_TIDAL_DE431 = 390,
-    JME_TIME_TIDAL_DE441 = 391,
-    JME_VERSION_ID = 392
+    JME_MODEL_OBL_IAU_1980 = 336,
+    JME_MODEL_OBL_IAU_2000 = 337,
+    JME_MODEL_OBL_IAU_2006 = 338,
+    JME_MODEL_PREC_IAU_1976 = 339,
+    JME_MODEL_PREC_IAU_2000 = 340,
+    JME_MODEL_PREC_IAU_2006 = 341,
+    JME_MODEL_PREC_LASKAR_1986 = 342,
+    JME_MODEL_PREC_VONDRAK_2011 = 343,
+    JME_MODEL_SIDT_IAU_1976 = 344,
+    JME_MODEL_SIDT_IAU_2006 = 345,
+    JME_MODEL_DELTAT_STEPHENSON_MORRISON_1984 = 346,
+    JME_MODEL_DELTAT_STEPHENSON_1997 = 347,
+    JME_MODEL_DELTAT_STEPHENSON_MORRISON_2004 = 348,
+    JME_MODEL_DELTAT_ESPENAK_MEEUS_2006 = 349,
+    JME_MODEL_DELTAT_STEPHENSON_ETC_2016 = 350,
+    JME_RISE_ANTI_MERIDIAN_TRANSIT = 351,
+    JME_RISE_ASTRONOMICAL_TWILIGHT = 352,
+    JME_RISE_CIVIL_TWILIGHT = 353,
+    JME_RISE_DISC_BOTTOM = 354,
+    JME_RISE_DISC_CENTER = 355,
+    JME_RISE_FIXED_DISC_SIZE = 356,
+    JME_RISE_HINDU_RISING = 357,
+    JME_RISE_MERIDIAN_TRANSIT = 358,
+    JME_RISE_NAUTICAL_TWILIGHT = 359,
+    JME_RISE_NO_REFRACTION = 360,
+    JME_RISE_RISE = 361,
+    JME_RISE_SET = 362,
+    JME_SIDEREAL_ALDEBARAN_15TAU = 363,
+    JME_SIDEREAL_ARYABHATA = 364,
+    JME_SIDEREAL_B1950 = 365,
+    JME_SIDEREAL_BABYL_ETPSC = 366,
+    JME_SIDEREAL_BABYL_HUBER = 367,
+    JME_SIDEREAL_BABYL_KUGLER1 = 368,
+    JME_SIDEREAL_BABYL_KUGLER2 = 369,
+    JME_SIDEREAL_BABYL_KUGLER3 = 370,
+    JME_SIDEREAL_DELUCE = 371,
+    JME_SIDEREAL_GALCENT_0SAG = 372,
+    JME_SIDEREAL_HIPPARCHOS = 373,
+    JME_SIDEREAL_J1900 = 374,
+    JME_SIDEREAL_J2000 = 375,
+    JME_SIDEREAL_JN_BHASIN = 376,
+    JME_SIDEREAL_KRISHNAMURTI = 377,
+    JME_SIDEREAL_RAMAN = 378,
+    JME_SIDEREAL_SASSANIAN = 379,
+    JME_SIDEREAL_SS_CITRA = 380,
+    JME_SIDEREAL_SS_REVATI = 381,
+    JME_SIDEREAL_SURYASIDDHANTA = 382,
+    JME_SIDEREAL_TRUE_CITRA = 383,
+    JME_SIDEREAL_TRUE_MULA = 384,
+    JME_SIDEREAL_TRUE_PUSHYA = 385,
+    JME_SIDEREAL_TRUE_REVATI = 386,
+    JME_SIDEREAL_USHASHASHI = 387,
+    JME_SIDEREAL_YUKTESHWAR = 388,
+    JME_TIME_DELTAT_AUTOMATIC = 389,
+    JME_TIME_TIDAL_AUTOMATIC = 390,
+    JME_TIME_TIDAL_DE200 = 391,
+    JME_TIME_TIDAL_DE403 = 392,
+    JME_TIME_TIDAL_DE404 = 393,
+    JME_TIME_TIDAL_DE405 = 394,
+    JME_TIME_TIDAL_DE406 = 395,
+    JME_TIME_TIDAL_DE421 = 396,
+    JME_TIME_TIDAL_DE430 = 397,
+    JME_TIME_TIDAL_DE431 = 398,
+    JME_TIME_TIDAL_DE441 = 399,
+    JME_VERSION_ID = 400,
+    JME_MODEL_REVISED_IAU_2000 = 401,
+    JME_MODEL_REVISED_IAU_2006 = 402,
+    JME_MODEL_REVISED_PREC_LASKAR = 403,
+    JME_MODEL_REVISED_PREC_VONDRAK = 404,
+    JME_MODEL_REVISED_PREC_LIESKE = 405
 } jme_extended_constant;
+
+double jme_delta_t(double jd_ut);
+
+double jme_delta_t_ex(double jd_ut, int model, char *error);
+
+int jme_get_obliquity(double jd_et, int model, double *eps, char *error);
+
+int jme_get_nutation(double jd_et, int model, double *dpsi, double *deps, char *error);
+
+int jme_get_precession_matrix(double jd_start, double jd_end, int model, double *m);
+
+void jme_get_nutation_matrix(double dpsi_rad, double deps_rad, double eps_rad, double *m);
+
+int jme_get_topo_pos(double jd_et, double *pos_au, char *error);
+
+double jme_get_ayanamsa(double jd_et);
+double jme_get_ayanamsa_ut(double jd_ut);
+int jme_get_ayanamsa_ex(double jd_et, int model, double *ayan, char *error);
+int jme_get_ayanamsa_ex_ut(double jd_ut, int model, double *ayan, char *error);
+
+int jme_time_equ(double jd_ut, double *e, char *error);
+
+void jme_matrix_identity(double *m);
+void jme_matrix_multiply(const double *a, const double *b, double *out);
+void jme_matrix_rotate_x(double angle_rad, double *m);
+void jme_matrix_rotate_y(double angle_rad, double *m);
+void jme_matrix_rotate_z(double angle_rad, double *m);
+void jme_matrix_transform_state(const double *m, const double *input, double *output);
 
 int jme_body_id_from_name(const char *name);
 

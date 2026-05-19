@@ -11,6 +11,9 @@ typedef struct jme_context {
     int sidereal_mode;
     double sidereal_t0;
     double sidereal_ayan_t0;
+    double topo_lon;
+    double topo_lat;
+    double topo_alt;
 } jme_context;
 
 jme_context *jme_get_context(void);

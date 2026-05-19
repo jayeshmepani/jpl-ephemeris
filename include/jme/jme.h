@@ -92,6 +92,78 @@ const char *jme_jpl_file(void);
 void jme_set_jpl_file(const char *path);
 void jme_set_sidereal_mode(int sidereal_mode, double t0, double ayan_t0);
 void jme_get_sidereal_mode(int *sidereal_mode, double *t0, double *ayan_t0);
+void jme_set_topo(double lon, double lat, double altitude);
+
+int jme_calc(double jd_et, int body, int flags, double *results, char *error);
+int jme_calc_ut(double jd_ut, int body, int flags, double *results, char *error);
+int jme_calc_pctr(double jd_et, int body, int center, int flags, double *results, char *error);
+int jme_pheno(double jd_et, int body, int flags, double *attr, char *error);
+int jme_pheno_ut(double jd_ut, int body, int flags, double *attr, char *error);
+int jme_fixstar(const char *star, double jd_et, int flags, double *results, char *error);
+int jme_fixstar_ut(const char *star, double jd_ut, int flags, double *results, char *error);
+int jme_fixstar_mag(const char *star, double *mag, char *error);
+int jme_fixstar2(const char *star, double jd_et, int flags, double *results, char *error);
+int jme_fixstar2_ut(const char *star, double jd_ut, int flags, double *results, char *error);
+int jme_fixstar2_mag(const char *star, double *mag, char *error);
+
+int jme_houses(double jd_ut, double geo_lat, double geo_lon, int house_system, double *cusps, double *ascmc);
+int jme_houses_ex(double jd_ut, int flags, double geo_lat, double geo_lon, int house_system, double *cusps, double *ascmc);
+int jme_houses_ex2(double jd_ut, int flags, double geo_lat, double geo_lon, int house_system, double *cusps, double *ascmc, double *cusps_speed, double *ascmc_speed);
+int jme_houses_armc(double armc, double geo_lat, double eps, int house_system, double *cusps, double *ascmc);
+int jme_houses_armc_ex2(double armc, double geo_lat, double eps, int house_system, double *cusps, double *ascmc, double *cusps_speed, double *ascmc_speed);
+double jme_house_pos(double armc, double geo_lat, double eps, int house_system, double *xpin, char *error);
+
+int jme_gauquelin_sector(double jd_ut, int body, const char *starname, int flags, int imeth, double *geopos, double atpress, double attemp, double *dgsect, char *error);
+
+int jme_sol_eclipse_where(double jd_ut, int flags, double *geopos, double *attr, char *error);
+int jme_sol_eclipse_how(double jd_ut, int flags, double *geopos, double *attr, char *error);
+int jme_sol_eclipse_when_loc(double jd_start, int flags, double *geopos, double *tret, double *attr, int backward, char *error);
+int jme_sol_eclipse_when_glob(double jd_start, int flags, int epheflag, double *tret, int backward, char *error);
+int jme_lun_eclipse_how(double jd_ut, int flags, double *geopos, double *attr, char *error);
+int jme_lun_eclipse_when_loc(double jd_start, int flags, double *geopos, double *tret, double *attr, int backward, char *error);
+int jme_lun_eclipse_when(double jd_start, int flags, int iflag, double *tret, int backward, char *error);
+int jme_lun_occult_where(double jd_ut, int body, const char *starname, int flags, double *geopos, double *attr, char *error);
+int jme_lun_occult_when_loc(double jd_start, int body, const char *starname, int flags, double *geopos, double *tret, double *attr, int backward, char *error);
+int jme_lun_occult_when_glob(double jd_start, int body, const char *starname, int flags, int iflag, double *tret, int backward, char *error);
+
+int jme_rise_trans(double jd_ut, int body, const char *starname, int flags, int rsmi, double *geopos, double atpress, double attemp, double *tret, char *error);
+int jme_rise_trans_true_hor(double jd_ut, int body, const char *starname, int flags, int rsmi, double *geopos, double atpress, double attemp, double horhgt, double *tret, char *error);
+
+int jme_solcross(double x2cross, double jd_ut, int flags, double *tret, char *error);
+int jme_solcross_ut(double x2cross, double jd_ut, int flags, double *tret, char *error);
+int jme_mooncross(double x2cross, double jd_ut, int flags, double *tret, char *error);
+int jme_mooncross_ut(double x2cross, double jd_ut, int flags, double *tret, char *error);
+int jme_mooncross_node(double jd_ut, int flags, double *tret, char *error);
+int jme_mooncross_node_ut(double jd_ut, int flags, double *tret, char *error);
+int jme_helio_cross(int body, double x2cross, double jd_ut, int flags, double *tret, char *error);
+int jme_helio_cross_ut(int body, double x2cross, double jd_ut, int flags, double *tret, char *error);
+
+int jme_nod_aps(double jd_et, int body, int flags, int method, double *tret, char *error);
+int jme_nod_aps_ut(double jd_ut, int body, int flags, int method, double *tret, char *error);
+int jme_get_orbital_elements(double jd_et, int body, int flags, double *elem, char *error);
+int jme_orbit_max_min_true_distance(double jd_et, int body, int flags, double *tmax, double *tmin, double *dmax, double *dmin, char *error);
+
+int jme_heliacal_ut(double jd_ut, double *geopos, double *dat_hel, char *error);
+int jme_heliacal_pheno_ut(double jd_ut, double *geopos, double *dat_hel, char *error);
+int jme_vis_limit_mag(double jd_ut, double *geopos, double *dat_hel, char *error);
+double jme_heliacal_angle(double jd_ut, double *geopos, double *dat_hel, char *error);
+double jme_topo_arcus_visionis(double jd_ut, double *geopos, double *dat_hel, char *error);
+
+void jme_set_astro_models(const char *models, int flags);
+int jme_get_astro_models(char *models, int flags);
+void jme_set_lapse_rate(double lapse_rate);
+void jme_set_interpolate_nut(int on);
+double jme_get_tid_acc(void);
+void jme_set_tid_acc(double t_acc);
+void jme_set_delta_t_userdef(double dt);
+const char *jme_get_ayanamsa_name(int model);
+
+int jme_lmt_to_lat(double jd_lmt, double geo_lon, double *jd_lat, char *error);
+int jme_lat_to_lmt(double jd_lat, double geo_lon, double *jd_lmt, char *error);
+
+char *jme_centiseconds_to_time_string(int cs, char *buffer);
+char *jme_centiseconds_to_lonlat_string(int cs, char *buffer);
+char *jme_centiseconds_to_degree_string(int cs, char *buffer);
 
 double jme_julian_day(int year, int month, int day, double hour, int calendar);
 int jme_calendar_is_leap_year(int year, int calendar);

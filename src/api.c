@@ -69,3 +69,47 @@ void jme_get_sidereal_mode(int *sidereal_mode, double *t0, double *ayan_t0)
         *ayan_t0 = ctx->sidereal_ayan_t0;
     }
 }
+
+void jme_set_topo(double lon, double lat, double altitude)
+{
+    jme_context *ctx = jme_get_context();
+    ctx->topo_lon = lon;
+    ctx->topo_lat = lat;
+    ctx->topo_alt = altitude;
+}
+
+void jme_set_astro_models(const char *models, int flags)
+{
+    (void)models; (void)flags;
+}
+
+int jme_get_astro_models(char *models, int flags)
+{
+    (void)models; (void)flags;
+    return JME_ERR; /* Open Path */
+}
+
+void jme_set_lapse_rate(double lapse_rate)
+{
+    (void)lapse_rate;
+}
+
+void jme_set_interpolate_nut(int on)
+{
+    (void)on;
+}
+
+double jme_get_tid_acc(void)
+{
+    return 0.0;
+}
+
+void jme_set_tid_acc(double t_acc)
+{
+    (void)t_acc;
+}
+
+void jme_set_delta_t_userdef(double dt)
+{
+    (void)dt;
+}

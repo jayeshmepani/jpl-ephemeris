@@ -18,8 +18,13 @@ find_package(calceph CONFIG QUIET)
 add_library(jme
     src/api.c
     src/angle.c
+    src/astrometry.c
+    src/calc.c
     src/context.c
     src/coordinates.c
+    src/events.c
+    src/fixstar.c
+    src/houses.c
     src/julian.c
     src/jpl.c
     src/metadata.c
@@ -67,6 +72,14 @@ if (JME_BUILD_TESTS)
     add_executable(test_jpl_runtime tests/test_jpl_runtime.c)
     target_link_libraries(test_jpl_runtime PRIVATE jme)
     add_test(NAME jpl_runtime COMMAND test_jpl_runtime)
+
+    add_executable(test_all_constants tests/test_all_constants.c)
+    target_link_libraries(test_all_constants PRIVATE jme)
+    add_test(NAME all_constants COMMAND test_all_constants)
+
+    add_executable(test_all_functions tests/test_all_functions.c)
+    target_link_libraries(test_all_functions PRIVATE jme)
+    add_test(NAME all_functions COMMAND test_all_functions)
 
     find_program(PWSH_EXECUTABLE NAMES pwsh powershell)
     if (PWSH_EXECUTABLE)

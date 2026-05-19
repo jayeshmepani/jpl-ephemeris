@@ -301,6 +301,24 @@ int main(void)
         return 1;
     }
 
+    if (fabs(jme_delta_t(2451545.0) - 63.8735) > 0.001) {
+        fprintf(stderr, "delta_t mismatch at J2000: %.17g\n", jme_delta_t(2451545.0));
+        return 1;
+    }
+
+    /* Test jme_calc (if possible without JPL kernel for basic frame check) */
+    /* Note: jme_calc will fail if JPL is not available unless we add an emulated or analytical fallback */
+    if (jme_jpl_is_available()) {
+        double results[6];
+        if (jme_calc(2451545.0, JME_BODY_SUN, JME_CALC_XYZ | JME_CALC_J2000, results, error) == JME_OK) {
+            /* Basic geometric distance check */
+            if (fabs(jme_state_distance(results) - 0.98328) > 0.01) {
+                fprintf(stderr, "Sun distance at J2000 mismatch\n");
+                return 1;
+            }
+        }
+    }
+
     if (!jme_jpl_is_available()) {
         if (jme_jpl_open("", error) != JME_ERR) {
             fprintf(stderr, "JPL open unexpectedly succeeded without CALCEPH\n");

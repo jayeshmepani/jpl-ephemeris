@@ -7,6 +7,9 @@ static jme_context g_context = {
     "",
     0,
     0.0,
+    0.0,
+    0.0,
+    0.0,
     0.0
 };
 

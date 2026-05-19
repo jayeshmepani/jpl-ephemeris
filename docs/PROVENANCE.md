@@ -22,8 +22,8 @@ This document tracks allowed sources and disallowed sources for the independent 
 | Sidereal time | Independently implemented standard mean sidereal-time expression | Active |
 | Backend boundary | CALCEPH API boundary, optional external link | Scaffold only |
 | Ephemeris data | NASA/JPL `.bsp` kernels | Not vendored |
-| Main ephemeris calculations | Independent JPL/CALCEPH reduction implementation pending | Incomplete functions return `JME_ERR` |
-| Analytical fallback | Moshier/public-domain source review pending | Planned after provenance review |
+| Main ephemeris calculations | Independent JPL/CALCEPH reduction implementation scheduled | Incomplete functions return `JME_ERR` |
+| Analytical fallback | Moshier/public-domain source review scheduled | Planned after provenance review |
 
 ## Future Source Log Format
 

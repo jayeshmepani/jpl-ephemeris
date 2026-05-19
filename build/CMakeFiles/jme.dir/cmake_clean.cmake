@@ -1,0 +1,37 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/jme.dir/src/angle.c.o"
+  "CMakeFiles/jme.dir/src/angle.c.o.d"
+  "CMakeFiles/jme.dir/src/api.c.o"
+  "CMakeFiles/jme.dir/src/api.c.o.d"
+  "CMakeFiles/jme.dir/src/astrometry.c.o"
+  "CMakeFiles/jme.dir/src/astrometry.c.o.d"
+  "CMakeFiles/jme.dir/src/calc.c.o"
+  "CMakeFiles/jme.dir/src/calc.c.o.d"
+  "CMakeFiles/jme.dir/src/context.c.o"
+  "CMakeFiles/jme.dir/src/context.c.o.d"
+  "CMakeFiles/jme.dir/src/coordinates.c.o"
+  "CMakeFiles/jme.dir/src/coordinates.c.o.d"
+  "CMakeFiles/jme.dir/src/events.c.o"
+  "CMakeFiles/jme.dir/src/events.c.o.d"
+  "CMakeFiles/jme.dir/src/fixstar.c.o"
+  "CMakeFiles/jme.dir/src/fixstar.c.o.d"
+  "CMakeFiles/jme.dir/src/houses.c.o"
+  "CMakeFiles/jme.dir/src/houses.c.o.d"
+  "CMakeFiles/jme.dir/src/jpl.c.o"
+  "CMakeFiles/jme.dir/src/jpl.c.o.d"
+  "CMakeFiles/jme.dir/src/julian.c.o"
+  "CMakeFiles/jme.dir/src/julian.c.o.d"
+  "CMakeFiles/jme.dir/src/metadata.c.o"
+  "CMakeFiles/jme.dir/src/metadata.c.o.d"
+  "CMakeFiles/jme.dir/src/sidereal.c.o"
+  "CMakeFiles/jme.dir/src/sidereal.c.o.d"
+  "CMakeFiles/jme.dir/src/time.c.o"
+  "CMakeFiles/jme.dir/src/time.c.o.d"
+  "libjme.a"
+  "libjme.pdb"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang C)
+  include(CMakeFiles/jme.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()

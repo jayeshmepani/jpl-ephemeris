@@ -1,6 +1,8 @@
 #include "jme/jme.h"
 
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define JME_DEG360 360.0
 #define JME_RAD2PI 6.2831853071795864769252867665590057683943387987502
@@ -174,4 +176,33 @@ void jme_split_degree(
     if (isgn != 0) {
         *isgn = ddeg < 0.0 ? -1 : 1;
     }
+}
+
+char *jme_centiseconds_to_time_string(int cs, char *buffer)
+{
+    int h, m, s, c;
+    h = cs / 360000;
+    m = (cs % 360000) / 6000;
+    s = (cs % 6000) / 100;
+    c = cs % 100;
+    sprintf(buffer, "%02d:%02d:%02d.%02d", h, m, s, c);
+    return buffer;
+}
+
+char *jme_centiseconds_to_lonlat_string(int cs, char *buffer)
+{
+    int d, m, s, c;
+    char sign = (cs >= 0) ? '+' : '-';
+    int acs = abs(cs);
+    d = acs / 360000;
+    m = (acs % 360000) / 6000;
+    s = (acs % 6000) / 100;
+    c = acs % 100;
+    sprintf(buffer, "%c%03d°%02d'%02d.%02d\"", sign, d, m, s, c);
+    return buffer;
+}
+
+char *jme_centiseconds_to_degree_string(int cs, char *buffer)
+{
+    return jme_centiseconds_to_lonlat_string(cs, buffer);
 }

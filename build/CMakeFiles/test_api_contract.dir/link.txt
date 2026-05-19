@@ -1,0 +1,1 @@
+/usr/bin/cc -Wl,--dependency-file=CMakeFiles/test_api_contract.dir/link.d CMakeFiles/test_api_contract.dir/tests/test_api_contract.c.o -o test_api_contract  libjme.a -lm

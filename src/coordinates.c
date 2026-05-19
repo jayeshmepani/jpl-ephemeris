@@ -504,3 +504,92 @@ int jme_state_scale(const double *input, double factor, double *output)
 
     return JME_OK;
 }
+
+void jme_matrix_identity(double *m)
+{
+    int i;
+    for (i = 0; i < 9; i++) {
+        m[i] = 0.0;
+    }
+    m[0] = m[4] = m[8] = 1.0;
+}
+
+void jme_matrix_multiply(const double *a, const double *b, double *out)
+{
+    int i, j, k;
+    double res[9];
+
+    for (i = 0; i < 3; i++) {
+        for (j = 0; j < 3; j++) {
+            res[i * 3 + j] = 0.0;
+            for (k = 0; k < 3; k++) {
+                res[i * 3 + j] += a[i * 3 + k] * b[k * 3 + j];
+            }
+        }
+    }
+
+    for (i = 0; i < 9; i++) {
+        out[i] = res[i];
+    }
+}
+
+void jme_matrix_rotate_x(double angle_rad, double *m)
+{
+    double c = cos(angle_rad);
+    double s = sin(angle_rad);
+    double res[9];
+
+    jme_matrix_identity(res);
+    res[4] = c;
+    res[5] = s;
+    res[7] = -s;
+    res[8] = c;
+    jme_matrix_multiply(res, m, m);
+}
+
+void jme_matrix_rotate_y(double angle_rad, double *m)
+{
+    double c = cos(angle_rad);
+    double s = sin(angle_rad);
+    double res[9];
+
+    jme_matrix_identity(res);
+    res[0] = c;
+    res[2] = -s;
+    res[6] = s;
+    res[8] = c;
+    jme_matrix_multiply(res, m, m);
+}
+
+void jme_matrix_rotate_z(double angle_rad, double *m)
+{
+    double c = cos(angle_rad);
+    double s = sin(angle_rad);
+    double res[9];
+
+    jme_matrix_identity(res);
+    res[0] = c;
+    res[1] = s;
+    res[3] = -s;
+    res[4] = c;
+    jme_matrix_multiply(res, m, m);
+}
+
+void jme_matrix_transform_state(const double *m, const double *input, double *output)
+{
+    int i, j;
+    double res[6];
+
+    for (i = 0; i < 3; i++) {
+        res[i] = 0.0;
+        res[i + 3] = 0.0;
+        for (j = 0; j < 3; j++) {
+            res[i] += m[i * 3 + j] * input[j];
+            res[i + 3] += m[i * 3 + j] * input[j + 3];
+        }
+    }
+
+    for (i = 0; i < 6; i++) {
+        output[i] = res[i];
+    }
+}

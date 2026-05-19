@@ -1,0 +1,1 @@
+/usr/bin/cc -Wl,--dependency-file=CMakeFiles/test_jpl_runtime.dir/link.d CMakeFiles/test_jpl_runtime.dir/tests/test_jpl_runtime.c.o -o test_jpl_runtime  libjme.a -lm
