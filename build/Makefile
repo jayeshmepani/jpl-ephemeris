@@ -348,6 +348,30 @@ src/coordinates.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/coordinates.c.s
 .PHONY : src/coordinates.c.s
 
+src/elp2000.o: src/elp2000.c.o
+.PHONY : src/elp2000.o
+
+# target to build an object file
+src/elp2000.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/elp2000.c.o
+.PHONY : src/elp2000.c.o
+
+src/elp2000.i: src/elp2000.c.i
+.PHONY : src/elp2000.i
+
+# target to preprocess a source file
+src/elp2000.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/elp2000.c.i
+.PHONY : src/elp2000.c.i
+
+src/elp2000.s: src/elp2000.c.s
+.PHONY : src/elp2000.s
+
+# target to generate assembly for a file
+src/elp2000.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/elp2000.c.s
+.PHONY : src/elp2000.c.s
+
 src/events.o: src/events.c.o
 .PHONY : src/events.o
 
@@ -468,6 +492,30 @@ src/julian.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/julian.c.s
 .PHONY : src/julian.c.s
 
+src/meeus.o: src/meeus.c.o
+.PHONY : src/meeus.o
+
+# target to build an object file
+src/meeus.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/meeus.c.o
+.PHONY : src/meeus.c.o
+
+src/meeus.i: src/meeus.c.i
+.PHONY : src/meeus.i
+
+# target to preprocess a source file
+src/meeus.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/meeus.c.i
+.PHONY : src/meeus.c.i
+
+src/meeus.s: src/meeus.c.s
+.PHONY : src/meeus.s
+
+# target to generate assembly for a file
+src/meeus.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/meeus.c.s
+.PHONY : src/meeus.c.s
+
 src/metadata.o: src/metadata.c.o
 .PHONY : src/metadata.o
 
@@ -491,6 +539,30 @@ src/metadata.s: src/metadata.c.s
 src/metadata.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/metadata.c.s
 .PHONY : src/metadata.c.s
+
+src/moshier_full.o: src/moshier_full.c.o
+.PHONY : src/moshier_full.o
+
+# target to build an object file
+src/moshier_full.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/moshier_full.c.o
+.PHONY : src/moshier_full.c.o
+
+src/moshier_full.i: src/moshier_full.c.i
+.PHONY : src/moshier_full.i
+
+# target to preprocess a source file
+src/moshier_full.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/moshier_full.c.i
+.PHONY : src/moshier_full.c.i
+
+src/moshier_full.s: src/moshier_full.c.s
+.PHONY : src/moshier_full.s
+
+# target to generate assembly for a file
+src/moshier_full.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/moshier_full.c.s
+.PHONY : src/moshier_full.c.s
 
 src/sidereal.o: src/sidereal.c.o
 .PHONY : src/sidereal.o
@@ -539,6 +611,30 @@ src/time.s: src/time.c.s
 src/time.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/time.c.s
 .PHONY : src/time.c.s
+
+src/vsop87.o: src/vsop87.c.o
+.PHONY : src/vsop87.o
+
+# target to build an object file
+src/vsop87.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/vsop87.c.o
+.PHONY : src/vsop87.c.o
+
+src/vsop87.i: src/vsop87.c.i
+.PHONY : src/vsop87.i
+
+# target to preprocess a source file
+src/vsop87.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/vsop87.c.i
+.PHONY : src/vsop87.c.i
+
+src/vsop87.s: src/vsop87.c.s
+.PHONY : src/vsop87.s
+
+# target to generate assembly for a file
+src/vsop87.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/vsop87.c.s
+.PHONY : src/vsop87.c.s
 
 tests/test_all_constants.o: tests/test_all_constants.c.o
 .PHONY : tests/test_all_constants.o
@@ -693,6 +789,9 @@ help:
 	@echo "... src/coordinates.o"
 	@echo "... src/coordinates.i"
 	@echo "... src/coordinates.s"
+	@echo "... src/elp2000.o"
+	@echo "... src/elp2000.i"
+	@echo "... src/elp2000.s"
 	@echo "... src/events.o"
 	@echo "... src/events.i"
 	@echo "... src/events.s"
@@ -708,15 +807,24 @@ help:
 	@echo "... src/julian.o"
 	@echo "... src/julian.i"
 	@echo "... src/julian.s"
+	@echo "... src/meeus.o"
+	@echo "... src/meeus.i"
+	@echo "... src/meeus.s"
 	@echo "... src/metadata.o"
 	@echo "... src/metadata.i"
 	@echo "... src/metadata.s"
+	@echo "... src/moshier_full.o"
+	@echo "... src/moshier_full.i"
+	@echo "... src/moshier_full.s"
 	@echo "... src/sidereal.o"
 	@echo "... src/sidereal.i"
 	@echo "... src/sidereal.s"
 	@echo "... src/time.o"
 	@echo "... src/time.i"
 	@echo "... src/time.s"
+	@echo "... src/vsop87.o"
+	@echo "... src/vsop87.i"
+	@echo "... src/vsop87.s"
 	@echo "... tests/test_all_constants.o"
 	@echo "... tests/test_all_constants.i"
 	@echo "... tests/test_all_constants.s"

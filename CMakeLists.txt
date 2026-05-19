@@ -22,14 +22,18 @@ add_library(jme
     src/calc.c
     src/context.c
     src/coordinates.c
+    src/elp2000.c
     src/events.c
     src/fixstar.c
     src/houses.c
     src/julian.c
     src/jpl.c
     src/metadata.c
+    src/meeus.c
+    src/moshier_full.c
     src/sidereal.c
     src/time.c
+    src/vsop87.c
 )
 
 target_include_directories(jme

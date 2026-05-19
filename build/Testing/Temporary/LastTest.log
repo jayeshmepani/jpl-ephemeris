@@ -1,17 +1,17 @@
-Start testing: May 19 11:04 IST
+Start testing: May 19 12:38 IST
 ----------------------------------------------------------
 1/7 Testing: julian
 1/7 Test: julian
 Command: "/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/test_julian"
 Directory: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build
-"julian" start time: May 19 11:04 IST
+"julian" start time: May 19 12:38 IST
 Output:
 ----------------------------------------------------------
 <end of output>
 Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"julian" end time: May 19 11:04 IST
+"julian" end time: May 19 12:38 IST
 "julian" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -19,14 +19,14 @@ Test Passed.
 2/7 Test: api_contract
 Command: "/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/test_api_contract"
 Directory: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build
-"api_contract" start time: May 19 11:04 IST
+"api_contract" start time: May 19 12:38 IST
 Output:
 ----------------------------------------------------------
 <end of output>
-Test time =   0.00 sec
+Test time =   0.01 sec
 ----------------------------------------------------------
 Test Passed.
-"api_contract" end time: May 19 11:04 IST
+"api_contract" end time: May 19 12:38 IST
 "api_contract" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -34,14 +34,14 @@ Test Passed.
 3/7 Test: jpl_runtime
 Command: "/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/test_jpl_runtime"
 Directory: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build
-"jpl_runtime" start time: May 19 11:04 IST
+"jpl_runtime" start time: May 19 12:38 IST
 Output:
 ----------------------------------------------------------
 <end of output>
-Test time =   0.01 sec
+Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"jpl_runtime" end time: May 19 11:04 IST
+"jpl_runtime" end time: May 19 12:38 IST
 "jpl_runtime" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -49,7 +49,7 @@ Test Passed.
 4/7 Test: all_constants
 Command: "/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/test_all_constants"
 Directory: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build
-"all_constants" start time: May 19 11:04 IST
+"all_constants" start time: May 19 12:38 IST
 Output:
 ----------------------------------------------------------
 All constants verified successfully.
@@ -57,7 +57,7 @@ All constants verified successfully.
 Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"all_constants" end time: May 19 11:04 IST
+"all_constants" end time: May 19 12:38 IST
 "all_constants" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -65,7 +65,7 @@ Test Passed.
 5/7 Test: all_functions
 Command: "/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/test_all_functions"
 Directory: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build
-"all_functions" start time: May 19 11:04 IST
+"all_functions" start time: May 19 12:38 IST
 Output:
 ----------------------------------------------------------
 Testing metadata and paths...
@@ -87,7 +87,7 @@ All functions tested successfully!
 Test time =   0.01 sec
 ----------------------------------------------------------
 Test Passed.
-"all_functions" end time: May 19 11:04 IST
+"all_functions" end time: May 19 12:38 IST
 "all_functions" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -95,37 +95,37 @@ Test Passed.
 6/7 Test: api_inventory
 Command: "/usr/bin/pwsh" "-NoProfile" "-ExecutionPolicy" "Bypass" "-File" "/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/tests/test_inventory.ps1"
 Directory: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build
-"api_inventory" start time: May 19 11:04 IST
+"api_inventory" start time: May 19 12:38 IST
 Output:
 ----------------------------------------------------------
 reference_constants=348
-jme_functions=185
+jme_functions=191
 jme_constants=460
 <end of output>
-Test time =   1.27 sec
+Test time =   0.69 sec
 ----------------------------------------------------------
 Test Passed.
-"api_inventory" end time: May 19 11:04 IST
-"api_inventory" time elapsed: 00:00:01
+"api_inventory" end time: May 19 12:38 IST
+"api_inventory" time elapsed: 00:00:00
 ----------------------------------------------------------
 
 7/7 Testing: symbol_coverage
 7/7 Test: symbol_coverage
 Command: "/usr/bin/pwsh" "-NoProfile" "-ExecutionPolicy" "Bypass" "-File" "/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/tests/test_symbol_coverage.ps1"
 Directory: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build
-"symbol_coverage" start time: May 19 11:04 IST
+"symbol_coverage" start time: May 19 12:38 IST
 Output:
 ----------------------------------------------------------
-jme_functions_total=185
-jme_functions_defined=185
+jme_functions_total=191
+jme_functions_defined=191
 jme_constants_total=460
 reference_constants_total=348
 <end of output>
-Test time =   0.86 sec
+Test time =   0.69 sec
 ----------------------------------------------------------
 Test Passed.
-"symbol_coverage" end time: May 19 11:05 IST
+"symbol_coverage" end time: May 19 12:38 IST
 "symbol_coverage" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-End testing: May 19 11:05 IST
+End testing: May 19 12:38 IST

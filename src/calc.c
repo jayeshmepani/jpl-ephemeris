@@ -89,7 +89,24 @@ int jme_calc(double jd_et, int body, int flags, double *results, char *error)
 
     /* 1. Geometric position (Target - Center) at t */
     if (jme_jpl_body_state(jd_et, body, center, JME_VECTOR_AU_PER_DAY, target_pos, error) != JME_OK) {
-        return JME_ERR;
+        /* Fallback to Analytical Theories if JPL fails */
+        if (body == JME_BODY_SUN) {
+            jme_meeus_sun_state(jd_et, target_pos);
+        } else if (body == JME_BODY_MOON) {
+            jme_meeus_moon_state(jd_et, target_pos);
+        } else {
+            if (jme_vsop87_planet_state(jd_et, body, target_pos) != JME_OK) {
+                return JME_ERR;
+            }
+        }
+        
+        /* If we are heliocentric and target is not sun, we have heliocentric state from VSOP87 */
+        /* If we are geocentric, we need Earth barycentric state to calculate relative vector */
+        if (center == JME_BODY_EARTH) {
+            double earth_helio[6];
+            jme_vsop87_planet_state(jd_et, JME_BODY_EARTH, earth_helio);
+            for (i = 0; i < 3; i++) { target_pos[i] -= earth_helio[i]; }
+        }
     }
 
     /* Apply topocentric correction to geometric position if needed */

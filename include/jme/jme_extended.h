@@ -978,6 +978,18 @@ int jme_utc_to_jd(
     double *jd_utc
 );
 
+int jme_vsop87_planet_state(double jd_et, int body, double *results);
+
+int jme_meeus_sun_state(double jd_et, double *results);
+
+int jme_meeus_moon_state(double jd_et, double *results);
+
+int jme_elp2000_moon_state(double jd_et, double *results);
+
+int jme_meeus_planet_state(double jd_et, int body, double *results);
+
+int jme_moshier_planet_state(double jd_et, int body, double *results);
+
 #ifdef __cplusplus
 }
 #endif

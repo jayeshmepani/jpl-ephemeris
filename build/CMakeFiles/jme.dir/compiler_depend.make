@@ -162,6 +162,35 @@ CMakeFiles/jme.dir/src/coordinates.c.o: /home/shreesoftech/projects/test1/astro_
   /usr/include/x86_64-linux-gnu/sys/cdefs.h \
   /usr/lib/gcc/x86_64-linux-gnu/15/include/stddef.h
 
+CMakeFiles/jme.dir/src/elp2000.c.o: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/elp2000.c \
+  /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/include/jme/jme.h \
+  /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/include/jme/jme_extended.h \
+  /usr/include/features-time64.h \
+  /usr/include/features.h \
+  /usr/include/math.h \
+  /usr/include/stdc-predef.h \
+  /usr/include/x86_64-linux-gnu/bits/floatn-common.h \
+  /usr/include/x86_64-linux-gnu/bits/floatn.h \
+  /usr/include/x86_64-linux-gnu/bits/flt-eval-method.h \
+  /usr/include/x86_64-linux-gnu/bits/fp-fast.h \
+  /usr/include/x86_64-linux-gnu/bits/fp-logb.h \
+  /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
+  /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h \
+  /usr/include/x86_64-linux-gnu/bits/long-double.h \
+  /usr/include/x86_64-linux-gnu/bits/math-vector.h \
+  /usr/include/x86_64-linux-gnu/bits/mathcalls-helper-functions.h \
+  /usr/include/x86_64-linux-gnu/bits/mathcalls-macros.h \
+  /usr/include/x86_64-linux-gnu/bits/mathcalls.h \
+  /usr/include/x86_64-linux-gnu/bits/time64.h \
+  /usr/include/x86_64-linux-gnu/bits/timesize.h \
+  /usr/include/x86_64-linux-gnu/bits/types.h \
+  /usr/include/x86_64-linux-gnu/bits/typesizes.h \
+  /usr/include/x86_64-linux-gnu/bits/wordsize.h \
+  /usr/include/x86_64-linux-gnu/gnu/stubs-64.h \
+  /usr/include/x86_64-linux-gnu/gnu/stubs.h \
+  /usr/include/x86_64-linux-gnu/sys/cdefs.h \
+  /usr/lib/gcc/x86_64-linux-gnu/15/include/stddef.h
+
 CMakeFiles/jme.dir/src/events.c.o: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/events.c \
   /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/include/jme/jme.h \
   /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/include/jme/jme_extended.h \
@@ -314,6 +343,36 @@ CMakeFiles/jme.dir/src/julian.c.o: /home/shreesoftech/projects/test1/astro_packa
   /usr/include/x86_64-linux-gnu/sys/cdefs.h \
   /usr/lib/gcc/x86_64-linux-gnu/15/include/stddef.h
 
+CMakeFiles/jme.dir/src/meeus.c.o: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/meeus.c \
+  /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/include/jme/jme.h \
+  /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/include/jme/jme_extended.h \
+  /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/context.h \
+  /usr/include/features-time64.h \
+  /usr/include/features.h \
+  /usr/include/math.h \
+  /usr/include/stdc-predef.h \
+  /usr/include/x86_64-linux-gnu/bits/floatn-common.h \
+  /usr/include/x86_64-linux-gnu/bits/floatn.h \
+  /usr/include/x86_64-linux-gnu/bits/flt-eval-method.h \
+  /usr/include/x86_64-linux-gnu/bits/fp-fast.h \
+  /usr/include/x86_64-linux-gnu/bits/fp-logb.h \
+  /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
+  /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h \
+  /usr/include/x86_64-linux-gnu/bits/long-double.h \
+  /usr/include/x86_64-linux-gnu/bits/math-vector.h \
+  /usr/include/x86_64-linux-gnu/bits/mathcalls-helper-functions.h \
+  /usr/include/x86_64-linux-gnu/bits/mathcalls-macros.h \
+  /usr/include/x86_64-linux-gnu/bits/mathcalls.h \
+  /usr/include/x86_64-linux-gnu/bits/time64.h \
+  /usr/include/x86_64-linux-gnu/bits/timesize.h \
+  /usr/include/x86_64-linux-gnu/bits/types.h \
+  /usr/include/x86_64-linux-gnu/bits/typesizes.h \
+  /usr/include/x86_64-linux-gnu/bits/wordsize.h \
+  /usr/include/x86_64-linux-gnu/gnu/stubs-64.h \
+  /usr/include/x86_64-linux-gnu/gnu/stubs.h \
+  /usr/include/x86_64-linux-gnu/sys/cdefs.h \
+  /usr/lib/gcc/x86_64-linux-gnu/15/include/stddef.h
+
 CMakeFiles/jme.dir/src/metadata.c.o: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/metadata.c \
   /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/include/jme/jme.h \
   /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/include/jme/jme_extended.h \
@@ -390,16 +449,51 @@ CMakeFiles/jme.dir/src/time.c.o: /home/shreesoftech/projects/test1/astro_package
   /usr/include/x86_64-linux-gnu/sys/cdefs.h \
   /usr/lib/gcc/x86_64-linux-gnu/15/include/stddef.h
 
+CMakeFiles/jme.dir/src/vsop87.c.o: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/vsop87.c \
+  /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/include/jme/jme.h \
+  /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/include/jme/jme_extended.h \
+  /usr/include/features-time64.h \
+  /usr/include/features.h \
+  /usr/include/math.h \
+  /usr/include/stdc-predef.h \
+  /usr/include/x86_64-linux-gnu/bits/floatn-common.h \
+  /usr/include/x86_64-linux-gnu/bits/floatn.h \
+  /usr/include/x86_64-linux-gnu/bits/flt-eval-method.h \
+  /usr/include/x86_64-linux-gnu/bits/fp-fast.h \
+  /usr/include/x86_64-linux-gnu/bits/fp-logb.h \
+  /usr/include/x86_64-linux-gnu/bits/libc-header-start.h \
+  /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h \
+  /usr/include/x86_64-linux-gnu/bits/long-double.h \
+  /usr/include/x86_64-linux-gnu/bits/math-vector.h \
+  /usr/include/x86_64-linux-gnu/bits/mathcalls-helper-functions.h \
+  /usr/include/x86_64-linux-gnu/bits/mathcalls-macros.h \
+  /usr/include/x86_64-linux-gnu/bits/mathcalls.h \
+  /usr/include/x86_64-linux-gnu/bits/time64.h \
+  /usr/include/x86_64-linux-gnu/bits/timesize.h \
+  /usr/include/x86_64-linux-gnu/bits/types.h \
+  /usr/include/x86_64-linux-gnu/bits/typesizes.h \
+  /usr/include/x86_64-linux-gnu/bits/wordsize.h \
+  /usr/include/x86_64-linux-gnu/gnu/stubs-64.h \
+  /usr/include/x86_64-linux-gnu/gnu/stubs.h \
+  /usr/include/x86_64-linux-gnu/sys/cdefs.h \
+  /usr/lib/gcc/x86_64-linux-gnu/15/include/stddef.h
+
 
 /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/time.c:
 
 /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/metadata.c:
 
+/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/meeus.c:
+
 /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/houses.c:
+
+/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/elp2000.c:
 
 /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/calc.c:
 
 /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/context.h:
+
+/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/vsop87.c:
 
 /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/api.c:
 
