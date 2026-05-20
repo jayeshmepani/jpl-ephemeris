@@ -4,28 +4,297 @@
 
 #define JME_C_AU_PER_DAY 173.1446326846693
 #define JME_DEG_TO_RAD 0.017453292519943295769236907684886127134428718885417
+#define JME_PI 3.14159265358979323846264338327950288419716939937510
+
+static double angle_to_output_unit(double degrees, int flags)
+{
+    if (flags & JME_CALC_RADIANS) {
+        return degrees * JME_DEG_TO_RAD;
+    }
+
+    return degrees;
+}
+
+static int state_is_finite(const double *state, int count)
+{
+    int i;
+
+    if (state == 0) {
+        return 0;
+    }
+
+    for (i = 0; i < count; i++) {
+        if (!isfinite(state[i])) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
+static int state_distance_is_usable(const double *state, double *distance, char *error)
+{
+    *distance = jme_state_distance(state);
+    if (!isfinite(*distance) || *distance <= 0.0) {
+        jme_set_error(error, "Calculation produced invalid distance");
+        return JME_ERR;
+    }
+
+    return JME_OK;
+}
+
+static double vector_angle_degrees(const double *a, const double *b)
+{
+    double adotb = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    double amag = sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
+    double bmag = sqrt(b[0] * b[0] + b[1] * b[1] + b[2] * b[2]);
+    double c;
+
+    if (!isfinite(amag) || !isfinite(bmag) || amag <= 0.0 || bmag <= 0.0) {
+        return NAN;
+    }
+
+    c = adotb / (amag * bmag);
+    if (c > 1.0) { c = 1.0; }
+    if (c < -1.0) { c = -1.0; }
+    return acos(c) * 180.0 / JME_PI;
+}
+
+static double body_equatorial_radius_km(int body)
+{
+    switch (body) {
+    case JME_BODY_SUN: return 695700.0;
+    case JME_BODY_MOON: return 1737.4;
+    case JME_BODY_MERCURY: return 2439.7;
+    case JME_BODY_VENUS: return 6051.8;
+    case JME_BODY_MARS: return 3396.2;
+    case JME_BODY_JUPITER: return 71492.0;
+    case JME_BODY_SATURN: return 60268.0;
+    case JME_BODY_URANUS: return 25559.0;
+    case JME_BODY_NEPTUNE: return 24764.0;
+    case JME_BODY_PLUTO: return 1188.3;
+    default: return 0.0;
+    }
+}
+
+static double apparent_magnitude_estimate(int body, double r, double delta, double phase_angle)
+{
+    double rd;
+
+    if (!isfinite(r) || !isfinite(delta) || r <= 0.0 || delta <= 0.0 || !isfinite(phase_angle)) {
+        return NAN;
+    }
+
+    rd = 5.0 * log10(r * delta);
+    switch (body) {
+    case JME_BODY_SUN:
+        return -26.74;
+    case JME_BODY_MOON:
+        return -12.73 + 0.026 * phase_angle + 4.0e-9 * phase_angle * phase_angle * phase_angle * phase_angle;
+    case JME_BODY_MERCURY:
+        return -0.42 + rd + 0.0380 * phase_angle - 0.000273 * phase_angle * phase_angle + 0.000002 * phase_angle * phase_angle * phase_angle;
+    case JME_BODY_VENUS:
+        return -4.40 + rd + 0.0009 * phase_angle + 0.000239 * phase_angle * phase_angle - 0.00000065 * phase_angle * phase_angle * phase_angle;
+    case JME_BODY_MARS:
+        return -1.52 + rd + 0.016 * phase_angle;
+    case JME_BODY_JUPITER:
+        return -9.40 + rd + 0.005 * phase_angle;
+    case JME_BODY_SATURN:
+        return -8.88 + rd + 0.044 * phase_angle;
+    case JME_BODY_URANUS:
+        return -7.19 + rd;
+    case JME_BODY_NEPTUNE:
+        return -6.87 + rd;
+    case JME_BODY_PLUTO:
+        return -1.0 + rd;
+    default:
+        return NAN;
+    }
+}
+
+static int lunar_node_spherical_state(double jd_et, int body, double *state)
+{
+    double t = (jd_et - 2451545.0) / 36525.0;
+    double omega;
+    double d;
+    double m;
+    double mp;
+    double f;
+    double speed;
+
+    if (body != JME_BODY_MEAN_NODE && body != JME_BODY_TRUE_NODE) {
+        return JME_ERR;
+    }
+
+    omega = 125.0445479
+        - 1934.1362891 * t
+        + 0.0020754 * t * t
+        + (t * t * t) / 467441.0
+        - (t * t * t * t) / 60616000.0;
+
+    if (body == JME_BODY_TRUE_NODE) {
+        d = 297.8501921 + 445267.1114034 * t - 0.0018819 * t * t + t * t * t / 545868.0 - t * t * t * t / 113065000.0;
+        m = 357.5291092 + 35999.0502909 * t - 0.0001536 * t * t + t * t * t / 24490000.0;
+        mp = 134.9633964 + 477198.8675055 * t + 0.0087414 * t * t + t * t * t / 69699.0 - t * t * t * t / 14712000.0;
+        f = 93.2720950 + 483202.0175233 * t - 0.0036539 * t * t - t * t * t / 3526000.0 + t * t * t * t / 863310000.0;
+
+        omega += -1.4979 * sin((2.0 * (d - f)) * JME_DEG_TO_RAD)
+            - 0.1500 * sin(m * JME_DEG_TO_RAD)
+            - 0.1226 * sin((2.0 * d) * JME_DEG_TO_RAD)
+            + 0.1176 * sin((2.0 * f) * JME_DEG_TO_RAD)
+            - 0.0801 * sin((2.0 * (mp - f)) * JME_DEG_TO_RAD);
+    }
+
+    speed = -1934.1362891 / 36525.0;
+
+    if (state != 0) {
+        state[0] = jme_degree_normalize(omega);
+        state[1] = 0.0;
+        state[2] = 1.0;
+        state[3] = speed;
+        state[4] = 0.0;
+        state[5] = 0.0;
+    }
+
+    return JME_OK;
+}
 
 static int analytic_body_state(double jd_et, int body, double *state)
 {
+    double pos[6];
+    int rc;
+    int i;
+
     if (body == JME_BODY_SUN) {
-        jme_meeus_sun_state(jd_et, state);
+        if (state != 0) {
+            for (i = 0; i < 6; i++) { state[i] = 0.0; }
+        }
         return JME_OK;
     }
 
     if (body == JME_BODY_MOON) {
-        jme_meeus_moon_state(jd_et, state);
+        double moon_geo[6];
+        double earth_helio[6];
+        if (jme_elp2000_moon_state(jd_et, moon_geo) != JME_OK) {
+            jme_meeus_moon_state(jd_et, moon_geo);
+        }
+        jme_vsop87_planet_state(jd_et, JME_BODY_EARTH, earth_helio);
+        if (state != 0) {
+            int i;
+            for (i = 0; i < 3; i++) { state[i] = moon_geo[i] + earth_helio[i]; }
+            for (i = 3; i < 6; i++) { state[i] = earth_helio[i]; }
+
+            {
+                double step = 1.0e-3;
+                double moon_prev[6], moon_next[6], earth_prev[6], earth_next[6];
+                if ((jme_elp2000_moon_state(jd_et - step, moon_prev) == JME_OK || jme_meeus_moon_state(jd_et - step, moon_prev) == JME_OK)
+                    && (jme_elp2000_moon_state(jd_et + step, moon_next) == JME_OK || jme_meeus_moon_state(jd_et + step, moon_next) == JME_OK)
+                    && jme_vsop87_planet_state(jd_et - step, JME_BODY_EARTH, earth_prev) == JME_OK
+                    && jme_vsop87_planet_state(jd_et + step, JME_BODY_EARTH, earth_next) == JME_OK) {
+                    for (i = 0; i < 3; i++) {
+                        state[i + 3] = ((moon_next[i] + earth_next[i]) - (moon_prev[i] + earth_prev[i])) / (2.0 * step);
+                    }
+                }
+            }
+        }
         return JME_OK;
     }
 
-    if (jme_vsop87_planet_state(jd_et, body, state) == JME_OK) {
-        return JME_OK;
+    rc = jme_vsop87_planet_state(jd_et, body, pos);
+    if (rc != JME_OK) {
+        rc = jme_moshier_planet_state(jd_et, body, pos);
+    }
+    if (rc != JME_OK) {
+        rc = jme_meeus_planet_state(jd_et, body, pos);
+    }
+    if (rc != JME_OK) {
+        return JME_ERR;
     }
 
-    if (jme_moshier_planet_state(jd_et, body, state) == JME_OK) {
-        return JME_OK;
+    if (state != 0) {
+        double prev[6];
+        double next[6];
+        double step = 1.0e-3;
+
+        for (i = 0; i < 3; i++) {
+            state[i] = pos[i];
+            state[i + 3] = pos[i + 3];
+        }
+
+        if (jme_vsop87_planet_state(jd_et - step, body, prev) == JME_OK
+            && jme_vsop87_planet_state(jd_et + step, body, next) == JME_OK) {
+            for (i = 0; i < 3; i++) {
+                state[i + 3] = (next[i] - prev[i]) / (2.0 * step);
+            }
+        } else if (jme_moshier_planet_state(jd_et - step, body, prev) == JME_OK
+            && jme_moshier_planet_state(jd_et + step, body, next) == JME_OK) {
+            for (i = 0; i < 3; i++) {
+                state[i + 3] = (next[i] - prev[i]) / (2.0 * step);
+            }
+        } else if (jme_meeus_planet_state(jd_et - step, body, prev) == JME_OK
+            && jme_meeus_planet_state(jd_et + step, body, next) == JME_OK) {
+            for (i = 0; i < 3; i++) {
+                state[i + 3] = (next[i] - prev[i]) / (2.0 * step);
+            }
+        }
     }
 
-    return jme_meeus_planet_state(jd_et, body, state);
+    return JME_OK;
+}
+
+static int calc_lunar_node(double jd_et, int body, int flags, double *results, char *error)
+{
+    double spherical[6];
+    double rectangular[6];
+    double eps;
+    double equatorial[6];
+    int i;
+
+    if (lunar_node_spherical_state(jd_et, body, spherical) != JME_OK) {
+        return JME_ERR;
+    }
+
+    if (flags & JME_CALC_SIDEREAL) {
+        spherical[0] = jme_degree_normalize(spherical[0] - jme_get_ayanamsa(jd_et));
+    }
+
+    if (flags & JME_CALC_XYZ) {
+        if (jme_spherical_to_rectangular_state(spherical, rectangular) != JME_OK) {
+            jme_set_error(error, "Lunar node rectangular conversion failed");
+            return JME_ERR;
+        }
+
+        if (flags & JME_CALC_EQUATORIAL) {
+            jme_get_obliquity((flags & JME_CALC_J2000) ? 2451545.0 : jd_et, JME_MODEL_OBL_IAU_1980, &eps, error);
+            if (jme_ecliptic_to_equatorial_rectangular_state(rectangular, eps, equatorial) != JME_OK) {
+                jme_set_error(error, "Lunar node equatorial conversion failed");
+                return JME_ERR;
+            }
+            for (i = 0; i < 6; i++) { results[i] = equatorial[i]; }
+        } else {
+            for (i = 0; i < 6; i++) { results[i] = rectangular[i]; }
+        }
+    } else {
+        if (flags & JME_CALC_EQUATORIAL) {
+            if (jme_spherical_to_rectangular_state(spherical, rectangular) != JME_OK) {
+                jme_set_error(error, "Lunar node rectangular conversion failed");
+                return JME_ERR;
+            }
+            jme_get_obliquity((flags & JME_CALC_J2000) ? 2451545.0 : jd_et, JME_MODEL_OBL_IAU_1980, &eps, error);
+            if (jme_ecliptic_to_equatorial_rectangular_state(rectangular, eps, equatorial) != JME_OK
+                || jme_rectangular_to_spherical_state(equatorial, spherical) != JME_OK) {
+                jme_set_error(error, "Lunar node equatorial conversion failed");
+                return JME_ERR;
+            }
+        }
+        for (i = 0; i < 6; i++) { results[i] = spherical[i]; }
+        results[0] = angle_to_output_unit(results[0], flags);
+        results[1] = angle_to_output_unit(results[1], flags);
+        results[3] = angle_to_output_unit(results[3], flags);
+        results[4] = angle_to_output_unit(results[4], flags);
+    }
+
+    return JME_OK;
 }
 
 int jme_pheno_ut(double jd_ut, int body, int flags, double *attr, char *error)
@@ -84,38 +353,98 @@ int jme_calc_pctr(double jd_et, int body, int center, int flags, double *results
 
 int jme_orbit_max_min_true_distance(double jd_et, int body, int flags, double *tmax, double *tmin, double *dmax, double *dmin, char *error)
 {
-    (void)jd_et; (void)body; (void)flags; (void)tmax; (void)tmin; (void)dmax; (void)dmin; (void)error;
-    return JME_ERR;
+    static const double mu = 0.0002959122082855911025;
+    double elem[20];
+    double a, e, nu, E, M, n, t_peri, period;
+
+    if (tmax == 0 || tmin == 0 || dmax == 0 || dmin == 0) {
+        jme_set_error(error, "Orbit distance extrema outputs are required");
+        return JME_ERR;
+    }
+
+    if (jme_get_orbital_elements(jd_et, body, flags, elem, error) != JME_OK) {
+        return JME_ERR;
+    }
+
+    a = elem[0];
+    e = elem[1];
+    nu = elem[5] * JME_DEG_TO_RAD;
+
+    if (!isfinite(a) || !isfinite(e) || a <= 0.0 || e < 0.0 || e >= 1.0) {
+        jme_set_error(error, "Orbit distance extrema require an elliptical osculating orbit");
+        return JME_ERR;
+    }
+
+    E = 2.0 * atan2(sqrt(1.0 - e) * sin(nu / 2.0), sqrt(1.0 + e) * cos(nu / 2.0));
+    M = E - e * sin(E);
+    n = sqrt(mu / (a * a * a));
+    period = 2.0 * JME_PI / n;
+    t_peri = jd_et - M / n;
+
+    while (t_peri > jd_et + period / 2.0) { t_peri -= period; }
+    while (t_peri < jd_et - period / 2.0) { t_peri += period; }
+
+    *tmin = t_peri;
+    *tmax = t_peri + period / 2.0;
+    if (*tmax > jd_et + period / 2.0) {
+        *tmax -= period;
+    }
+    *dmin = a * (1.0 - e);
+    *dmax = a * (1.0 + e);
+
+    return JME_OK;
 }
 
 int jme_pheno(double jd_et, int body, int flags, double *attr, char *error)
 {
-    double planet_geo[6], earth_helio[6], planet_helio[6];
-    double r, delta, R, cos_i, phase;
+    double planet_geo[6], sun_geo[6], planet_helio[6];
+    double earth_from_body[3], sun_from_body[3];
+    double r, delta, phase_angle, phase, elongation, radius_km, diameter_arcsec, magnitude;
     int i;
 
     if (attr != 0) {
         for (i = 0; i < 20; i++) { attr[i] = 0.0; }
     }
 
-    if (jme_calc(jd_et, body, flags | JME_CALC_TRUE_POSITION, planet_geo, error) != JME_OK) { return JME_ERR; }
-    if (jme_calc(jd_et, JME_BODY_EARTH, flags | JME_CALC_HELIOCENTRIC | JME_CALC_TRUE_POSITION, earth_helio, error) != JME_OK) { return JME_ERR; }
-    if (jme_calc(jd_et, body, flags | JME_CALC_HELIOCENTRIC | JME_CALC_TRUE_POSITION, planet_helio, error) != JME_OK) { return JME_ERR; }
+    if (jme_calc(jd_et, body, flags | JME_CALC_XYZ | JME_CALC_TRUE_POSITION, planet_geo, error) != JME_OK) { return JME_ERR; }
+    if (jme_calc(jd_et, JME_BODY_SUN, flags | JME_CALC_XYZ | JME_CALC_TRUE_POSITION, sun_geo, error) != JME_OK) { return JME_ERR; }
 
     delta = jme_state_distance(planet_geo);
-    R = jme_state_distance(earth_helio);
-    r = jme_state_distance(planet_helio);
+    if (body == JME_BODY_SUN) {
+        r = 1.0;
+        phase_angle = 0.0;
+        phase = 1.0;
+        elongation = 0.0;
+    } else {
+        if (jme_calc(jd_et, body, flags | JME_CALC_XYZ | JME_CALC_HELIOCENTRIC | JME_CALC_TRUE_POSITION, planet_helio, error) != JME_OK) { return JME_ERR; }
+        r = jme_state_distance(planet_helio);
 
-    cos_i = (r * r + delta * delta - R * R) / (2.0 * r * delta);
-    if (cos_i > 1.0) cos_i = 1.0;
-    if (cos_i < -1.0) cos_i = -1.0;
+        for (i = 0; i < 3; i++) {
+            earth_from_body[i] = -planet_geo[i];
+            sun_from_body[i] = -planet_helio[i];
+        }
+        phase_angle = vector_angle_degrees(earth_from_body, sun_from_body);
+        phase = (1.0 + cos(phase_angle * JME_DEG_TO_RAD)) / 2.0;
+        elongation = vector_angle_degrees(planet_geo, sun_geo);
+    }
 
-    phase = (1.0 + cos_i) / 2.0;
+    if (!isfinite(delta) || delta <= 0.0 || !isfinite(r) || r <= 0.0 || !isfinite(phase_angle) || !isfinite(phase) || !isfinite(elongation)) {
+        jme_set_error(error, "Physical phenomena geometry is invalid");
+        return JME_ERR;
+    }
+
+    radius_km = body_equatorial_radius_km(body);
+    diameter_arcsec = radius_km > 0.0 ? 2.0 * asin(radius_km / (delta * JME_AU_KM)) * (180.0 / JME_PI) * 3600.0 : NAN;
+    magnitude = apparent_magnitude_estimate(body, r, delta, phase_angle);
 
     if (attr != 0) {
-        attr[0] = phase;
-        attr[1] = acos(cos_i) * 180.0 / 3.14159265358979323846;
-        /* attr[2] and following indices reserved for extended attributes */
+        attr[0] = phase_angle;
+        attr[1] = phase;
+        attr[2] = elongation;
+        attr[3] = diameter_arcsec;
+        attr[4] = magnitude;
+        attr[5] = delta;
+        attr[6] = r;
     }
 
     return JME_OK;
@@ -128,10 +457,21 @@ int jme_calc(double jd_et, int body, int flags, double *results, char *error)
     double observer_pos_au[3] = {0,0,0};
     double dist, light_time;
     int center = JME_BODY_EARTH;
+    int target_is_ecliptic = 0;
     int i;
 
-    if (results != 0) {
-        for (i = 0; i < 6; i++) { results[i] = 0.0; }
+    if (results == 0) {
+        jme_set_error(error, "Output buffer is required");
+        return JME_ERR;
+    }
+
+    for (i = 0; i < 6; i++) { results[i] = 0.0; }
+
+    if (body == JME_BODY_MEAN_NODE || body == JME_BODY_TRUE_NODE) {
+        if (calc_lunar_node(jd_et, body, flags, results, error) != JME_OK) {
+            return JME_ERR;
+        }
+        return state_is_finite(results, 6) ? JME_OK : JME_ERR;
     }
 
     if (flags & JME_CALC_BARYCENTRIC) {
@@ -149,13 +489,14 @@ int jme_calc(double jd_et, int body, int flags, double *results, char *error)
         if (analytic_body_state(jd_et, body, target_pos) != JME_OK) {
             return JME_ERR;
         }
+        target_is_ecliptic = 1;
 
         if (center == JME_BODY_EARTH) {
             double earth_helio[6];
             if (analytic_body_state(jd_et, JME_BODY_EARTH, earth_helio) != JME_OK) {
                 return JME_ERR;
             }
-            for (i = 0; i < 3; i++) { target_pos[i] -= earth_helio[i]; }
+            for (i = 0; i < 6; i++) { target_pos[i] -= earth_helio[i]; }
         }
     }
 
@@ -166,35 +507,41 @@ int jme_calc(double jd_et, int body, int flags, double *results, char *error)
 
     /* 2. Light-time correction */
     if (!(flags & JME_CALC_TRUE_POSITION)) {
-        dist = jme_state_distance(target_pos);
+        if (state_distance_is_usable(target_pos, &dist, error) != JME_OK) {
+            return JME_ERR;
+        }
         light_time = dist / JME_C_AU_PER_DAY;
 
         if (jme_jpl_body_state(jd_et - light_time, body, center, JME_VECTOR_AU_PER_DAY, target_pos, error) != JME_OK) {
             if (analytic_body_state(jd_et - light_time, body, target_pos) != JME_OK) {
                 return JME_ERR;
             }
+            target_is_ecliptic = 1;
             if (center == JME_BODY_EARTH) {
                 double earth_helio[6];
                 if (analytic_body_state(jd_et - light_time, JME_BODY_EARTH, earth_helio) != JME_OK) {
                     return JME_ERR;
                 }
-                for (i = 0; i < 3; i++) { target_pos[i] -= earth_helio[i]; }
+                for (i = 0; i < 6; i++) { target_pos[i] -= earth_helio[i]; }
             }
         }
 
         /* Second iteration */
-        dist = jme_state_distance(target_pos);
+        if (state_distance_is_usable(target_pos, &dist, error) != JME_OK) {
+            return JME_ERR;
+        }
         light_time = dist / JME_C_AU_PER_DAY;
         if (jme_jpl_body_state(jd_et - light_time, body, center, JME_VECTOR_AU_PER_DAY, target_pos, error) != JME_OK) {
             if (analytic_body_state(jd_et - light_time, body, target_pos) != JME_OK) {
                 return JME_ERR;
             }
+            target_is_ecliptic = 1;
             if (center == JME_BODY_EARTH) {
                 double earth_helio[6];
                 if (analytic_body_state(jd_et - light_time, JME_BODY_EARTH, earth_helio) != JME_OK) {
                     return JME_ERR;
                 }
-                for (i = 0; i < 3; i++) { target_pos[i] -= earth_helio[i]; }
+                for (i = 0; i < 6; i++) { target_pos[i] -= earth_helio[i]; }
             }
         }
 
@@ -218,7 +565,9 @@ int jme_calc(double jd_et, int body, int flags, double *results, char *error)
                 v2 += v_obs[i] * v_obs[i];
             }
 
-            dist = jme_state_distance(target_pos);
+            if (state_distance_is_usable(target_pos, &dist, error) != JME_OK) {
+                return JME_ERR;
+            }
             for (i = 0; i < 3; i++) { u[i] = target_pos[i] / dist; }
 
             v_dot_u = 0.0;
@@ -243,10 +592,14 @@ int jme_calc(double jd_et, int body, int flags, double *results, char *error)
             const double r_s_sun = 2.0 * 1.32712440041e20 / (JME_SPEED_OF_LIGHT_KM_PER_SEC * 1000.0 * JME_SPEED_OF_LIGHT_KM_PER_SEC * 1000.0) / (JME_AU_KM * 1000.0);
 
             if (jme_jpl_body_state(jd_et, JME_BODY_SUN, center, JME_VECTOR_AU_PER_DAY, sun_state, error) == JME_OK) {
-                sun_dist = jme_state_distance(sun_state);
+                if (state_distance_is_usable(sun_state, &sun_dist, error) != JME_OK) {
+                    return JME_ERR;
+                }
                 for (i = 0; i < 3; i++) { e[i] = sun_state[i] / sun_dist; }
 
-                dist = jme_state_distance(target_pos);
+                if (state_distance_is_usable(target_pos, &dist, error) != JME_OK) {
+                    return JME_ERR;
+                }
                 for (i = 0; i < 3; i++) { u[i] = target_pos[i] / dist; }
 
                 e_dot_u = 0.0;
@@ -261,6 +614,10 @@ int jme_calc(double jd_et, int body, int flags, double *results, char *error)
 
                 /* Normalize u_prime */
                 dist = sqrt(u_prime[0] * u_prime[0] + u_prime[1] * u_prime[1] + u_prime[2] * u_prime[2]);
+                if (!isfinite(dist) || dist <= 0.0) {
+                    jme_set_error(error, "Calculation produced invalid light-deflection vector");
+                    return JME_ERR;
+                }
                 dist = jme_state_distance(target_pos) / dist;
                 for (i = 0; i < 3; i++) { target_pos[i] = u_prime[i] * dist; }
             }
@@ -268,7 +625,7 @@ int jme_calc(double jd_et, int body, int flags, double *results, char *error)
     }
 
     /* 3. Reference Frame / Transformation */
-    if (!(flags & JME_CALC_J2000)) {
+    if (!target_is_ecliptic && !(flags & JME_CALC_J2000)) {
         /* Precession to date */
         double prec_mat[9];
         jme_get_precession_matrix(2451545.0, jd_et, JME_MODEL_PREC_IAU_1976, prec_mat);
@@ -291,26 +648,73 @@ int jme_calc(double jd_et, int body, int flags, double *results, char *error)
     } else {
         /* Convert to spherical (default is Ecliptic if not JME_CALC_EQUATORIAL) */
         if (flags & JME_CALC_EQUATORIAL) {
-            jme_rectangular_to_spherical_state(target_pos, state);
-        } else {
-            /* Convert to ecliptic then spherical */
-            double ecliptic_rect[6];
-            double eps;
-            double jd_for_obl = (flags & JME_CALC_J2000) ? 2451545.0 : jd_et;
-            jme_get_obliquity(jd_for_obl, JME_MODEL_OBL_IAU_1980, &eps, error);
-            
-            /* If not J2000, we need the True Obliquity for True Ecliptic */
-            if (!(flags & JME_CALC_J2000) && !(flags & JME_CALC_NO_NUTATION)) {
-                double dpsi, deps;
-                jme_get_nutation(jd_et, JME_MODEL_NUT_IAU_1980, &dpsi, &deps, error);
-                eps += deps;
+            if (target_is_ecliptic) {
+                double equatorial_rect[6];
+                double eps;
+                double jd_for_obl = (flags & JME_CALC_J2000) ? 2451545.0 : jd_et;
+                jme_get_obliquity(jd_for_obl, JME_MODEL_OBL_IAU_1980, &eps, error);
+                jme_ecliptic_to_equatorial_rectangular_state(target_pos, eps, equatorial_rect);
+                jme_rectangular_to_spherical_state(equatorial_rect, state);
+            } else {
+                jme_rectangular_to_spherical_state(target_pos, state);
             }
+        } else {
+            if (target_is_ecliptic) {
+                jme_rectangular_to_spherical_state(target_pos, state);
+            } else {
+                /* Convert to ecliptic then spherical */
+                double ecliptic_rect[6];
+                double eps;
+                double jd_for_obl = (flags & JME_CALC_J2000) ? 2451545.0 : jd_et;
+                jme_get_obliquity(jd_for_obl, JME_MODEL_OBL_IAU_1980, &eps, error);
+                
+                /* If not J2000, we need the True Obliquity for True Ecliptic */
+                if (!(flags & JME_CALC_J2000) && !(flags & JME_CALC_NO_NUTATION)) {
+                    double dpsi, deps;
+                    jme_get_nutation(jd_et, JME_MODEL_NUT_IAU_1980, &dpsi, &deps, error);
+                    eps += deps;
+                }
 
-            jme_equatorial_to_ecliptic_rectangular_state(target_pos, eps, ecliptic_rect);
-            jme_rectangular_to_spherical_state(ecliptic_rect, state);
+                jme_equatorial_to_ecliptic_rectangular_state(target_pos, eps, ecliptic_rect);
+                jme_rectangular_to_spherical_state(ecliptic_rect, state);
+            }
         }
 
         for (i = 0; i < 6; i++) { results[i] = state[i]; }
+
+        if (flags & JME_CALC_SIDEREAL) {
+            results[0] = jme_degree_normalize(results[0] - jme_get_ayanamsa(jd_et));
+        }
+
+        results[0] = angle_to_output_unit(results[0], flags);
+        results[1] = angle_to_output_unit(results[1], flags);
+        results[3] = angle_to_output_unit(results[3], flags);
+        results[4] = angle_to_output_unit(results[4], flags);
+    }
+
+    if (flags & JME_CALC_DISTANCE_KM) {
+        if (flags & JME_CALC_XYZ) {
+            for (i = 0; i < 6; i++) { results[i] *= JME_AU_KM; }
+        } else {
+            results[2] *= JME_AU_KM;
+            results[5] *= JME_AU_KM;
+        }
+    }
+
+    if (flags & JME_CALC_VELOCITY_PER_SECOND) {
+        if (flags & JME_CALC_XYZ) {
+            for (i = 3; i < 6; i++) { results[i] /= JME_SECONDS_PER_DAY; }
+        } else {
+            results[3] /= JME_SECONDS_PER_DAY;
+            results[4] /= JME_SECONDS_PER_DAY;
+            results[5] /= JME_SECONDS_PER_DAY;
+        }
+    }
+
+    if (!state_is_finite(results, 6)) {
+        for (i = 0; i < 6; i++) { results[i] = 0.0; }
+        jme_set_error(error, "Calculation produced non-finite output");
+        return JME_ERR;
     }
 
     return JME_OK;

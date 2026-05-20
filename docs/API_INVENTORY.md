@@ -31,6 +31,6 @@ Current verified output:
 ``text
 jme_functions_total=191
 jme_functions_defined=191
-jme_constants_total=460
+jme_constants_total=462
 reference_constants_total=348
 ``

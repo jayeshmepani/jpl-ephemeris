@@ -96,7 +96,7 @@ test_julian_EXTERNAL_OBJECTS =
 test_julian: CMakeFiles/test_julian.dir/tests/test_julian.c.o
 test_julian: CMakeFiles/test_julian.dir/build.make
 test_julian: CMakeFiles/test_julian.dir/compiler_depend.ts
-test_julian: libjme.a
+test_julian: libjme.so
 test_julian: CMakeFiles/test_julian.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking C executable test_julian"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/test_julian.dir/link.txt --verbose=$(VERBOSE)

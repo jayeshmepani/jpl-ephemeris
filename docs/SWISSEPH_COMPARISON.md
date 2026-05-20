@@ -23,14 +23,14 @@ This document tracks reference coverage against the project-owned JME API. Symbo
     *   **Result:** 100% Success for declared/defined symbol coverage and smoke-level call coverage. This is not a full Swiss behavior-parity claim.
 3.  **Clean-Room Compliance:**
     *   **Terminology:** 0 forbidden markers remain (no "to-do", "fix-me", or "fixed").
-    *   **Provenance:** All logic verified against independent public-domain astronomical standards.
-    *   **Contract:** 100% adherence to the "Lossless I/O" mandate.
+    *   **Provenance:** Implemented logic must remain traceable to independent permitted sources before it is marked behavior-complete.
+    *   **Contract:** Current tests enforce symbol coverage and reject false-success paths such as `JME_OK` with non-finite calculation output. This is not a full behavior-parity claim.
 
 ---
 
 ### 2. Full 106 Reference Function Mapping
 
-All 106 reference behavior rows are mapped to native `jme_` equivalents. Some mapped rows are still partial or open at the algorithm level; the behavioral source of truth is `docs/REFERENCE_FUNCTION_COVERAGE.md`.
+All 106 reference behavior rows are mapped to native `jme_` equivalents. In the table below, `Verified` means the mapping/symbol is verified, not that Swiss behavior is complete. Some mapped rows are still partial or open at the algorithm level; the behavioral source of truth is `docs/REFERENCE_FUNCTION_COVERAGE.md`.
 
 | # | Reference Function | JME Native Equivalent | Status |
 |---|---|---|---|
@@ -46,14 +46,14 @@ All 106 reference behavior rows are mapped to native `jme_` equivalents. Some ma
 | 10 | `swe_calc` | `jme_calc` | **Verified** |
 | 11 | `swe_calc_ut` | `jme_calc_ut` | **Verified** |
 | 12 | `swe_calc_pctr` | `jme_calc_pctr` | **Verified** |
-| 13 | `swe_solcross` | `jme_solcross` | **Verified** |
-| 14 | `swe_solcross_ut` | `jme_solcross_ut` | **Verified** |
-| 15 | `swe_mooncross` | `jme_mooncross` | **Verified** |
-| 16 | `swe_mooncross_ut` | `jme_mooncross_ut` | **Verified** |
-| 17 | `swe_mooncross_node` | `jme_mooncross_node` | **Verified** |
-| 18 | `swe_mooncross_node_ut` | `jme_mooncross_node_ut` | **Verified** |
-| 19 | `swe_helio_cross` | `jme_helio_cross` | **Verified** |
-| 20 | `swe_helio_cross_ut` | `jme_helio_cross_ut` | **Verified** |
+| 13 | `swe_solcross` | `jme_solcross` | **Verified; refined root search** |
+| 14 | `swe_solcross_ut` | `jme_solcross_ut` | **Verified; refined root search** |
+| 15 | `swe_mooncross` | `jme_mooncross` | **Verified; refined root search** |
+| 16 | `swe_mooncross_ut` | `jme_mooncross_ut` | **Verified; refined root search** |
+| 17 | `swe_mooncross_node` | `jme_mooncross_node` | **Verified; refined root search** |
+| 18 | `swe_mooncross_node_ut` | `jme_mooncross_node_ut` | **Verified; refined root search** |
+| 19 | `swe_helio_cross` | `jme_helio_cross` | **Verified; refined root search** |
+| 20 | `swe_helio_cross_ut` | `jme_helio_cross_ut` | **Verified; refined root search** |
 | 21 | `swe_fixstar` | `jme_fixstar` | **Verified** |
 | 22 | `swe_fixstar_ut` | `jme_fixstar_ut` | **Verified** |
 | 23 | `swe_fixstar_mag` | `jme_fixstar_mag` | **Verified** |
@@ -79,35 +79,35 @@ All 106 reference behavior rows are mapped to native `jme_` equivalents. Some ma
 | 43 | `swe_jdet_to_utc` | `jme_jd_to_utc` | **Verified** |
 | 44 | `swe_jdut1_to_utc` | `jme_jd_to_utc` | **Verified** |
 | 45 | `swe_utc_time_zone` | `jme_utc_time_zone` | **Verified** |
-| 46 | `swe_houses` | `jme_houses` | **Verified** |
-| 47 | `swe_houses_ex` | `jme_houses_ex` | **Verified** |
-| 48 | `swe_houses_ex2` | `jme_houses_ex2` | **Verified** |
-| 49 | `swe_houses_armc` | `jme_houses_armc` | **Verified** |
-| 50 | `swe_houses_armc_ex2` | `jme_houses_armc_ex2` | **Verified** |
+| 46 | `swe_houses` | `jme_houses` | **Mapped; Koch/Krusinski/APC/Sunshine and exact systems implemented** |
+| 47 | `swe_houses_ex` | `jme_houses_ex` | **Mapped; Koch/Krusinski/APC/Sunshine and exact systems implemented** |
+| 48 | `swe_houses_ex2` | `jme_houses_ex2` | **Mapped; finite speeds implemented** |
+| 49 | `swe_houses_armc` | `jme_houses_armc` | **Mapped; Koch/Krusinski/APC and exact systems implemented** |
+| 50 | `swe_houses_armc_ex2` | `jme_houses_armc_ex2` | **Mapped; finite speeds implemented** |
 | 51 | `swe_house_pos` | `jme_house_pos` | **Verified** |
 | 52 | `swe_house_name` | `jme_house_system_name` | **Verified** |
-| 53 | `swe_gauquelin_sector` | `jme_gauquelin_sector` | **Verified** |
-| 54 | `swe_sol_eclipse_where` | `jme_sol_eclipse_where` | **Verified** |
-| 55 | `swe_lun_occult_where` | `jme_lun_occult_where` | **Verified** |
-| 56 | `swe_sol_eclipse_how` | `jme_sol_eclipse_how` | **Verified** |
-| 57 | `swe_sol_eclipse_when_loc` | `jme_sol_eclipse_when_loc` | **Verified** |
-| 58 | `swe_lun_occult_when_loc` | `jme_lun_occult_when_loc` | **Verified** |
-| 59 | `swe_sol_eclipse_when_glob` | `jme_sol_eclipse_when_glob` | **Verified** |
-| 60 | `swe_lun_occult_when_glob` | `jme_lun_occult_when_glob` | **Verified** |
-| 61 | `swe_lun_eclipse_how` | `jme_lun_eclipse_how` | **Verified** |
-| 62 | `swe_lun_eclipse_when` | `jme_lun_eclipse_when` | **Verified** |
-| 63 | `swe_lun_eclipse_when_loc` | `jme_lun_eclipse_when_loc` | **Verified** |
-| 64 | `swe_pheno` | `jme_pheno` | **Verified** |
-| 65 | `swe_pheno_ut` | `jme_pheno_ut` | **Verified** |
+| 53 | `swe_gauquelin_sector` | `jme_gauquelin_sector` | **Mapped; bounded event-based sector** |
+| 54 | `swe_sol_eclipse_where` | `jme_sol_eclipse_where` | **Mapped; exact pending** |
+| 55 | `swe_lun_occult_where` | `jme_lun_occult_where` | **Mapped; exact pending** |
+| 56 | `swe_sol_eclipse_how` | `jme_sol_eclipse_how` | **Mapped; exact pending** |
+| 57 | `swe_sol_eclipse_when_loc` | `jme_sol_eclipse_when_loc` | **Mapped; exact pending** |
+| 58 | `swe_lun_occult_when_loc` | `jme_lun_occult_when_loc` | **Mapped; exact pending** |
+| 59 | `swe_sol_eclipse_when_glob` | `jme_sol_eclipse_when_glob` | **Mapped; exact pending** |
+| 60 | `swe_lun_occult_when_glob` | `jme_lun_occult_when_glob` | **Mapped; exact pending** |
+| 61 | `swe_lun_eclipse_how` | `jme_lun_eclipse_how` | **Mapped; exact pending** |
+| 62 | `swe_lun_eclipse_when` | `jme_lun_eclipse_when` | **Mapped; exact pending** |
+| 63 | `swe_lun_eclipse_when_loc` | `jme_lun_eclipse_when_loc` | **Mapped; exact pending** |
+| 64 | `swe_pheno` | `jme_pheno` | **Verified; standard first five fields exported** |
+| 65 | `swe_pheno_ut` | `jme_pheno_ut` | **Verified; standard first five fields exported** |
 | 66 | `swe_refrac` | `jme_refract` | **Verified** |
 | 67 | `swe_refrac_extended` | `jme_refract_extended` | **Verified** |
 | 68 | `swe_set_lapse_rate` | `jme_set_lapse_rate` | **Verified** |
 | 69 | `swe_azalt` | `jme_equatorial_to_horizontal` | **Verified** |
 | 70 | `swe_azalt_rev` | `jme_horizontal_to_equatorial` | **Verified** |
-| 71 | `swe_rise_trans_true_hor` | `jme_rise_trans_true_hor` | **Verified** |
-| 72 | `swe_rise_trans` | `jme_rise_trans` | **Verified** |
-| 73 | `swe_nod_aps` | `jme_nod_aps` | **Verified** |
-| 74 | `swe_nod_aps_ut` | `jme_nod_aps_ut` | **Verified** |
+| 71 | `swe_rise_trans_true_hor` | `jme_rise_trans_true_hor` | **Verified; true horizon honored** |
+| 72 | `swe_rise_trans` | `jme_rise_trans` | **Verified; rise/set/transit/twilight flags tested** |
+| 73 | `swe_nod_aps` | `jme_nod_aps` | **Mapped; lunar node/apside subset implemented** |
+| 74 | `swe_nod_aps_ut` | `jme_nod_aps_ut` | **Mapped; lunar node/apside subset implemented** |
 | 75 | `swe_get_orbital_elements` | `jme_get_orbital_elements` | **Verified** |
 | 76 | `swe_orbit_max_min_true_distance` | `jme_orbit_max_min_true_distance` | **Verified** |
 | 77 | `swe_deltat` | `jme_delta_t` | **Verified** |

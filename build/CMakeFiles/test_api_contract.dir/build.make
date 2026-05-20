@@ -96,7 +96,7 @@ test_api_contract_EXTERNAL_OBJECTS =
 test_api_contract: CMakeFiles/test_api_contract.dir/tests/test_api_contract.c.o
 test_api_contract: CMakeFiles/test_api_contract.dir/build.make
 test_api_contract: CMakeFiles/test_api_contract.dir/compiler_depend.ts
-test_api_contract: libjme.a
+test_api_contract: libjme.so
 test_api_contract: CMakeFiles/test_api_contract.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking C executable test_api_contract"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/test_api_contract.dir/link.txt --verbose=$(VERBOSE)

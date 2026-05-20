@@ -15,7 +15,7 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 find_package(calceph CONFIG QUIET)
 
-add_library(jme
+add_library(jme SHARED
     src/api.c
     src/angle.c
     src/astrometry.c
@@ -23,6 +23,9 @@ add_library(jme
     src/context.c
     src/coordinates.c
     src/elp2000.c
+    src/elp2000/arguments.c
+    src/elp2000/elp2000-82b.c
+    src/elp2000/series.c
     src/events.c
     src/fixstar.c
     src/houses.c
@@ -31,19 +34,11 @@ add_library(jme
     src/metadata.c
     src/meeus.c
     src/moshier.c
-    src/moshier/ear404.c
-    src/moshier/gplan.c
-    src/moshier/jup404.c
-    src/moshier/mar404.c
-    src/moshier/mer404.c
-    src/moshier/nep404.c
-    src/moshier/plu404.c
-    src/moshier/sat404.c
-    src/moshier/ura404.c
-    src/moshier/ven404.c
+    src/moshier_full.c
     src/sidereal.c
     src/time.c
     src/vsop87.c
+    src/vsop87a_full.c
     src/vsop87d_full.c
 )
 
@@ -53,6 +48,7 @@ target_include_directories(jme
         $<INSTALL_INTERFACE:include>
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/elp2000
         ${CMAKE_CURRENT_SOURCE_DIR}/src/moshier
 )
 
@@ -71,7 +67,7 @@ if (MSVC)
     target_compile_options(jme PRIVATE /W4)
 else()
     target_compile_options(jme PRIVATE -Wall -Wextra -Wpedantic)
-    target_link_libraries(jme PRIVATE m)
+    target_link_libraries(jme PUBLIC m)
 endif()
 
 if (JME_BUILD_TESTS)
@@ -96,6 +92,10 @@ if (JME_BUILD_TESTS)
     add_executable(test_all_functions tests/test_all_functions.c)
     target_link_libraries(test_all_functions PRIVATE jme)
     add_test(NAME all_functions COMMAND test_all_functions)
+
+    add_executable(test_analytical_validation tests/test_analytical_validation.c)
+    target_link_libraries(test_analytical_validation PRIVATE jme)
+    add_test(NAME analytical_validation COMMAND test_analytical_validation)
 
     find_program(PWSH_EXECUTABLE NAMES pwsh powershell)
     if (PWSH_EXECUTABLE)

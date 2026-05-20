@@ -96,7 +96,7 @@ test_all_constants_EXTERNAL_OBJECTS =
 test_all_constants: CMakeFiles/test_all_constants.dir/tests/test_all_constants.c.o
 test_all_constants: CMakeFiles/test_all_constants.dir/build.make
 test_all_constants: CMakeFiles/test_all_constants.dir/compiler_depend.ts
-test_all_constants: libjme.a
+test_all_constants: libjme.so
 test_all_constants: CMakeFiles/test_all_constants.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking C executable test_all_constants"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/test_all_constants.dir/link.txt --verbose=$(VERBOSE)

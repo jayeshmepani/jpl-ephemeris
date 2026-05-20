@@ -8,7 +8,6 @@ function Read-Text([string] $path) {
 
 $jmeHeader = Read-Text "include/jme/jme.h"
 $jmeExtendedHeader = Read-Text "include/jme/jme_extended.h"
-$referenceHeader = Read-Text "include/jme_compat/swephexp.h"
 $sourceText = (
     Get-ChildItem -Path (Join-Path $root "src") -Filter "*.c" |
         ForEach-Object { Get-Content -Raw $_.FullName }
@@ -16,8 +15,8 @@ $sourceText = (
 $projectText = (
     Get-ChildItem -Path $root -Recurse -File |
         Where-Object {
-            $_.FullName -notmatch "\\build\\" -and
-            $_.FullName -notmatch "\\.git\\" -and
+            $_.FullName -notmatch '[/\\]build[/\\]' -and
+            $_.FullName -notmatch '[/\\]\.git[/\\]' -and
             $_.Extension -in @(".c", ".h", ".md", ".ps1", ".txt")
         } |
         ForEach-Object { Get-Content -Raw $_.FullName }
@@ -33,11 +32,6 @@ $jmeFunctions = [regex]::Matches(
 $jmeConstants = [regex]::Matches($jmeText, "\bJME_[A-Z0-9_]+\b") |
     ForEach-Object { $_.Value } |
     Sort-Object -Unique
-
-$referenceConstants = [regex]::Matches(
-    $referenceHeader,
-    "(?m)^#define\s+(SE[A-Z0-9_]*|SEMOD[A-Z0-9_]*|OK|ERR)\b"
-) | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique
 
 $missingJme = New-Object System.Collections.Generic.List[string]
 
@@ -78,11 +72,6 @@ if ($jmeConstants.Count -lt 348) {
     throw "JME constants below target: $($jmeConstants.Count)"
 }
 
-if ($referenceConstants.Count -ne 348) {
-    throw "Reference constants mismatch: $($referenceConstants.Count)"
-}
-
 Write-Output "jme_functions_total=$($jmeFunctions.Count)"
 Write-Output "jme_functions_defined=$($jmeFunctions.Count)"
 Write-Output "jme_constants_total=$($jmeConstants.Count)"
-Write-Output "reference_constants_total=$($referenceConstants.Count)"

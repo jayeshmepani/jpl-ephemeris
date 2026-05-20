@@ -43,7 +43,9 @@ typedef enum jme_body {
     JME_BODY_SATURN_BARYCENTER = 17,
     JME_BODY_URANUS_BARYCENTER = 18,
     JME_BODY_NEPTUNE_BARYCENTER = 19,
-    JME_BODY_PLUTO_BARYCENTER = 20
+    JME_BODY_PLUTO_BARYCENTER = 20,
+    JME_BODY_MEAN_NODE = 21,
+    JME_BODY_TRUE_NODE = 22
 } jme_body;
 
 typedef enum jme_calc_flags {

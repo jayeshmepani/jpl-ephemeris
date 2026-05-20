@@ -7,10 +7,9 @@ This file tracks the project-owned public API. The product surface is `jme_*` fu
 | Area | Count | Source |
 |---|---:|---|
 | JME public functions | 191 | `include/jme/jme.h`, `include/jme/jme_extended.h` |
-| JME public constants | 460 | `include/jme/jme.h`, `include/jme/jme_extended.h` |
-| Reference constants | 348 | `include/jme_compat/swephexp.h` |
+| JME public constants | 462 | `include/jme/jme.h`, `include/jme/jme_extended.h` |
 
-Function count and reference behavior coverage are separate checks. The full reference behavior matrix is in `docs/REFERENCE_FUNCTION_COVERAGE.md`.
+Function count and behavior coverage are separate checks. The full behavior matrix is in `docs/REFERENCE_FUNCTION_COVERAGE.md`.
 
 ## JME Public Functions
 

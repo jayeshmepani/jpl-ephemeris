@@ -18,6 +18,8 @@ static const jme_name_entry body_names[] = {
     {JME_BODY_URANUS, "Uranus"},
     {JME_BODY_NEPTUNE, "Neptune"},
     {JME_BODY_PLUTO, "Pluto"},
+    {JME_BODY_MEAN_NODE, "Mean Node"},
+    {JME_BODY_TRUE_NODE, "True Node"},
     {JME_BODY_EARTH, "Earth"},
     {JME_BODY_SOLAR_SYSTEM_BARYCENTER, "Solar System Barycenter"},
     {JME_BODY_MERCURY_BARYCENTER, "Mercury Barycenter"},
@@ -147,7 +149,15 @@ const char *jme_house_system_name(int house_system)
         case 'T':
             return "Polich/Page";
         case 'V':
+        case JME_HOUSE_VEHLOW_EQUAL:
             return "Vehlow Equal";
+        case 'A':
+        case JME_HOUSE_AZIMUTHAL:
+        case JME_HOUSE_HORIZONTAL:
+            return "Horizontal/Azimuthal";
+        case 'I':
+        case JME_HOUSE_SUNSHINE:
+            return "Sunshine";
         default:
             return 0;
     }

@@ -170,10 +170,52 @@ CMakeFiles/jme.dir/src/elp2000.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/jme.dir/src/elp2000.c.s"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/elp2000.c -o CMakeFiles/jme.dir/src/elp2000.c.s
 
+CMakeFiles/jme.dir/src/elp2000/arguments.c.o: CMakeFiles/jme.dir/flags.make
+CMakeFiles/jme.dir/src/elp2000/arguments.c.o: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/elp2000/arguments.c
+CMakeFiles/jme.dir/src/elp2000/arguments.c.o: CMakeFiles/jme.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building C object CMakeFiles/jme.dir/src/elp2000/arguments.c.o"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/jme.dir/src/elp2000/arguments.c.o -MF CMakeFiles/jme.dir/src/elp2000/arguments.c.o.d -o CMakeFiles/jme.dir/src/elp2000/arguments.c.o -c /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/elp2000/arguments.c
+
+CMakeFiles/jme.dir/src/elp2000/arguments.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/jme.dir/src/elp2000/arguments.c.i"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/elp2000/arguments.c > CMakeFiles/jme.dir/src/elp2000/arguments.c.i
+
+CMakeFiles/jme.dir/src/elp2000/arguments.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/jme.dir/src/elp2000/arguments.c.s"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/elp2000/arguments.c -o CMakeFiles/jme.dir/src/elp2000/arguments.c.s
+
+CMakeFiles/jme.dir/src/elp2000/elp2000-82b.c.o: CMakeFiles/jme.dir/flags.make
+CMakeFiles/jme.dir/src/elp2000/elp2000-82b.c.o: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/elp2000/elp2000-82b.c
+CMakeFiles/jme.dir/src/elp2000/elp2000-82b.c.o: CMakeFiles/jme.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building C object CMakeFiles/jme.dir/src/elp2000/elp2000-82b.c.o"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/jme.dir/src/elp2000/elp2000-82b.c.o -MF CMakeFiles/jme.dir/src/elp2000/elp2000-82b.c.o.d -o CMakeFiles/jme.dir/src/elp2000/elp2000-82b.c.o -c /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/elp2000/elp2000-82b.c
+
+CMakeFiles/jme.dir/src/elp2000/elp2000-82b.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/jme.dir/src/elp2000/elp2000-82b.c.i"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/elp2000/elp2000-82b.c > CMakeFiles/jme.dir/src/elp2000/elp2000-82b.c.i
+
+CMakeFiles/jme.dir/src/elp2000/elp2000-82b.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/jme.dir/src/elp2000/elp2000-82b.c.s"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/elp2000/elp2000-82b.c -o CMakeFiles/jme.dir/src/elp2000/elp2000-82b.c.s
+
+CMakeFiles/jme.dir/src/elp2000/series.c.o: CMakeFiles/jme.dir/flags.make
+CMakeFiles/jme.dir/src/elp2000/series.c.o: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/elp2000/series.c
+CMakeFiles/jme.dir/src/elp2000/series.c.o: CMakeFiles/jme.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building C object CMakeFiles/jme.dir/src/elp2000/series.c.o"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/jme.dir/src/elp2000/series.c.o -MF CMakeFiles/jme.dir/src/elp2000/series.c.o.d -o CMakeFiles/jme.dir/src/elp2000/series.c.o -c /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/elp2000/series.c
+
+CMakeFiles/jme.dir/src/elp2000/series.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/jme.dir/src/elp2000/series.c.i"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/elp2000/series.c > CMakeFiles/jme.dir/src/elp2000/series.c.i
+
+CMakeFiles/jme.dir/src/elp2000/series.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/jme.dir/src/elp2000/series.c.s"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/elp2000/series.c -o CMakeFiles/jme.dir/src/elp2000/series.c.s
+
 CMakeFiles/jme.dir/src/events.c.o: CMakeFiles/jme.dir/flags.make
 CMakeFiles/jme.dir/src/events.c.o: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/events.c
 CMakeFiles/jme.dir/src/events.c.o: CMakeFiles/jme.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building C object CMakeFiles/jme.dir/src/events.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building C object CMakeFiles/jme.dir/src/events.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/jme.dir/src/events.c.o -MF CMakeFiles/jme.dir/src/events.c.o.d -o CMakeFiles/jme.dir/src/events.c.o -c /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/events.c
 
 CMakeFiles/jme.dir/src/events.c.i: cmake_force
@@ -187,7 +229,7 @@ CMakeFiles/jme.dir/src/events.c.s: cmake_force
 CMakeFiles/jme.dir/src/fixstar.c.o: CMakeFiles/jme.dir/flags.make
 CMakeFiles/jme.dir/src/fixstar.c.o: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/fixstar.c
 CMakeFiles/jme.dir/src/fixstar.c.o: CMakeFiles/jme.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building C object CMakeFiles/jme.dir/src/fixstar.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building C object CMakeFiles/jme.dir/src/fixstar.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/jme.dir/src/fixstar.c.o -MF CMakeFiles/jme.dir/src/fixstar.c.o.d -o CMakeFiles/jme.dir/src/fixstar.c.o -c /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/fixstar.c
 
 CMakeFiles/jme.dir/src/fixstar.c.i: cmake_force
@@ -201,7 +243,7 @@ CMakeFiles/jme.dir/src/fixstar.c.s: cmake_force
 CMakeFiles/jme.dir/src/houses.c.o: CMakeFiles/jme.dir/flags.make
 CMakeFiles/jme.dir/src/houses.c.o: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/houses.c
 CMakeFiles/jme.dir/src/houses.c.o: CMakeFiles/jme.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building C object CMakeFiles/jme.dir/src/houses.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building C object CMakeFiles/jme.dir/src/houses.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/jme.dir/src/houses.c.o -MF CMakeFiles/jme.dir/src/houses.c.o.d -o CMakeFiles/jme.dir/src/houses.c.o -c /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/houses.c
 
 CMakeFiles/jme.dir/src/houses.c.i: cmake_force
@@ -215,7 +257,7 @@ CMakeFiles/jme.dir/src/houses.c.s: cmake_force
 CMakeFiles/jme.dir/src/julian.c.o: CMakeFiles/jme.dir/flags.make
 CMakeFiles/jme.dir/src/julian.c.o: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/julian.c
 CMakeFiles/jme.dir/src/julian.c.o: CMakeFiles/jme.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building C object CMakeFiles/jme.dir/src/julian.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building C object CMakeFiles/jme.dir/src/julian.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/jme.dir/src/julian.c.o -MF CMakeFiles/jme.dir/src/julian.c.o.d -o CMakeFiles/jme.dir/src/julian.c.o -c /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/julian.c
 
 CMakeFiles/jme.dir/src/julian.c.i: cmake_force
@@ -229,7 +271,7 @@ CMakeFiles/jme.dir/src/julian.c.s: cmake_force
 CMakeFiles/jme.dir/src/jpl.c.o: CMakeFiles/jme.dir/flags.make
 CMakeFiles/jme.dir/src/jpl.c.o: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/jpl.c
 CMakeFiles/jme.dir/src/jpl.c.o: CMakeFiles/jme.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building C object CMakeFiles/jme.dir/src/jpl.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building C object CMakeFiles/jme.dir/src/jpl.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/jme.dir/src/jpl.c.o -MF CMakeFiles/jme.dir/src/jpl.c.o.d -o CMakeFiles/jme.dir/src/jpl.c.o -c /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/jpl.c
 
 CMakeFiles/jme.dir/src/jpl.c.i: cmake_force
@@ -243,7 +285,7 @@ CMakeFiles/jme.dir/src/jpl.c.s: cmake_force
 CMakeFiles/jme.dir/src/metadata.c.o: CMakeFiles/jme.dir/flags.make
 CMakeFiles/jme.dir/src/metadata.c.o: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/metadata.c
 CMakeFiles/jme.dir/src/metadata.c.o: CMakeFiles/jme.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building C object CMakeFiles/jme.dir/src/metadata.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building C object CMakeFiles/jme.dir/src/metadata.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/jme.dir/src/metadata.c.o -MF CMakeFiles/jme.dir/src/metadata.c.o.d -o CMakeFiles/jme.dir/src/metadata.c.o -c /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/metadata.c
 
 CMakeFiles/jme.dir/src/metadata.c.i: cmake_force
@@ -257,7 +299,7 @@ CMakeFiles/jme.dir/src/metadata.c.s: cmake_force
 CMakeFiles/jme.dir/src/meeus.c.o: CMakeFiles/jme.dir/flags.make
 CMakeFiles/jme.dir/src/meeus.c.o: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/meeus.c
 CMakeFiles/jme.dir/src/meeus.c.o: CMakeFiles/jme.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building C object CMakeFiles/jme.dir/src/meeus.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building C object CMakeFiles/jme.dir/src/meeus.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/jme.dir/src/meeus.c.o -MF CMakeFiles/jme.dir/src/meeus.c.o.d -o CMakeFiles/jme.dir/src/meeus.c.o -c /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/meeus.c
 
 CMakeFiles/jme.dir/src/meeus.c.i: cmake_force
@@ -268,10 +310,24 @@ CMakeFiles/jme.dir/src/meeus.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/jme.dir/src/meeus.c.s"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/meeus.c -o CMakeFiles/jme.dir/src/meeus.c.s
 
+CMakeFiles/jme.dir/src/moshier.c.o: CMakeFiles/jme.dir/flags.make
+CMakeFiles/jme.dir/src/moshier.c.o: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/moshier.c
+CMakeFiles/jme.dir/src/moshier.c.o: CMakeFiles/jme.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building C object CMakeFiles/jme.dir/src/moshier.c.o"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/jme.dir/src/moshier.c.o -MF CMakeFiles/jme.dir/src/moshier.c.o.d -o CMakeFiles/jme.dir/src/moshier.c.o -c /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/moshier.c
+
+CMakeFiles/jme.dir/src/moshier.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/jme.dir/src/moshier.c.i"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/moshier.c > CMakeFiles/jme.dir/src/moshier.c.i
+
+CMakeFiles/jme.dir/src/moshier.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/jme.dir/src/moshier.c.s"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/moshier.c -o CMakeFiles/jme.dir/src/moshier.c.s
+
 CMakeFiles/jme.dir/src/moshier_full.c.o: CMakeFiles/jme.dir/flags.make
 CMakeFiles/jme.dir/src/moshier_full.c.o: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/moshier_full.c
 CMakeFiles/jme.dir/src/moshier_full.c.o: CMakeFiles/jme.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building C object CMakeFiles/jme.dir/src/moshier_full.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building C object CMakeFiles/jme.dir/src/moshier_full.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/jme.dir/src/moshier_full.c.o -MF CMakeFiles/jme.dir/src/moshier_full.c.o.d -o CMakeFiles/jme.dir/src/moshier_full.c.o -c /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/moshier_full.c
 
 CMakeFiles/jme.dir/src/moshier_full.c.i: cmake_force
@@ -285,7 +341,7 @@ CMakeFiles/jme.dir/src/moshier_full.c.s: cmake_force
 CMakeFiles/jme.dir/src/sidereal.c.o: CMakeFiles/jme.dir/flags.make
 CMakeFiles/jme.dir/src/sidereal.c.o: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/sidereal.c
 CMakeFiles/jme.dir/src/sidereal.c.o: CMakeFiles/jme.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building C object CMakeFiles/jme.dir/src/sidereal.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building C object CMakeFiles/jme.dir/src/sidereal.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/jme.dir/src/sidereal.c.o -MF CMakeFiles/jme.dir/src/sidereal.c.o.d -o CMakeFiles/jme.dir/src/sidereal.c.o -c /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/sidereal.c
 
 CMakeFiles/jme.dir/src/sidereal.c.i: cmake_force
@@ -299,7 +355,7 @@ CMakeFiles/jme.dir/src/sidereal.c.s: cmake_force
 CMakeFiles/jme.dir/src/time.c.o: CMakeFiles/jme.dir/flags.make
 CMakeFiles/jme.dir/src/time.c.o: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/time.c
 CMakeFiles/jme.dir/src/time.c.o: CMakeFiles/jme.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building C object CMakeFiles/jme.dir/src/time.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building C object CMakeFiles/jme.dir/src/time.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/jme.dir/src/time.c.o -MF CMakeFiles/jme.dir/src/time.c.o.d -o CMakeFiles/jme.dir/src/time.c.o -c /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/time.c
 
 CMakeFiles/jme.dir/src/time.c.i: cmake_force
@@ -313,7 +369,7 @@ CMakeFiles/jme.dir/src/time.c.s: cmake_force
 CMakeFiles/jme.dir/src/vsop87.c.o: CMakeFiles/jme.dir/flags.make
 CMakeFiles/jme.dir/src/vsop87.c.o: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/vsop87.c
 CMakeFiles/jme.dir/src/vsop87.c.o: CMakeFiles/jme.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building C object CMakeFiles/jme.dir/src/vsop87.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building C object CMakeFiles/jme.dir/src/vsop87.c.o"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/jme.dir/src/vsop87.c.o -MF CMakeFiles/jme.dir/src/vsop87.c.o.d -o CMakeFiles/jme.dir/src/vsop87.c.o -c /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/vsop87.c
 
 CMakeFiles/jme.dir/src/vsop87.c.i: cmake_force
@@ -324,6 +380,34 @@ CMakeFiles/jme.dir/src/vsop87.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/jme.dir/src/vsop87.c.s"
 	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/vsop87.c -o CMakeFiles/jme.dir/src/vsop87.c.s
 
+CMakeFiles/jme.dir/src/vsop87a_full.c.o: CMakeFiles/jme.dir/flags.make
+CMakeFiles/jme.dir/src/vsop87a_full.c.o: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/vsop87a_full.c
+CMakeFiles/jme.dir/src/vsop87a_full.c.o: CMakeFiles/jme.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building C object CMakeFiles/jme.dir/src/vsop87a_full.c.o"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/jme.dir/src/vsop87a_full.c.o -MF CMakeFiles/jme.dir/src/vsop87a_full.c.o.d -o CMakeFiles/jme.dir/src/vsop87a_full.c.o -c /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/vsop87a_full.c
+
+CMakeFiles/jme.dir/src/vsop87a_full.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/jme.dir/src/vsop87a_full.c.i"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/vsop87a_full.c > CMakeFiles/jme.dir/src/vsop87a_full.c.i
+
+CMakeFiles/jme.dir/src/vsop87a_full.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/jme.dir/src/vsop87a_full.c.s"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/vsop87a_full.c -o CMakeFiles/jme.dir/src/vsop87a_full.c.s
+
+CMakeFiles/jme.dir/src/vsop87d_full.c.o: CMakeFiles/jme.dir/flags.make
+CMakeFiles/jme.dir/src/vsop87d_full.c.o: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/vsop87d_full.c
+CMakeFiles/jme.dir/src/vsop87d_full.c.o: CMakeFiles/jme.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building C object CMakeFiles/jme.dir/src/vsop87d_full.c.o"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/jme.dir/src/vsop87d_full.c.o -MF CMakeFiles/jme.dir/src/vsop87d_full.c.o.d -o CMakeFiles/jme.dir/src/vsop87d_full.c.o -c /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/vsop87d_full.c
+
+CMakeFiles/jme.dir/src/vsop87d_full.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/jme.dir/src/vsop87d_full.c.i"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/vsop87d_full.c > CMakeFiles/jme.dir/src/vsop87d_full.c.i
+
+CMakeFiles/jme.dir/src/vsop87d_full.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/jme.dir/src/vsop87d_full.c.s"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/vsop87d_full.c -o CMakeFiles/jme.dir/src/vsop87d_full.c.s
+
 # Object files for target jme
 jme_OBJECTS = \
 "CMakeFiles/jme.dir/src/api.c.o" \
@@ -333,6 +417,9 @@ jme_OBJECTS = \
 "CMakeFiles/jme.dir/src/context.c.o" \
 "CMakeFiles/jme.dir/src/coordinates.c.o" \
 "CMakeFiles/jme.dir/src/elp2000.c.o" \
+"CMakeFiles/jme.dir/src/elp2000/arguments.c.o" \
+"CMakeFiles/jme.dir/src/elp2000/elp2000-82b.c.o" \
+"CMakeFiles/jme.dir/src/elp2000/series.c.o" \
 "CMakeFiles/jme.dir/src/events.c.o" \
 "CMakeFiles/jme.dir/src/fixstar.c.o" \
 "CMakeFiles/jme.dir/src/houses.c.o" \
@@ -340,40 +427,49 @@ jme_OBJECTS = \
 "CMakeFiles/jme.dir/src/jpl.c.o" \
 "CMakeFiles/jme.dir/src/metadata.c.o" \
 "CMakeFiles/jme.dir/src/meeus.c.o" \
+"CMakeFiles/jme.dir/src/moshier.c.o" \
 "CMakeFiles/jme.dir/src/moshier_full.c.o" \
 "CMakeFiles/jme.dir/src/sidereal.c.o" \
 "CMakeFiles/jme.dir/src/time.c.o" \
-"CMakeFiles/jme.dir/src/vsop87.c.o"
+"CMakeFiles/jme.dir/src/vsop87.c.o" \
+"CMakeFiles/jme.dir/src/vsop87a_full.c.o" \
+"CMakeFiles/jme.dir/src/vsop87d_full.c.o"
 
 # External object files for target jme
 jme_EXTERNAL_OBJECTS =
 
-libjme.a: CMakeFiles/jme.dir/src/api.c.o
-libjme.a: CMakeFiles/jme.dir/src/angle.c.o
-libjme.a: CMakeFiles/jme.dir/src/astrometry.c.o
-libjme.a: CMakeFiles/jme.dir/src/calc.c.o
-libjme.a: CMakeFiles/jme.dir/src/context.c.o
-libjme.a: CMakeFiles/jme.dir/src/coordinates.c.o
-libjme.a: CMakeFiles/jme.dir/src/elp2000.c.o
-libjme.a: CMakeFiles/jme.dir/src/events.c.o
-libjme.a: CMakeFiles/jme.dir/src/fixstar.c.o
-libjme.a: CMakeFiles/jme.dir/src/houses.c.o
-libjme.a: CMakeFiles/jme.dir/src/julian.c.o
-libjme.a: CMakeFiles/jme.dir/src/jpl.c.o
-libjme.a: CMakeFiles/jme.dir/src/metadata.c.o
-libjme.a: CMakeFiles/jme.dir/src/meeus.c.o
-libjme.a: CMakeFiles/jme.dir/src/moshier_full.c.o
-libjme.a: CMakeFiles/jme.dir/src/sidereal.c.o
-libjme.a: CMakeFiles/jme.dir/src/time.c.o
-libjme.a: CMakeFiles/jme.dir/src/vsop87.c.o
-libjme.a: CMakeFiles/jme.dir/build.make
-libjme.a: CMakeFiles/jme.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Linking C static library libjme.a"
-	$(CMAKE_COMMAND) -P CMakeFiles/jme.dir/cmake_clean_target.cmake
+libjme.so: CMakeFiles/jme.dir/src/api.c.o
+libjme.so: CMakeFiles/jme.dir/src/angle.c.o
+libjme.so: CMakeFiles/jme.dir/src/astrometry.c.o
+libjme.so: CMakeFiles/jme.dir/src/calc.c.o
+libjme.so: CMakeFiles/jme.dir/src/context.c.o
+libjme.so: CMakeFiles/jme.dir/src/coordinates.c.o
+libjme.so: CMakeFiles/jme.dir/src/elp2000.c.o
+libjme.so: CMakeFiles/jme.dir/src/elp2000/arguments.c.o
+libjme.so: CMakeFiles/jme.dir/src/elp2000/elp2000-82b.c.o
+libjme.so: CMakeFiles/jme.dir/src/elp2000/series.c.o
+libjme.so: CMakeFiles/jme.dir/src/events.c.o
+libjme.so: CMakeFiles/jme.dir/src/fixstar.c.o
+libjme.so: CMakeFiles/jme.dir/src/houses.c.o
+libjme.so: CMakeFiles/jme.dir/src/julian.c.o
+libjme.so: CMakeFiles/jme.dir/src/jpl.c.o
+libjme.so: CMakeFiles/jme.dir/src/metadata.c.o
+libjme.so: CMakeFiles/jme.dir/src/meeus.c.o
+libjme.so: CMakeFiles/jme.dir/src/moshier.c.o
+libjme.so: CMakeFiles/jme.dir/src/moshier_full.c.o
+libjme.so: CMakeFiles/jme.dir/src/sidereal.c.o
+libjme.so: CMakeFiles/jme.dir/src/time.c.o
+libjme.so: CMakeFiles/jme.dir/src/vsop87.c.o
+libjme.so: CMakeFiles/jme.dir/src/vsop87a_full.c.o
+libjme.so: CMakeFiles/jme.dir/src/vsop87d_full.c.o
+libjme.so: CMakeFiles/jme.dir/build.make
+libjme.so: CMakeFiles/jme.dir/compiler_depend.ts
+libjme.so: CMakeFiles/jme.dir/link.txt
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Linking C shared library libjme.so"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/jme.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
-CMakeFiles/jme.dir/build: libjme.a
+CMakeFiles/jme.dir/build: libjme.so
 .PHONY : CMakeFiles/jme.dir/build
 
 CMakeFiles/jme.dir/clean:

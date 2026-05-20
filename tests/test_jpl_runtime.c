@@ -39,6 +39,7 @@ int main(void)
     int continuous = 0;
     double rectangular[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     double ecliptic[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    double calc_results[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
     double order_state[12] = {
         0.0, 0.0, 0.0, 0.0,
         0.0, 0.0, 0.0, 0.0,
@@ -490,6 +491,26 @@ int main(void)
 
     if (!finite_state(ecliptic)) {
         fprintf(stderr, "UTC enum ecliptic state is non-finite\n");
+        return 1;
+    }
+
+    if (jme_calc(2451545.0, JME_BODY_SUN, JME_CALC_XYZ | JME_CALC_J2000, calc_results, error) != JME_OK) {
+        fprintf(stderr, "high-level calc failed with kernel: %s\n", error);
+        return 1;
+    }
+
+    if (!finite_state(calc_results) || fabs(jme_state_distance(calc_results) - 0.98328) > 0.02) {
+        fprintf(stderr, "high-level calc Sun distance mismatch\n");
+        return 1;
+    }
+
+    if (jme_calc(2451545.0, JME_BODY_MOON, JME_CALC_TRUE_POSITION, calc_results, error) != JME_OK) {
+        fprintf(stderr, "high-level Moon calc failed with kernel: %s\n", error);
+        return 1;
+    }
+
+    if (!finite_state(calc_results) || calc_results[2] <= 0.0 || calc_results[2] > 0.01) {
+        fprintf(stderr, "high-level Moon distance range mismatch\n");
         return 1;
     }
 

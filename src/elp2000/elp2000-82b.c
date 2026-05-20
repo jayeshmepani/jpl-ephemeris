@@ -174,8 +174,8 @@ cartesian_3d_point geocentric_moon_position_cartesian(double t)
     sp = geocentric_moon_position(t);
     
     // converting longitude and latitude from arcseconds to radians (π = 368000")
-    sp.longitude *= M_PI / 648000.0;
-    sp.latitude *= M_PI / 648000.0;
+    sp.longitude *= 3.14159265358979323846 / 648000.0;
+    sp.latitude *= 3.14159265358979323846 / 648000.0;
     
     // converting to rectangular coordinates
     rp.x = sp.distance * cos(sp.longitude) * cos(sp.latitude);

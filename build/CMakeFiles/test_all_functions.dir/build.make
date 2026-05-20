@@ -96,7 +96,7 @@ test_all_functions_EXTERNAL_OBJECTS =
 test_all_functions: CMakeFiles/test_all_functions.dir/tests/test_all_functions.c.o
 test_all_functions: CMakeFiles/test_all_functions.dir/build.make
 test_all_functions: CMakeFiles/test_all_functions.dir/compiler_depend.ts
-test_all_functions: libjme.a
+test_all_functions: libjme.so
 test_all_functions: CMakeFiles/test_all_functions.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking C executable test_all_functions"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/test_all_functions.dir/link.txt --verbose=$(VERBOSE)

@@ -1,4 +1,5 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/jme.dir/link.d"
   "CMakeFiles/jme.dir/src/angle.c.o"
   "CMakeFiles/jme.dir/src/angle.c.o.d"
   "CMakeFiles/jme.dir/src/api.c.o"
@@ -13,6 +14,12 @@ file(REMOVE_RECURSE
   "CMakeFiles/jme.dir/src/coordinates.c.o.d"
   "CMakeFiles/jme.dir/src/elp2000.c.o"
   "CMakeFiles/jme.dir/src/elp2000.c.o.d"
+  "CMakeFiles/jme.dir/src/elp2000/arguments.c.o"
+  "CMakeFiles/jme.dir/src/elp2000/arguments.c.o.d"
+  "CMakeFiles/jme.dir/src/elp2000/elp2000-82b.c.o"
+  "CMakeFiles/jme.dir/src/elp2000/elp2000-82b.c.o.d"
+  "CMakeFiles/jme.dir/src/elp2000/series.c.o"
+  "CMakeFiles/jme.dir/src/elp2000/series.c.o.d"
   "CMakeFiles/jme.dir/src/events.c.o"
   "CMakeFiles/jme.dir/src/events.c.o.d"
   "CMakeFiles/jme.dir/src/fixstar.c.o"
@@ -27,6 +34,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/jme.dir/src/meeus.c.o.d"
   "CMakeFiles/jme.dir/src/metadata.c.o"
   "CMakeFiles/jme.dir/src/metadata.c.o.d"
+  "CMakeFiles/jme.dir/src/moshier.c.o"
+  "CMakeFiles/jme.dir/src/moshier.c.o.d"
   "CMakeFiles/jme.dir/src/moshier_full.c.o"
   "CMakeFiles/jme.dir/src/moshier_full.c.o.d"
   "CMakeFiles/jme.dir/src/sidereal.c.o"
@@ -35,8 +44,12 @@ file(REMOVE_RECURSE
   "CMakeFiles/jme.dir/src/time.c.o.d"
   "CMakeFiles/jme.dir/src/vsop87.c.o"
   "CMakeFiles/jme.dir/src/vsop87.c.o.d"
-  "libjme.a"
+  "CMakeFiles/jme.dir/src/vsop87a_full.c.o"
+  "CMakeFiles/jme.dir/src/vsop87a_full.c.o.d"
+  "CMakeFiles/jme.dir/src/vsop87d_full.c.o"
+  "CMakeFiles/jme.dir/src/vsop87d_full.c.o.d"
   "libjme.pdb"
+  "libjme.so"
 )
 
 # Per-language clean rules from dependency scanning.

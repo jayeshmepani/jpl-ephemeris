@@ -96,7 +96,7 @@ test_jpl_runtime_EXTERNAL_OBJECTS =
 test_jpl_runtime: CMakeFiles/test_jpl_runtime.dir/tests/test_jpl_runtime.c.o
 test_jpl_runtime: CMakeFiles/test_jpl_runtime.dir/build.make
 test_jpl_runtime: CMakeFiles/test_jpl_runtime.dir/compiler_depend.ts
-test_jpl_runtime: libjme.a
+test_jpl_runtime: libjme.so
 test_jpl_runtime: CMakeFiles/test_jpl_runtime.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking C executable test_jpl_runtime"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/test_jpl_runtime.dir/link.txt --verbose=$(VERBOSE)

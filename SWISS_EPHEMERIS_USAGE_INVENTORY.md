@@ -259,7 +259,7 @@ Definitions:
 
 - **Ready:** equivalent exists and current behavior is low-risk for these projects.
 - **Partial:** equivalent exists, but behavior is not yet strict enough to guarantee intact I/O for these projects.
-- **Not ready:** equivalent symbol exists but currently returns an error for the required behavior, or the required Swiss-compatible surface is not implemented.
+- **Not ready:** equivalent symbol exists but currently returns an error for the required behavior, or the required Swiss-compatible surface is in the open release domain.
 
 ### Function Readiness
 

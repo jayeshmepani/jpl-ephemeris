@@ -3,7 +3,7 @@ test_all_constants: \
   /usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/crti.o \
   /usr/lib/gcc/x86_64-linux-gnu/15/crtbeginS.o \
   CMakeFiles/test_all_constants.dir/tests/test_all_constants.c.o \
-  libjme.a \
+  libjme.so \
   /usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/libm.so \
   /usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/libm.so \
   /usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/libm.so \
@@ -39,7 +39,7 @@ test_all_constants: \
 
 CMakeFiles/test_all_constants.dir/tests/test_all_constants.c.o:
 
-libjme.a:
+libjme.so:
 
 /usr/lib/gcc/x86_64-linux-gnu/15/../../../x86_64-linux-gnu/libm.so:
 

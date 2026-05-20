@@ -1,1 +1,1 @@
-/usr/bin/cc -Wl,--dependency-file=CMakeFiles/test_all_functions.dir/link.d CMakeFiles/test_all_functions.dir/tests/test_all_functions.c.o -o test_all_functions  libjme.a -lm
+/usr/bin/cc -Wl,--dependency-file=CMakeFiles/test_all_functions.dir/link.d CMakeFiles/test_all_functions.dir/tests/test_all_functions.c.o -o test_all_functions  -Wl,-rpath,/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build libjme.so -lm
