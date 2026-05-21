@@ -2,7 +2,97 @@
 
 #include "context.h"
 
+#include <math.h>
 #include <string.h>
+#include <stdio.h>
+
+static int token_matches(const char *token, const char *expected)
+{
+    size_t i = 0;
+
+    if (token == 0 || expected == 0) {
+        return 0;
+    }
+
+    while (token[i] != '\0' && expected[i] != '\0') {
+        char a = token[i];
+        char b = expected[i];
+        if (a >= 'a' && a <= 'z') { a = (char)(a - 'a' + 'A'); }
+        if (b >= 'a' && b <= 'z') { b = (char)(b - 'a' + 'A'); }
+        if (a != b) {
+            return 0;
+        }
+        i++;
+    }
+
+    return token[i] == '\0' && expected[i] == '\0';
+}
+
+static void set_default_models(jme_context *ctx)
+{
+    ctx->model_bias = JME_MODEL_BIAS_NONE;
+    ctx->model_nut = JME_MODEL_NUT_IAU_1980;
+    ctx->model_obl = JME_MODEL_OBL_IAU_1980;
+    ctx->model_prec = JME_MODEL_PREC_IAU_1976;
+    ctx->model_sidt = JME_MODEL_SIDT_IAU_1976;
+    ctx->model_deltat = JME_MODEL_DELTAT_ESPENAK_MEEUS_2006;
+}
+
+static void write_model_summary(jme_context *ctx)
+{
+    snprintf(ctx->astro_models, sizeof(ctx->astro_models),
+        "BIAS=%d;NUT=%d;OBL=%d;PREC=%d;SIDT=%d;DELTAT=%d",
+        ctx->model_bias,
+        ctx->model_nut,
+        ctx->model_obl,
+        ctx->model_prec,
+        ctx->model_sidt,
+        ctx->model_deltat);
+}
+
+static void apply_model_token(jme_context *ctx, const char *token)
+{
+    if (token_matches(token, "DEFAULT") || token_matches(token, "IAU1980") || token_matches(token, "IAU1976")) {
+        set_default_models(ctx);
+    } else if (token_matches(token, "IAU2000")) {
+        ctx->model_bias = JME_MODEL_BIAS_IAU2000;
+        ctx->model_nut = JME_MODEL_NUT_IAU_2000B;
+        ctx->model_obl = JME_MODEL_OBL_IAU_2000;
+        ctx->model_prec = JME_MODEL_PREC_IAU_2000;
+    } else if (token_matches(token, "IAU2006")) {
+        ctx->model_bias = JME_MODEL_BIAS_IAU2006;
+        ctx->model_nut = JME_MODEL_NUT_IAU_2000B;
+        ctx->model_obl = JME_MODEL_OBL_IAU_2006;
+        ctx->model_prec = JME_MODEL_PREC_IAU_2006;
+        ctx->model_sidt = JME_MODEL_SIDT_IAU_2006;
+    } else if (token_matches(token, "NUT1980")) {
+        ctx->model_nut = JME_MODEL_NUT_IAU_1980;
+    } else if (token_matches(token, "NUT2000B")) {
+        ctx->model_nut = JME_MODEL_NUT_IAU_2000B;
+    } else if (token_matches(token, "OBL1980")) {
+        ctx->model_obl = JME_MODEL_OBL_IAU_1980;
+    } else if (token_matches(token, "OBL2000")) {
+        ctx->model_obl = JME_MODEL_OBL_IAU_2000;
+    } else if (token_matches(token, "OBL2006")) {
+        ctx->model_obl = JME_MODEL_OBL_IAU_2006;
+    } else if (token_matches(token, "PREC1976")) {
+        ctx->model_prec = JME_MODEL_PREC_IAU_1976;
+    } else if (token_matches(token, "PREC2000")) {
+        ctx->model_prec = JME_MODEL_PREC_IAU_2000;
+    } else if (token_matches(token, "PREC2006")) {
+        ctx->model_prec = JME_MODEL_PREC_IAU_2006;
+    } else if (token_matches(token, "DELTAT1984")) {
+        ctx->model_deltat = JME_MODEL_DELTAT_STEPHENSON_MORRISON_1984;
+    } else if (token_matches(token, "DELTAT1997")) {
+        ctx->model_deltat = JME_MODEL_DELTAT_STEPHENSON_1997;
+    } else if (token_matches(token, "DELTAT2004")) {
+        ctx->model_deltat = JME_MODEL_DELTAT_STEPHENSON_MORRISON_2004;
+    } else if (token_matches(token, "DELTAT2006")) {
+        ctx->model_deltat = JME_MODEL_DELTAT_ESPENAK_MEEUS_2006;
+    } else if (token_matches(token, "DELTAT2016")) {
+        ctx->model_deltat = JME_MODEL_DELTAT_STEPHENSON_ETC_2016;
+    }
+}
 
 const char *jme_version(char *buffer, size_t buffer_size)
 {
@@ -51,8 +141,8 @@ void jme_set_sidereal_mode(int sidereal_mode, double t0, double ayan_t0)
 {
     jme_context *ctx = jme_get_context();
     ctx->sidereal_mode = sidereal_mode;
-    ctx->sidereal_t0 = t0;
-    ctx->sidereal_ayan_t0 = ayan_t0;
+    ctx->sidereal_t0 = isfinite(t0) ? t0 : 0.0;
+    ctx->sidereal_ayan_t0 = isfinite(ayan_t0) ? ayan_t0 : 0.0;
 }
 
 void jme_get_sidereal_mode(int *sidereal_mode, double *t0, double *ayan_t0)
@@ -73,7 +163,13 @@ void jme_get_sidereal_mode(int *sidereal_mode, double *t0, double *ayan_t0)
 void jme_set_topo(double lon, double lat, double altitude)
 {
     jme_context *ctx = jme_get_context();
-    ctx->topo_lon = lon;
+    if (!isfinite(lon)) { lon = 0.0; }
+    if (!isfinite(lat)) { lat = 0.0; }
+    if (!isfinite(altitude)) { altitude = 0.0; }
+
+    ctx->topo_lon = jme_degrees_difference_signed(lon, 0.0);
+    if (lat > 90.0) { lat = 90.0; }
+    if (lat < -90.0) { lat = -90.0; }
     ctx->topo_lat = lat;
     ctx->topo_alt = altitude;
 }
@@ -81,8 +177,36 @@ void jme_set_topo(double lon, double lat, double altitude)
 void jme_set_astro_models(const char *models, int flags)
 {
     jme_context *ctx = jme_get_context();
+    char token[64];
+    size_t i = 0;
+    size_t j = 0;
     (void)flags;
-    jme_set_string(ctx->astro_models, sizeof(ctx->astro_models), models);
+
+    if (models == 0 || models[0] == '\0') {
+        set_default_models(ctx);
+        write_model_summary(ctx);
+        return;
+    }
+
+    while (models[i] != '\0') {
+        char c = models[i++];
+        if (c == ',' || c == ';' || c == ' ' || c == '\t' || c == '\n') {
+            if (j > 0) {
+                token[j] = '\0';
+                apply_model_token(ctx, token);
+                j = 0;
+            }
+        } else if (j + 1 < sizeof(token)) {
+            token[j++] = c;
+        }
+    }
+
+    if (j > 0) {
+        token[j] = '\0';
+        apply_model_token(ctx, token);
+    }
+
+    write_model_summary(ctx);
 }
 
 int jme_get_astro_models(char *models, int flags)
@@ -113,12 +237,21 @@ double jme_get_tid_acc(void)
 
 void jme_set_tid_acc(double t_acc)
 {
-    jme_get_context()->tidal_acceleration = t_acc;
+    if (isfinite(t_acc)) {
+        jme_get_context()->tidal_acceleration = t_acc;
+    }
 }
 
 void jme_set_delta_t_userdef(double dt)
 {
     jme_context *ctx = jme_get_context();
+
+    if (!isfinite(dt)) {
+        ctx->delta_t_userdef = 0.0;
+        ctx->delta_t_userdef_enabled = 0;
+        return;
+    }
+
     ctx->delta_t_userdef = dt;
     ctx->delta_t_userdef_enabled = 1;
 }

@@ -198,7 +198,8 @@ void test_astro_models_and_params() {
     char models[256];
     jme_set_astro_models("IAU2006", 0);
     TEST_ASSERT(jme_get_astro_models(models, 0) == JME_OK);
-    TEST_ASSERT(strcmp(models, "IAU2006") == 0);
+    TEST_ASSERT(strstr(models, "OBL=338") != NULL);
+    TEST_ASSERT(strstr(models, "PREC=341") != NULL);
     
     jme_set_lapse_rate(0.0065);
     jme_set_interpolate_nut(1);

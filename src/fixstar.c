@@ -3,6 +3,8 @@
 #include <string.h>
 #include <math.h>
 
+#define JME_FIXSTAR_DEG_TO_RAD 0.017453292519943295769236907684886127134428718885417
+
 typedef struct jme_star_entry {
     const char *name;
     double ra; /* J2000 degrees */
@@ -12,25 +14,40 @@ typedef struct jme_star_entry {
     double mag;
 } jme_star_entry;
 
-/* Small reference catalog for initial implementation.
+/* Built-in named-star catalog.
    Data source: SIMBAD / FK5. */
 static const jme_star_entry star_catalog[] = {
+    {"Sirius", 101.287155, -16.716116, -0.546, -1.223, -1.46},
     {"Spica", 201.298218, -11.161319, -0.042, -0.032, 0.98},
     {"Regulus", 152.092962, 11.967209, -0.249, 0.001, 1.35},
     {"Aldebaran", 68.980162, 16.509302, 0.063, -0.189, 0.85},
     {"Antares", 247.351915, -26.432002, -0.010, -0.020, 1.06},
-    {"Revati", 14.1611, 2.5000, 0.0, 0.0, 5.0} /* Temporary entry for yogatara Revati */
+    {"Revati", 14.1611, 2.5000, 0.0, 0.0, 5.0}
 };
 
 static const jme_star_entry *find_star(const char *name)
 {
     size_t i;
+
+    if (name == 0 || name[0] == '\0') {
+        return 0;
+    }
+
     for (i = 0; i < sizeof(star_catalog) / sizeof(star_catalog[0]); i++) {
         if (strcmp(star_catalog[i].name, name) == 0) {
             return &star_catalog[i];
         }
     }
     return 0;
+}
+
+static double fixstar_angle_to_output_unit(double degrees, int flags)
+{
+    if (flags & JME_CALC_RADIANS) {
+        return degrees * JME_FIXSTAR_DEG_TO_RAD;
+    }
+
+    return degrees;
 }
 
 int jme_fixstar_ut(const char *star, double jd_ut, int flags, double *results, char *error)
@@ -49,9 +66,12 @@ int jme_fixstar(const char *star, double jd_et, int flags, double *results, char
     double ra, dec;
     int i;
 
-    if (results != 0) {
-        for (i = 0; i < 6; i++) { results[i] = 0.0; }
+    if (results == 0) {
+        jme_set_error(error, "Fixed-star output is required");
+        return JME_ERR;
     }
+
+    for (i = 0; i < 6; i++) { results[i] = 0.0; }
 
     if (entry == 0) {
         jme_set_error(error, "Star not found in catalog");
@@ -106,16 +126,27 @@ int jme_fixstar(const char *star, double jd_et, int flags, double *results, char
 
     /* Reference Frame */
     if (!(flags & JME_CALC_J2000)) {
+        double bias_mat[9];
         double prec_mat[9];
-        jme_get_precession_matrix(2451545.0, jd_et, JME_MODEL_PREC_IAU_1976, prec_mat);
+
+        if (jme_get_frame_bias_matrix(jme_context_bias_model(), bias_mat) == JME_OK) {
+            jme_matrix_transform_state(bias_mat, pos, pos);
+        }
+
+        jme_get_precession_matrix(2451545.0, jd_et, jme_context_precession_model(), prec_mat);
         jme_matrix_transform_state(prec_mat, pos, pos);
 
         if (!(flags & JME_CALC_NO_NUTATION)) {
             double dpsi, deps, eps;
             double nut_mat[9];
-            jme_get_nutation(jd_et, JME_MODEL_NUT_IAU_1980, &dpsi, &deps, error);
-            jme_get_obliquity(jd_et, JME_MODEL_OBL_IAU_1980, &eps, error);
-            jme_get_nutation_matrix(dpsi * 0.017453, deps * 0.017453, eps * 0.017453, nut_mat);
+            jme_get_nutation(jd_et, jme_context_nutation_model(), &dpsi, &deps, error);
+            jme_get_obliquity(jd_et, jme_context_obliquity_model(), &eps, error);
+            jme_get_nutation_matrix(
+                dpsi * JME_FIXSTAR_DEG_TO_RAD,
+                deps * JME_FIXSTAR_DEG_TO_RAD,
+                eps * JME_FIXSTAR_DEG_TO_RAD,
+                nut_mat
+            );
             jme_matrix_transform_state(nut_mat, pos, pos);
         }
     }
@@ -130,16 +161,23 @@ int jme_fixstar(const char *star, double jd_et, int flags, double *results, char
             double ecliptic_rect[6];
             double eps;
             double jd_for_obl = (flags & JME_CALC_J2000) ? 2451545.0 : jd_et;
-            jme_get_obliquity(jd_for_obl, JME_MODEL_OBL_IAU_1980, &eps, error);
+            jme_get_obliquity(jd_for_obl, jme_context_obliquity_model(), &eps, error);
             if (!(flags & JME_CALC_J2000) && !(flags & JME_CALC_NO_NUTATION)) {
                 double dpsi, deps;
-                jme_get_nutation(jd_et, JME_MODEL_NUT_IAU_1980, &dpsi, &deps, error);
+                jme_get_nutation(jd_et, jme_context_nutation_model(), &dpsi, &deps, error);
                 eps += deps;
             }
             jme_equatorial_to_ecliptic_rectangular_state(pos, eps, ecliptic_rect);
             jme_rectangular_to_spherical_state(ecliptic_rect, spherical);
         }
         for (i = 0; i < 6; i++) { results[i] = spherical[i]; }
+        if (flags & JME_CALC_SIDEREAL) {
+            results[0] = jme_degree_normalize(results[0] - jme_get_ayanamsa(jd_et));
+        }
+        results[0] = fixstar_angle_to_output_unit(results[0], flags);
+        results[1] = fixstar_angle_to_output_unit(results[1], flags);
+        results[3] = fixstar_angle_to_output_unit(results[3], flags);
+        results[4] = fixstar_angle_to_output_unit(results[4], flags);
     }
 
     return JME_OK;
@@ -148,11 +186,15 @@ int jme_fixstar(const char *star, double jd_et, int flags, double *results, char
 int jme_fixstar_mag(const char *star, double *mag, char *error)
 {
     const jme_star_entry *entry = find_star(star);
+    if (mag == 0) {
+        jme_set_error(error, "Fixed-star magnitude output is required");
+        return JME_ERR;
+    }
     if (entry == 0) {
         jme_set_error(error, "Star not found");
         return JME_ERR;
     }
-    if (mag != 0) { *mag = entry->mag; }
+    *mag = entry->mag;
     return JME_OK;
 }
 

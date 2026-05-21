@@ -7,18 +7,18 @@ This document tracks reference coverage against the project-owned JME API. Symbo
 | Metric | Swiss Ephemeris (Reference) | **JPL Moshier Ephemeris (Current)** | **Parity %** |
 | :--- | :--- | :--- | :--- |
 | **Reference Function Rows Mapped** | 106 | **106** | **100% mapping, not 100% behavior** |
-| **Total Functions (API Surface)** | - | **191** | (85 extra utilities) |
-| **Reference Constants** | 348 | **348** | **100%** |
-| **Total Constants (API Surface)** | - | **460** | (112 extra constants) |
+| **Total Functions (API Surface)** | - | **204** | 112 unique mapped `jme_*` functions + 92 extra `jme_*` functions |
+| **Reference Constants** | 348 | **348** | **100% mapped, not 100% semantic parity** |
+| **Total Constants (API Surface)** | - | **462** | (114 extra constants) |
 
 ---
 
 ### 1. Verification Summary
 
-1.  **Strict Constant Validation (460/460):**
+1.  **Strict Constant Validation (462/462):**
     *   **Test Suite:** `tests/test_all_constants.c`
-    *   **Result:** 100% Success. Verified existence and spelling for all 460 public `JME_*` constants.
-2.  **Function Symbol Validation (191/191):**
+    *   **Result:** 100% Success. Verified existence and spelling for all 462 public `JME_*` constants.
+2.  **Function Symbol Validation (204/204):**
     *   **Test Suite:** `tests/test_all_functions.c`
     *   **Result:** 100% Success for declared/defined symbol coverage and smoke-level call coverage. This is not a full Swiss behavior-parity claim.
 3.  **Clean-Room Compliance:**
@@ -82,23 +82,23 @@ All 106 reference behavior rows are mapped to native `jme_` equivalents. In the 
 | 46 | `swe_houses` | `jme_houses` | **Mapped; Koch/Krusinski/APC/Sunshine and exact systems implemented** |
 | 47 | `swe_houses_ex` | `jme_houses_ex` | **Mapped; Koch/Krusinski/APC/Sunshine and exact systems implemented** |
 | 48 | `swe_houses_ex2` | `jme_houses_ex2` | **Mapped; finite speeds implemented** |
-| 49 | `swe_houses_armc` | `jme_houses_armc` | **Mapped; Koch/Krusinski/APC and exact systems implemented** |
+| 49 | `swe_houses_armc` | `jme_houses_armc` | **Mapped; Koch/Krusinski/APC/Sunshine and exact systems implemented** |
 | 50 | `swe_houses_armc_ex2` | `jme_houses_armc_ex2` | **Mapped; finite speeds implemented** |
 | 51 | `swe_house_pos` | `jme_house_pos` | **Verified** |
 | 52 | `swe_house_name` | `jme_house_system_name` | **Verified** |
-| 53 | `swe_gauquelin_sector` | `jme_gauquelin_sector` | **Mapped; bounded event-based sector** |
-| 54 | `swe_sol_eclipse_where` | `jme_sol_eclipse_where` | **Mapped; exact pending** |
-| 55 | `swe_lun_occult_where` | `jme_lun_occult_where` | **Mapped; exact pending** |
-| 56 | `swe_sol_eclipse_how` | `jme_sol_eclipse_how` | **Mapped; exact pending** |
-| 57 | `swe_sol_eclipse_when_loc` | `jme_sol_eclipse_when_loc` | **Mapped; exact pending** |
-| 58 | `swe_lun_occult_when_loc` | `jme_lun_occult_when_loc` | **Mapped; exact pending** |
-| 59 | `swe_sol_eclipse_when_glob` | `jme_sol_eclipse_when_glob` | **Mapped; exact pending** |
-| 60 | `swe_lun_occult_when_glob` | `jme_lun_occult_when_glob` | **Mapped; exact pending** |
-| 61 | `swe_lun_eclipse_how` | `jme_lun_eclipse_how` | **Mapped; exact pending** |
-| 62 | `swe_lun_eclipse_when` | `jme_lun_eclipse_when` | **Mapped; exact pending** |
-| 63 | `swe_lun_eclipse_when_loc` | `jme_lun_eclipse_when_loc` | **Mapped; exact pending** |
-| 64 | `swe_pheno` | `jme_pheno` | **Verified; standard first five fields exported** |
-| 65 | `swe_pheno_ut` | `jme_pheno_ut` | **Verified; standard first five fields exported** |
+| 53 | `swe_gauquelin_sector` | `jme_gauquelin_sector` | **Mapped; methods 0/1 semiarc and 2/3 rise/set implemented; certification pending** |
+| 54 | `swe_sol_eclipse_where` | `jme_sol_eclipse_where` | **Mapped; native geometry implemented; exact locality certification pending** |
+| 55 | `swe_lun_occult_where` | `jme_lun_occult_where` | **Mapped; first-pass native geometry implemented; certification pending** |
+| 56 | `swe_sol_eclipse_how` | `jme_sol_eclipse_how` | **Mapped; native local circumstances implemented; exact-contact certification pending** |
+| 57 | `swe_sol_eclipse_when_loc` | `jme_sol_eclipse_when_loc` | **Mapped; native local search implemented; contact validation pending** |
+| 58 | `swe_lun_occult_when_loc` | `jme_lun_occult_when_loc` | **Mapped; first-pass local topocentric search implemented; certification pending** |
+| 59 | `swe_sol_eclipse_when_glob` | `jme_sol_eclipse_when_glob` | **Mapped; native global search and classification implemented; broader validation pending** |
+| 60 | `swe_lun_occult_when_glob` | `jme_lun_occult_when_glob` | **Mapped; first-pass global search implemented; certification pending** |
+| 61 | `swe_lun_eclipse_how` | `jme_lun_eclipse_how` | **Mapped; native lunar circumstances implemented; broader validation pending** |
+| 62 | `swe_lun_eclipse_when` | `jme_lun_eclipse_when` | **Mapped; native lunar search implemented; broader validation pending** |
+| 63 | `swe_lun_eclipse_when_loc` | `jme_lun_eclipse_when_loc` | **Mapped; local visibility/contact clipping implemented; certification pending** |
+| 64 | `swe_pheno` | `jme_pheno` | **Verified; standard fields plus extended geometry exported** |
+| 65 | `swe_pheno_ut` | `jme_pheno_ut` | **Verified; standard fields plus extended geometry exported** |
 | 66 | `swe_refrac` | `jme_refract` | **Verified** |
 | 67 | `swe_refrac_extended` | `jme_refract_extended` | **Verified** |
 | 68 | `swe_set_lapse_rate` | `jme_set_lapse_rate` | **Verified** |
@@ -143,9 +143,9 @@ All 106 reference behavior rows are mapped to native `jme_` equivalents. In the 
 
 ---
 
-### 3. Extended JME-Only Utilities (85 Additional Functions)
+### 3. Extended JME-Only Utilities
 
-JME provides **85 additional functions** beyond the original 106 reference behavior rows, including:
+JME provides **92 distinct public functions outside the 106-row reference behavior mapping**. The arithmetic is `112` unique mapped `jme_*` functions plus `92` extra `jme_*` functions, for `204` total public `jme_*` functions. Do not calculate this as `106 + 92`, because the `106` value is a behavior-row count, not a unique-function count.
 *   **Matrix Algebra:** `jme_matrix_multiply`, `jme_matrix_identity`, `jme_matrix_rotate_x/y/z`.
 *   **Native JPL State Lookups:** `jme_jpl_body_state_native_naif`, `jme_jpl_orientation_state_order_naif`.
 *   **Coordinate Vector Transforms:** `jme_rectangular_to_spherical_state`, `jme_spherical_to_rectangular_state`.

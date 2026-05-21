@@ -14,7 +14,9 @@ This is not a wrapper around Astrodienst Swiss Ephemeris and does not use Swiss 
 
 ## Current Status
 
-This is the initial implementation base:
+This repository now contains a substantial implemented ephemeris engine, but it is still not exact across every domain.
+
+Current status summary:
 
 - CMake build
 - public C header at `include/jme/jme.h`
@@ -22,10 +24,8 @@ This is the initial implementation base:
 - context/path/version API
 - Julian day conversion API
 - CALCEPH backend boundary
-- `jme_calc_ut()` entry point with explicit `JME_ERR` until the exact JPL/CALCEPH reduction pipeline is implemented
-- C tests for current implemented API contract
-
-This is not a complete ephemeris engine yet.
+- analytical fallback engines for Moshier, VSOP87, ELP2000, and Meeus
+- eclipse, occultation, heliacal, house, and physical-phenomena coverage with remaining validation gaps documented in `docs/IMPLEMENTATION_STATUS.md` and `docs/REFERENCE_FUNCTION_COVERAGE.md`
 
 No public calculation function may return approximate production output. A function is either exact for its documented contract or it returns `JME_ERR` with a clear error message.
 

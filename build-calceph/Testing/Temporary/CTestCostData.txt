@@ -1,0 +1,9 @@
+jpl_runtime 10 0.000345529
+julian 4 0.000824346
+api_contract 2 47.089
+all_constants 4 0.000591931
+all_functions 4 2.39686
+analytical_validation 4 0.017274
+api_inventory 4 0.129505
+symbol_coverage 4 0.407603
+---

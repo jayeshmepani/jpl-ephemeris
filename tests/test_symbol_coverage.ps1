@@ -26,7 +26,7 @@ $jmeText = $jmeHeader + "`n" + $jmeExtendedHeader
 
 $jmeFunctions = [regex]::Matches(
     $jmeText,
-    "(?m)^\s*(?:const\s+char\s*\*|void|double|int)\s+(jme_[a-zA-Z0-9_]+)\s*\("
+    "(?m)^\s*(?:const\s+char\s*\*\s*|char\s*\*\s*|void\s+|double\s+|int\s+)(jme_[a-zA-Z0-9_]+)\s*\("
 ) | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique
 
 $jmeConstants = [regex]::Matches($jmeText, "\bJME_[A-Z0-9_]+\b") |
@@ -36,7 +36,7 @@ $jmeConstants = [regex]::Matches($jmeText, "\bJME_[A-Z0-9_]+\b") |
 $missingJme = New-Object System.Collections.Generic.List[string]
 
 foreach ($fn in $jmeFunctions) {
-    $hasDefinition = $sourceText -match "(?m)^\s*(?:const\s+char\s*\*|void|double|int)\s+$([regex]::Escape($fn))\s*\("
+    $hasDefinition = $sourceText -match "(?m)^\s*(?:const\s+char\s*\*\s*|char\s*\*\s*|void\s+|double\s+|int\s+)$([regex]::Escape($fn))\s*\("
 
     if (!$hasDefinition) {
         $missingJme.Add($fn)

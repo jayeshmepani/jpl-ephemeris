@@ -15,6 +15,12 @@ typedef struct jme_context {
     double topo_lat;
     double topo_alt;
     char astro_models[256];
+    int model_bias;
+    int model_nut;
+    int model_obl;
+    int model_prec;
+    int model_sidt;
+    int model_deltat;
     double lapse_rate;
     int interpolate_nut;
     double tidal_acceleration;
@@ -25,5 +31,13 @@ typedef struct jme_context {
 jme_context *jme_get_context(void);
 void jme_set_string(char *dst, size_t dst_size, const char *src);
 void jme_set_error(char *error, const char *msg);
+int jme_context_bias_model(void);
+int jme_context_nutation_model(void);
+int jme_context_obliquity_model(void);
+int jme_context_precession_model(void);
+int jme_context_sidereal_time_model(void);
+int jme_context_deltat_model(void);
+int jme_context_interpolate_nut(void);
+int jme_get_frame_bias_matrix(int model, double *m);
 
 #endif

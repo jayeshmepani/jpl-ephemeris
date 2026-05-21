@@ -20,10 +20,10 @@ This document tracks allowed sources and disallowed sources for the independent 
 | Coordinate/refraction utilities | Independently implemented spherical-coordinate transforms and standard refraction helper | Active |
 | Metadata utilities | Independently maintained body and house-system name tables | Active |
 | Sidereal time | Independently implemented standard mean sidereal-time expression | Active |
-| Backend boundary | CALCEPH API boundary, optional external link | Scaffold only |
+| Backend boundary | CALCEPH API boundary, optional external link | Implemented for the current raw JPL API surface |
 | Ephemeris data | NASA/JPL `.bsp` kernels | Not vendored |
-| Main ephemeris calculations | Independent JPL/CALCEPH reduction implementation scheduled | Incomplete functions return `JME_ERR` |
-| Analytical fallback | Moshier/public-domain source review scheduled | Planned after provenance review |
+| Main ephemeris calculations | Independent JME calculation pipeline with JPL and analytical fallback paths | Implemented, but full reference-parity validation remains partial |
+| Analytical fallback | Moshier/public-domain source review completed enough to implement callable analytical paths; broader validation remains | Implemented, but not precision-certified |
 
 ## Future Source Log Format
 

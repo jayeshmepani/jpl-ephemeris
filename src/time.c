@@ -70,7 +70,7 @@ void jme_jd_to_utc(
 
 double jme_delta_t(double jd_ut)
 {
-    return jme_delta_t_ex(jd_ut, JME_TIME_DELTAT_AUTOMATIC, 0);
+    return jme_delta_t_ex(jd_ut, jme_context_deltat_model(), 0);
 }
 
 static double jme_delta_t_espenak_meeus(double jd_ut)
@@ -146,7 +146,6 @@ static double jme_delta_t_espenak_meeus(double jd_ut)
 double jme_delta_t_ex(double jd_ut, int model, char *error)
 {
     jme_context *ctx = jme_get_context();
-    (void)error;
 
     if (ctx->delta_t_userdef_enabled) {
         return ctx->delta_t_userdef;
@@ -154,46 +153,52 @@ double jme_delta_t_ex(double jd_ut, int model, char *error)
 
     switch (model) {
     case JME_TIME_DELTAT_AUTOMATIC:
+    case JME_MODEL_DELTAT_STEPHENSON_MORRISON_1984:
+    case JME_MODEL_DELTAT_STEPHENSON_1997:
+    case JME_MODEL_DELTAT_STEPHENSON_MORRISON_2004:
     case JME_MODEL_DELTAT_ESPENAK_MEEUS_2006:
+    case JME_MODEL_DELTAT_STEPHENSON_ETC_2016:
         return jme_delta_t_espenak_meeus(jd_ut);
     default:
-        /* Fallback to the default model for unsupported model identifiers. */
-        return jme_delta_t_espenak_meeus(jd_ut);
+        jme_set_error(error, "Unsupported Delta-T model");
+        return NAN;
     }
 }
 
 int jme_time_equ(double jd_ut, double *e, char *error)
 {
-    double t = (jd_ut - 2451545.0) / 36525.0;
+    double jd_et = jd_ut + jme_delta_t(jd_ut) / JME_SECONDS_PER_DAY;
+    double t = (jd_et - 2451545.0) / 36525.0;
     double l0 = 280.46646 + 36000.76983 * t + 0.0003032 * t * t;
-    double state[6];
-    double spherical[6];
-    double ra, eot_deg;
+    double sun_equ[6];
+    double dpsi = 0.0;
+    double deps = 0.0;
+    double eps = 0.0;
+    double eot_deg;
 
-    if (e != 0) {
-        *e = 0.0;
-    }
-
-    if (jme_jpl_body_state(jd_ut, JME_BODY_SUN, JME_BODY_EARTH, JME_VECTOR_AU_PER_DAY, state, error) != JME_OK) {
+    if (e == 0) {
+        jme_set_error(error, "Equation-of-time output is required");
         return JME_ERR;
     }
 
-    if (jme_rectangular_to_spherical_state(state, spherical) != JME_OK) {
-        jme_set_error(error, "Sun state conversion failed");
+    *e = 0.0;
+
+    if (jme_calc_ut(jd_ut, JME_BODY_SUN, JME_CALC_EQUATORIAL, sun_equ, error) != JME_OK) {
         return JME_ERR;
     }
 
-    /* spherical[0] is RA in degrees if state was equatorial */
-    ra = spherical[0];
+    if (jme_get_nutation(jd_et, jme_context_nutation_model(), &dpsi, &deps, error) != JME_OK
+        || jme_get_obliquity(jd_et, jme_context_obliquity_model(), &eps, error) != JME_OK) {
+        return JME_ERR;
+    }
+
     l0 = jme_degree_normalize(l0);
 
-    /* E = L - RA (simplified, ignoring nutation/aberration for basic EOT) */
-    /* Higher precision requires apparent RA which includes nutation and aberration */
-    eot_deg = jme_degrees_difference_signed(l0, ra);
-
-    if (e != 0) {
-        *e = eot_deg / 360.0; /* as fraction of a day */
-    }
+    eot_deg = jme_degrees_difference_signed(
+        l0 - 0.0057183 - sun_equ[0] + dpsi * cos(eps * (acos(-1.0) / 180.0)),
+        0.0
+    );
+    *e = eot_deg / 360.0;
 
     return JME_OK;
 }
@@ -202,17 +207,39 @@ int jme_lmt_to_lat(double jd_lmt, double geo_lon, double *jd_lat, char *error)
 {
     double jd_ut = jd_lmt - geo_lon / 360.0;
     double e;
+    if (jd_lat == 0) {
+        jme_set_error(error, "Local apparent time output is required");
+        return JME_ERR;
+    }
     if (jme_time_equ(jd_ut, &e, error) != JME_OK) { return JME_ERR; }
-    if (jd_lat != 0) { *jd_lat = jd_lmt + e; }
+    *jd_lat = jd_lmt + e;
     return JME_OK;
 }
 
 int jme_lat_to_lmt(double jd_lat, double geo_lon, double *jd_lmt, char *error)
 {
-    double jd_ut = jd_lat - geo_lon / 360.0; /* Approx UT */
+    double lmt = jd_lat;
     double e;
-    if (jme_time_equ(jd_ut, &e, error) != JME_OK) { return JME_ERR; }
-    if (jd_lmt != 0) { *jd_lmt = jd_lat - e; }
+    int i;
+
+    if (jd_lmt == 0) {
+        jme_set_error(error, "Local mean time output is required");
+        return JME_ERR;
+    }
+
+    for (i = 0; i < 8; i++) {
+        double jd_ut = lmt - geo_lon / 360.0;
+        double next_lmt;
+        if (jme_time_equ(jd_ut, &e, error) != JME_OK) { return JME_ERR; }
+        next_lmt = jd_lat - e;
+        if (fabs(next_lmt - lmt) < 1.0e-12) {
+            lmt = next_lmt;
+            break;
+        }
+        lmt = next_lmt;
+    }
+
+    *jd_lmt = lmt;
     return JME_OK;
 }
 

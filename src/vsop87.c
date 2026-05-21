@@ -67,7 +67,7 @@ int jme_vsop87_planet_state(double jd_et, int body, double *results)
     }
 
     if (results == 0) {
-        return vsop87_position(jd_et, body, prev);
+        return JME_ERR;
     }
 
     if (vsop87_position(jd_et, body, results) != JME_OK) {

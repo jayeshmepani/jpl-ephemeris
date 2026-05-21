@@ -12,10 +12,12 @@ Current verified counts from `tests/test_symbol_coverage.ps1`:
 
 | Inventory | Count | Source of truth |
 |---|---:|---|
-| Public `jme_*` functions | 191 | `docs/API_TRACKING.md`, `include/jme/jme.h`, `include/jme/jme_extended.h` |
+| Public `jme_*` functions | 204 | `docs/API_TRACKING.md`, `include/jme/jme.h`, `include/jme/jme_extended.h` |
 | Public `JME_*` constants | 462 | `docs/API_TRACKING.md`, `include/jme/jme.h`, `include/jme/jme_extended.h` |
 
-Use `docs/API_TRACKING.md` for the full 191-function list and full 462-constant list. Do not maintain a second manually copied list here, because that would create two sources of truth.
+Use `docs/API_TRACKING.md` for the full 204-function list and full 462-constant list. Do not maintain a second manually copied list here, because that would create two sources of truth.
+
+Use `docs/FUNCTION_CLOSURE_CHECKLIST.md` as the live behavior-closure checklist. Update that checklist whenever a function family moves from not-closed to closed.
 
 Regenerate/check the inventory with:
 
@@ -26,14 +28,14 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1
 Expected current output:
 
 ```text
-jme_functions_total=191
-jme_functions_defined=191
+jme_functions_total=204
+jme_functions_defined=204
 jme_constants_total=462
 ```
 
 ## JPL/CALCEPH Layer
 
-Status: completed for the current JPL API surface and verified with a real kernel.
+Status: completed for the current raw JPL/CALCEPH API surface and verified with capability-specific real kernels/files.
 
 Verification already performed:
 
@@ -52,6 +54,22 @@ ctest --test-dir build-local -C Debug --output-on-failure
 ```
 
 Result: `7/7` tests passed.
+
+Additional Linux verification for the extra-function closure checklist:
+
+```bash
+cmake -S . -B build-calceph -DJME_REQUIRE_CALCEPH=ON -Dcalceph_DIR=/tmp/jme-calceph-cmake/calceph -DCMAKE_BUILD_TYPE=Debug
+cmake --build build-calceph
+LD_LIBRARY_PATH=/tmp/jme-calceph-root/usr/lib/x86_64-linux-gnu \
+JME_TEST_JPL_KERNEL=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/data/jpl/de440s.bsp \
+JME_TEST_JPL_CONSTANT_KERNEL=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/tests/fixtures/jpl_constants.tpc \
+JME_TEST_JPL_ORIENTATION_KERNEL=/tmp/jme-kernels/moon_pa_de440_200625.bpc \
+JME_TEST_JPL_VERSION_KERNEL=/tmp/calceph-4.0.5/examples/example1.dat \
+JME_TEST_JPL_ROTANGMOM_KERNEL=/tmp/calceph-4.0.5/examples/example2_rotangmom.dat \
+ctest --test-dir build-calceph -R jpl_runtime --output-on-failure
+```
+
+Result: `1/1` `jpl_runtime` passed. This closes all 49 extra raw JPL/CALCEPH functions in `docs/FUNCTION_CLOSURE_CHECKLIST.md`.
 
 ### JPL Functions Currently Implemented
 
@@ -86,16 +104,16 @@ JPL-specific constants currently include:
 
 ### JPL Work Remaining
 
-No remaining work is known inside the raw JPL/CALCEPH boundary listed above.
+No remaining work is known inside the current raw JPL/CALCEPH boundary listed above.
 
 Remaining work is above the JPL boundary, not inside kernel access:
 
 - full apparent geocentric reduction pipeline using JPL vectors
 - full topocentric reduction pipeline using JPL vectors
-- complete frame-bias, precession, nutation, aberration, light-deflection, and time-scale policy validation
+- remaining nutation variants, aberration, light-deflection, and time-scale policy validation
 - full physical ephemeris attributes built from JPL states
 - full eclipse circumstances and locality algorithms built from JPL states
-- full rise/set/transit and heliacal algorithms built from JPL states
+- full rise/set/transit and fully validated heliacal algorithms built from JPL states
 - asteroid/comet catalog loading beyond direct kernel target IDs
 
 ## Compatibility Surface
@@ -106,34 +124,52 @@ The in-tree public surface is the project-owned `jme_*` / `JME_*` API. The forme
 
 Current native hardening:
 
+- `jme_set_astro_models` and `jme_get_astro_models` now maintain canonical model state for bias, nutation, obliquity, precession, sidereal time, and Delta-T profiles instead of only storing a raw string.
+- `jme_get_nutation` implements IAU 1980 and IAU 2000B abridged nutation. The IAU 2000B path uses the 77-term MHB_2000_SHORT/Luzum series and fixed planetary-bias offsets used by ERFA/SOFA. The declared IAU 2000A constant is intentionally rejected until the full 1365-term model is implemented, avoiding silent approximation.
+- `jme_sidereal_time` now consumes the selected sidereal-time model: default/IAU 1976 keeps the historical GMST expression, while IAU 2006 uses the Earth-rotation-angle plus Capitaine-compatible GMST06 polynomial with TT from the active Delta-T model.
+- Frame-bias model state is now consumed by the equatorial reduction pipeline. IAU 2000/2006 bias uses the fixed MHB2000/Chapront frame-bias angles before precession in planet, fixed-star, and topocentric event reductions; `JME_MODEL_BIAS_NONE` remains an identity transform.
+- Direct public contracts now assert that `jme_moshier_planet_state` succeeds for supported planet bodies and rejects unsupported ones, and that `jme_meeus_planet_state` does the same for its supported-body subset. That is a contract check, not a precision certification.
+- The public calculation pipeline now also has a direct regression that exercises a non-JPL analytic fallback body path (`JME_BODY_PLUTO`) and requires finite output, which helps guard the VSOP/Moshier/Meeus selection stack without overstating numerical certification.
+- The same regression now checks rectangular and distance-unit flag behavior for the fallback Pluto path, so the public contract is not only "finite" but also flag-consistent.
+- The public calculation regression also checks velocity-per-second conversion for a representative analytic body, so rectangular velocity scaling is covered too.
+- The same contract block now checks `jme_calc_pctr()` for the Mercury/Sun difference contract using the same ET timescale, and also checks spherical conversion, radians, sidereal longitude, null-output rejection, unsupported body/center rejection, and distance-unit scaling against the direct heliocentric Mercury vector norm.
+- `jme_jpl_current_file_data` is now closed for the Swiss mapped metadata row: the CALCEPH runtime suite validates a real `de440s.bsp` success path, output coverage span, closed/unavailable error paths, reset behavior, and null metadata output rejection.
+- `jme_get_ayanamsa_ex` no longer silently maps unsupported sidereal model IDs to Lahiri. Lahiri, Fagan-Bradley, user-defined mode, UT wrapper behavior, null-output rejection, and unsupported-model rejection are covered. The numeric ayanamsa rows remain open until all declared sidereal models have source-backed formula/epoch data and known-value validation.
+- `jme_fixstar*` now has stronger safety and flag handling: null/empty star names reject cleanly, spherical output honors radians and sidereal longitude flags, nutation conversion uses the full-precision degree-to-radian constant, and every built-in catalog entry is contract-tested for finite position and magnitude. The fixed-star rows remain open until broad catalog support and reference-grade reduction validation are implemented.
+- The analytical validation suite also checks direct public state production for representative Moshier, VSOP87, and Meeus bodies at J2000 so the stack remains callable as state providers, not just through derived-element paths.
 - `jme_houses_ex2` and `jme_houses_armc_ex2` compute finite cusp and angle speeds by central difference instead of returning zero arrays.
-- `jme_pheno` and `jme_pheno_ut` return phase angle, illuminated fraction, elongation, apparent diameter, magnitude, and internal distance fields.
-- `jme_rise_trans` supports refined rise, set, meridian transit, anti-meridian transit, civil/nautical/astronomical twilight horizons, disc-center horizon handling, and no-refraction mode.
+- `jme_pheno` and `jme_pheno_ut` return phase angle, illuminated fraction, elongation, apparent diameter, magnitude, internal distance fields, light-time, apparent radius, phase defect, and bright-limb position angle.
+- `jme_rise_trans` supports refined rise, set, meridian transit, anti-meridian transit, civil/nautical/astronomical twilight horizons, disc-center horizon handling, and no-refraction mode. The rise/transit altitude path now uses the public topocentric equatorial calculation pipeline directly, avoiding mixed-frame rectangular corrections. Contract tests independently recompute returned altitude and hour-angle roots for Sun, Moon, Mars, and Sirius plus invalid/no-event paths.
 - Solar, lunar, and heliocentric longitude crossings plus lunar node crossings refine roots instead of returning coarse scan midpoints.
 - Lunar node/apside helpers return bounded lunar mean node, true node, mean apogee, and focal-point longitude contracts.
 - Orbital-element derivation now returns a fuller derived set from the current state vector, including eccentric anomaly, mean anomaly, mean motion, period, perihelion/aphelion distance, and related longitudes.
 - Solar eclipse global/local search, geographic circumstance, and local circumstance entry points now return native geometric results. Global classification now uses Moon-shadow cone versus Earth-sphere geometry so hybrid and central/noncentral behavior are represented natively.
-- Eclipse, occultation, and heliacal functions that are still exact-pending return `JME_ERR` with explicit error text instead of silent success.
+- Eclipse, occultation, and heliacal functions now have native geometry paths. Heliacal support is a first-pass visibility model, not final reference-method parity.
 
 Known limits:
 
+- Astro model selection has real canonical state and is consumed by reduction paths. Frame bias now has none plus IAU 2000/2006 paths, obliquity has IAU 1980 plus corrected IAU 2006/P03 polynomial coverage, precession has IAU 1976 and P03/IAU 2006-family matrix paths, nutation has IAU 1980 plus IAU 2000B paths, and sidereal time has IAU 1976/default plus IAU 2006 paths. Remaining model-specific formula gaps are mainly IAU 2000A nutation and broader cross-validation.
 - Solar and lunar eclipse outputs now return native search/circumstance results, including hybrid solar classification and central/noncentral shadow classification, but independent validation coverage for exact locality/contact precision is still narrower than the rest of the API.
-- Lunar occultation locality/contact/search remain explicit `JME_ERR`.
-- Sunshine is implemented for date-aware `jme_houses`/`jme_houses_ex`; ARMC-only Sunshine remains `ERR` because that API does not carry the required Sun declination input. Full Gauquelin house-system variants remain `ERR` unless an exact independent formula is implemented and validated.
-- Gauquelin sector currently uses refined surrounding rise/set events and returns a bounded sector only when those events are available; it is not yet certified as full reference-method parity.
-- Occultations and heliacal visibility remain explicit error-returning contracts until validated algorithms are added.
-- Physical phenomena provide the standard first five phenomenon fields plus internal distance fields in extended slots; rotation-axis and central-meridian style physical ephemeris attributes remain open.
+- Solar partial-only global circumstances no longer report negative magnitude from geocentric apparent separation; `jme_sol_eclipse_where()` now derives the circumstance fields at the returned shadow-surface location, and 2022-10-25 is covered as a partial solar known-value regression.
+- Global lunar eclipse search/circumstance behavior is closed for JME-native behavior: total, partial, and penumbral eclipse regressions are covered against external known-value maxima/magnitudes, backward search works, non-eclipse instants reject, and null-output paths are tested.
+- Lunar occultation locality/contact/search now return first-pass native geometry results, with validation limits documented below.
+- Solar eclipse, lunar eclipse, and lunar occultation public entry points now have direct null required-output/geopos rejection tests. This is input-contract hardening, not exact contact/locality closure.
+- Sunshine is implemented for date-aware `jme_houses`/`jme_houses_ex`; ARMC Sunshine is also available when the caller supplies Sun declination in `ascmc[9]`.
+- Gauquelin sector now branches by method: ecliptic longitude/latitude semiarc, longitude-only semiarc, disk-center rise/set, and refracted disk-center rise/set. It returns fractional sectors, but it is not yet certified as full reference-method parity.
+- Heliacal visibility now returns first-pass native results using local twilight, Sun/body altitude, arcus visionis, elongation, apparent magnitude, and a simple limiting-magnitude rule. It still needs a source-backed visual-observer model and external known-value validation before it can be marked complete.
+- Heliacal body selection is now explicit for array-output APIs: unsupported IDs, fractional IDs, node bodies, and null required outputs return errors instead of silently changing the request to Venus. Scalar helpers may still use Venus only when the caller omits `dat_hel` because they return one scalar value and use an internal default.
+- Physical phenomena provide the standard first five phenomenon fields plus extended geometric fields; rotation-axis and central-meridian style physical ephemeris attributes remain open.
 
 ## Remaining Gaps
 
-- `jme_lun_occult_where`, `jme_lun_occult_when_loc`, and `jme_lun_occult_when_glob` are still unimplemented and return explicit validated-algorithm errors.
-- `jme_heliacal_ut`, `jme_heliacal_pheno_ut`, `jme_heliacal_angle`, and `jme_topo_arcus_visionis` are still unimplemented and return explicit validated-model errors.
-- Eclipse coverage is materially stronger, but exact independent validation density for topocentric solar/lunar locality and contact precision is still thinner than the rest of the API.
-- `jme_lun_eclipse_when_loc` still reuses global contact times and adds local visibility; it does not yet solve a separate local-contact geometry.
-- Physical phenomena are still partial: the standard phase/elongation/diameter/magnitude fields are implemented, but full rotational physical ephemeris outputs remain open.
-- Gauquelin support is still partial: `jme_gauquelin_sector` is bounded and refined, but not yet certified as full reference-method parity.
-- Sunshine support is still partial: date-aware Sunshine is implemented, but ARMC-only Sunshine remains unsupported because that API does not provide Sun declination.
-- Broader independent known-value validation is still incomplete across `jme_calc`, `jme_calc_ut`, `jme_calc_pctr`, fixed stars, ayanamsa, houses, rise/set/transit, physical phenomena, and analytical fallbacks.
+- `jme_lun_occult_where`, `jme_lun_occult_when_loc`, and `jme_lun_occult_when_glob` now have first-pass native Moon-target geometry. Global search uses lunar horizontal parallax as a possibility threshold; local search uses topocentric disk overlap. Broader external validation and exact geographic-contact modeling remain open.
+- `jme_heliacal_ut`, `jme_heliacal_pheno_ut`, `jme_heliacal_angle`, `jme_topo_arcus_visionis`, and `jme_vis_limit_mag` now return first-pass native visibility fields. Remaining work is source-backed visual-model parity, atmospheric/observer parameter handling, and independent known-value validation.
+- Eclipse coverage is materially stronger, and global lunar eclipse search/circumstance behavior is closed for the current JME-native contract. Exact independent validation density for topocentric solar locality, local lunar visibility/contact clipping, and occultation locality is still thinner than the rest of the API.
+- `jme_lun_eclipse_when_loc` now intersects the global lunar eclipse phase window with the local Moon-above-horizon interval, clips local-visible contacts, and reports visible duration. It still uses geocentric shadow geometry rather than a fully independent topocentric lunar-shadow contact model.
+- Physical phenomena are still partial: phase/elongation/diameter/magnitude, distance, light-time, apparent-radius, phase-defect, and bright-limb position-angle fields are implemented, but full rotational physical ephemeris outputs remain open.
+- Gauquelin support is stronger but still partial: `jme_gauquelin_sector` supports methods 0 through 3 with fractional sectors; polar-region semiarc edge behavior and independent known-value certification remain open.
+- Sunshine support is stronger but still partial: date-aware Sunshine is implemented, and ARMC Sunshine works with caller-supplied Sun declination in `ascmc[9]`; independent reference-value validation remains open.
+- Broader independent known-value validation is still incomplete across fixed stars, full numeric ayanamsa model breadth, eclipse/occultation, heliacal visibility, and analytical fallback edge cases.
 - Full ELP2000 lunar integration and broader cross-validation across VSOP87, Moshier, Meeus, and mixed fallback paths are still not closed out as complete.
 
 ## Moshier
@@ -266,7 +302,7 @@ Callable symbol:
 
 | Function | File | Current behavior |
 |---|---|---|
-| `jme_elp2000_moon_state` | `src/elp2000.c` | Calls `geocentric_moon_position_cartesian_of_J2000()`, converts kilometers to AU, and returns position components. Velocity components remain zero because this wrapper path does not yet derive velocity. |
+| `jme_elp2000_moon_state` | `src/elp2000.c` | Calls `geocentric_moon_position_cartesian_of_J2000()`, converts kilometers to AU, and returns position plus central-difference velocity in AU/day. |
 
 Source material currently present:
 
@@ -283,8 +319,8 @@ Source material currently present:
 
 Current ELP2000 validation:
 
-- `tests/test_analytical_validation.c` checks the Moon state against a public ELP2000-82B reference case for JD `2451555.5`.
-- The current source variant is kilometer-level against that external case, so ELP is validated as wired and bounded but not yet precision-certified.
+- `tests/test_analytical_validation.c` checks the Moon state against multiple public ELP2000-82B reference cases generated from the original Fortran code.
+- The current source variant is tens-of-kilometers level against the modern external cases, so ELP is validated as wired and bounded but not yet precision-certified.
 - The current wrapper path is therefore better described as “implemented and bounded” than “fully closed”.
 
 Known remaining ELP2000 work:
@@ -303,11 +339,13 @@ Exact resume point for ELP2000:
 
 ## Meeus
 
-Status: partially implemented as lightweight analytical fallback/utilities.
+Status: implemented as bounded analytical fallback/utilities, with certification work still required.
 
 What is real today:
 
 - Meeus-style analytical state helpers for Sun, Moon, and planets are implemented and callable.
+- `jme_meeus_planet_state` now uses time-varying heliocentric mean elements plus a Newton-solved Kepler equation for Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune, and Pluto; unsupported bodies return `JME_ERR`.
+- The Moon helper now consumes the auxiliary longitude/latitude terms already present in the routine instead of leaving those terms unused.
 - Meeus-style utility behavior also exists in adjacent time, coordinate, refraction, and search helpers across the codebase.
 - Meeus is therefore not just conceptual; it is part of the actual low-weight analytical toolbox in the repo.
 
@@ -323,7 +361,7 @@ Implemented/callable:
 |---|---|---|
 | `jme_meeus_sun_state` | `src/meeus.c` | Computes a solar analytical state used by fallback paths. |
 | `jme_meeus_moon_state` | `src/meeus.c` | Computes a lunar analytical state used by fallback paths. |
-| `jme_meeus_planet_state` | `src/meeus.c` | Computes analytical planetary fallback for supported bodies. |
+| `jme_meeus_planet_state` | `src/meeus.c` | Computes J2000 ecliptic heliocentric rectangular analytical fallback for Mercury through Pluto and rejects unsupported bodies. |
 
 Other Meeus-style utility areas currently implemented elsewhere:
 
@@ -335,8 +373,8 @@ Other Meeus-style utility areas currently implemented elsewhere:
 
 Current validation status:
 
-- Meeus participates in the broader analytical/fallback validation story, but does not yet have a dedicated exhaustive known-value certification layer across all supported helper families.
-- The repo currently proves that Meeus-style code exists and is callable; it does not yet prove that every Meeus-derived helper is production-certified at the exactness standard you want.
+- Meeus participates in the broader analytical/fallback validation story and has direct contract coverage for supported-body success and unsupported-body rejection.
+- The repo currently proves that Meeus-style code exists, is callable, and returns finite state vectors for representative cases; it does not yet prove that every Meeus-derived helper is production-certified at the exactness standard you want.
 
 Known remaining Meeus work:
 
@@ -350,14 +388,14 @@ Known remaining Meeus work:
 Exact resume point for Meeus:
 
 - keep the Sun/Moon/planet state helpers as implemented analytical support
-- treat the broader Meeus presence as real but still partially certified
+- treat the broader Meeus presence as real but still requiring dedicated certification
 - next exact-closeout work is formula-family provenance, per-domain known-value validation, and clearer production-fallback policy
 
 ## High-Level Public API Status
 
-The project currently has all 191 public `jme_*` functions declared and defined. Some functions are complete utilities or complete JPL-boundary functions. Some are partial high-level algorithms. Some are explicit error-returning contracts.
+The project currently has all 204 public `jme_*` functions declared and defined. Some functions are complete utilities or complete JPL-boundary functions. Some are partial high-level algorithms. Some are explicit error-returning contracts.
 
-Examples of explicit remaining or incomplete high-level areas:
+Examples of implemented-but-not-yet-complete high-level areas:
 
 - `jme_elp2000_moon_state`
 - `jme_sol_eclipse_where`
@@ -365,19 +403,19 @@ Examples of explicit remaining or incomplete high-level areas:
 - `jme_lun_occult_where`
 - `jme_lun_occult_when_loc`
 - `jme_lun_occult_when_glob`
-- `jme_heliacal_ut`
-- `jme_heliacal_pheno_ut`
-- `jme_heliacal_angle`
-- `jme_topo_arcus_visionis`
-- `jme_vis_limit_mag`
+- `jme_heliacal_ut` source-backed visual-model parity
+- `jme_heliacal_pheno_ut` source-backed visual-model parity
+- `jme_heliacal_angle` output semantics validation
+- `jme_topo_arcus_visionis` output semantics validation
+- `jme_vis_limit_mag` observer/atmosphere model validation
 - `jme_nod_aps` complete reference method variants
 - `jme_nod_aps_ut` complete reference method variants
 - `jme_get_orbital_elements` full reference attribute layout and validation
-- `jme_gauquelin_sector`
+- `jme_gauquelin_sector` polar semiarc validation and independent known-value certification
 
-Before marking any of these complete, require:
+Before marking any of these exact-complete, require:
 
-- real algorithm implementation
+- real algorithm implementation where the function is not already implemented
 - independent source/provenance note
 - known-value tests
 - invalid-input tests
@@ -405,7 +443,7 @@ Current verified results:
 
 - `build-local`: `8/8` tests passed
 - `build-vcpkg` with real `de440s.bsp`: `7/7` tests passed
-- symbol coverage: `191/191` functions defined, `462` constants tracked
+- symbol coverage: `204/204` functions defined, `462` constants tracked
 
 ## Next Work Order
 

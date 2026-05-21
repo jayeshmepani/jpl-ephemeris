@@ -9,10 +9,10 @@ Coverage must mean implemented, tested, and documented. A name in a header is no
 | Family | Intended role | Current status |
 | --- | --- | --- |
 | JPL/CALCEPH | Primary numerical ephemeris backend | Raw kernel access, multi-kernel open, rectangular body-state vectors, UTC wrappers, ecliptic state helpers, kernel metadata, derivative-order vectors, name/id lookup, constants access, and orientation/rotation state calls are implemented through CALCEPH when CALCEPH is present at build time |
-| Moshier | Lightweight analytical/public-domain fallback components after provenance review | Planned after provenance review |
-| VSOP87 | Planetary analytical theory support after source/license review | Planned after provenance review |
-| ELP2000 | Lunar analytical theory support after source/license review | Planned after provenance review |
-| Meeus | Calendar, time, coordinate, rise/set, eclipse, and astronomy utility formulas where suitable | Partially started for calendar/JD and angle utilities |
+| Moshier | Lightweight analytical/public-domain fallback components after provenance review | Implemented and callable, but not precision-certified |
+| VSOP87 | Planetary analytical theory support after source/license review | Implemented and callable, with J2000 known-value checks for supported planets |
+| ELP2000 | Lunar analytical theory support after source/license review | Implemented and callable, with external reference checks, but not full date-range certified |
+| Meeus | Calendar, time, coordinate, rise/set, eclipse, and astronomy utility formulas where suitable | Implemented in multiple helper families and analytical fallbacks; planet state now uses Kepler-solved mean elements for Mercury through Pluto, but full helper-family certification is still pending |
 
 ## Completion Rules
 
@@ -113,7 +113,7 @@ For each algorithm family:
 
 ## Remaining Non-JPL Work
 
-- full Moshier fallback
-- full VSOP87 implementation
-- full ELP2000 implementation
-- broad Meeus formula set
+- broader independent known-value validation for Moshier
+- broader variant/frame/unit validation for VSOP87
+- broader date-range and contract validation for ELP2000
+- formula-family provenance and completeness validation for Meeus-derived helpers

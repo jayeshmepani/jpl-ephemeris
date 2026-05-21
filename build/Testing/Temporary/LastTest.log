@@ -1,17 +1,17 @@
-Start testing: May 20 18:21 IST
+Start testing: May 21 18:20 IST
 ----------------------------------------------------------
 1/8 Testing: julian
 1/8 Test: julian
 Command: "/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/test_julian"
 Directory: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build
-"julian" start time: May 20 18:21 IST
+"julian" start time: May 21 18:20 IST
 Output:
 ----------------------------------------------------------
 <end of output>
-Test time =   0.01 sec
+Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"julian" end time: May 20 18:21 IST
+"julian" end time: May 21 18:20 IST
 "julian" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -19,29 +19,29 @@ Test Passed.
 2/8 Test: api_contract
 Command: "/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/test_api_contract"
 Directory: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build
-"api_contract" start time: May 20 18:21 IST
+"api_contract" start time: May 21 18:20 IST
 Output:
 ----------------------------------------------------------
 <end of output>
-Test time =  62.03 sec
+Test time = 120.99 sec
 ----------------------------------------------------------
 Test Passed.
-"api_contract" end time: May 20 18:22 IST
-"api_contract" time elapsed: 00:01:02
+"api_contract" end time: May 21 18:22 IST
+"api_contract" time elapsed: 00:02:00
 ----------------------------------------------------------
 
 3/8 Testing: jpl_runtime
 3/8 Test: jpl_runtime
 Command: "/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/test_jpl_runtime"
 Directory: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build
-"jpl_runtime" start time: May 20 18:22 IST
+"jpl_runtime" start time: May 21 18:22 IST
 Output:
 ----------------------------------------------------------
 <end of output>
 Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"jpl_runtime" end time: May 20 18:22 IST
+"jpl_runtime" end time: May 21 18:22 IST
 "jpl_runtime" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -49,7 +49,7 @@ Test Passed.
 4/8 Test: all_constants
 Command: "/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/test_all_constants"
 Directory: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build
-"all_constants" start time: May 20 18:22 IST
+"all_constants" start time: May 21 18:22 IST
 Output:
 ----------------------------------------------------------
 All constants verified successfully.
@@ -57,7 +57,7 @@ All constants verified successfully.
 Test time =   0.00 sec
 ----------------------------------------------------------
 Test Passed.
-"all_constants" end time: May 20 18:22 IST
+"all_constants" end time: May 21 18:22 IST
 "all_constants" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -65,7 +65,7 @@ Test Passed.
 5/8 Test: all_functions
 Command: "/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/test_all_functions"
 Directory: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build
-"all_functions" start time: May 20 18:22 IST
+"all_functions" start time: May 21 18:22 IST
 Output:
 ----------------------------------------------------------
 Testing metadata and paths...
@@ -84,25 +84,25 @@ Testing extended functions...
 
 All functions tested successfully!
 <end of output>
-Test time =   5.80 sec
+Test time =   8.40 sec
 ----------------------------------------------------------
 Test Passed.
-"all_functions" end time: May 20 18:22 IST
-"all_functions" time elapsed: 00:00:05
+"all_functions" end time: May 21 18:22 IST
+"all_functions" time elapsed: 00:00:08
 ----------------------------------------------------------
 
 6/8 Testing: analytical_validation
 6/8 Test: analytical_validation
 Command: "/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/test_analytical_validation"
 Directory: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build
-"analytical_validation" start time: May 20 18:22 IST
+"analytical_validation" start time: May 21 18:22 IST
 Output:
 ----------------------------------------------------------
 <end of output>
-Test time =   0.02 sec
+Test time =   0.11 sec
 ----------------------------------------------------------
 Test Passed.
-"analytical_validation" end time: May 20 18:22 IST
+"analytical_validation" end time: May 21 18:22 IST
 "analytical_validation" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -110,35 +110,35 @@ Test Passed.
 7/8 Test: api_inventory
 Command: "/usr/bin/pwsh" "-NoProfile" "-ExecutionPolicy" "Bypass" "-File" "/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/tests/test_inventory.ps1"
 Directory: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build
-"api_inventory" start time: May 20 18:22 IST
+"api_inventory" start time: May 21 18:22 IST
 Output:
 ----------------------------------------------------------
-jme_functions=191
+jme_functions=192
 jme_constants=462
 <end of output>
-Test time =   0.91 sec
+Test time =   1.31 sec
 ----------------------------------------------------------
 Test Passed.
-"api_inventory" end time: May 20 18:22 IST
-"api_inventory" time elapsed: 00:00:00
+"api_inventory" end time: May 21 18:22 IST
+"api_inventory" time elapsed: 00:00:01
 ----------------------------------------------------------
 
 8/8 Testing: symbol_coverage
 8/8 Test: symbol_coverage
 Command: "/usr/bin/pwsh" "-NoProfile" "-ExecutionPolicy" "Bypass" "-File" "/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/tests/test_symbol_coverage.ps1"
 Directory: /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build
-"symbol_coverage" start time: May 20 18:22 IST
+"symbol_coverage" start time: May 21 18:22 IST
 Output:
 ----------------------------------------------------------
-jme_functions_total=191
-jme_functions_defined=191
+jme_functions_total=204
+jme_functions_defined=204
 jme_constants_total=462
 <end of output>
-Test time =   2.25 sec
+Test time =   2.36 sec
 ----------------------------------------------------------
 Test Passed.
-"symbol_coverage" end time: May 20 18:22 IST
+"symbol_coverage" end time: May 21 18:22 IST
 "symbol_coverage" time elapsed: 00:00:02
 ----------------------------------------------------------
 
-End testing: May 20 18:22 IST
+End testing: May 21 18:22 IST

@@ -6,7 +6,7 @@ This file tracks the project-owned public API. The product surface is `jme_*` fu
 
 | Area | Count | Source |
 |---|---:|---|
-| JME public functions | 191 | `include/jme/jme.h`, `include/jme/jme_extended.h` |
+| JME public functions | 204 | `include/jme/jme.h`, `include/jme/jme_extended.h` |
 | JME public constants | 462 | `include/jme/jme.h`, `include/jme/jme_extended.h` |
 
 Function count and behavior coverage are separate checks. The full behavior matrix is in `docs/REFERENCE_FUNCTION_COVERAGE.md`.
@@ -206,6 +206,19 @@ Function count and behavior coverage are separate checks. The full behavior matr
 | 189 | `jme_utc_to_jd` | Declared and defined |
 | 190 | `jme_vis_limit_mag` | Declared and defined |
 | 191 | `jme_vsop87_planet_state` | Declared and defined |
+| 192 | `jme_get_frame_bias_matrix` | Declared and defined |
+| 193 | `jme_body_name` | Declared and defined |
+| 194 | `jme_centiseconds_to_degree_string` | Declared and defined |
+| 195 | `jme_centiseconds_to_lonlat_string` | Declared and defined |
+| 196 | `jme_centiseconds_to_time_string` | Declared and defined |
+| 197 | `jme_copy_body_name` | Declared and defined |
+| 198 | `jme_ephemeris_path` | Declared and defined |
+| 199 | `jme_get_ayanamsa_name` | Declared and defined |
+| 200 | `jme_house_system_name` | Declared and defined |
+| 201 | `jme_jpl_engine_version` | Declared and defined |
+| 202 | `jme_jpl_file` | Declared and defined |
+| 203 | `jme_library_path` | Declared and defined |
+| 204 | `jme_version` | Declared and defined |
 
 ## JME Public Constants
 
@@ -671,6 +684,8 @@ Function count and behavior coverage are separate checks. The full behavior matr
 | 458 | `JME_VECTOR_KM_PER_SECOND` |
 | 459 | `JME_VERSION` |
 | 460 | `JME_VERSION_ID` |
+| 461 | `JME_BODY_MEAN_NODE` |
+| 462 | `JME_BODY_TRUE_NODE` |
 
 ## Reference Parity Constants
 

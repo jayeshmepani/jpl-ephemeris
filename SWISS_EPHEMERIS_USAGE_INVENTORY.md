@@ -259,7 +259,7 @@ Definitions:
 
 - **Ready:** equivalent exists and current behavior is low-risk for these projects.
 - **Partial:** equivalent exists, but behavior is not yet strict enough to guarantee intact I/O for these projects.
-- **Not ready:** equivalent symbol exists but currently returns an error for the required behavior, or the required Swiss-compatible surface is in the open release domain.
+- **Not ready:** no suitable equivalent exists yet, or the current equivalent cannot produce the required behavior for these projects.
 
 ### Function Readiness
 
@@ -277,27 +277,27 @@ Definitions:
 | `swe_calc_ut` | `jme_calc_ut` | Partial | Core equivalent exists, but full Swiss behavior parity is not complete. Gaps include exact flag handling, sidereal mode parity, apparent/true position policy, speed output, topocentric/geocentric behavior, and fallback/JPL reduction differences. This is the most important blocker for both projects. |
 | `swe_houses` | `jme_houses` | Partial | Function exists, but not all Swiss house systems and edge cases are complete. For current usage, verify the default house system and ascendant/MC/cusp output shape against Swiss. |
 | `swe_rise_trans` | `jme_rise_trans` | Partial | Function exists, but full Swiss-grade rise/set/transit behavior is not complete. Needs parity for Sun/Moon rise/set, disc-center flags, refraction policy, no-event handling, and date-boundary behavior. This is important for both projects. |
-| `swe_sol_eclipse_how` | `jme_sol_eclipse_how` | Not ready | Current function exists but returns `JME_ERR`. It must compute local solar eclipse circumstances before `panchang-core` can migrate. |
-| `swe_lun_eclipse_how` | `jme_lun_eclipse_how` | Not ready | Current function exists but returns `JME_ERR`. It must compute local lunar eclipse circumstances before `panchang-core` can migrate. |
-| `swe_sol_eclipse_when_glob` | `jme_sol_eclipse_when_glob` | Partial | Function exists and delegates to a local search, but it is not full Swiss-grade eclipse search/classification. Needs contact timing, type flags, search direction, and event classification parity. |
-| `swe_sol_eclipse_when_loc` | `jme_sol_eclipse_when_loc` | Partial | Function exists, but local solar eclipse search/circumstances are not full parity. Needs location-aware visibility and contact output validation. |
-| `swe_lun_eclipse_when` | `jme_lun_eclipse_when` | Partial | Function exists and delegates to local search, but it is not full Swiss-grade lunar eclipse search/classification. |
-| `swe_lun_eclipse_when_loc` | `jme_lun_eclipse_when_loc` | Partial | Function exists, but local lunar eclipse search/circumstances are not full parity. Needs visibility, contacts, magnitude/type, and output array validation. |
+| `swe_sol_eclipse_how` | `jme_sol_eclipse_how` | Partial | Native local solar eclipse circumstances are implemented and contract-tested. Exact Swiss-compatible contact timing, output-array shape, and locality validation remain before intact migration. |
+| `swe_lun_eclipse_how` | `jme_lun_eclipse_how` | Partial | Native lunar eclipse circumstances are implemented and contract-tested for total and penumbral cases. Broader Swiss-compatible output validation remains before intact migration. |
+| `swe_sol_eclipse_when_glob` | `jme_sol_eclipse_when_glob` | Partial | Native global solar search/classification is implemented and tested for total, annular, and hybrid cases. Broader event catalog validation, search-direction behavior, and output shape parity remain. |
+| `swe_sol_eclipse_when_loc` | `jme_sol_eclipse_when_loc` | Partial | Native local solar eclipse search is implemented and contract-tested. Exact location-aware contacts, visibility flags, and output-array parity remain before intact migration. |
+| `swe_lun_eclipse_when` | `jme_lun_eclipse_when` | Partial | Native lunar eclipse search is implemented and tested for total and penumbral cases. Broader catalog/date-range validation and output-array parity remain. |
+| `swe_lun_eclipse_when_loc` | `jme_lun_eclipse_when_loc` | Partial | Native local lunar eclipse visibility/contact clipping is implemented and tested. A fully independent topocentric shadow-contact model and output-array parity remain. |
 
 ### Constant Readiness
 
-All constants required by `vedic_astrology` and `panchang-core` are present in `JPL-Moshier-Ephemeris/include/jme_compat/swephexp.h` with Swiss-style `SE_*` / `SEFLG_*` names.
+The in-tree C API is JME-native only. The old Swiss-style compatibility header is not present in this repository build, so required Swiss constants must be mapped through a separate migration wrapper or adapter.
 
 Constant coverage status:
 
 | Area | Status | Notes |
 |---|---|---|
-| Body IDs | Ready | `SE_SUN`, `SE_MOON`, `SE_MERCURY`, `SE_VENUS`, `SE_MARS`, `SE_JUPITER`, `SE_SATURN`, `SE_MEAN_NODE`, `SE_TRUE_NODE` exist. |
-| Calendar flags | Ready | `SE_GREG_CAL`, `SE_JUL_CAL` exist. |
-| Calculation flags | Ready as constants, partial as behavior | `SEFLG_SWIEPH`, `SEFLG_SIDEREAL`, `SEFLG_SPEED`, `SEFLG_EQUATORIAL`, `SEFLG_HELCTR` exist. Behavior behind these flags must be verified in `jme_calc_ut`. |
-| Rise/transit flags | Ready as constants, partial as behavior | Rise/set/twilight/transit constants exist. `jme_rise_trans` needs full behavior parity. |
-| Eclipse flags | Ready as constants, partial/not-ready as behavior | Eclipse constants exist. Eclipse behavior is the main missing area for `panchang-core`. |
-| Sidereal modes | Ready as constants, partial as behavior | Required sidereal mode constants exist. Ayanamsa calculations need mode-by-mode parity verification. |
+| Body IDs | Mapped in JME-native constants | Required bodies have `JME_BODY_*` equivalents. A migration adapter must expose any required `SE_*` names and confirm value semantics. |
+| Calendar flags | Mapped in JME-native constants | Gregorian/Julian calendar behavior exists through `JME_CALENDAR_*`. A migration adapter must expose any required `SE_*` names. |
+| Calculation flags | Mapped in JME-native constants, partial as behavior | Required flag concepts have `JME_CALC_*` equivalents, but behavior behind these flags must be verified in `jme_calc_ut`. |
+| Rise/transit flags | Mapped in JME-native constants, partial as behavior | Rise/set/twilight/transit concepts exist in JME, but `jme_rise_trans` still needs full intact-I/O validation. |
+| Eclipse flags | Mapped as JME constants, partial as behavior | JME eclipse constants exist, but they are not guaranteed Swiss-style flag values. Eclipse behavior is implemented but still needs intact I/O and broader parity validation for `panchang-core`. |
+| Sidereal modes | Mapped in JME-native constants, partial as behavior | Required sidereal concepts have JME equivalents. Ayanamsa calculations need mode-by-mode parity verification and adapter-level name/value mapping. |
 
 ## Migration Blockers For Intact I/O
 
@@ -350,7 +350,7 @@ Primary blockers:
    - `swe_lun_eclipse_when`
    - `swe_lun_eclipse_when_loc`
 
-   Current JME equivalents are not sufficient for intact panchang-core eclipse JSON output. Local circumstances, visibility flags, type flags, contact times, and output arrays must be implemented and compared against existing Swiss-based output.
+   Current JME equivalents are implemented but not yet sufficient for intact panchang-core eclipse JSON output. Local circumstances, visibility flags, type flags, contact times, and output arrays must be compared against existing Swiss-based output.
 
 2. `swe_rise_trans`
    - must preserve sunrise, sunset, moonrise, moonset, transit, and twilight behavior
@@ -370,7 +370,7 @@ Lower-risk items:
 
 - `swe_julday`
 - `swe_jdut1_to_utc`, after wrapper shape is added and event time formatting is verified
-- constants, because all required constants are already present
+- constants, after the migration layer maps required Swiss-style names and values onto the JME-native constants intentionally
 
 ## Required Compatibility Layer
 

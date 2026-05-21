@@ -420,6 +420,8 @@ double jme_delta_t_ex(double jd_ut, int model, char *error);
 
 int jme_get_obliquity(double jd_et, int model, double *eps, char *error);
 
+int jme_get_frame_bias_matrix(int model, double *m);
+
 int jme_get_nutation(double jd_et, int model, double *dpsi, double *deps, char *error);
 
 int jme_get_precession_matrix(double jd_start, double jd_end, int model, double *m);

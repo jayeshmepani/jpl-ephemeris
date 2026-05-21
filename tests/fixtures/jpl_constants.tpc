@@ -1,0 +1,10 @@
+KPL/PCK
+
+\begindata
+
+JME_TEST_STRING = 'JME'
+JME_TEST_STRING_VECTOR = ( 'JME', 'CALCEPH' )
+JME_TEST_NUMBER = 42.0
+JME_TEST_VECTOR = ( 1.0, 2.0, 3.0 )
+
+\begintext

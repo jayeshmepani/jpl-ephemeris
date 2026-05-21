@@ -38,6 +38,77 @@ static int normalize_house_system(int house_system)
     }
 }
 
+static double clamp_sector(double sector)
+{
+    if (sector < 1.0) {
+        return 1.0;
+    }
+    if (sector >= 37.0) {
+        return 36.999999999;
+    }
+    return sector;
+}
+
+static int gauquelin_sector_from_equatorial(double jd_ut, double ra, double dec, double geo_lon, double geo_lat, double *dgsect, char *error)
+{
+    double lst;
+    double h;
+    double arg;
+    double h0;
+    double nocturnal_arc;
+    double fraction;
+
+    if (dgsect == 0 || !isfinite(ra) || !isfinite(dec) || !isfinite(geo_lon) || !isfinite(geo_lat)) {
+        jme_set_error(error, "Gauquelin semiarc inputs are invalid");
+        return JME_ERR;
+    }
+
+    lst = jme_degree_normalize(jme_sidereal_time(jd_ut) * 15.0 + geo_lon);
+    h = jme_degrees_difference_signed(lst, ra);
+    arg = -tan(geo_lat * JME_DEG_TO_RAD) * tan(dec * JME_DEG_TO_RAD);
+
+    if (arg > -1.0 && arg < 1.0) {
+        h0 = acos(arg) * JME_RAD_TO_DEG;
+        nocturnal_arc = 180.0 - h0;
+
+        if (h < 0.0 && h >= -h0) {
+            fraction = (h + h0) / h0;
+            *dgsect = clamp_sector(1.0 + fraction * 9.0);
+            return JME_OK;
+        }
+        if (h >= 0.0 && h <= h0) {
+            fraction = h / h0;
+            *dgsect = clamp_sector(10.0 + fraction * 9.0);
+            return JME_OK;
+        }
+        if (h > h0) {
+            fraction = nocturnal_arc > 0.0 ? (h - h0) / nocturnal_arc : 0.0;
+            *dgsect = clamp_sector(19.0 + fraction * 9.0);
+            return JME_OK;
+        }
+
+        fraction = nocturnal_arc > 0.0 ? (h + 180.0) / nocturnal_arc : 0.0;
+        *dgsect = clamp_sector(28.0 + fraction * 9.0);
+        return JME_OK;
+    }
+
+    if (arg <= -1.0) {
+        if (h < 0.0) {
+            *dgsect = clamp_sector(1.0 + ((h + 180.0) / 180.0) * 9.0);
+        } else {
+            *dgsect = clamp_sector(10.0 + (h / 180.0) * 9.0);
+        }
+        return JME_OK;
+    }
+
+    if (h >= 0.0) {
+        *dgsect = clamp_sector(19.0 + (h / 180.0) * 9.0);
+    } else {
+        *dgsect = clamp_sector(28.0 + ((h + 180.0) / 180.0) * 9.0);
+    }
+    return JME_OK;
+}
+
 static double ecliptic_longitude_from_ra(double ra, double eps)
 {
     double r = ra * JME_DEG_TO_RAD;
@@ -819,9 +890,14 @@ int jme_houses_ex(double jd_ut, int flags, double geo_lat, double geo_lon, int h
 
     (void)flags;
 
+    if (cusps == 0) {
+        jme_set_error(0, "House cusp output is required");
+        return JME_ERR;
+    }
+
     /* 1. Need Obliquity and Nutation for RAMC and coordinate transform */
-    jme_get_obliquity(jd_ut, JME_MODEL_OBL_IAU_1980, &eps, 0);
-    jme_get_nutation(jd_ut, JME_MODEL_NUT_IAU_1980, &dpsi, &deps, 0);
+    jme_get_obliquity(jd_ut, jme_context_obliquity_model(), &eps, 0);
+    jme_get_nutation(jd_ut, jme_context_nutation_model(), &dpsi, &deps, 0);
     eps += deps; /* True obliquity */
 
     gst = jme_sidereal_time0(jd_ut, eps - deps, dpsi);
@@ -924,13 +1000,29 @@ int jme_houses_ex2(double jd_ut, int flags, double geo_lat, double geo_lon, int 
 int jme_houses_armc(double armc, double geo_lat, double eps, int house_system, double *cusps, double *ascmc)
 {
     double local_ascmc[10];
+    double input_sun_decl = ascmc != 0 ? ascmc[9] : NAN;
+    int system = normalize_house_system(house_system);
     int i;
+
+    if (cusps == 0) {
+        return JME_ERR;
+    }
 
     calc_ascmc(armc, geo_lat, eps, local_ascmc);
     if (ascmc != 0) {
         for (i = 0; i < 10; i++) {
             ascmc[i] = local_ascmc[i];
         }
+        if (system == 'I' && isfinite(input_sun_decl)) {
+            ascmc[9] = input_sun_decl;
+        }
+    }
+
+    if (system == 'I') {
+        if (!isfinite(input_sun_decl)) {
+            return JME_ERR;
+        }
+        return sunshine_cusps(local_ascmc[0], local_ascmc[1], armc, geo_lat, eps, input_sun_decl, cusps);
     }
 
     return fill_house_cusps_from_angles(local_ascmc[0], local_ascmc[1], armc, geo_lat, eps, house_system, cusps);
@@ -998,6 +1090,7 @@ int jme_gauquelin_sector(double jd_ut, int body, const char *starname, int flags
     int rc_ic_prev;
     int rc_ic_next;
     int sector_offset = 0;
+    int rsmi_extra = 0;
 
     if (dgsect != 0) { *dgsect = 0.0; }
     if (dgsect == 0 || geopos == 0) {
@@ -1005,10 +1098,53 @@ int jme_gauquelin_sector(double jd_ut, int body, const char *starname, int flags
         return JME_ERR;
     }
 
-    rc_rise_prev = jme_rise_trans(day_start - 1.0, body, starname, flags, JME_RISE_RISE, geopos, atpress, attemp, &prev_rise, error);
-    rc_rise_next = jme_rise_trans(day_start, body, starname, flags, JME_RISE_RISE, geopos, atpress, attemp, &next_rise, error);
-    rc_set_prev = jme_rise_trans(day_start - 1.0, body, starname, flags, JME_RISE_SET, geopos, atpress, attemp, &prev_set, error);
-    rc_set_next = jme_rise_trans(day_start, body, starname, flags, JME_RISE_SET, geopos, atpress, attemp, &next_set, error);
+    if (imeth < 0 || imeth > 3) {
+        jme_set_error(error, "Gauquelin method must be 0, 1, 2, or 3");
+        return JME_ERR;
+    }
+
+    if (imeth == 0 || imeth == 1) {
+        double pos[6];
+        double ra;
+        double dec;
+        double eps;
+        double dpsi;
+        double deps;
+
+        if (starname != 0 && starname[0] != '\0') {
+            if (jme_fixstar_ut(starname, jd_ut, flags | JME_CALC_TRUE_POSITION, pos, error) != JME_OK) {
+                return JME_ERR;
+            }
+        } else if (jme_calc_ut(jd_ut, body, flags | JME_CALC_TRUE_POSITION, pos, error) != JME_OK) {
+            return JME_ERR;
+        }
+
+        if (jme_get_obliquity(jd_ut, jme_context_obliquity_model(), &eps, error) != JME_OK
+            || jme_get_nutation(jd_ut, jme_context_nutation_model(), &dpsi, &deps, error) != JME_OK) {
+            return JME_ERR;
+        }
+        eps += deps;
+        (void)dpsi;
+
+        jme_ecliptic_to_equatorial(pos[0], imeth == 0 ? pos[1] : 0.0, eps, &ra, &dec);
+        return gauquelin_sector_from_equatorial(jd_ut, ra, dec, geopos[0], geopos[1], dgsect, error);
+    }
+
+    if (imeth == 2) {
+        atpress = 0.0;
+    } else if (atpress == 0.0) {
+        atpress = 1013.25;
+    }
+
+    rsmi_extra = JME_RISE_DISC_CENTER;
+    if (imeth == 2) {
+        rsmi_extra |= JME_RISE_NO_REFRACTION;
+    }
+
+    rc_rise_prev = jme_rise_trans(day_start - 1.0, body, starname, flags, JME_RISE_RISE | rsmi_extra, geopos, atpress, attemp, &prev_rise, error);
+    rc_rise_next = jme_rise_trans(day_start, body, starname, flags, JME_RISE_RISE | rsmi_extra, geopos, atpress, attemp, &next_rise, error);
+    rc_set_prev = jme_rise_trans(day_start - 1.0, body, starname, flags, JME_RISE_SET | rsmi_extra, geopos, atpress, attemp, &prev_set, error);
+    rc_set_next = jme_rise_trans(day_start, body, starname, flags, JME_RISE_SET | rsmi_extra, geopos, atpress, attemp, &next_set, error);
     rc_mc_prev = jme_rise_trans(day_start - 1.0, body, starname, flags, JME_RISE_MERIDIAN_TRANSIT, geopos, atpress, attemp, &prev_mc, error);
     rc_mc_next = jme_rise_trans(day_start, body, starname, flags, JME_RISE_MERIDIAN_TRANSIT, geopos, atpress, attemp, &next_mc, error);
     rc_ic_prev = jme_rise_trans(day_start - 1.0, body, starname, flags, JME_RISE_ANTI_MERIDIAN_TRANSIT, geopos, atpress, attemp, &prev_ic, error);
@@ -1065,8 +1201,7 @@ int jme_gauquelin_sector(double jd_ut, int body, const char *starname, int flags
     if (fraction < 0.0) { fraction = 0.0; }
     if (fraction >= 1.0) { fraction = 0.999999999; }
 
-    (void)imeth;
-    *dgsect = floor(fraction * 9.0) + 1.0 + sector_offset;
+    *dgsect = clamp_sector(1.0 + sector_offset + fraction * 9.0);
 
     return JME_OK;
 }

@@ -250,16 +250,31 @@ double jme_refract_extended(
 )
 {
     double refracted;
+    double local_pressure = pressure;
+    double local_temperature = temperature;
 
-    (void)geoalt;
-    (void)lapse_rate;
+    if (pressure > 0.0 && geoalt != 0.0) {
+        const double t0 = 273.15 + temperature;
+        const double g_over_r = 5.255877432444129;
+        double h_km = geoalt / 1000.0;
 
-    refracted = jme_refract(altitude, pressure, temperature, calc_flag);
+        if (lapse_rate > 0.0 && t0 > 0.0) {
+            double ratio = (t0 - lapse_rate * geoalt) / t0;
+            if (ratio > 0.0) {
+                local_pressure = pressure * pow(ratio, g_over_r);
+                local_temperature = temperature - lapse_rate * geoalt;
+            }
+        } else {
+            local_pressure = pressure * exp(-h_km / 7.996);
+        }
+    }
+
+    refracted = jme_refract(altitude, local_pressure, local_temperature, calc_flag);
     if (out != 0) {
         out[0] = refracted;
         out[1] = refracted - altitude;
-        out[2] = pressure;
-        out[3] = temperature;
+        out[2] = local_pressure;
+        out[3] = local_temperature;
     }
     return refracted;
 }

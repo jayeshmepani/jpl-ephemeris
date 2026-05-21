@@ -29,4 +29,11 @@ Every public function must have:
 
 The current implemented callable surface is tracked in `docs/API_TRACKING.md`.
 
-The old 106-function list is not the public API target. It is only a coverage checklist used to make sure this product eventually covers the same astronomy and astrology capability areas, with project-owned names and behavior.
+The old 106-function list is not the public API target. It is a Swiss-reference coverage checklist used to make sure this product covers the same astronomy and astrology capability areas, with project-owned names and behavior.
+
+Current Swiss-reference tracking:
+
+- 106 reference behavior rows mapped to project-owned entry points
+- 348 reference constants inventoried
+- not all mapped rows are exact-complete yet
+- not all inventoried constants are guaranteed Swiss-semantic parity yet

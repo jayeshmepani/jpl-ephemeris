@@ -179,27 +179,40 @@ static int check_vsop87a_j2000(void)
 
 static int check_elp2000_reference(void)
 {
-    double state[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    double expected_km[3] = {382979.7604730463, -68204.20174530084, -25987.71602589964};
+    struct elp_case {
+        double jd;
+        double xyz_km[3];
+    } cases[] = {
+        {2451555.5, {382979.7604730463, -68204.20174530084, -25987.71602589964}},
+        {2450535.0858589401, {-275315.85366705677, -278571.10866498074, 26325.720663196265}},
+        {2452219.5869187401, {-81955.583671778193, 368196.84963875631, 8622.8434201957880}},
+        {2457671.9752448499, {206861.16245819122, -326463.48893797904, 22436.002934452619}},
+        {2468059.7751763500, {371212.90122084937, 117491.28319247597, 25803.144969337736}}
+    };
     int i;
 
-    if (jme_elp2000_moon_state(2451555.5, state) != JME_OK) {
-        fprintf(stderr, "ELP2000 state failed\n");
-        return 1;
-    }
+    for (i = 0; i < (int)(sizeof(cases) / sizeof(cases[0])); i++) {
+        double state[6] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        int j;
 
-    for (i = 0; i < 3; i++) {
-        char label[64];
-        snprintf(label, sizeof(label), "ELP2000 Moon km[%d]", i);
-        if (check_close(label, state[i] * JME_AU_KM, expected_km[i], 10.0) != 0) {
+        if (jme_elp2000_moon_state(cases[i].jd, state) != JME_OK) {
+            fprintf(stderr, "ELP2000 state failed at JD %.10f\n", cases[i].jd);
             return 1;
         }
-    }
 
-    if (!isfinite(state[3]) || !isfinite(state[4]) || !isfinite(state[5])
-        || fabs(state[3]) + fabs(state[4]) + fabs(state[5]) <= 0.0) {
-        fprintf(stderr, "ELP2000 velocity is not finite/non-zero\n");
-        return 1;
+        for (j = 0; j < 3; j++) {
+            char label[96];
+            snprintf(label, sizeof(label), "ELP2000 Moon JD %.1f km[%d]", cases[i].jd, j);
+            if (check_close(label, state[j] * JME_AU_KM, cases[i].xyz_km[j], 50.0) != 0) {
+                return 1;
+            }
+        }
+
+        if (!isfinite(state[3]) || !isfinite(state[4]) || !isfinite(state[5])
+            || fabs(state[3]) + fabs(state[4]) + fabs(state[5]) <= 0.0) {
+            fprintf(stderr, "ELP2000 velocity is not finite/non-zero\n");
+            return 1;
+        }
     }
 
     return 0;
@@ -279,6 +292,113 @@ static int check_engine_elements_against_jpl_table(void)
     return 0;
 }
 
+static int check_engine_public_state_contracts(void)
+{
+    double state[6];
+    int planet_bodies[] = {
+        JME_BODY_MERCURY,
+        JME_BODY_VENUS,
+        JME_BODY_EARTH,
+        JME_BODY_MARS,
+        JME_BODY_JUPITER,
+        JME_BODY_SATURN,
+        JME_BODY_URANUS,
+        JME_BODY_NEPTUNE,
+        JME_BODY_PLUTO
+    };
+    int vsop_bodies[] = {
+        JME_BODY_MERCURY,
+        JME_BODY_VENUS,
+        JME_BODY_EARTH,
+        JME_BODY_MARS,
+        JME_BODY_JUPITER,
+        JME_BODY_SATURN,
+        JME_BODY_URANUS,
+        JME_BODY_NEPTUNE
+    };
+    int i;
+
+    for (i = 0; i < (int)(sizeof(vsop_bodies) / sizeof(vsop_bodies[0])); i++) {
+        if (jme_vsop87_planet_state(2451545.0, vsop_bodies[i], state) != JME_OK
+            || !isfinite(state[0]) || !isfinite(state[1]) || !isfinite(state[2])
+            || !isfinite(state[3]) || !isfinite(state[4]) || !isfinite(state[5])
+            || jme_state_distance(state) <= 0.0
+            || jme_state_speed(state) <= 0.0) {
+            fprintf(stderr, "VSOP87 public state contract failed for body %d\n", vsop_bodies[i]);
+            return 1;
+        }
+    }
+
+    if (jme_vsop87_planet_state(2451545.0, JME_BODY_PLUTO, state) != JME_OK
+        || jme_state_distance(state) <= 0.0
+        || jme_state_speed(state) <= 0.0) {
+        fprintf(stderr, "VSOP87 fallback contract failed for Pluto\n");
+        return 1;
+    }
+
+    if (jme_vsop87_planet_state(2451545.0, JME_BODY_SUN, state) != JME_ERR
+        || jme_vsop87_planet_state(2451545.0, JME_BODY_MARS, 0) != JME_ERR) {
+        fprintf(stderr, "VSOP87 invalid-input contract failed\n");
+        return 1;
+    }
+
+    for (i = 0; i < (int)(sizeof(planet_bodies) / sizeof(planet_bodies[0])); i++) {
+        if (jme_moshier_planet_state(2451545.0, planet_bodies[i], state) != JME_OK
+            || !isfinite(state[0]) || !isfinite(state[1]) || !isfinite(state[2])
+            || !isfinite(state[3]) || !isfinite(state[4]) || !isfinite(state[5])
+            || jme_state_distance(state) <= 0.0
+            || jme_state_speed(state) <= 0.0) {
+            fprintf(stderr, "Moshier public state contract failed for body %d\n", planet_bodies[i]);
+            return 1;
+        }
+
+        if (jme_meeus_planet_state(2451545.0, planet_bodies[i], state) != JME_OK
+            || !isfinite(state[0]) || !isfinite(state[1]) || !isfinite(state[2])
+            || !isfinite(state[3]) || !isfinite(state[4]) || !isfinite(state[5])
+            || jme_state_distance(state) <= 0.0
+            || jme_state_speed(state) <= 0.0) {
+            fprintf(stderr, "Meeus public state contract failed for body %d\n", planet_bodies[i]);
+            return 1;
+        }
+    }
+
+    if (jme_moshier_planet_state(2451545.0, JME_BODY_MOON, state) != JME_ERR
+        || jme_moshier_planet_state(2451545.0, JME_BODY_MERCURY, 0) != JME_ERR
+        || jme_meeus_planet_state(2451545.0, JME_BODY_MOON, state) != JME_ERR
+        || jme_meeus_planet_state(2451545.0, JME_BODY_MERCURY, 0) != JME_ERR) {
+        fprintf(stderr, "Moshier/Meeus invalid-input contract failed\n");
+        return 1;
+    }
+
+    if (jme_elp2000_moon_state(2451545.0, state) != JME_OK
+        || !isfinite(state[0]) || !isfinite(state[1]) || !isfinite(state[2])
+        || !isfinite(state[3]) || !isfinite(state[4]) || !isfinite(state[5])
+        || jme_state_distance(state) <= 0.0
+        || jme_state_speed(state) <= 0.0
+        || jme_elp2000_moon_state(2451545.0, 0) != JME_ERR) {
+        fprintf(stderr, "ELP2000 public state contract failed\n");
+        return 1;
+    }
+
+    if (jme_meeus_sun_state(2451545.0, state) != JME_OK
+        || jme_state_distance(state) <= 0.0
+        || jme_state_speed(state) <= 0.0
+        || jme_meeus_sun_state(2451545.0, 0) != JME_ERR) {
+        fprintf(stderr, "Meeus Sun state contract failed\n");
+        return 1;
+    }
+
+    if (jme_meeus_moon_state(2451545.0, state) != JME_OK
+        || jme_state_distance(state) <= 0.0
+        || jme_state_speed(state) <= 0.0
+        || jme_meeus_moon_state(2451545.0, 0) != JME_ERR) {
+        fprintf(stderr, "Meeus Moon state contract failed\n");
+        return 1;
+    }
+
+    return 0;
+}
+
 int main(void)
 {
     if (check_vsop87a_j2000() != 0) {
@@ -290,6 +410,10 @@ int main(void)
     }
 
     if (check_engine_elements_against_jpl_table() != 0) {
+        return 1;
+    }
+
+    if (check_engine_public_state_contracts() != 0) {
         return 1;
     }
 
