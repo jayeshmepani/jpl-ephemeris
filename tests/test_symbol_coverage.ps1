@@ -12,6 +12,10 @@ $sourceText = (
     Get-ChildItem -Path (Join-Path $root "src") -Filter "*.c" |
         ForEach-Object { Get-Content -Raw $_.FullName }
 ) -join "`n"
+$testText = (
+    Get-ChildItem -Path (Join-Path $root "tests") -Filter "*.c" |
+        ForEach-Object { Get-Content -Raw $_.FullName }
+) -join "`n"
 $projectText = (
     Get-ChildItem -Path $root -Recurse -File |
         Where-Object {
@@ -34,6 +38,7 @@ $jmeConstants = [regex]::Matches($jmeText, "\bJME_[A-Z0-9_]+\b") |
     Sort-Object -Unique
 
 $missingJme = New-Object System.Collections.Generic.List[string]
+$untestedJme = New-Object System.Collections.Generic.List[string]
 
 foreach ($fn in $jmeFunctions) {
     $hasDefinition = $sourceText -match "(?m)^\s*(?:const\s+char\s*\*\s*|char\s*\*\s*|void\s+|double\s+|int\s+)$([regex]::Escape($fn))\s*\("
@@ -41,10 +46,19 @@ foreach ($fn in $jmeFunctions) {
     if (!$hasDefinition) {
         $missingJme.Add($fn)
     }
+
+    $hasDirectTestReference = $testText -match "\b$([regex]::Escape($fn))\s*\("
+    if (!$hasDirectTestReference) {
+        $untestedJme.Add($fn)
+    }
 }
 
 if ($missingJme.Count -gt 0) {
     throw "Declared JME functions without definitions: $($missingJme -join ', ')"
+}
+
+if ($untestedJme.Count -gt 0) {
+    throw "Declared JME functions without direct C test references: $($untestedJme -join ', ')"
 }
 
 $forbiddenBytes = @(
@@ -74,4 +88,5 @@ if ($jmeConstants.Count -lt 348) {
 
 Write-Output "jme_functions_total=$($jmeFunctions.Count)"
 Write-Output "jme_functions_defined=$($jmeFunctions.Count)"
+Write-Output "jme_functions_directly_tested=$($jmeFunctions.Count)"
 Write-Output "jme_constants_total=$($jmeConstants.Count)"

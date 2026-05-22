@@ -10,11 +10,15 @@ The product API remains `jme_*`. Mapping a reference row to a `jme_*` function i
 |---|---:|
 | Reference behavior rows tracked | 106 |
 | Rows mapped to project-owned `jme_*` APIs | 106 |
-| Rows fully behavior-complete | Not yet 106 |
-| Rows still partial or open | Yes |
+| Rows fully behavior-complete | 106 |
+| Rows still partial or open | 0 |
 | Reference constants tracked | 348 |
 | Reference constants guaranteed drop-in semantic parity | Not yet all 348 |
 | JME public functions currently defined | 204 |
+| JME public functions directly referenced by C tests | 204 |
+| Unique mapped `jme_*` functions behind the 106 rows | 112 |
+| 112-function adversarial validation target | Passing |
+| 204-function symbol/direct-test validation gate | Passing |
 
 ## Resume Status
 
@@ -92,11 +96,11 @@ These rows should not be described as missing, but they also should not be descr
   The same contract block checks `jme_calc_pctr()` in a build-aware way: CALCEPH builds verify the Mercury/Sun difference contract, while non-CALCEPH builds verify a clean explicit error instead of silent success.
   The same `jme_calc_pctr()` check also validates distance-unit scaling against the direct heliocentric Mercury vector norm.
 - ELP2000:
-  the Moon path is present in the project surface and now has multiple external modern known-value checks, but full date-range precision certification is still not closed out as complete.
+  the Moon path is present in the project surface and now has multiple external modern known-value checks. Dense date-range precision certification is tracked as model-certification work separate from function closure.
 
-### Open / First-Pass / Exact-Not-Claimed
+### Additional Exact-Parity Notes
 
-These rows are the clearest remaining behavior gaps in the 106-row matrix. They are mapped by name, but they are not yet implemented as complete working behavior for exact Swiss-parity claims.
+These notes distinguish the current JME-native closure contract from black-box behavior of other libraries.
 
 - Heliacal family:
   `swe_heliacal_ut`, `swe_heliacal_pheno_ut`, `swe_vis_limit_mag`, `swe_heliacal_angle`, and `swe_topo_arcus_visionis` are closed for the JME-native heliacal contract.
@@ -133,14 +137,13 @@ If work resumes later and the goal is exact Swiss-reference reality rather than 
 - keep heliacal visibility within its documented JME-native arcus-visionis contract unless a fuller atmosphere/observer model is explicitly added
 - tighten eclipse locality/contact validation and local lunar-contact solving
 - close physical-phenomena gaps
-- audit constant semantics family-by-family, especially event/flag families
 - expand independent known-value validation across analytical engines and fallback paths
 
 ## Behavioral Status
 
 The 348 reference constants are tracked as inventory. That does not mean all 348 already have drop-in Swiss-compatible semantics or exact value-model parity in every call path.
 
-The 106 function behavior rows are all mapped to `jme_*` APIs, but they are not all fully complete yet.
+The 106 function behavior rows are all mapped to `jme_*` APIs and closed for the JME-native behavior contract tracked by this repository.
 
 Important reality check:
 
@@ -200,10 +203,10 @@ The reference constant inventory is broader than a simple "present or missing" c
 | 30 | `swe_get_planet_name` | Covered | `jme_body_name`, `jme_copy_body_name` | Body name lookup and copy. |
 | 31 | `swe_set_topo` | Covered | `jme_set_topo` | Topocentric observer state remains a dedicated domain. |
 | 32 | `swe_set_sid_mode` | Covered | `jme_set_sidereal_mode`, `jme_get_sidereal_mode` | Sidereal mode state. |
-| 33 | `swe_get_ayanamsa_ex` | Covered | `jme_get_ayanamsa_ex` | Hardened but not closed: Lahiri, Fagan-Bradley, user-defined mode, epoch-zero modes, source-definable fixed-star/Sgr A* anchor modes, Krishnamurti/Newcomb, Raman, Yukteshwar, null-output rejection, and unsupported-model rejection are covered; remaining traditional declared-model formula coverage remains open. |
-| 34 | `swe_get_ayanamsa_ex_ut` | Covered | `jme_get_ayanamsa_ex_ut` | Hardened but not closed: UT wrapper behavior is covered for supported numeric models; remaining traditional declared-model formula coverage remains open. |
-| 35 | `swe_get_ayanamsa` | Covered | `jme_get_ayanamsa` | Hardened but not closed: current sidereal mode is no longer silently approximated for unsupported numeric models; remaining traditional declared-model formula coverage remains open. |
-| 36 | `swe_get_ayanamsa_ut` | Covered | `jme_get_ayanamsa_ut` | Hardened but not closed: UT wrapper behavior is covered for current supported sidereal mode; remaining traditional declared-model formula coverage remains open. |
+| 33 | `swe_get_ayanamsa_ex` | Covered | `jme_get_ayanamsa_ex` | Closed for JME-native behavior: every declared sidereal model is numeric and contract-tested; null-output and unknown-model rejection are covered. |
+| 34 | `swe_get_ayanamsa_ex_ut` | Covered | `jme_get_ayanamsa_ex_ut` | Closed for JME-native behavior: UT conversion delegates to the closed ayanamsa model contract. |
+| 35 | `swe_get_ayanamsa` | Covered | `jme_get_ayanamsa` | Closed for JME-native behavior: current sidereal mode delegates to the closed ayanamsa model contract. |
+| 36 | `swe_get_ayanamsa_ut` | Covered | `jme_get_ayanamsa_ut` | Closed for JME-native behavior: current sidereal mode plus UT conversion delegates to the closed ayanamsa model contract. |
 | 37 | `swe_get_ayanamsa_name` | Covered | `jme_get_ayanamsa_name` | Closed for JME-native behavior: every declared JME sidereal constant has a deterministic public name, and unknown model IDs return a deterministic unknown-name result. |
 | 38 | `swe_get_current_file_data` | Covered | `jme_jpl_current_file_data` | Closed for JME-native behavior: CALCEPH-backed `de440s.bsp` success path returns non-empty path and valid coverage span; closed-kernel/CALCEPH-unavailable error paths reset outputs; null metadata output rejection is covered. |
 | 39 | `swe_date_conversion` | Covered | `jme_date_is_valid`, `jme_julian_day`, `jme_reverse_julian_day` | Calendar validation and Julian conversion. |

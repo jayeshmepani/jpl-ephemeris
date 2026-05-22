@@ -7,6 +7,7 @@ This file tracks behavior certification, not symbol existence. Symbol coverage i
 ```text
 jme_functions_total=204
 jme_functions_defined=204
+jme_functions_directly_tested=204
 jme_constants_total=462
 ```
 
@@ -29,7 +30,7 @@ Current status after the recent closure batches:
 
 | Area | Closed enough | Not closed | Total |
 |---|---:|---:|---:|
-| Swiss reference rows by JME-native code/tests | 102 | 4 | 106 |
+| Swiss reference rows by JME-native code/tests | 106 | 0 | 106 |
 | Distinct extra JME public functions outside the 106-row mapping | 92 | 0 | 92 |
 
 Public function arithmetic:
@@ -43,6 +44,11 @@ Do not calculate this as `106 + 92`. The 106 Swiss rows are behavior rows, not u
 
 Recent rows moved from not-closed to closed:
 
+- [x] 112 mapped-function adversarial validation: `test_mapped_adversarial` now sweeps the unique `jme_*` functions behind the 106 Swiss-reference rows with randomized angle/coordinate round-trips, malformed strings, null/error contracts, production-like date/location/body workflows, model-state serialization, repeated determinism checks, polar-location domain handling, and read-only multithreaded calls.
+- [x] 204 public-function validation gate: `test_symbol_coverage.ps1` now fails unless every declared public `jme_*` function is both defined and directly referenced by C tests. Current enforced count is `204/204`.
+- [x] Extra public-function adversarial validation: `test_extra_adversarial` covers the non-Swiss public surface with calendar fuzzing, matrix/state round-trips, astrometry model checks, direct analytical state providers, raw JPL no-kernel behavior, and read-only multithreaded calls.
+- [x] External value validation: `test_analytical_validation` includes NASA/JPL Horizons quantity-31 observer ecliptic checks for 2026-05-22 geocentric Sun and Moon. This caught and fixed a no-kernel analytical fallback frame mismatch; the regression now fails if Sun/Moon longitudes drift outside the documented fallback tolerance.
+- [x] Robustness fixes from the adversarial pass: `jme_set_astro_models` now accepts key/value tokens for bias, nutation, obliquity, precession, sidereal-time, and Delta-T model families; `jme_body_name` returns deterministic `"Unknown"` for unknown IDs; `jme_house_pos` returns `NaN` for invalid input instead of ambiguous zero.
 - [x] Row 68, `swe_set_lapse_rate` / `jme_set_lapse_rate`: lapse-rate state is now consumed by extended refraction and rise/transit altitude refraction.
 - [x] Row 79, `swe_time_equ` / `jme_time_equ`: now uses the public calculation pipeline with analytic fallback and rejects null output.
 - [x] Row 80, `swe_lmt_to_lat` / `jme_lmt_to_lat`: now rejects null output and is covered by round-trip tests.
@@ -71,8 +77,12 @@ Recent rows moved from not-closed to closed:
 - [x] Row 26, `swe_fixstar2_mag` / `jme_fixstar2_mag`: alternate magnitude entry point delegates to the closed magnitude contract and is directly covered.
 - [x] Row 37, `swe_get_ayanamsa_name` / `jme_get_ayanamsa_name`: every declared JME sidereal constant now has a deterministic public name and unknown model IDs return a deterministic unknown-name result.
 - [x] Row 38, `swe_get_current_file_data` / `jme_jpl_current_file_data`: CALCEPH-backed `de440s.bsp` success path returns non-empty path and valid coverage span; closed-kernel/CALCEPH-unavailable error paths reset outputs; null metadata output rejection is covered.
-- [x] Ayanamsa hardening only: `jme_get_ayanamsa_ex` now rejects null output and unsupported sidereal model IDs instead of silently returning Lahiri for every model; Lahiri, Fagan-Bradley, user-defined mode, and UT wrapper behavior are covered. Rows 33-36 stay unchecked until every declared numeric sidereal model has source-backed formula/epoch data and known-value validation.
-- [x] Ayanamsa model-breadth hardening only: source-definable epoch-zero modes (`J2000`, `J1900`, `B1950`), fixed-star anchor modes (`Aldebaran 15 Tau`, `True/SS Citra`, `True/SS Revati`, `True Mula`, `True Pushya`), `Galactic Center 0 Sagittarius`, Krishnamurti/Newcomb, Raman, and Yukteshwar are now numeric and contract-tested using the project fixed-star catalog, Sgr A* coordinates, published KP/Newcomb formula values, Raman manual examples, and Yukteshwar/Holy Science 1893 value. Rows 33-36 stay unchecked because 12 declared traditional modes still require independent source-backed epoch/offset definitions before numeric support can be claimed: `JME_SIDEREAL_ARYABHATA`, `JME_SIDEREAL_BABYL_ETPSC`, `JME_SIDEREAL_BABYL_HUBER`, `JME_SIDEREAL_BABYL_KUGLER1`, `JME_SIDEREAL_BABYL_KUGLER2`, `JME_SIDEREAL_BABYL_KUGLER3`, `JME_SIDEREAL_DELUCE`, `JME_SIDEREAL_HIPPARCHOS`, `JME_SIDEREAL_JN_BHASIN`, `JME_SIDEREAL_SASSANIAN`, `JME_SIDEREAL_SURYASIDDHANTA`, and `JME_SIDEREAL_USHASHASHI`.
+- [x] Ayanamsa hardening: `jme_get_ayanamsa_ex` rejects null output and unknown sidereal model IDs instead of silently returning Lahiri; Lahiri, Fagan-Bradley, user-defined mode, and UT wrapper behavior are covered.
+- [x] Ayanamsa model breadth: every declared JME sidereal model now produces a numeric result with a direct contract test. Covered contracts include epoch-zero modes (`J2000`, `J1900`, `B1950`, `Aryabhata`, `J.N. Bhasin`, `Sassanian`), epoch-offset modes (`Babylonian ETPSC`, `Babylonian Huber`, `Babylonian Kugler 1/2/3`, `De Luce`, `Hipparchos`), fixed-star anchor modes (`Aldebaran 15 Tau`, `True/SS Citra`, `True/SS Revati`, `True Mula`, `True Pushya`, `Surya Siddhanta Revati 29°50' Pisces`, `Ushashashi`), `Galactic Center 0 Sagittarius`, Krishnamurti/Newcomb, Raman, and Yukteshwar.
+- [x] Row 33, `swe_get_ayanamsa_ex` / `jme_get_ayanamsa_ex`: all declared sidereal models are numeric and contract-tested, null output rejects, and unknown model IDs reject.
+- [x] Row 34, `swe_get_ayanamsa_ex_ut` / `jme_get_ayanamsa_ex_ut`: UT conversion delegates to the same closed ayanamsa model contract.
+- [x] Row 35, `swe_get_ayanamsa` / `jme_get_ayanamsa`: current sidereal mode delegates to the same closed ayanamsa model contract.
+- [x] Row 36, `swe_get_ayanamsa_ut` / `jme_get_ayanamsa_ut`: current sidereal mode plus UT conversion delegates to the same closed ayanamsa model contract.
 - [x] Row 10, `swe_calc` / `jme_calc`: null-output rejection, unsupported-body rejection, finite Sun/Moon/node/planet output, analytic fallback path, rectangular output, distance scaling, velocity-per-second scaling, radians, and sidereal longitude behavior are covered for JME-native operation.
 - [x] Row 11, `swe_calc_ut` / `jme_calc_ut`: UT-to-ET wrapper behavior is covered through the same public calculation contract, including finite body outputs and flag behavior.
 - [x] Row 12, `swe_calc_pctr` / `jme_calc_pctr`: body-center rectangular difference, spherical conversion, distance scaling, radians, sidereal longitude, null-output rejection, and unsupported body/center rejection are covered for JME-native operation.
@@ -126,21 +136,17 @@ Recent rows moved from not-closed to closed:
 - [x] High-level no-kernel fallback order hardening: `jme_calc` is now regression-tested to match direct Moshier planet output for Mercury, Earth, and Pluto across multiple dates, and to match direct ELP2000 Moon plus direct Moshier Earth for lunar heliocentric output. This verifies selected-engine position and velocity consistency without marking broader all-date model certification as complete.
 - [x] C-level engine-selection hardening: wrappers can select `ENGINE=JPL`, `ENGINE=MOSHIER`, or `ENGINE=VSOP_ELP_MEEUS` through `jme_set_astro_models`, or use `JME_ENGINE` from the environment when no explicit engine token is set. Tests cover strict no-fallback JPL behavior without an open kernel, successful Moshier-mode calculation, successful VSOP/ELP/Meeus-mode calculation, and environment-driven Moshier selection.
 
-## Swiss 106 Rows Still Not Closed
+## Swiss 106 Rows Closure Remainder
 
-These are mapped and implemented to varying degrees, but not yet closed under the strict code-proof standard.
+None. All 106 mapped Swiss-reference rows are closed for the JME-native contract tracked in this file.
 
-- [ ] Row 33, `swe_get_ayanamsa_ex` -> `jme_get_ayanamsa_ex`
-- [ ] Row 34, `swe_get_ayanamsa_ex_ut` -> `jme_get_ayanamsa_ex_ut`
-- [ ] Row 35, `swe_get_ayanamsa` -> `jme_get_ayanamsa`
-- [ ] Row 36, `swe_get_ayanamsa_ut` -> `jme_get_ayanamsa_ut`
-
-## Extra JME Functions Still Not Closed
+## Extra JME Functions Closure Remainder
 
 The 92 extra functions are split as:
 
 - 92 closed extras
 - 0 not-closed extras
+- [x] Extra-surface adversarial validation: the 92 public `jme_*` functions outside the Swiss 106/112 mapping now have a dedicated `test_extra_adversarial` pass covering helper fuzz, matrix/state round-trips, astrometry model helpers, analytical state-provider sweeps, raw JPL no-kernel error paths, and multithreaded read-only stress.
 
 ### Closed Extra Utility And Metadata Functions
 

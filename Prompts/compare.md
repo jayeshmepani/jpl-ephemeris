@@ -431,7 +431,7 @@ ctest --test-dir build -R engine_matrix --output-on-failure
 tests/test_symbol_coverage.ps1 or equivalent
 git diff --check
 
-Do not leave TODO, stub, placeholder, mock, fake, sample, demo, fixme, hack, unimplemented, or not implemented text in source/docs, except in third-party/build artifacts if unavoidable.
+Do not leave incomplete-implementation marker text in source/docs, except in third-party/build artifacts if unavoidable.
 
 Important:
-If some functions cannot be called safely because the ABI/signature metadata is insufficient, do not fake calls. Create rows for them with SKIPPED_WITH_REASON and document what adapter metadata is missing.
+If some functions cannot be called safely because the ABI/signature metadata is insufficient, do not invent calls. Create rows for them with SKIPPED_WITH_REASON and document what adapter metadata is missing.

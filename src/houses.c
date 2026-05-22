@@ -935,12 +935,12 @@ double jme_house_pos(double armc, double geo_lat, double eps, int house_system, 
 
     if (xpin == 0) {
         jme_set_error(error, "House position input is required");
-        return 0.0;
+        return NAN;
     }
 
     if (jme_houses_armc(armc, geo_lat, eps, house_system, cusps, ascmc) != JME_OK) {
         jme_set_error(error, "House system is not available");
-        return 0.0;
+        return NAN;
     }
 
     lon = jme_degree_normalize(xpin[0]);

@@ -340,6 +340,7 @@ int main(void)
         double ayan_anchor = 0.0;
         double ayan_kp = 0.0;
         double ayan_traditional = 0.0;
+        double ayan_source = 0.0;
         double kp_zero_jd = 2415020.31352 + (291.21645153698 - 1900.0) * 365.242198781;
         double star_ecl[6] = {0.0};
 
@@ -386,6 +387,12 @@ int main(void)
             fprintf(stderr, "new fixed-anchor ayanamsa contract mismatch: %s %.17g %.17g\n", error, star_ecl[0], ayan_anchor);
             return 1;
         }
+        if (jme_fixstar("Revati", 2451545.0, JME_CALC_TRUE_POSITION, star_ecl, error) != JME_OK
+            || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_SURYASIDDHANTA, &ayan_anchor, error) != JME_OK
+            || fabs(jme_degrees_difference_signed(star_ecl[0] - ayan_anchor, 359.8333333333333)) > 1.0e-9) {
+            fprintf(stderr, "Surya Siddhanta Revati ayanamsa contract mismatch: %s %.17g %.17g\n", error, star_ecl[0], ayan_anchor);
+            return 1;
+        }
 
         jme_set_sidereal_mode(JME_SIDEREAL_USER, 2451545.0, 12.5);
         if (jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_USER, &ayan_user, error) != JME_OK
@@ -424,8 +431,81 @@ int main(void)
             return 1;
         }
 
+        if (jme_get_ayanamsa_ex(1903396.789532, JME_SIDEREAL_ARYABHATA, &ayan_source, error) != JME_OK
+            || fabs(jme_degrees_difference_signed(ayan_source, 0.0)) > 1.0e-12
+            || jme_get_ayanamsa_ex(jme_julian_day(-129, 1, 1, 0.0, JME_CALENDAR_JULIAN), JME_SIDEREAL_BABYL_ETPSC, &ayan_source, error) != JME_OK
+            || fabs(jme_degrees_difference_signed(ayan_source, -(5.0 + 4.0 / 60.0 + 46.0 / 3600.0))) > 1.0e-12
+            || jme_get_ayanamsa_ex(jme_julian_day(-100, 1, 1, 0.0, JME_CALENDAR_JULIAN), JME_SIDEREAL_BABYL_HUBER, &ayan_source, error) != JME_OK
+            || fabs(jme_degrees_difference_signed(ayan_source, -(4.0 + 28.0 / 60.0))) > 1.0e-12
+            || jme_get_ayanamsa_ex(jme_julian_day(-100, 1, 1, 0.0, JME_CALENDAR_JULIAN), JME_SIDEREAL_BABYL_KUGLER1, &ayan_source, error) != JME_OK
+            || fabs(jme_degrees_difference_signed(ayan_source, -(5.0 + 40.0 / 60.0))) > 1.0e-12
+            || jme_get_ayanamsa_ex(jme_julian_day(-100, 1, 1, 0.0, JME_CALENDAR_JULIAN), JME_SIDEREAL_BABYL_KUGLER2, &ayan_source, error) != JME_OK
+            || fabs(jme_degrees_difference_signed(ayan_source, -(4.0 + 16.0 / 60.0))) > 1.0e-12
+            || jme_get_ayanamsa_ex(jme_julian_day(-100, 1, 1, 0.0, JME_CALENDAR_JULIAN), JME_SIDEREAL_BABYL_KUGLER3, &ayan_source, error) != JME_OK
+            || fabs(jme_degrees_difference_signed(ayan_source, -(3.0 + 25.0 / 60.0))) > 1.0e-12
+            || jme_get_ayanamsa_ex(2415020.5, JME_SIDEREAL_DELUCE, &ayan_source, error) != JME_OK
+            || fabs(ayan_source - (26.0 + 24.0 / 60.0 + 47.0 / 3600.0)) > 1.0e-12
+            || jme_get_ayanamsa_ex(1674484.0, JME_SIDEREAL_HIPPARCHOS, &ayan_source, error) != JME_OK
+            || fabs(jme_degrees_difference_signed(ayan_source, -(9.0 + 20.0 / 60.0))) > 1.0e-12
+            || jme_get_ayanamsa_ex(1854239.3, JME_SIDEREAL_JN_BHASIN, &ayan_source, error) != JME_OK
+            || fabs(jme_degrees_difference_signed(ayan_source, 0.0)) > 1.0e-12
+            || jme_get_ayanamsa_ex(1927135.8747793, JME_SIDEREAL_SASSANIAN, &ayan_source, error) != JME_OK
+            || fabs(jme_degrees_difference_signed(ayan_source, 0.0)) > 1.0e-12) {
+            fprintf(stderr, "source-contract ayanamsa known-value mismatch: %s %.17g\n", error, ayan_source);
+            return 1;
+        }
+        if (jme_fixstar("Revati", 2451545.0, JME_CALC_TRUE_POSITION, star_ecl, error) != JME_OK
+            || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_USHASHASHI, &ayan_source, error) != JME_OK
+            || fabs(jme_degrees_difference_signed(star_ecl[0] - ayan_source, 359.8333333333333)) > 1.0e-9) {
+            fprintf(stderr, "Ushashashi Revati ayanamsa contract mismatch: %s %.17g %.17g\n", error, star_ecl[0], ayan_source);
+            return 1;
+        }
+        {
+            const int historical_modes[] = {
+                JME_SIDEREAL_ARYABHATA,
+                JME_SIDEREAL_BABYL_ETPSC,
+                JME_SIDEREAL_BABYL_HUBER,
+                JME_SIDEREAL_BABYL_KUGLER1,
+                JME_SIDEREAL_BABYL_KUGLER2,
+                JME_SIDEREAL_BABYL_KUGLER3,
+                JME_SIDEREAL_DELUCE,
+                JME_SIDEREAL_HIPPARCHOS,
+                JME_SIDEREAL_JN_BHASIN,
+                JME_SIDEREAL_SASSANIAN,
+                JME_SIDEREAL_USHASHASHI
+            };
+            const double historical_dates[] = {
+                1674484.0,
+                1903396.789532,
+                2415020.5,
+                2451545.0,
+                2816787.5
+            };
+            size_t mode_index;
+            size_t date_index;
+
+            for (mode_index = 0; mode_index < sizeof(historical_modes) / sizeof(historical_modes[0]); mode_index++) {
+                for (date_index = 0; date_index < sizeof(historical_dates) / sizeof(historical_dates[0]); date_index++) {
+                    double et_value = 0.0;
+                    double ut_value = 0.0;
+                    if (jme_get_ayanamsa_ex(historical_dates[date_index], historical_modes[mode_index], &et_value, error) != JME_OK
+                        || !isfinite(et_value)
+                        || et_value < 0.0
+                        || et_value >= 360.0
+                        || jme_get_ayanamsa_ex_ut(historical_dates[date_index], historical_modes[mode_index], &ut_value, error) != JME_OK
+                        || !isfinite(ut_value)
+                        || ut_value < 0.0
+                        || ut_value >= 360.0) {
+                        fprintf(stderr, "historical ayanamsa sweep failed for mode %d date %.17g: %s %.17g %.17g\n",
+                            historical_modes[mode_index], historical_dates[date_index], error, et_value, ut_value);
+                        return 1;
+                    }
+                }
+            }
+        }
+
         if (jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_LAHIRI, 0, error) != JME_ERR
-            || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_ARYABHATA, &ayan_user, error) != JME_ERR) {
+            || jme_get_ayanamsa_ex(2451545.0, -12345, &ayan_user, error) != JME_ERR) {
             fprintf(stderr, "ayanamsa accepted null output or unsupported model\n");
             return 1;
         }
@@ -1675,7 +1755,7 @@ int main(void)
             return 1;
         }
 
-        if (jme_house_pos(0.0, 0.0, 23.4392911, JME_HOUSE_EQUAL, 0, error) != 0.0) {
+        if (!isnan(jme_house_pos(0.0, 0.0, 23.4392911, JME_HOUSE_EQUAL, 0, error))) {
             fprintf(stderr, "house position accepted null input\n");
             return 1;
         }
@@ -1851,9 +1931,7 @@ int main(void)
             return 1;
         }
 
-        if (!(tret[2] < tret[0] && tret[0] < tret[3])
-            || tret[4] != 0.0
-            || tret[5] != 0.0) {
+        if (!(tret[2] < tret[4] && tret[4] < tret[0] && tret[0] < tret[5] && tret[5] < tret[3])) {
             fprintf(stderr, "solar Albuquerque local contacts are not ordered\n");
             return 1;
         }

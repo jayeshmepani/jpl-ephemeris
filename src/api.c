@@ -107,31 +107,41 @@ static void apply_model_token(jme_context *ctx, const char *token)
         ctx->model_obl = JME_MODEL_OBL_IAU_2006;
         ctx->model_prec = JME_MODEL_PREC_IAU_2006;
         ctx->model_sidt = JME_MODEL_SIDT_IAU_2006;
-    } else if (token_matches(token, "NUT1980")) {
+    } else if (token_matches(token, "BIASNONE") || token_value_matches(token, "BIAS=", "NONE") || token_value_matches(token, "BIAS=", "332")) {
+        ctx->model_bias = JME_MODEL_BIAS_NONE;
+    } else if (token_matches(token, "BIAS2000") || token_value_matches(token, "BIAS=", "IAU2000") || token_value_matches(token, "BIAS=", "330")) {
+        ctx->model_bias = JME_MODEL_BIAS_IAU2000;
+    } else if (token_matches(token, "BIAS2006") || token_value_matches(token, "BIAS=", "IAU2006") || token_value_matches(token, "BIAS=", "331")) {
+        ctx->model_bias = JME_MODEL_BIAS_IAU2006;
+    } else if (token_matches(token, "NUT1980") || token_value_matches(token, "NUT=", "IAU1980") || token_value_matches(token, "NUT=", "333")) {
         ctx->model_nut = JME_MODEL_NUT_IAU_1980;
-    } else if (token_matches(token, "NUT2000B")) {
+    } else if (token_matches(token, "NUT2000B") || token_value_matches(token, "NUT=", "IAU2000B") || token_value_matches(token, "NUT=", "335")) {
         ctx->model_nut = JME_MODEL_NUT_IAU_2000B;
-    } else if (token_matches(token, "OBL1980")) {
+    } else if (token_matches(token, "OBL1980") || token_value_matches(token, "OBL=", "IAU1980") || token_value_matches(token, "OBL=", "336")) {
         ctx->model_obl = JME_MODEL_OBL_IAU_1980;
-    } else if (token_matches(token, "OBL2000")) {
+    } else if (token_matches(token, "OBL2000") || token_value_matches(token, "OBL=", "IAU2000") || token_value_matches(token, "OBL=", "337")) {
         ctx->model_obl = JME_MODEL_OBL_IAU_2000;
-    } else if (token_matches(token, "OBL2006")) {
+    } else if (token_matches(token, "OBL2006") || token_value_matches(token, "OBL=", "IAU2006") || token_value_matches(token, "OBL=", "338")) {
         ctx->model_obl = JME_MODEL_OBL_IAU_2006;
-    } else if (token_matches(token, "PREC1976")) {
+    } else if (token_matches(token, "PREC1976") || token_value_matches(token, "PREC=", "IAU1976") || token_value_matches(token, "PREC=", "339")) {
         ctx->model_prec = JME_MODEL_PREC_IAU_1976;
-    } else if (token_matches(token, "PREC2000")) {
+    } else if (token_matches(token, "PREC2000") || token_value_matches(token, "PREC=", "IAU2000") || token_value_matches(token, "PREC=", "340")) {
         ctx->model_prec = JME_MODEL_PREC_IAU_2000;
-    } else if (token_matches(token, "PREC2006")) {
+    } else if (token_matches(token, "PREC2006") || token_value_matches(token, "PREC=", "IAU2006") || token_value_matches(token, "PREC=", "341")) {
         ctx->model_prec = JME_MODEL_PREC_IAU_2006;
-    } else if (token_matches(token, "DELTAT1984")) {
+    } else if (token_matches(token, "SIDT1976") || token_value_matches(token, "SIDT=", "IAU1976") || token_value_matches(token, "SIDT=", "344")) {
+        ctx->model_sidt = JME_MODEL_SIDT_IAU_1976;
+    } else if (token_matches(token, "SIDT2006") || token_value_matches(token, "SIDT=", "IAU2006") || token_value_matches(token, "SIDT=", "345")) {
+        ctx->model_sidt = JME_MODEL_SIDT_IAU_2006;
+    } else if (token_matches(token, "DELTAT1984") || token_value_matches(token, "DELTAT=", "STEPHENSON_MORRISON_1984") || token_value_matches(token, "DELTAT=", "346")) {
         ctx->model_deltat = JME_MODEL_DELTAT_STEPHENSON_MORRISON_1984;
-    } else if (token_matches(token, "DELTAT1997")) {
+    } else if (token_matches(token, "DELTAT1997") || token_value_matches(token, "DELTAT=", "STEPHENSON_1997") || token_value_matches(token, "DELTAT=", "347")) {
         ctx->model_deltat = JME_MODEL_DELTAT_STEPHENSON_1997;
-    } else if (token_matches(token, "DELTAT2004")) {
+    } else if (token_matches(token, "DELTAT2004") || token_value_matches(token, "DELTAT=", "STEPHENSON_MORRISON_2004") || token_value_matches(token, "DELTAT=", "348")) {
         ctx->model_deltat = JME_MODEL_DELTAT_STEPHENSON_MORRISON_2004;
-    } else if (token_matches(token, "DELTAT2006")) {
+    } else if (token_matches(token, "DELTAT2006") || token_value_matches(token, "DELTAT=", "ESPENAK_MEEUS_2006") || token_value_matches(token, "DELTAT=", "349")) {
         ctx->model_deltat = JME_MODEL_DELTAT_ESPENAK_MEEUS_2006;
-    } else if (token_matches(token, "DELTAT2016")) {
+    } else if (token_matches(token, "DELTAT2016") || token_value_matches(token, "DELTAT=", "STEPHENSON_ETC_2016") || token_value_matches(token, "DELTAT=", "350")) {
         ctx->model_deltat = JME_MODEL_DELTAT_STEPHENSON_ETC_2016;
     } else if (token_matches(token, "ENGINE_AUTO") || token_value_matches(token, "ENGINE=", "AUTO")) {
         set_engine_policy(ctx, JME_ENGINE_AUTO);

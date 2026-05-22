@@ -14,6 +14,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
 find_package(calceph CONFIG QUIET)
+find_package(Threads QUIET)
 
 add_library(jme SHARED
     src/api.c
@@ -100,6 +101,28 @@ if (JME_BUILD_TESTS)
     add_executable(test_extra_contract tests/test_extra_contract.c)
     target_link_libraries(test_extra_contract PRIVATE jme)
     add_test(NAME extra_contract COMMAND test_extra_contract)
+
+    add_executable(test_mapped_adversarial tests/test_mapped_adversarial.c)
+    target_link_libraries(test_mapped_adversarial PRIVATE jme)
+    if (Threads_FOUND)
+        target_link_libraries(test_mapped_adversarial PRIVATE Threads::Threads)
+    endif()
+    add_test(NAME mapped_adversarial COMMAND test_mapped_adversarial)
+
+    add_executable(test_extra_adversarial tests/test_extra_adversarial.c)
+    target_link_libraries(test_extra_adversarial PRIVATE jme)
+    if (Threads_FOUND)
+        target_link_libraries(test_extra_adversarial PRIVATE Threads::Threads)
+    endif()
+    add_test(NAME extra_adversarial COMMAND test_extra_adversarial)
+
+    add_executable(jme_call_probe tests/jme_call_probe.c)
+    target_link_libraries(jme_call_probe PRIVATE jme)
+
+    add_test(
+        NAME engine_matrix
+        COMMAND /bin/bash ${CMAKE_CURRENT_SOURCE_DIR}/tools/run_engine_matrix.sh
+    )
 
     find_program(PWSH_EXECUTABLE NAMES pwsh powershell)
     if (PWSH_EXECUTABLE)

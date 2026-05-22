@@ -1,10 +1,13 @@
-julian 165 3.67959e-05
-api_contract 160 0.25488
-jpl_runtime 166 1.26434e-05
-api_inventory 164 0.00469166
-symbol_coverage 147 0.0133444
-all_constants 155 8.24965e-06
-all_functions 154 0.0140823
-analytical_validation 107 0.00130451
-extra_contract 12 0.00307826
+julian 182 5.76791e-05
+api_contract 176 0.24769
+jpl_runtime 183 1.06266e-05
+api_inventory 181 0.00458677
+symbol_coverage 162 0.0103065
+all_constants 172 7.13769e-06
+all_functions 171 0.0134592
+analytical_validation 122 0.0010309
+extra_contract 29 0.000606024
+mapped_adversarial 11 0.150569
+extra_adversarial 9 0.0227848
+engine_matrix 6 6.80265
 ---

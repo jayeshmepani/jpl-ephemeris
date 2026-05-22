@@ -285,3 +285,39 @@ events:
       Running the C compiler's linker: "/usr/bin/ld" "-v"
       GNU ld (GNU Binutils for Ubuntu) 2.45
 ...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/Internal/CheckSourceCompiles.cmake:108 (try_compile)"
+      - "/usr/share/cmake-3.31/Modules/CheckCSourceCompiles.cmake:58 (cmake_check_source_compiles)"
+      - "/usr/share/cmake-3.31/Modules/FindThreads.cmake:97 (CHECK_C_SOURCE_COMPILES)"
+      - "/usr/share/cmake-3.31/Modules/FindThreads.cmake:163 (_threads_check_libc)"
+      - "CMakeLists.txt:17 (find_package)"
+    directories:
+      source: "/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles/CMakeScratch/TryCompile-1D7rAi"
+      binary: "/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles/CMakeScratch/TryCompile-1D7rAi"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "CMAKE_HAVE_LIBC_PTHREAD"
+      cached: true
+      stdout: |
+        Change Dir: '/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles/CMakeScratch/TryCompile-1D7rAi'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_87a48/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_87a48.dir/build.make CMakeFiles/cmTC_87a48.dir/build
+        gmake[1]: Entering directory '/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles/CMakeScratch/TryCompile-1D7rAi'
+        Building C object CMakeFiles/cmTC_87a48.dir/src.c.o
+        /usr/bin/cc -DCMAKE_HAVE_LIBC_PTHREAD  -std=c99 -o CMakeFiles/cmTC_87a48.dir/src.c.o -c /home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles/CMakeScratch/TryCompile-1D7rAi/src.c
+        Linking C executable cmTC_87a48
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_87a48.dir/link.txt --verbose=1
+        /usr/bin/cc CMakeFiles/cmTC_87a48.dir/src.c.o -o cmTC_87a48
+        gmake[1]: Leaving directory '/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build/CMakeFiles/CMakeScratch/TryCompile-1D7rAi'
+        
+      exitCode: 0
+...

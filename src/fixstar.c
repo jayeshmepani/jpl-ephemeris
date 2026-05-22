@@ -48,6 +48,7 @@ static const jme_star_alias star_aliases[] = {
     {"Vega", 7001},
     {"Asellus Australis", 3461},
     {"Lambda Scorpii", 6527},
+    {"Eta Psc", 437},
     {"Zeta Psc", 361}
 };
 

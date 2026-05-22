@@ -236,6 +236,46 @@ int jme_get_ayanamsa_ex(double jd_et, int model, double *ayan, char *error)
     case JME_SIDEREAL_YUKTESHWAR:
         *ayan = jme_degree_normalize(((double)(gregorian_year_from_jd(jd_et) - 499) * 54.0) / 3600.0);
         return JME_OK;
+    case JME_SIDEREAL_ARYABHATA:
+        t0 = 1903396.789532;
+        offset = 0.0;
+        break;
+    case JME_SIDEREAL_BABYL_ETPSC:
+        t0 = jme_julian_day(-129, 1, 1, 0.0, JME_CALENDAR_JULIAN);
+        offset = -(5.0 + 4.0 / 60.0 + 46.0 / 3600.0);
+        break;
+    case JME_SIDEREAL_BABYL_HUBER:
+        t0 = jme_julian_day(-100, 1, 1, 0.0, JME_CALENDAR_JULIAN);
+        offset = -(4.0 + 28.0 / 60.0);
+        break;
+    case JME_SIDEREAL_BABYL_KUGLER1:
+        t0 = jme_julian_day(-100, 1, 1, 0.0, JME_CALENDAR_JULIAN);
+        offset = -(5.0 + 40.0 / 60.0);
+        break;
+    case JME_SIDEREAL_BABYL_KUGLER2:
+        t0 = jme_julian_day(-100, 1, 1, 0.0, JME_CALENDAR_JULIAN);
+        offset = -(4.0 + 16.0 / 60.0);
+        break;
+    case JME_SIDEREAL_BABYL_KUGLER3:
+        t0 = jme_julian_day(-100, 1, 1, 0.0, JME_CALENDAR_JULIAN);
+        offset = -(3.0 + 25.0 / 60.0);
+        break;
+    case JME_SIDEREAL_DELUCE:
+        t0 = 2415020.5;
+        offset = 26.0 + 24.0 / 60.0 + 47.0 / 3600.0;
+        break;
+    case JME_SIDEREAL_HIPPARCHOS:
+        t0 = 1674484.0;
+        offset = -(9.0 + 20.0 / 60.0);
+        break;
+    case JME_SIDEREAL_JN_BHASIN:
+        t0 = 1854239.3;
+        offset = 0.0;
+        break;
+    case JME_SIDEREAL_SASSANIAN:
+        t0 = 1927135.8747793;
+        offset = 0.0;
+        break;
     case JME_SIDEREAL_J2000:
         offset = 0.0;
         break;
@@ -255,6 +295,10 @@ int jme_get_ayanamsa_ex(double jd_et, int model, double *ayan, char *error)
     case JME_SIDEREAL_TRUE_REVATI:
     case JME_SIDEREAL_SS_REVATI:
         return ayanamsa_from_fixed_star(jd_et, "Revati", 0.0, ayan, error);
+    case JME_SIDEREAL_SURYASIDDHANTA:
+        return ayanamsa_from_fixed_star(jd_et, "Revati", 359.8333333333333, ayan, error);
+    case JME_SIDEREAL_USHASHASHI:
+        return ayanamsa_from_fixed_star(jd_et, "Revati", 359.8333333333333, ayan, error);
     case JME_SIDEREAL_GALCENT_0SAG:
         return ayanamsa_from_j2000_equatorial(jd_et, 266.4168085291667, -29.0078377805556, 240.0, ayan, error);
     case JME_SIDEREAL_TRUE_MULA:

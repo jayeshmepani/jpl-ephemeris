@@ -75,7 +75,7 @@ const char *jme_body_name(int body)
         }
     }
 
-    return 0;
+    return "Unknown";
 }
 
 int jme_body_naif_id(int body)

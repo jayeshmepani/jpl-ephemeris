@@ -123,7 +123,6 @@ For each algorithm family:
 - remaining light-time, aberration, deflection, precession, nutation, and frame-bias model-depth validation
 - remaining apparent geocentric and topocentric reduction model-depth validation
 - UTC/TT/TDB time-scale conversion pipeline for direct civil-time calls
-- sidereal ayanamsa models
 - asteroid/comet catalog loading beyond direct kernel target IDs
 - dense all-body/all-date certification for high-level houses, eclipses, rise/set/transit, fixed stars, heliacal visibility, and physical ephemerides beyond their current JME-native closure contracts
 

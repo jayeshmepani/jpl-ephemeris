@@ -3,6 +3,10 @@
 #include <math.h>
 #include <stdio.h>
 
+#ifndef M_PI
+#define M_PI 3.141592653589793238462643383279502884
+#endif
+
 static int check_close(const char *label, double got, double expected, double tolerance)
 {
     if (!isfinite(got) || fabs(got - expected) > tolerance) {
@@ -10,6 +14,45 @@ static int check_close(const char *label, double got, double expected, double to
         return 1;
     }
     return 0;
+}
+
+static int convert_j2000_ecliptic_to_equatorial_of_date(double jd_et, const double *input, double *output, char *error)
+{
+    double eps = 0.0;
+    double bias[9];
+    double prec[9];
+    double dpsi = 0.0;
+    double deps = 0.0;
+    double nut[9];
+    double temp[6];
+    int i;
+
+    if (jme_get_obliquity(2451545.0, JME_MODEL_OBL_IAU_1980, &eps, error) != JME_OK
+        || jme_ecliptic_to_equatorial_rectangular_state(input, eps, temp) != JME_OK) {
+        return JME_ERR;
+    }
+    for (i = 0; i < 6; i++) {
+        output[i] = temp[i];
+    }
+    if (jme_get_frame_bias_matrix(JME_MODEL_BIAS_NONE, bias) == JME_OK) {
+        jme_matrix_transform_state(bias, output, output);
+    }
+    if (jme_get_precession_matrix(2451545.0, jd_et, JME_MODEL_PREC_IAU_1976, prec) != JME_OK) {
+        return JME_ERR;
+    }
+    jme_matrix_transform_state(prec, output, output);
+    if (jme_get_nutation(jd_et, JME_MODEL_NUT_IAU_1980, &dpsi, &deps, error) != JME_OK
+        || jme_get_obliquity(jd_et, JME_MODEL_OBL_IAU_1980, &eps, error) != JME_OK) {
+        return JME_ERR;
+    }
+    jme_get_nutation_matrix(dpsi * (M_PI / 180.0), deps * (M_PI / 180.0), eps * (M_PI / 180.0), nut);
+    jme_matrix_transform_state(nut, output, output);
+    for (i = 0; i < 6; i++) {
+        if (!isfinite(output[i])) {
+            return JME_ERR;
+        }
+    }
+    return JME_OK;
 }
 
 static double angular_distance_deg(double a, double b)
@@ -430,7 +473,8 @@ static int check_high_level_analytical_fallback_order(void)
                 return 1;
             }
 
-            if (jme_moshier_planet_state(jd_cases[j], planet_cases[i].body, moshier_state) != JME_OK) {
+            if (jme_moshier_planet_state(jd_cases[j], planet_cases[i].body, moshier_state) != JME_OK
+                || convert_j2000_ecliptic_to_equatorial_of_date(jd_cases[j], moshier_state, moshier_state, error) != JME_OK) {
                 fprintf(stderr, "direct Moshier state failed for %s at JD %.1f\n", planet_cases[i].name, jd_cases[j]);
                 return 1;
             }
@@ -461,11 +505,18 @@ static int check_high_level_analytical_fallback_order(void)
             fprintf(stderr, "direct ELP2000+Moshier Earth state failed at JD %.1f\n", jd_cases[j]);
             return 1;
         }
+        for (k = 0; k < 6; k++) {
+            moon_geo[k] += earth_helio[k];
+        }
+        if (convert_j2000_ecliptic_to_equatorial_of_date(jd_cases[j], moon_geo, moon_geo, error) != JME_OK) {
+            fprintf(stderr, "direct ELP2000+Moshier Earth frame conversion failed at JD %.1f\n", jd_cases[j]);
+            return 1;
+        }
 
         for (k = 0; k < 6; k++) {
             char label[128];
             snprintf(label, sizeof(label), "jme_calc Moon ELP+Moshier JD %.1f[%d]", jd_cases[j], k);
-            if (check_close(label, calc_state[k], moon_geo[k] + earth_helio[k], 1.0e-14) != 0) {
+            if (check_close(label, calc_state[k], moon_geo[k], 1.0e-14) != 0) {
                 return 1;
             }
         }
@@ -480,7 +531,8 @@ static int check_high_level_analytical_fallback_order(void)
         int k;
 
         if (jme_calc(jd_cases[j], JME_BODY_MERCURY, JME_CALC_TRUE_POSITION | JME_CALC_HELIOCENTRIC | JME_CALC_XYZ, calc_state, error) != JME_OK
-            || jme_vsop87_planet_state(jd_cases[j], JME_BODY_MERCURY, vsop_state) != JME_OK) {
+            || jme_vsop87_planet_state(jd_cases[j], JME_BODY_MERCURY, vsop_state) != JME_OK
+            || convert_j2000_ecliptic_to_equatorial_of_date(jd_cases[j], vsop_state, vsop_state, error) != JME_OK) {
             fprintf(stderr, "VSOP+ELP+Meeus Mercury fallback failed at JD %.1f\n", jd_cases[j]);
             return 1;
         }
@@ -493,7 +545,8 @@ static int check_high_level_analytical_fallback_order(void)
         }
 
         if (jme_calc(jd_cases[j], JME_BODY_PLUTO, JME_CALC_TRUE_POSITION | JME_CALC_HELIOCENTRIC | JME_CALC_XYZ, calc_state, error) != JME_OK
-            || jme_meeus_planet_state(jd_cases[j], JME_BODY_PLUTO, meeus_state) != JME_OK) {
+            || jme_meeus_planet_state(jd_cases[j], JME_BODY_PLUTO, meeus_state) != JME_OK
+            || convert_j2000_ecliptic_to_equatorial_of_date(jd_cases[j], meeus_state, meeus_state, error) != JME_OK) {
             fprintf(stderr, "VSOP+ELP+Meeus Pluto fallback failed at JD %.1f\n", jd_cases[j]);
             return 1;
         }
@@ -506,6 +559,48 @@ static int check_high_level_analytical_fallback_order(void)
         }
     }
 
+    jme_set_astro_models(0, 0);
+
+    return 0;
+}
+
+static int check_horizons_observer_ecliptic_regression(void)
+{
+    const double jd_ut = 2461182.5; /* 2026-05-22 00:00 UTC */
+    const struct {
+        int body;
+        const char *name;
+        double lon;
+        double lat;
+        double lon_tolerance;
+        double lat_tolerance;
+    } cases[] = {
+        {JME_BODY_SUN, "Sun", 60.9377788, 0.0000444, 0.02, 0.01},
+        {JME_BODY_MOON, "Moon", 132.4438470, 1.9106796, 0.02, 0.02}
+    };
+    char error[256];
+    int i;
+
+    jme_set_astro_models("ENGINE=MOSHIER", 0);
+    for (i = 0; i < (int)(sizeof(cases) / sizeof(cases[0])); i++) {
+        double result[6];
+        double lon_delta;
+        double lat_delta;
+
+        if (jme_calc_ut(jd_ut, cases[i].body, 0, result, error) != JME_OK) {
+            fprintf(stderr, "Horizons regression %s calculation failed: %s\n", cases[i].name, error);
+            return 1;
+        }
+
+        lon_delta = fabs(jme_degrees_difference_signed(result[0], cases[i].lon));
+        lat_delta = fabs(result[1] - cases[i].lat);
+        if (lon_delta > cases[i].lon_tolerance || lat_delta > cases[i].lat_tolerance) {
+            fprintf(stderr,
+                "Horizons regression %s mismatch: got lon %.10f lat %.10f, expected lon %.10f lat %.10f, delta lon %.10f lat %.10f\n",
+                cases[i].name, result[0], result[1], cases[i].lon, cases[i].lat, lon_delta, lat_delta);
+            return 1;
+        }
+    }
     jme_set_astro_models(0, 0);
 
     return 0;
@@ -530,6 +625,10 @@ int main(void)
     }
 
     if (check_high_level_analytical_fallback_order() != 0) {
+        return 1;
+    }
+
+    if (check_horizons_observer_ecliptic_regression() != 0) {
         return 1;
     }
 

@@ -266,7 +266,21 @@ static int selected_body_state(
         for (i = 0; i < 6; i++) { state[i] -= earth_helio[i]; }
     }
 
-    if (is_ecliptic != 0) { *is_ecliptic = 1; }
+    {
+        double eps = 0.0;
+        double equatorial[6];
+
+        if (jme_get_obliquity(2451545.0, jme_context_obliquity_model(), &eps, error) != JME_OK
+            || jme_ecliptic_to_equatorial_rectangular_state(state, eps, equatorial) != JME_OK) {
+            jme_set_error(error, "Analytical ecliptic-to-equatorial frame conversion failed");
+            return JME_ERR;
+        }
+        for (i = 0; i < 6; i++) {
+            state[i] = equatorial[i];
+        }
+    }
+
+    if (is_ecliptic != 0) { *is_ecliptic = 0; }
     return JME_OK;
 }
 

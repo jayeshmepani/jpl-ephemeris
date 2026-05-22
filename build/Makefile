@@ -230,6 +230,45 @@ test_extra_contract/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_extra_contract.dir/build.make CMakeFiles/test_extra_contract.dir/build
 .PHONY : test_extra_contract/fast
 
+#=============================================================================
+# Target rules for targets named test_mapped_adversarial
+
+# Build rule for target.
+test_mapped_adversarial: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_mapped_adversarial
+.PHONY : test_mapped_adversarial
+
+# fast build rule for target.
+test_mapped_adversarial/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_mapped_adversarial.dir/build.make CMakeFiles/test_mapped_adversarial.dir/build
+.PHONY : test_mapped_adversarial/fast
+
+#=============================================================================
+# Target rules for targets named test_extra_adversarial
+
+# Build rule for target.
+test_extra_adversarial: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_extra_adversarial
+.PHONY : test_extra_adversarial
+
+# fast build rule for target.
+test_extra_adversarial/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_extra_adversarial.dir/build.make CMakeFiles/test_extra_adversarial.dir/build
+.PHONY : test_extra_adversarial/fast
+
+#=============================================================================
+# Target rules for targets named jme_call_probe
+
+# Build rule for target.
+jme_call_probe: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 jme_call_probe
+.PHONY : jme_call_probe
+
+# fast build rule for target.
+jme_call_probe/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme_call_probe.dir/build.make CMakeFiles/jme_call_probe.dir/build
+.PHONY : jme_call_probe/fast
+
 src/angle.o: src/angle.c.o
 .PHONY : src/angle.o
 
@@ -806,6 +845,30 @@ src/vsop87d_full.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/vsop87d_full.c.s
 .PHONY : src/vsop87d_full.c.s
 
+tests/jme_call_probe.o: tests/jme_call_probe.c.o
+.PHONY : tests/jme_call_probe.o
+
+# target to build an object file
+tests/jme_call_probe.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme_call_probe.dir/build.make CMakeFiles/jme_call_probe.dir/tests/jme_call_probe.c.o
+.PHONY : tests/jme_call_probe.c.o
+
+tests/jme_call_probe.i: tests/jme_call_probe.c.i
+.PHONY : tests/jme_call_probe.i
+
+# target to preprocess a source file
+tests/jme_call_probe.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme_call_probe.dir/build.make CMakeFiles/jme_call_probe.dir/tests/jme_call_probe.c.i
+.PHONY : tests/jme_call_probe.c.i
+
+tests/jme_call_probe.s: tests/jme_call_probe.c.s
+.PHONY : tests/jme_call_probe.s
+
+# target to generate assembly for a file
+tests/jme_call_probe.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme_call_probe.dir/build.make CMakeFiles/jme_call_probe.dir/tests/jme_call_probe.c.s
+.PHONY : tests/jme_call_probe.c.s
+
 tests/test_all_constants.o: tests/test_all_constants.c.o
 .PHONY : tests/test_all_constants.o
 
@@ -902,6 +965,30 @@ tests/test_api_contract.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_api_contract.dir/build.make CMakeFiles/test_api_contract.dir/tests/test_api_contract.c.s
 .PHONY : tests/test_api_contract.c.s
 
+tests/test_extra_adversarial.o: tests/test_extra_adversarial.c.o
+.PHONY : tests/test_extra_adversarial.o
+
+# target to build an object file
+tests/test_extra_adversarial.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_extra_adversarial.dir/build.make CMakeFiles/test_extra_adversarial.dir/tests/test_extra_adversarial.c.o
+.PHONY : tests/test_extra_adversarial.c.o
+
+tests/test_extra_adversarial.i: tests/test_extra_adversarial.c.i
+.PHONY : tests/test_extra_adversarial.i
+
+# target to preprocess a source file
+tests/test_extra_adversarial.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_extra_adversarial.dir/build.make CMakeFiles/test_extra_adversarial.dir/tests/test_extra_adversarial.c.i
+.PHONY : tests/test_extra_adversarial.c.i
+
+tests/test_extra_adversarial.s: tests/test_extra_adversarial.c.s
+.PHONY : tests/test_extra_adversarial.s
+
+# target to generate assembly for a file
+tests/test_extra_adversarial.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_extra_adversarial.dir/build.make CMakeFiles/test_extra_adversarial.dir/tests/test_extra_adversarial.c.s
+.PHONY : tests/test_extra_adversarial.c.s
+
 tests/test_extra_contract.o: tests/test_extra_contract.c.o
 .PHONY : tests/test_extra_contract.o
 
@@ -974,6 +1061,30 @@ tests/test_julian.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_julian.dir/build.make CMakeFiles/test_julian.dir/tests/test_julian.c.s
 .PHONY : tests/test_julian.c.s
 
+tests/test_mapped_adversarial.o: tests/test_mapped_adversarial.c.o
+.PHONY : tests/test_mapped_adversarial.o
+
+# target to build an object file
+tests/test_mapped_adversarial.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_mapped_adversarial.dir/build.make CMakeFiles/test_mapped_adversarial.dir/tests/test_mapped_adversarial.c.o
+.PHONY : tests/test_mapped_adversarial.c.o
+
+tests/test_mapped_adversarial.i: tests/test_mapped_adversarial.c.i
+.PHONY : tests/test_mapped_adversarial.i
+
+# target to preprocess a source file
+tests/test_mapped_adversarial.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_mapped_adversarial.dir/build.make CMakeFiles/test_mapped_adversarial.dir/tests/test_mapped_adversarial.c.i
+.PHONY : tests/test_mapped_adversarial.c.i
+
+tests/test_mapped_adversarial.s: tests/test_mapped_adversarial.c.s
+.PHONY : tests/test_mapped_adversarial.s
+
+# target to generate assembly for a file
+tests/test_mapped_adversarial.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_mapped_adversarial.dir/build.make CMakeFiles/test_mapped_adversarial.dir/tests/test_mapped_adversarial.c.s
+.PHONY : tests/test_mapped_adversarial.c.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -984,13 +1095,16 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... test"
 	@echo "... jme"
+	@echo "... jme_call_probe"
 	@echo "... test_all_constants"
 	@echo "... test_all_functions"
 	@echo "... test_analytical_validation"
 	@echo "... test_api_contract"
+	@echo "... test_extra_adversarial"
 	@echo "... test_extra_contract"
 	@echo "... test_jpl_runtime"
 	@echo "... test_julian"
+	@echo "... test_mapped_adversarial"
 	@echo "... src/angle.o"
 	@echo "... src/angle.i"
 	@echo "... src/angle.s"
@@ -1063,6 +1177,9 @@ help:
 	@echo "... src/vsop87d_full.o"
 	@echo "... src/vsop87d_full.i"
 	@echo "... src/vsop87d_full.s"
+	@echo "... tests/jme_call_probe.o"
+	@echo "... tests/jme_call_probe.i"
+	@echo "... tests/jme_call_probe.s"
 	@echo "... tests/test_all_constants.o"
 	@echo "... tests/test_all_constants.i"
 	@echo "... tests/test_all_constants.s"
@@ -1075,6 +1192,9 @@ help:
 	@echo "... tests/test_api_contract.o"
 	@echo "... tests/test_api_contract.i"
 	@echo "... tests/test_api_contract.s"
+	@echo "... tests/test_extra_adversarial.o"
+	@echo "... tests/test_extra_adversarial.i"
+	@echo "... tests/test_extra_adversarial.s"
 	@echo "... tests/test_extra_contract.o"
 	@echo "... tests/test_extra_contract.i"
 	@echo "... tests/test_extra_contract.s"
@@ -1084,6 +1204,9 @@ help:
 	@echo "... tests/test_julian.o"
 	@echo "... tests/test_julian.i"
 	@echo "... tests/test_julian.s"
+	@echo "... tests/test_mapped_adversarial.o"
+	@echo "... tests/test_mapped_adversarial.i"
+	@echo "... tests/test_mapped_adversarial.s"
 .PHONY : help
 
 
