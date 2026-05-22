@@ -258,13 +258,19 @@ int jme_get_nutation(double jd_et, int model, double *dpsi, double *deps, char *
     if (dpsi != 0) { *dpsi = 0.0; }
     if (deps != 0) { *deps = 0.0; }
 
+    if (dpsi == 0 || deps == 0) {
+        jme_set_error(error, "Nutation output pointers are required");
+        return JME_ERR;
+    }
+
     if (model == JME_MODEL_NUT_IAU_2000A) {
         jme_set_error(error, "IAU 2000A nutation is not available; use IAU 2000B or IAU 1980");
         return JME_ERR;
     }
 
     if (model != JME_MODEL_NUT_IAU_1980 && model != JME_MODEL_NUT_IAU_2000B) {
-        model = JME_MODEL_NUT_IAU_1980;
+        jme_set_error(error, "Unsupported nutation model");
+        return JME_ERR;
     }
 
     if (jme_context_interpolate_nut()) {

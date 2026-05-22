@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200112L
+
 #include "jme/jme.h"
 
 #include <math.h>
@@ -217,7 +219,8 @@ int main(void)
         || strstr(path, "OBL=338") == 0
         || strstr(path, "PREC=341") == 0
         || strstr(path, "SIDT=345") == 0
-        || strstr(path, "DELTAT=350") == 0) {
+        || strstr(path, "DELTAT=350") == 0
+        || strstr(path, "ENGINE=AUTO") == 0) {
         fprintf(stderr, "astro model profile getter mismatch: %s\n", path);
         return 1;
     }
@@ -225,6 +228,49 @@ int main(void)
         fprintf(stderr, "IAU 2006 sidereal time mismatch: %.17g\n", jme_sidereal_time(2451545.0));
         return 1;
     }
+    jme_set_astro_models("ENGINE=JPL", 0);
+    if (jme_get_astro_models(path, 0) != JME_OK || strstr(path, "ENGINE=JPL") == 0) {
+        fprintf(stderr, "JPL engine model summary mismatch: %s\n", path);
+        return 1;
+    }
+    jme_jpl_close();
+    if (jme_calc(2451545.0, JME_BODY_MERCURY, JME_CALC_TRUE_POSITION | JME_CALC_HELIOCENTRIC | JME_CALC_XYZ, state, error) != JME_ERR) {
+        fprintf(stderr, "ENGINE=JPL unexpectedly used analytical fallback without an open JPL kernel\n");
+        return 1;
+    }
+
+    jme_set_astro_models("ENGINE=MOSHIER", 0);
+    if (jme_get_astro_models(path, 0) != JME_OK || strstr(path, "ENGINE=MOSHIER") == 0) {
+        fprintf(stderr, "Moshier engine model summary mismatch: %s\n", path);
+        return 1;
+    }
+    if (jme_calc(2451545.0, JME_BODY_MERCURY, JME_CALC_TRUE_POSITION | JME_CALC_HELIOCENTRIC | JME_CALC_XYZ, state, error) != JME_OK
+        || !finite_values(state, 6)) {
+        fprintf(stderr, "ENGINE=MOSHIER calculation failed: %s\n", error);
+        return 1;
+    }
+
+    jme_set_astro_models("ENGINE=VSOP_ELP_MEEUS", 0);
+    if (jme_get_astro_models(path, 0) != JME_OK || strstr(path, "ENGINE=VSOP_ELP_MEEUS") == 0) {
+        fprintf(stderr, "VSOP/ELP/Meeus engine model summary mismatch: %s\n", path);
+        return 1;
+    }
+    if (jme_calc(2451545.0, JME_BODY_MERCURY, JME_CALC_TRUE_POSITION | JME_CALC_HELIOCENTRIC | JME_CALC_XYZ, state, error) != JME_OK
+        || !finite_values(state, 6)) {
+        fprintf(stderr, "ENGINE=VSOP_ELP_MEEUS calculation failed: %s\n", error);
+        return 1;
+    }
+
+#if defined(__unix__) || defined(__APPLE__)
+    setenv("JME_ENGINE", "MOSHIER", 1);
+    jme_set_astro_models(0, 0);
+    if (jme_get_astro_models(path, 0) != JME_OK || strstr(path, "ENGINE=MOSHIER") == 0) {
+        fprintf(stderr, "JME_ENGINE environment selection mismatch: %s\n", path);
+        return 1;
+    }
+    unsetenv("JME_ENGINE");
+#endif
+
     jme_set_astro_models(0, 0);
     if (jme_get_astro_models(path, 0) != JME_OK
         || strstr(path, "BIAS=332") == 0
@@ -290,12 +336,54 @@ int main(void)
         double ayan_fagan = 0.0;
         double ayan_user = 0.0;
         double ayan_ut = 0.0;
+        double ayan_epoch = 0.0;
+        double ayan_anchor = 0.0;
+        double ayan_kp = 0.0;
+        double ayan_traditional = 0.0;
+        double kp_zero_jd = 2415020.31352 + (291.21645153698 - 1900.0) * 365.242198781;
+        double star_ecl[6] = {0.0};
 
         if (jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_LAHIRI, &ayan_lahiri, error) != JME_OK
             || fabs(ayan_lahiri - 23.8570) > 1e-12
             || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_FAGAN_BRADLEY, &ayan_fagan, error) != JME_OK
             || fabs(ayan_fagan - 24.733333333) > 1e-12) {
             fprintf(stderr, "built-in ayanamsa known-value mismatch\n");
+            return 1;
+        }
+
+        if (jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_J2000, &ayan_epoch, error) != JME_OK
+            || fabs(ayan_epoch) > 1.0e-12
+            || jme_get_ayanamsa_ex(2415020.0, JME_SIDEREAL_J1900, &ayan_epoch, error) != JME_OK
+            || fabs(ayan_epoch) > 1.0e-12
+            || jme_get_ayanamsa_ex(2433282.42345905, JME_SIDEREAL_B1950, &ayan_epoch, error) != JME_OK
+            || fabs(ayan_epoch) > 1.0e-12) {
+            fprintf(stderr, "epoch-zero ayanamsa contract mismatch: %s %.17g\n", error, ayan_epoch);
+            return 1;
+        }
+
+        if (jme_fixstar("Aldebaran", 2451545.0, JME_CALC_TRUE_POSITION, star_ecl, error) != JME_OK
+            || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_ALDEBARAN_15TAU, &ayan_anchor, error) != JME_OK
+            || fabs(jme_degrees_difference(star_ecl[0] - ayan_anchor, 45.0)) > 1.0e-9
+            || jme_fixstar("Spica", 2451545.0, JME_CALC_TRUE_POSITION, star_ecl, error) != JME_OK
+            || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_TRUE_CITRA, &ayan_anchor, error) != JME_OK
+            || fabs(jme_degrees_difference(star_ecl[0] - ayan_anchor, 180.0)) > 1.0e-9
+            || jme_fixstar("Revati", 2451545.0, JME_CALC_TRUE_POSITION, star_ecl, error) != JME_OK
+            || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_TRUE_REVATI, &ayan_anchor, error) != JME_OK
+            || fabs(jme_degrees_difference(star_ecl[0] - ayan_anchor, 0.0)) > 1.0e-9) {
+            fprintf(stderr, "fixed-star anchored ayanamsa contract mismatch: %s %.17g %.17g\n", error, star_ecl[0], ayan_anchor);
+            return 1;
+        }
+        if (jme_fixstar("Shaula", 2451545.0, JME_CALC_TRUE_POSITION, star_ecl, error) != JME_OK
+            || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_TRUE_MULA, &ayan_anchor, error) != JME_OK
+            || fabs(jme_degrees_difference_signed(star_ecl[0] - ayan_anchor, 240.0)) > 1.0e-9
+            || jme_fixstar("Delta Cancri", 2451545.0, JME_CALC_TRUE_POSITION, star_ecl, error) != JME_OK
+            || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_TRUE_PUSHYA, &ayan_anchor, error) != JME_OK
+            || fabs(jme_degrees_difference_signed(star_ecl[0] - ayan_anchor, 106.0)) > 1.0e-9
+            || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_GALCENT_0SAG, &ayan_anchor, error) != JME_OK
+            || !isfinite(ayan_anchor)
+            || ayan_anchor < 25.0
+            || ayan_anchor > 27.0) {
+            fprintf(stderr, "new fixed-anchor ayanamsa contract mismatch: %s %.17g %.17g\n", error, star_ecl[0], ayan_anchor);
             return 1;
         }
 
@@ -315,11 +403,38 @@ int main(void)
             return 1;
         }
 
+        if (jme_get_ayanamsa_ex(kp_zero_jd, JME_SIDEREAL_KRISHNAMURTI, &ayan_kp, error) != JME_OK
+            || fabs(jme_degrees_difference_signed(ayan_kp, 0.0)) > 1.0e-8
+            || jme_get_ayanamsa_ex(2415020.31352, JME_SIDEREAL_KRISHNAMURTI, &ayan_kp, error) != JME_OK
+            || fabs(ayan_kp - (80564.38104 / 3600.0)) > 1.0e-10
+            || jme_get_ayanamsa_ex_ut(2451545.0, JME_SIDEREAL_KRISHNAMURTI, &ayan_kp, error) != JME_OK
+            || fabs(ayan_kp - (23.0 + 46.0 / 60.0 + 31.19526 / 3600.0)) > 1.0e-7
+        ) {
+            fprintf(stderr, "Krishnamurti ayanamsa known-value mismatch: %s %.17g\n", error, ayan_kp);
+            return 1;
+        }
+
+        if (jme_get_ayanamsa_ex(jme_julian_day(1912, 1, 1, 0.0, JME_CALENDAR_GREGORIAN), JME_SIDEREAL_RAMAN, &ayan_traditional, error) != JME_OK
+            || fabs(ayan_traditional - (21.0 + 10.0 / 60.0 + 55.0 / 3600.0)) > 1.0e-12
+            || jme_get_ayanamsa_ex(jme_julian_day(1918, 1, 1, 0.0, JME_CALENDAR_GREGORIAN), JME_SIDEREAL_RAMAN, &ayan_traditional, error) != JME_OK
+            || fabs(ayan_traditional - (21.0 + 15.0 / 60.0 + 57.0 / 3600.0)) > 1.0e-12
+            || jme_get_ayanamsa_ex(jme_julian_day(1893, 3, 20, 0.0, JME_CALENDAR_GREGORIAN), JME_SIDEREAL_YUKTESHWAR, &ayan_traditional, error) != JME_OK
+            || fabs(ayan_traditional - (20.0 + 54.0 / 60.0 + 36.0 / 3600.0)) > 1.0e-12) {
+            fprintf(stderr, "traditional published ayanamsa known-value mismatch: %s %.17g\n", error, ayan_traditional);
+            return 1;
+        }
+
         if (jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_LAHIRI, 0, error) != JME_ERR
-            || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_ALDEBARAN_15TAU, &ayan_user, error) != JME_ERR) {
+            || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_ARYABHATA, &ayan_user, error) != JME_ERR) {
             fprintf(stderr, "ayanamsa accepted null output or unsupported model\n");
             return 1;
         }
+    }
+    if (jme_get_nutation(2451545.0, JME_MODEL_NUT_IAU_1980, &ra, &dec, error) != JME_OK
+        || fabs(ra - (-0.0038698621712391834)) > 1e-15
+        || fabs(dec - (-0.0016041131523510195)) > 1e-15) {
+        fprintf(stderr, "IAU 1980 nutation mismatch: %s %.17g %.17g\n", error, ra, dec);
+        return 1;
     }
     if (jme_get_nutation(2451545.0, JME_MODEL_NUT_IAU_2000B, &ra, &dec, error) != JME_OK
         || fabs(ra - (-0.0038699066358249398)) > 1e-15
@@ -327,8 +442,11 @@ int main(void)
         fprintf(stderr, "IAU 2000B nutation mismatch: %s %.17g %.17g\n", error, ra, dec);
         return 1;
     }
-    if (jme_get_nutation(2451545.0, JME_MODEL_NUT_IAU_2000A, &ra, &dec, error) != JME_ERR) {
-        fprintf(stderr, "unavailable IAU 2000A nutation was not rejected\n");
+    if (jme_get_nutation(2451545.0, JME_MODEL_NUT_IAU_2000A, &ra, &dec, error) != JME_ERR
+        || jme_get_nutation(2451545.0, 999999, &ra, &dec, error) != JME_ERR
+        || jme_get_nutation(2451545.0, JME_MODEL_NUT_IAU_1980, 0, &dec, error) != JME_ERR
+        || jme_get_nutation(2451545.0, JME_MODEL_NUT_IAU_1980, &ra, 0, error) != JME_ERR) {
+        fprintf(stderr, "nutation accepted unavailable model or null output\n");
         return 1;
     }
 
@@ -501,6 +619,8 @@ int main(void)
         double star_2006[6];
         double star_radians[6];
         double star_sidereal[6];
+        double star_hr[6];
+        double star_future[6];
         double star_mag = 0.0;
         const char *built_in_stars[] = {
             "Sirius",
@@ -527,11 +647,44 @@ int main(void)
         }
         jme_set_astro_models(0, 0);
 
-        if (jme_fixstar("Sirius", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL, star_default, error) != JME_OK
+        if (jme_fixstar("Sirius", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL | JME_CALC_J2000, star_default, error) != JME_OK
             || !finite_values(star_default, 6)
-            || fabs(star_default[0] - 101.287155) > 0.5
-            || fabs(star_default[1] - (-16.716116)) > 0.5) {
+            || fabs(star_default[0] - 101.287083333333) > 1.0e-10
+            || fabs(star_default[1] - (-16.716111111111)) > 1.0e-10
+            || fabs(star_default[3] - ((-0.553 / 3600.0) / 365.25)) > 1.0e-14
+            || fabs(star_default[4] - ((-1.205 / 3600.0) / 365.25)) > 1.0e-14) {
             fprintf(stderr, "Sirius fixed-star catalog contract mismatch: %s %.17g %.17g\n", error, star_default[0], star_default[1]);
+            return 1;
+        }
+        if (jme_fixstar("HR 2491", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL | JME_CALC_J2000, star_hr, error) != JME_OK
+            || fabs(star_hr[0] - star_default[0]) > 1.0e-12
+            || fabs(star_hr[1] - star_default[1]) > 1.0e-12
+            || jme_fixstar("HD48915", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL | JME_CALC_J2000, star_hr, error) != JME_OK
+            || fabs(star_hr[0] - star_default[0]) > 1.0e-12
+            || fabs(star_hr[1] - star_default[1]) > 1.0e-12
+            || jme_fixstar("SAO 151881", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL | JME_CALC_J2000, star_hr, error) != JME_OK
+            || fabs(star_hr[0] - star_default[0]) > 1.0e-12
+            || fabs(star_hr[1] - star_default[1]) > 1.0e-12
+            || jme_fixstar("9Alp CMa", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL | JME_CALC_J2000, star_hr, error) != JME_OK
+            || fabs(star_hr[0] - star_default[0]) > 1.0e-12
+            || fabs(star_hr[1] - star_default[1]) > 1.0e-12
+            || jme_fixstar("sirius", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL | JME_CALC_J2000, star_hr, error) != JME_OK
+            || fabs(star_hr[0] - star_default[0]) > 1.0e-12
+            || fabs(star_hr[1] - star_default[1]) > 1.0e-12) {
+            fprintf(stderr, "fixed-star identifier/alias lookup mismatch: %s\n", error);
+            return 1;
+        }
+        if (jme_fixstar("HR 1", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL | JME_CALC_J2000, star_hr, error) != JME_OK
+            || !finite_values(star_hr, 6)
+            || jme_fixstar("HR 9110", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL | JME_CALC_J2000, star_hr, error) != JME_OK
+            || !finite_values(star_hr, 6)) {
+            fprintf(stderr, "fixed-star broad catalog endpoint lookup mismatch: %s\n", error);
+            return 1;
+        }
+        if (jme_fixstar("Sirius", 2451545.0 + 36525.0, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL | JME_CALC_J2000, star_future, error) != JME_OK
+            || fabs(star_future[0] - star_default[0]) < 0.001
+            || fabs(star_future[1] - star_default[1]) < 0.001) {
+            fprintf(stderr, "fixed-star proper-motion contract mismatch: %s %.17g %.17g\n", error, star_future[0], star_future[1]);
             return 1;
         }
         if (jme_fixstar_ut("Sirius", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL, star_default, error) != JME_OK
@@ -567,7 +720,8 @@ int main(void)
 
         if (jme_fixstar("Sirius", 2451545.0, JME_CALC_TRUE_POSITION, star_default, error) != JME_OK
             || jme_fixstar("Sirius", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_SIDEREAL, star_sidereal, error) != JME_OK
-            || fabs(jme_degrees_difference(star_sidereal[0], star_default[0] - jme_get_ayanamsa(2451545.0))) > 1e-9) {
+            || fabs(jme_degrees_difference(star_sidereal[0], star_default[0] - jme_get_ayanamsa(2451545.0))) > 1e-9
+            || fabs(star_sidereal[3] - star_default[3]) < 1.0e-7) {
             fprintf(stderr, "fixed-star sidereal contract mismatch\n");
             return 1;
         }
@@ -581,7 +735,10 @@ int main(void)
             || jme_fixstar_mag("Sirius", 0, error) != JME_ERR
             || jme_fixstar_mag(0, &star_mag, error) != JME_ERR
             || jme_fixstar2_mag(0, &star_mag, error) != JME_ERR
-            || jme_fixstar("UnknownStar", 2451545.0, JME_CALC_TRUE_POSITION, star_default, error) != JME_ERR) {
+            || jme_fixstar("UnknownStar", 2451545.0, JME_CALC_TRUE_POSITION, star_default, error) != JME_ERR
+            || jme_fixstar("HR 999999", 2451545.0, JME_CALC_TRUE_POSITION, star_default, error) != JME_ERR
+            || jme_fixstar("HD 999999999", 2451545.0, JME_CALC_TRUE_POSITION, star_default, error) != JME_ERR
+            || jme_fixstar("SAO X", 2451545.0, JME_CALC_TRUE_POSITION, star_default, error) != JME_ERR) {
             fprintf(stderr, "fixed-star invalid-input contract mismatch\n");
             return 1;
         }
@@ -1570,11 +1727,28 @@ int main(void)
         double lunar_partial_start = jme_julian_day(2023, 10, 28, 0.0, JME_CALENDAR_GREGORIAN);
         double lunar_partial_max = jme_julian_day(2023, 10, 28, 20.0 + 14.0 / 60.0 + 3.9 / 3600.0, JME_CALENDAR_GREGORIAN);
         double mars_occult_start = jme_julian_day(2022, 12, 8, 0.0, JME_CALENDAR_GREGORIAN);
+        double los_angeles_geopos[3] = {-118.2437, 34.0522, 0.0};
         int solar_rc = 0;
 
         if ((jme_sol_eclipse_when_glob(solar_start, JME_CALC_TRUE_POSITION, 0, tret, 0, error) & JME_ECLIPSE_SOLAR_TOTAL) == 0
             || fabs(tret[0] - solar_total_max) > (20.0 / 1440.0)) {
             fprintf(stderr, "solar total eclipse global search mismatch: %s %.17g\n", error, tret[0]);
+            return 1;
+        }
+
+        if (!(tret[2] < tret[0] && tret[0] < tret[3])
+            || tret[4] != 0.0
+            || tret[5] != 0.0) {
+            fprintf(stderr, "solar total eclipse global contacts are not ordered\n");
+            return 1;
+        }
+
+        if ((jme_sol_eclipse_when_glob(solar_start + 5.0, JME_CALC_TRUE_POSITION, 0, tret, 1, error) & JME_ECLIPSE_SOLAR_TOTAL) == 0
+            || fabs(tret[0] - solar_total_max) > (20.0 / 1440.0)
+            || !(tret[2] < tret[0] && tret[0] < tret[3])
+            || tret[4] != 0.0
+            || tret[5] != 0.0) {
+            fprintf(stderr, "solar total eclipse backward search mismatch: %s %.17g\n", error, tret[0]);
             return 1;
         }
 
@@ -1597,6 +1771,11 @@ int main(void)
             return 1;
         }
 
+        if (!(tret[2] < tret[0] && tret[0] < tret[3])) {
+            fprintf(stderr, "solar Dallas local contacts are not ordered\n");
+            return 1;
+        }
+
         solar_rc = jme_sol_eclipse_how(tret[0], JME_CALC_TRUE_POSITION, geopos, attr, error);
         if (solar_rc == JME_ERR
             || (solar_rc & JME_ECLIPSE_SOLAR_PARTIAL) == 0
@@ -1607,8 +1786,17 @@ int main(void)
             return 1;
         }
 
+        if (jme_sol_eclipse_where(2451545.0, JME_CALC_TRUE_POSITION, geopos, attr, error) != JME_ERR
+            || jme_sol_eclipse_how(2451545.0, JME_CALC_TRUE_POSITION, geopos, attr, error) != JME_ERR) {
+            fprintf(stderr, "solar eclipse circumstance accepted non-eclipse instant\n");
+            return 1;
+        }
+
         if ((jme_sol_eclipse_when_glob(annular_start, JME_CALC_TRUE_POSITION, 0, tret, 0, error) & JME_ECLIPSE_SOLAR_ANNULAR) == 0
-            || fabs(tret[0] - annular_global_max) > (25.0 / 1440.0)) {
+            || fabs(tret[0] - annular_global_max) > (25.0 / 1440.0)
+            || !(tret[2] < tret[0] && tret[0] < tret[3])
+            || tret[4] != 0.0
+            || tret[5] != 0.0) {
             fprintf(stderr, "solar annular eclipse global mismatch: %s %.17g\n", error, tret[0]);
             return 1;
         }
@@ -1629,9 +1817,17 @@ int main(void)
             return 1;
         }
 
+        if (tret[2] != 0.0 || tret[3] != 0.0 || tret[4] != 0.0 || tret[5] != 0.0) {
+            fprintf(stderr, "solar partial global search unexpectedly returned contact times\n");
+            return 1;
+        }
+
         solar_rc = jme_sol_eclipse_when_glob(hybrid_start, JME_CALC_TRUE_POSITION, 0, tret, 0, error);
         if (solar_rc != JME_ECLIPSE_SOLAR_HYBRID
-            || fabs(tret[0] - hybrid_global_max) > (30.0 / 1440.0)) {
+            || fabs(tret[0] - hybrid_global_max) > (30.0 / 1440.0)
+            || !(tret[2] < tret[0] && tret[0] < tret[3])
+            || tret[4] != 0.0
+            || tret[5] != 0.0) {
             fprintf(stderr, "solar hybrid eclipse global mismatch: %s %.17g %d\n", error, tret[0], solar_rc);
             return 1;
         }
@@ -1652,6 +1848,13 @@ int main(void)
             || tret[0] < annular_start
             || tret[0] > annular_start + 2.0) {
             fprintf(stderr, "solar Albuquerque eclipse local mismatch: %s %.17g\n", error, tret[0]);
+            return 1;
+        }
+
+        if (!(tret[2] < tret[0] && tret[0] < tret[3])
+            || tret[4] != 0.0
+            || tret[5] != 0.0) {
+            fprintf(stderr, "solar Albuquerque local contacts are not ordered\n");
             return 1;
         }
 
@@ -1710,11 +1913,26 @@ int main(void)
             || tret[9] <= tret[8]
             || tret[0] < tret[8]
             || tret[0] > tret[9]
+            || !(tret[2] < tret[4] && tret[4] < tret[6] && tret[6] <= tret[0] && tret[0] <= tret[7] && tret[7] < tret[5] && tret[5] < tret[3])
             || attr[8] != JME_ECLIPSE_VISIBLE
             || attr[9] <= 0.0) {
             fprintf(stderr, "lunar local eclipse search mismatch: %s\n", error);
             return 1;
         }
+
+        if ((jme_lun_eclipse_when_loc(lunar_total_start + 5.0, JME_CALC_TRUE_POSITION, lunar_visible_geopos, tret, attr, 1, error) & JME_ECLIPSE_LUNAR_TOTAL) == 0
+            || fabs(tret[1] - lunar_total_max) > (20.0 / 1440.0)
+            || tret[8] <= 0.0
+            || tret[9] <= tret[8]
+            || tret[0] < tret[8]
+            || tret[0] > tret[9]
+            || !(tret[2] < tret[4] && tret[4] < tret[6] && tret[6] <= tret[0] && tret[0] <= tret[7] && tret[7] < tret[5] && tret[5] < tret[3])
+            || attr[8] != JME_ECLIPSE_VISIBLE
+            || attr[9] <= 0.0) {
+            fprintf(stderr, "lunar local eclipse backward search mismatch: %s\n", error);
+            return 1;
+        }
+
         if ((tret[2] != 0.0 && (tret[2] < tret[8] || tret[2] > tret[9]))
             || (tret[3] != 0.0 && (tret[3] < tret[8] || tret[3] > tret[9]))
             || (tret[4] != 0.0 && (tret[4] < tret[8] || tret[4] > tret[9]))
@@ -1733,7 +1951,8 @@ int main(void)
 
         if (jme_lun_occult_when_glob(mars_occult_start, JME_BODY_MARS, 0, JME_CALC_TRUE_POSITION, 0, tret, 0, error) != JME_OK
             || tret[0] < mars_occult_start
-            || tret[0] > mars_occult_start + 2.0) {
+            || tret[0] > mars_occult_start + 2.0
+            || !(tret[2] < tret[0] && tret[0] < tret[3])) {
             fprintf(stderr, "lunar Mars occultation global mismatch: %s %.17g\n", error, tret[0]);
             return 1;
         }
@@ -1742,8 +1961,21 @@ int main(void)
             || !finite_values(geopos, 2)
             || !finite_values(attr, 5)
             || attr[0] <= 0.0
-            || attr[3] <= 0.0) {
+            || attr[3] <= 0.0
+            || attr[9] <= 0.0) {
             fprintf(stderr, "lunar Mars occultation where mismatch: %s\n", error);
+            return 1;
+        }
+
+        if (jme_lun_occult_when_loc(mars_occult_start, JME_BODY_MARS, 0, JME_CALC_TRUE_POSITION, los_angeles_geopos, tret, attr, 0, error) != JME_OK
+            || tret[0] < mars_occult_start
+            || tret[0] > mars_occult_start + 2.0
+            || !(tret[2] < tret[0] && tret[0] < tret[3])
+            || attr[0] <= 0.0
+            || attr[3] <= 0.0
+            || attr[5] <= 0.0
+            || attr[8] != JME_ECLIPSE_VISIBLE) {
+            fprintf(stderr, "lunar Mars local occultation mismatch: %s %.17g\n", error, tret[0]);
             return 1;
         }
 
@@ -1945,6 +2177,7 @@ int main(void)
         double dat_hel[20] = {0.0};
         double invalid_dat_hel[20] = {0.0};
         int visible;
+        int heliacal_body;
         double hangle = jme_heliacal_angle(2451545.0, geopos, 0, error);
         double arcus = jme_topo_arcus_visionis(2451545.0, geopos, 0, error);
 
@@ -1962,22 +2195,47 @@ int main(void)
             || !isfinite(dat_hel[5])
             || !isfinite(dat_hel[6])
             || !isfinite(dat_hel[7])
+            || !isfinite(dat_hel[10])
             || dat_hel[7] < 0.0
-            || dat_hel[7] > 180.0) {
+            || dat_hel[7] > 180.0
+            || fabs(dat_hel[10] - (10.50 + 1.40 * dat_hel[6])) > 1.0e-12
+            || fabs(dat_hel[5] - ((dat_hel[4] - 10.50) / 1.40)) > 1.0e-12) {
             fprintf(stderr, "heliacal phenomenon contract mismatch: %s\n", error);
             return 1;
         }
 
+        if (fabs(jme_heliacal_angle(2451545.0, geopos, dat_hel, error) - dat_hel[7]) > 1.0e-12
+            || fabs(jme_topo_arcus_visionis(2451545.0, geopos, dat_hel, error) - dat_hel[4]) > 1.0e-12) {
+            fprintf(stderr, "heliacal scalar helper mismatch against phenomenon output\n");
+            return 1;
+        }
+
         visible = dat_hel[9] != 0.0;
-        if (visible && (dat_hel[3] < 0.0 || dat_hel[2] > -6.0 || dat_hel[2] < -18.5 || dat_hel[4] < 5.0 || dat_hel[6] > dat_hel[5])) {
+        if (visible && (dat_hel[3] < 0.0 || dat_hel[2] >= 0.0 || dat_hel[4] < dat_hel[10] || dat_hel[6] > dat_hel[5])) {
             fprintf(stderr, "heliacal visibility flag contract mismatch\n");
             return 1;
+        }
+
+        for (heliacal_body = JME_BODY_MOON; heliacal_body <= JME_BODY_PLUTO; heliacal_body++) {
+            memset(dat_hel, 0, sizeof(dat_hel));
+            dat_hel[0] = (double)heliacal_body;
+            if (jme_heliacal_pheno_ut(2451545.0, geopos, dat_hel, error) != JME_OK
+                || !finite_values(dat_hel, 11)
+                || dat_hel[1] != (double)heliacal_body
+                || dat_hel[7] < 0.0
+                || dat_hel[7] > 180.0
+                || fabs(dat_hel[10] - (10.50 + 1.40 * dat_hel[6])) > 1.0e-12
+                || fabs(dat_hel[5] - ((dat_hel[4] - 10.50) / 1.40)) > 1.0e-12) {
+                fprintf(stderr, "heliacal body sweep contract mismatch for body %d: %s\n", heliacal_body, error);
+                return 1;
+            }
         }
 
         memset(dat_hel, 0, sizeof(dat_hel));
         dat_hel[0] = JME_BODY_VENUS;
         if (jme_vis_limit_mag(2451545.0, geopos, dat_hel, error) != JME_OK
-            || !isfinite(dat_hel[5])) {
+            || !isfinite(dat_hel[5])
+            || fabs(dat_hel[5] - ((dat_hel[4] - 10.50) / 1.40)) > 1.0e-12) {
             fprintf(stderr, "visual limit contract mismatch: %s\n", error);
             return 1;
         }
@@ -1988,9 +2246,25 @@ int main(void)
             || !isfinite(dat_hel[0])
             || dat_hel[0] < 2451545.0
             || dat_hel[0] > 2451545.0 + 370.0
-            || dat_hel[9] == 0.0) {
+            || dat_hel[1] != (double)JME_BODY_VENUS
+            || dat_hel[9] == 0.0
+            || dat_hel[3] < 0.0
+            || dat_hel[2] >= 0.0
+            || dat_hel[4] < dat_hel[10]
+            || dat_hel[6] > dat_hel[5]) {
             fprintf(stderr, "heliacal event search contract mismatch: %s\n", error);
             return 1;
+        }
+        {
+            double event_time = dat_hel[0];
+            memset(dat_hel, 0, sizeof(dat_hel));
+            dat_hel[0] = JME_BODY_VENUS;
+            if (jme_heliacal_pheno_ut(event_time, geopos, dat_hel, error) != JME_OK
+                || dat_hel[9] == 0.0
+                || fabs(dat_hel[10] - (10.50 + 1.40 * dat_hel[6])) > 1.0e-12) {
+                fprintf(stderr, "heliacal event revalidation mismatch: %s\n", error);
+                return 1;
+            }
         }
 
         invalid_dat_hel[0] = JME_BODY_SUN;

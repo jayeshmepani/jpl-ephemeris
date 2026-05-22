@@ -329,10 +329,8 @@ static int check_engine_public_state_contracts(void)
         }
     }
 
-    if (jme_vsop87_planet_state(2451545.0, JME_BODY_PLUTO, state) != JME_OK
-        || jme_state_distance(state) <= 0.0
-        || jme_state_speed(state) <= 0.0) {
-        fprintf(stderr, "VSOP87 fallback contract failed for Pluto\n");
+    if (jme_vsop87_planet_state(2451545.0, JME_BODY_PLUTO, state) != JME_ERR) {
+        fprintf(stderr, "VSOP87 unexpectedly accepted unsupported Pluto fallback\n");
         return 1;
     }
 
@@ -399,6 +397,120 @@ static int check_engine_public_state_contracts(void)
     return 0;
 }
 
+static int check_high_level_analytical_fallback_order(void)
+{
+    struct planet_case {
+        int body;
+        const char *name;
+    } planet_cases[] = {
+        {JME_BODY_MERCURY, "Mercury"},
+        {JME_BODY_EARTH, "Earth"},
+        {JME_BODY_PLUTO, "Pluto"}
+    };
+    double jd_cases[] = {
+        2451545.0,
+        2415020.5,
+        2488070.5
+    };
+    char error[256] = "";
+    int i;
+    int j;
+
+    jme_jpl_close();
+    jme_set_astro_models("ENGINE=MOSHIER", 0);
+
+    for (i = 0; i < (int)(sizeof(planet_cases) / sizeof(planet_cases[0])); i++) {
+        for (j = 0; j < (int)(sizeof(jd_cases) / sizeof(jd_cases[0])); j++) {
+            double calc_state[6];
+            double moshier_state[6];
+            int k;
+
+            if (jme_calc(jd_cases[j], planet_cases[i].body, JME_CALC_TRUE_POSITION | JME_CALC_HELIOCENTRIC | JME_CALC_XYZ, calc_state, error) != JME_OK) {
+                fprintf(stderr, "jme_calc analytical fallback failed for %s at JD %.1f: %s\n", planet_cases[i].name, jd_cases[j], error);
+                return 1;
+            }
+
+            if (jme_moshier_planet_state(jd_cases[j], planet_cases[i].body, moshier_state) != JME_OK) {
+                fprintf(stderr, "direct Moshier state failed for %s at JD %.1f\n", planet_cases[i].name, jd_cases[j]);
+                return 1;
+            }
+
+            for (k = 0; k < 6; k++) {
+                char label[128];
+                snprintf(label, sizeof(label), "jme_calc Moshier-first %s JD %.1f[%d]", planet_cases[i].name, jd_cases[j], k);
+                if (check_close(label, calc_state[k], moshier_state[k], 1.0e-14) != 0) {
+                    return 1;
+                }
+            }
+        }
+    }
+
+    for (j = 0; j < (int)(sizeof(jd_cases) / sizeof(jd_cases[0])); j++) {
+        double calc_state[6];
+        double moon_geo[6];
+        double earth_helio[6];
+        int k;
+
+        if (jme_calc(jd_cases[j], JME_BODY_MOON, JME_CALC_TRUE_POSITION | JME_CALC_HELIOCENTRIC | JME_CALC_XYZ, calc_state, error) != JME_OK) {
+            fprintf(stderr, "jme_calc analytical Moon fallback failed at JD %.1f: %s\n", jd_cases[j], error);
+            return 1;
+        }
+
+        if (jme_elp2000_moon_state(jd_cases[j], moon_geo) != JME_OK
+            || jme_moshier_planet_state(jd_cases[j], JME_BODY_EARTH, earth_helio) != JME_OK) {
+            fprintf(stderr, "direct ELP2000+Moshier Earth state failed at JD %.1f\n", jd_cases[j]);
+            return 1;
+        }
+
+        for (k = 0; k < 6; k++) {
+            char label[128];
+            snprintf(label, sizeof(label), "jme_calc Moon ELP+Moshier JD %.1f[%d]", jd_cases[j], k);
+            if (check_close(label, calc_state[k], moon_geo[k] + earth_helio[k], 1.0e-14) != 0) {
+                return 1;
+            }
+        }
+    }
+
+    jme_set_astro_models("ENGINE=VSOP_ELP_MEEUS", 0);
+
+    for (j = 0; j < (int)(sizeof(jd_cases) / sizeof(jd_cases[0])); j++) {
+        double calc_state[6];
+        double vsop_state[6];
+        double meeus_state[6];
+        int k;
+
+        if (jme_calc(jd_cases[j], JME_BODY_MERCURY, JME_CALC_TRUE_POSITION | JME_CALC_HELIOCENTRIC | JME_CALC_XYZ, calc_state, error) != JME_OK
+            || jme_vsop87_planet_state(jd_cases[j], JME_BODY_MERCURY, vsop_state) != JME_OK) {
+            fprintf(stderr, "VSOP+ELP+Meeus Mercury fallback failed at JD %.1f\n", jd_cases[j]);
+            return 1;
+        }
+        for (k = 0; k < 6; k++) {
+            char label[128];
+            snprintf(label, sizeof(label), "jme_calc VSOP-selected Mercury JD %.1f[%d]", jd_cases[j], k);
+            if (check_close(label, calc_state[k], vsop_state[k], 1.0e-14) != 0) {
+                return 1;
+            }
+        }
+
+        if (jme_calc(jd_cases[j], JME_BODY_PLUTO, JME_CALC_TRUE_POSITION | JME_CALC_HELIOCENTRIC | JME_CALC_XYZ, calc_state, error) != JME_OK
+            || jme_meeus_planet_state(jd_cases[j], JME_BODY_PLUTO, meeus_state) != JME_OK) {
+            fprintf(stderr, "VSOP+ELP+Meeus Pluto fallback failed at JD %.1f\n", jd_cases[j]);
+            return 1;
+        }
+        for (k = 0; k < 6; k++) {
+            char label[128];
+            snprintf(label, sizeof(label), "jme_calc Meeus-selected Pluto JD %.1f[%d]", jd_cases[j], k);
+            if (check_close(label, calc_state[k], meeus_state[k], 1.0e-14) != 0) {
+                return 1;
+            }
+        }
+    }
+
+    jme_set_astro_models(0, 0);
+
+    return 0;
+}
+
 int main(void)
 {
     if (check_vsop87a_j2000() != 0) {
@@ -414,6 +526,10 @@ int main(void)
     }
 
     if (check_engine_public_state_contracts() != 0) {
+        return 1;
+    }
+
+    if (check_high_level_analytical_fallback_order() != 0) {
         return 1;
     }
 

@@ -19,11 +19,14 @@ This document tracks allowed sources and disallowed sources for the independent 
 | Angle and centisecond utilities | Independently implemented modular arithmetic and sign-preserving rounding | Active |
 | Coordinate/refraction utilities | Independently implemented spherical-coordinate transforms and standard refraction helper | Active |
 | Metadata utilities | Independently maintained body and house-system name tables | Active |
+| Fixed-star catalog | Yale Bright Star Catalog / NASA HEASARC BSC5P-derived public catalog data. Generated `src/fixstar_catalog.inc` contains HR, HD, SAO, catalog alternate name, J2000 RA/Dec, proper motion, and V magnitude fields for 9,096 entries. Common-name aliases in `src/fixstar.c` map to catalog HR identifiers. | Active |
+| Ayanamsa source-definable modes | Project fixed-star catalog plus standard epoch definitions. Numeric support exists for Lahiri, Fagan-Bradley, user-defined offsets, epoch-zero modes (`J2000`, `J1900`, `B1950`), fixed-star anchor modes (`Aldebaran 15 Tau`, `True/SS Citra`, `True/SS Revati`, `True Mula`, `True Pushya`), `Galactic Center 0 Sagittarius`, Krishnamurti/Newcomb, Raman, and Yukteshwar. The new anchors use cataloged Shaula/Lambda Scorpii and Delta Cancri plus published Sgr A* coordinates; the Pushya target uses the published Pushya-paksha definition of Delta Cancri at 16 Cancer; Krishnamurti uses the published KP/Newcomb B1900 formula and zero-epoch/value checks; Raman and Yukteshwar use their published simple year/rate formulas with published examples. Remaining traditional named modes need independent source-backed epoch/offset definitions before implementation. | Partially active |
 | Sidereal time | Independently implemented standard mean sidereal-time expression | Active |
 | Backend boundary | CALCEPH API boundary, optional external link | Implemented for the current raw JPL API surface |
 | Ephemeris data | NASA/JPL `.bsp` kernels | Not vendored |
-| Main ephemeris calculations | Independent JME calculation pipeline with JPL and analytical fallback paths | Implemented, but full reference-parity validation remains partial |
-| Analytical fallback | Moshier/public-domain source review completed enough to implement callable analytical paths; broader validation remains | Implemented, but not precision-certified |
+| Main ephemeris calculations | Independent JME calculation pipeline with JPL and analytical fallback paths | Implemented; full Swiss/reference parity remains tracked separately from native JME closure |
+| Analytical fallback | Moshier/public-domain source review completed enough to implement callable analytical paths; broader validation remains | Direct extra analytical APIs are implemented and contract-tested; model-wide dense precision certification remains separately tracked |
+| Heliacal visibility | Independent published/secondary visibility references describing linear arcus-visionis relations for heliacal events, including Schaefer-style visibility literature and Alcyone visibility documentation. Current code uses the explicit relation `required_arcus = 10.50 + 1.40 * visual_magnitude` and its inverse limiting-magnitude expression, revalidates found events through the phenomenon function, and rejects unsupported body/null-output paths. | Active for current JME-native contract |
 
 ## Future Source Log Format
 

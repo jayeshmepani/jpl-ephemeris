@@ -1,11 +1,16 @@
 #include "jme/jme.h"
 #include "context.h"
+#include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
 #define JME_FIXSTAR_DEG_TO_RAD 0.017453292519943295769236907684886127134428718885417
 
 typedef struct jme_star_entry {
+    int hr;
+    int hd;
+    int sao;
     const char *name;
     double ra; /* J2000 degrees */
     double dec; /* J2000 degrees */
@@ -14,27 +19,144 @@ typedef struct jme_star_entry {
     double mag;
 } jme_star_entry;
 
-/* Built-in named-star catalog.
-   Data source: SIMBAD / FK5. */
-static const jme_star_entry star_catalog[] = {
-    {"Sirius", 101.287155, -16.716116, -0.546, -1.223, -1.46},
-    {"Spica", 201.298218, -11.161319, -0.042, -0.032, 0.98},
-    {"Regulus", 152.092962, 11.967209, -0.249, 0.001, 1.35},
-    {"Aldebaran", 68.980162, 16.509302, 0.063, -0.189, 0.85},
-    {"Antares", 247.351915, -26.432002, -0.010, -0.020, 1.06},
-    {"Revati", 14.1611, 2.5000, 0.0, 0.0, 5.0}
+typedef struct jme_star_alias {
+    const char *name;
+    int hr;
+} jme_star_alias;
+
+/* Common-name aliases point into the generated Bright Star catalog. */
+static const jme_star_alias star_aliases[] = {
+    {"Achernar", 472},
+    {"Aldebaran", 1457},
+    {"Altair", 7557},
+    {"Antares", 6134},
+    {"Arcturus", 5340},
+    {"Betelgeuse", 2061},
+    {"Canopus", 2326},
+    {"Capella", 1708},
+    {"Deneb", 7924},
+    {"Delta Cancri", 3461},
+    {"Fomalhaut", 8728},
+    {"Pollux", 2990},
+    {"Procyon", 2943},
+    {"Regulus", 3982},
+    {"Revati", 361},
+    {"Rigel", 1713},
+    {"Shaula", 6527},
+    {"Sirius", 2491},
+    {"Spica", 5056},
+    {"Vega", 7001},
+    {"Asellus Australis", 3461},
+    {"Lambda Scorpii", 6527},
+    {"Zeta Psc", 361}
 };
+
+#include "fixstar_catalog.inc"
+
+static int ascii_case_equal(const char *a, const char *b)
+{
+    while (*a != '\0' && *b != '\0') {
+        if (tolower((unsigned char)*a) != tolower((unsigned char)*b)) {
+            return 0;
+        }
+        a++;
+        b++;
+    }
+
+    return *a == '\0' && *b == '\0';
+}
+
+static int parse_prefixed_number(const char *text, const char *prefix, int *value)
+{
+    const char *p = text;
+    char *end = 0;
+    long parsed;
+
+    while (isspace((unsigned char)*p)) {
+        p++;
+    }
+
+    while (*prefix != '\0') {
+        if (tolower((unsigned char)*p) != tolower((unsigned char)*prefix)) {
+            return 0;
+        }
+        p++;
+        prefix++;
+    }
+
+    while (isspace((unsigned char)*p) || *p == '-') {
+        p++;
+    }
+
+    if (!isdigit((unsigned char)*p)) {
+        return 0;
+    }
+
+    parsed = strtol(p, &end, 10);
+    while (end != 0 && isspace((unsigned char)*end)) {
+        end++;
+    }
+
+    if (end == 0 || *end != '\0' || parsed <= 0 || parsed > 999999999L) {
+        return 0;
+    }
+
+    *value = (int)parsed;
+    return 1;
+}
+
+static const jme_star_entry *find_star_by_hr(int hr)
+{
+    size_t i;
+
+    for (i = 0; i < sizeof(star_catalog) / sizeof(star_catalog[0]); i++) {
+        if (star_catalog[i].hr == hr) {
+            return &star_catalog[i];
+        }
+    }
+
+    return 0;
+}
 
 static const jme_star_entry *find_star(const char *name)
 {
     size_t i;
+    int value = 0;
 
     if (name == 0 || name[0] == '\0') {
         return 0;
     }
 
+    if (parse_prefixed_number(name, "HR", &value)) {
+        return find_star_by_hr(value);
+    }
+
+    if (parse_prefixed_number(name, "HD", &value)) {
+        for (i = 0; i < sizeof(star_catalog) / sizeof(star_catalog[0]); i++) {
+            if (star_catalog[i].hd == value) {
+                return &star_catalog[i];
+            }
+        }
+        return 0;
+    }
+
+    if (parse_prefixed_number(name, "SAO", &value)) {
+        for (i = 0; i < sizeof(star_catalog) / sizeof(star_catalog[0]); i++) {
+            if (star_catalog[i].sao == value) {
+                return &star_catalog[i];
+            }
+        }
+        return 0;
+    }
+
+    for (i = 0; i < sizeof(star_aliases) / sizeof(star_aliases[0]); i++) {
+        if (ascii_case_equal(star_aliases[i].name, name)) {
+            return find_star_by_hr(star_aliases[i].hr);
+        }
+    }
+
     for (i = 0; i < sizeof(star_catalog) / sizeof(star_catalog[0]); i++) {
-        if (strcmp(star_catalog[i].name, name) == 0) {
+        if (star_catalog[i].name[0] != '\0' && ascii_case_equal(star_catalog[i].name, name)) {
             return &star_catalog[i];
         }
     }
@@ -48,6 +170,18 @@ static double fixstar_angle_to_output_unit(double degrees, int flags)
     }
 
     return degrees;
+}
+
+static double fixstar_ayanamsa_rate(double jd_et)
+{
+    double before = jme_get_ayanamsa(jd_et - 0.5);
+    double after = jme_get_ayanamsa(jd_et + 0.5);
+
+    if (!isfinite(before) || !isfinite(after)) {
+        return 0.0;
+    }
+
+    return jme_degrees_difference_signed(after, before);
 }
 
 int jme_fixstar_ut(const char *star, double jd_ut, int flags, double *results, char *error)
@@ -86,8 +220,8 @@ int jme_fixstar(const char *star, double jd_et, int flags, double *results, char
     spherical[0] = ra;
     spherical[1] = dec;
     spherical[2] = 1.0; /* Distant star unit distance */
-    spherical[3] = 0.0;
-    spherical[4] = 0.0;
+    spherical[3] = (entry->pm_ra / 3600.0) / 365.25;
+    spherical[4] = (entry->pm_dec / 3600.0) / 365.25;
     spherical[5] = 0.0;
     jme_spherical_to_rectangular_state(spherical, pos);
 
@@ -173,6 +307,7 @@ int jme_fixstar(const char *star, double jd_et, int flags, double *results, char
         for (i = 0; i < 6; i++) { results[i] = spherical[i]; }
         if (flags & JME_CALC_SIDEREAL) {
             results[0] = jme_degree_normalize(results[0] - jme_get_ayanamsa(jd_et));
+            results[3] -= fixstar_ayanamsa_rate(jd_et);
         }
         results[0] = fixstar_angle_to_output_unit(results[0], flags);
         results[1] = fixstar_angle_to_output_unit(results[1], flags);

@@ -217,6 +217,19 @@ test_analytical_validation/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_analytical_validation.dir/build.make CMakeFiles/test_analytical_validation.dir/build
 .PHONY : test_analytical_validation/fast
 
+#=============================================================================
+# Target rules for targets named test_extra_contract
+
+# Build rule for target.
+test_extra_contract: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_extra_contract
+.PHONY : test_extra_contract
+
+# fast build rule for target.
+test_extra_contract/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_extra_contract.dir/build.make CMakeFiles/test_extra_contract.dir/build
+.PHONY : test_extra_contract/fast
+
 src/angle.o: src/angle.c.o
 .PHONY : src/angle.o
 
@@ -889,6 +902,30 @@ tests/test_api_contract.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_api_contract.dir/build.make CMakeFiles/test_api_contract.dir/tests/test_api_contract.c.s
 .PHONY : tests/test_api_contract.c.s
 
+tests/test_extra_contract.o: tests/test_extra_contract.c.o
+.PHONY : tests/test_extra_contract.o
+
+# target to build an object file
+tests/test_extra_contract.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_extra_contract.dir/build.make CMakeFiles/test_extra_contract.dir/tests/test_extra_contract.c.o
+.PHONY : tests/test_extra_contract.c.o
+
+tests/test_extra_contract.i: tests/test_extra_contract.c.i
+.PHONY : tests/test_extra_contract.i
+
+# target to preprocess a source file
+tests/test_extra_contract.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_extra_contract.dir/build.make CMakeFiles/test_extra_contract.dir/tests/test_extra_contract.c.i
+.PHONY : tests/test_extra_contract.c.i
+
+tests/test_extra_contract.s: tests/test_extra_contract.c.s
+.PHONY : tests/test_extra_contract.s
+
+# target to generate assembly for a file
+tests/test_extra_contract.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_extra_contract.dir/build.make CMakeFiles/test_extra_contract.dir/tests/test_extra_contract.c.s
+.PHONY : tests/test_extra_contract.c.s
+
 tests/test_jpl_runtime.o: tests/test_jpl_runtime.c.o
 .PHONY : tests/test_jpl_runtime.o
 
@@ -951,6 +988,7 @@ help:
 	@echo "... test_all_functions"
 	@echo "... test_analytical_validation"
 	@echo "... test_api_contract"
+	@echo "... test_extra_contract"
 	@echo "... test_jpl_runtime"
 	@echo "... test_julian"
 	@echo "... src/angle.o"
@@ -1037,6 +1075,9 @@ help:
 	@echo "... tests/test_api_contract.o"
 	@echo "... tests/test_api_contract.i"
 	@echo "... tests/test_api_contract.s"
+	@echo "... tests/test_extra_contract.o"
+	@echo "... tests/test_extra_contract.i"
+	@echo "... tests/test_extra_contract.s"
 	@echo "... tests/test_jpl_runtime.o"
 	@echo "... tests/test_jpl_runtime.i"
 	@echo "... tests/test_jpl_runtime.s"

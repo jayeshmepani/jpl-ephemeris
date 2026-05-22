@@ -5,6 +5,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 static int token_matches(const char *token, const char *expected)
 {
@@ -38,16 +39,57 @@ static void set_default_models(jme_context *ctx)
     ctx->model_deltat = JME_MODEL_DELTAT_ESPENAK_MEEUS_2006;
 }
 
+static const char *engine_policy_name(int engine_policy)
+{
+    switch (engine_policy) {
+    case JME_ENGINE_JPL: return "JPL";
+    case JME_ENGINE_MOSHIER: return "MOSHIER";
+    case JME_ENGINE_VSOP_ELP_MEEUS: return "VSOP_ELP_MEEUS";
+    case JME_ENGINE_AUTO:
+    default:
+        return "AUTO";
+    }
+}
+
 static void write_model_summary(jme_context *ctx)
 {
     snprintf(ctx->astro_models, sizeof(ctx->astro_models),
-        "BIAS=%d;NUT=%d;OBL=%d;PREC=%d;SIDT=%d;DELTAT=%d",
+        "BIAS=%d;NUT=%d;OBL=%d;PREC=%d;SIDT=%d;DELTAT=%d;ENGINE=%s",
         ctx->model_bias,
         ctx->model_nut,
         ctx->model_obl,
         ctx->model_prec,
         ctx->model_sidt,
-        ctx->model_deltat);
+        ctx->model_deltat,
+        engine_policy_name(ctx->engine_policy));
+}
+
+static void set_engine_policy(jme_context *ctx, int engine_policy)
+{
+    ctx->engine_policy = engine_policy;
+    ctx->engine_policy_is_explicit = 1;
+}
+
+static int token_value_matches(const char *token, const char *prefix, const char *expected)
+{
+    size_t i = 0;
+
+    if (token == 0 || prefix == 0 || expected == 0) {
+        return 0;
+    }
+
+    while (prefix[i] != '\0') {
+        char a = token[i];
+        char b = prefix[i];
+        if (a >= 'a' && a <= 'z') { a = (char)(a - 'a' + 'A'); }
+        if (b >= 'a' && b <= 'z') { b = (char)(b - 'a' + 'A'); }
+        if (a != b) {
+            return 0;
+        }
+        i++;
+    }
+
+    return token_matches(token + i, expected);
 }
 
 static void apply_model_token(jme_context *ctx, const char *token)
@@ -91,7 +133,39 @@ static void apply_model_token(jme_context *ctx, const char *token)
         ctx->model_deltat = JME_MODEL_DELTAT_ESPENAK_MEEUS_2006;
     } else if (token_matches(token, "DELTAT2016")) {
         ctx->model_deltat = JME_MODEL_DELTAT_STEPHENSON_ETC_2016;
+    } else if (token_matches(token, "ENGINE_AUTO") || token_value_matches(token, "ENGINE=", "AUTO")) {
+        set_engine_policy(ctx, JME_ENGINE_AUTO);
+    } else if (token_matches(token, "ENGINE_JPL") || token_value_matches(token, "ENGINE=", "JPL")) {
+        set_engine_policy(ctx, JME_ENGINE_JPL);
+    } else if (token_matches(token, "ENGINE_MOSHIER") || token_value_matches(token, "ENGINE=", "MOSHIER")) {
+        set_engine_policy(ctx, JME_ENGINE_MOSHIER);
+    } else if (token_matches(token, "ENGINE_VSOP_ELP_MEEUS")
+        || token_matches(token, "ENGINE_ANALYTICAL")
+        || token_value_matches(token, "ENGINE=", "VSOP_ELP_MEEUS")
+        || token_value_matches(token, "ENGINE=", "ANALYTICAL")) {
+        set_engine_policy(ctx, JME_ENGINE_VSOP_ELP_MEEUS);
     }
+}
+
+static int engine_policy_from_env(void)
+{
+    const char *engine = getenv("JME_ENGINE");
+
+    if (engine == 0 || engine[0] == '\0') {
+        return JME_ENGINE_AUTO;
+    }
+
+    if (token_matches(engine, "JPL")) {
+        return JME_ENGINE_JPL;
+    }
+    if (token_matches(engine, "MOSHIER")) {
+        return JME_ENGINE_MOSHIER;
+    }
+    if (token_matches(engine, "VSOP_ELP_MEEUS") || token_matches(engine, "ANALYTICAL")) {
+        return JME_ENGINE_VSOP_ELP_MEEUS;
+    }
+
+    return JME_ENGINE_AUTO;
 }
 
 const char *jme_version(char *buffer, size_t buffer_size)
@@ -184,6 +258,8 @@ void jme_set_astro_models(const char *models, int flags)
 
     if (models == 0 || models[0] == '\0') {
         set_default_models(ctx);
+        ctx->engine_policy = engine_policy_from_env();
+        ctx->engine_policy_is_explicit = 0;
         write_model_summary(ctx);
         return;
     }

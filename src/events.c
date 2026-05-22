@@ -69,13 +69,35 @@ static int heliacal_body_from_data(const double *dat_hel, int *body, char *error
     return JME_OK;
 }
 
-static int heliacal_visibility_flag(double body_alt, double sun_alt, double arcus, double magnitude, double limiting_mag)
+static double heliacal_required_arcus(double magnitude)
+{
+    if (!isfinite(magnitude)) {
+        return NAN;
+    }
+
+    /*
+     * Stellar and planetary first/last visibility threshold.
+     * Independent visibility references commonly use the linear relation
+     * arcus visionis = 10.50 + 1.40 * visual magnitude for heliacal events.
+     */
+    return 10.50 + 1.40 * magnitude;
+}
+
+static double heliacal_limiting_magnitude(double arcus)
+{
+    if (!isfinite(arcus)) {
+        return NAN;
+    }
+
+    return (arcus - 10.50) / 1.40;
+}
+
+static int heliacal_visibility_flag(double body_alt, double sun_alt, double arcus, double magnitude, double limiting_mag, double required_arcus)
 {
     return magnitude <= limiting_mag
         && body_alt >= 0.0
-        && sun_alt <= -6.0
-        && sun_alt >= -18.5
-        && arcus >= 5.0;
+        && sun_alt < 0.0
+        && arcus >= required_arcus;
 }
 
 static int lunar_eclipse_geometry(double jd_ut, double *umbral_mag, double *penumbral_mag, double *umbral_radius_km, double *penumbral_radius_km, double *offset_km, double *axis_distance_km, char *error)
@@ -629,23 +651,10 @@ static int solar_eclipse_global_geometry(double jd_ut, double *separation_deg, d
 
 static int solar_eclipse_local_geometry(double jd_ut, double *geopos, double *separation_deg, double *sun_radius_deg, double *moon_radius_deg, double *sun_alt_deg, double *moon_alt_deg, char *error)
 {
-    double sun_eq_xyz[6];
-    double moon_eq_xyz[6];
-    double topo_pos[3];
-    double topo_state[6];
-    double prec_mat[9];
-    double nut_mat[9];
-    double bias_mat[9];
-    double eps;
-    double dpsi;
-    double deps;
-    double sun_topo_xyz[6];
-    double moon_topo_xyz[6];
     double sun_eq[6];
     double moon_eq[6];
     double sun_dist_km;
     double moon_dist_km;
-    int i;
 
     if (geopos == 0) {
         jme_set_error(error, "Solar eclipse local geometry requires geopos");
@@ -654,45 +663,13 @@ static int solar_eclipse_local_geometry(double jd_ut, double *geopos, double *se
 
     jme_set_topo(geopos[0], geopos[1], geopos[2]);
 
-    if (jme_calc_ut(jd_ut, JME_BODY_SUN, JME_CALC_TRUE_POSITION | JME_CALC_XYZ | JME_CALC_EQUATORIAL, sun_eq_xyz, error) != JME_OK
-        || jme_calc_ut(jd_ut, JME_BODY_MOON, JME_CALC_TRUE_POSITION | JME_CALC_XYZ | JME_CALC_EQUATORIAL, moon_eq_xyz, error) != JME_OK
-        || jme_get_topo_pos(jd_ut, topo_pos, error) != JME_OK
-        || jme_get_obliquity(jd_ut, jme_context_obliquity_model(), &eps, error) != JME_OK
-        || jme_get_nutation(jd_ut, jme_context_nutation_model(), &dpsi, &deps, error) != JME_OK) {
+    if (jme_calc_ut(jd_ut, JME_BODY_SUN, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL | JME_CALC_TOPOCENTRIC, sun_eq, error) != JME_OK
+        || jme_calc_ut(jd_ut, JME_BODY_MOON, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL | JME_CALC_TOPOCENTRIC, moon_eq, error) != JME_OK) {
         return JME_ERR;
     }
 
-    topo_state[0] = topo_pos[0];
-    topo_state[1] = topo_pos[1];
-    topo_state[2] = topo_pos[2];
-    topo_state[3] = 0.0;
-    topo_state[4] = 0.0;
-    topo_state[5] = 0.0;
-    if (jme_get_frame_bias_matrix(jme_context_bias_model(), bias_mat) == JME_OK) {
-        jme_matrix_transform_state(bias_mat, topo_state, topo_state);
-    }
-    jme_get_precession_matrix(2451545.0, jd_ut, jme_context_precession_model(), prec_mat);
-    jme_matrix_transform_state(prec_mat, topo_state, topo_state);
-    jme_get_nutation_matrix(dpsi * JME_EVENTS_DEG_TO_RAD, deps * JME_EVENTS_DEG_TO_RAD, eps * JME_EVENTS_DEG_TO_RAD, nut_mat);
-    jme_matrix_transform_state(nut_mat, topo_state, topo_state);
-
-    for (i = 0; i < 6; i++) {
-        sun_topo_xyz[i] = sun_eq_xyz[i];
-        moon_topo_xyz[i] = moon_eq_xyz[i];
-    }
-    for (i = 0; i < 3; i++) {
-        sun_topo_xyz[i] -= topo_state[i];
-        moon_topo_xyz[i] -= topo_state[i];
-    }
-
-    if (jme_rectangular_to_spherical_state(sun_topo_xyz, sun_eq) != JME_OK
-        || jme_rectangular_to_spherical_state(moon_topo_xyz, moon_eq) != JME_OK) {
-        jme_set_error(error, "Solar eclipse local geometry rectangular-to-spherical conversion failed");
-        return JME_ERR;
-    }
-
-    sun_dist_km = jme_state_distance(sun_topo_xyz) * JME_AU_KM;
-    moon_dist_km = jme_state_distance(moon_topo_xyz) * JME_AU_KM;
+    sun_dist_km = sun_eq[2] * JME_AU_KM;
+    moon_dist_km = moon_eq[2] * JME_AU_KM;
 
     if (separation_deg != 0) {
         *separation_deg = jme_spherical_angular_separation(sun_eq[0], sun_eq[1], moon_eq[0], moon_eq[1]);
@@ -2244,6 +2221,7 @@ int jme_heliacal_pheno_ut(double jd_ut, double *geopos, double *dat_hel, char *e
     double arcus;
     double elongation;
     double limiting_mag;
+    double required_arcus;
     int i;
 
     if (geopos == 0 || dat_hel == 0) {
@@ -2269,7 +2247,12 @@ int jme_heliacal_pheno_ut(double jd_ut, double *geopos, double *dat_hel, char *e
 
     arcus = body_alt - sun_alt;
     elongation = jme_spherical_angular_separation(sun_eq[0], sun_eq[1], body_eq[0], body_eq[1]);
-    limiting_mag = 6.0 - 0.12 * fmax(0.0, body_alt < 10.0 ? 10.0 - body_alt : 0.0) - 0.25 * fmax(0.0, sun_alt + 18.0);
+    limiting_mag = heliacal_limiting_magnitude(arcus);
+    required_arcus = heliacal_required_arcus(pheno[4]);
+    if (!isfinite(limiting_mag) || !isfinite(required_arcus)) {
+        jme_set_error(error, "Heliacal visibility model produced non-finite thresholds");
+        return JME_ERR;
+    }
 
     for (i = 0; i < 20; i++) {
         dat_hel[i] = 0.0;
@@ -2283,7 +2266,8 @@ int jme_heliacal_pheno_ut(double jd_ut, double *geopos, double *dat_hel, char *e
     dat_hel[6] = pheno[4];
     dat_hel[7] = elongation;
     dat_hel[8] = pheno[3];
-    dat_hel[9] = heliacal_visibility_flag(body_alt, sun_alt, arcus, pheno[4], limiting_mag) ? 1.0 : 0.0;
+    dat_hel[9] = heliacal_visibility_flag(body_alt, sun_alt, arcus, pheno[4], limiting_mag, required_arcus) ? 1.0 : 0.0;
+    dat_hel[10] = required_arcus;
 
     return JME_OK;
 }
@@ -2731,13 +2715,24 @@ int jme_heliacal_ut(double jd_ut, double *geopos, double *dat_hel, char *error)
     for (i = 0; i <= 370; i++) {
         double day = jd_ut + (double)i;
         double candidates[2] = {0.0, 0.0};
+        double pheno[20];
+        double required_arcus;
         int n = 0;
         double t;
 
-        if (jme_rise_trans_true_hor(day, JME_BODY_SUN, 0, JME_CALC_TRUE_POSITION, JME_RISE_SET, geopos, 0.0, 0.0, -9.0, &t, error) == JME_OK) {
+        if (jme_pheno_ut(day + 0.5, body, JME_CALC_TRUE_POSITION, pheno, error) != JME_OK) {
+            return JME_ERR;
+        }
+        required_arcus = heliacal_required_arcus(pheno[4]);
+        if (!isfinite(required_arcus)) {
+            jme_set_error(error, "Heliacal visibility search requires finite body magnitude");
+            return JME_ERR;
+        }
+
+        if (jme_rise_trans_true_hor(day, JME_BODY_SUN, 0, JME_CALC_TRUE_POSITION, JME_RISE_SET, geopos, 0.0, 0.0, -required_arcus, &t, error) == JME_OK) {
             candidates[n++] = t;
         }
-        if (jme_rise_trans_true_hor(day, JME_BODY_SUN, 0, JME_CALC_TRUE_POSITION, JME_RISE_RISE, geopos, 0.0, 0.0, -9.0, &t, error) == JME_OK) {
+        if (jme_rise_trans_true_hor(day, JME_BODY_SUN, 0, JME_CALC_TRUE_POSITION, JME_RISE_RISE, geopos, 0.0, 0.0, -required_arcus, &t, error) == JME_OK) {
             candidates[n++] = t;
         }
 

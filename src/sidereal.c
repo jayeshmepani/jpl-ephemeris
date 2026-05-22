@@ -53,6 +53,98 @@ static double normalize_radians(double angle)
     return value;
 }
 
+static double ayanamsa_precession_degrees(double jd_et, double t0)
+{
+    double t = (jd_et - t0) / 36525.0;
+
+    return (5029.0966 * t + 1.11113 * t * t) / 3600.0;
+}
+
+static double krishnamurti_newcomb_ayanamsa_degrees(double jd_et)
+{
+    const double b1900_jd = 2415020.31352;
+    const double besselian_year_days = 365.242198781;
+    double besselian_year = 1900.0 + (jd_et - b1900_jd) / besselian_year_days;
+    double t = besselian_year - 1900.0;
+    double seconds = 80564.38104 + (50.2564 * t) + (0.000111 * t * t);
+
+    return jme_degree_normalize(seconds / 3600.0);
+}
+
+static int gregorian_year_from_jd(double jd)
+{
+    int year = 0;
+    jme_reverse_julian_day(jd, JME_CALENDAR_GREGORIAN, &year, 0, 0, 0);
+    return year;
+}
+
+static int ayanamsa_from_fixed_star(double jd_et, const char *star, double sidereal_lon, double *ayan, char *error)
+{
+    double equatorial[6];
+    double eps = 0.0;
+    double dpsi = 0.0;
+    double deps = 0.0;
+    double lon = 0.0;
+    double lat = 0.0;
+
+    if (jme_fixstar(star, jd_et, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL, equatorial, error) != JME_OK
+        || jme_get_obliquity(jd_et, jme_context_obliquity_model(), &eps, error) != JME_OK) {
+        return JME_ERR;
+    }
+    if (jme_get_nutation(jd_et, jme_context_nutation_model(), &dpsi, &deps, error) == JME_OK) {
+        eps += deps;
+    }
+
+    jme_equatorial_to_ecliptic(equatorial[0], equatorial[1], eps, &lon, &lat);
+    (void)lat;
+
+    *ayan = jme_degree_normalize(lon - sidereal_lon);
+    return JME_OK;
+}
+
+static int ayanamsa_from_j2000_equatorial(double jd_et, double ra, double dec, double sidereal_lon, double *ayan, char *error)
+{
+    double spherical[6];
+    double pos[6];
+    double eps = 0.0;
+    double lon = 0.0;
+    double lat = 0.0;
+
+    spherical[0] = ra;
+    spherical[1] = dec;
+    spherical[2] = 1.0;
+    spherical[3] = 0.0;
+    spherical[4] = 0.0;
+    spherical[5] = 0.0;
+    jme_spherical_to_rectangular_state(spherical, pos);
+
+    if (jd_et != 2451545.0) {
+        double bias_mat[9];
+        double prec_mat[9];
+
+        if (jme_get_frame_bias_matrix(jme_context_bias_model(), bias_mat) == JME_OK) {
+            jme_matrix_transform_state(bias_mat, pos, pos);
+        }
+        jme_get_precession_matrix(2451545.0, jd_et, jme_context_precession_model(), prec_mat);
+        jme_matrix_transform_state(prec_mat, pos, pos);
+        if (jme_rectangular_to_spherical_state(pos, spherical) != JME_OK) {
+            jme_set_error(error, "Invalid ayanamsa anchor vector");
+            return JME_ERR;
+        }
+        ra = spherical[0];
+        dec = spherical[1];
+    }
+
+    if (jme_get_obliquity(jd_et, jme_context_obliquity_model(), &eps, error) != JME_OK) {
+        return JME_ERR;
+    }
+    jme_equatorial_to_ecliptic(ra, dec, eps, &lon, &lat);
+    (void)lat;
+
+    *ayan = jme_degree_normalize(lon - sidereal_lon);
+    return JME_OK;
+}
+
 static double earth_rotation_angle_iau2000(double jd_ut)
 {
     double d1 = floor(jd_ut);
@@ -118,9 +210,8 @@ double jme_get_ayanamsa_ut(double jd_ut)
 
 int jme_get_ayanamsa_ex(double jd_et, int model, double *ayan, char *error)
 {
-    double t = (jd_et - 2451545.0) / 36525.0;
     double offset = 0.0;
-    double prec = 0.0;
+    double t0 = 2451545.0;
     jme_context *ctx = jme_get_context();
 
     if (ayan != 0) { *ayan = 0.0; }
@@ -136,12 +227,46 @@ int jme_get_ayanamsa_ex(double jd_et, int model, double *ayan, char *error)
     case JME_SIDEREAL_LAHIRI:
         offset = 23.8570;
         break;
+    case JME_SIDEREAL_KRISHNAMURTI:
+        *ayan = krishnamurti_newcomb_ayanamsa_degrees(jd_et);
+        return JME_OK;
+    case JME_SIDEREAL_RAMAN:
+        *ayan = jme_degree_normalize(((double)(gregorian_year_from_jd(jd_et) - 397) * (151.0 / 3.0)) / 3600.0);
+        return JME_OK;
+    case JME_SIDEREAL_YUKTESHWAR:
+        *ayan = jme_degree_normalize(((double)(gregorian_year_from_jd(jd_et) - 499) * 54.0) / 3600.0);
+        return JME_OK;
+    case JME_SIDEREAL_J2000:
+        offset = 0.0;
+        break;
+    case JME_SIDEREAL_J1900:
+        offset = 0.0;
+        t0 = 2415020.0;
+        break;
+    case JME_SIDEREAL_B1950:
+        offset = 0.0;
+        t0 = 2433282.42345905;
+        break;
+    case JME_SIDEREAL_ALDEBARAN_15TAU:
+        return ayanamsa_from_fixed_star(jd_et, "Aldebaran", 45.0, ayan, error);
+    case JME_SIDEREAL_TRUE_CITRA:
+    case JME_SIDEREAL_SS_CITRA:
+        return ayanamsa_from_fixed_star(jd_et, "Spica", 180.0, ayan, error);
+    case JME_SIDEREAL_TRUE_REVATI:
+    case JME_SIDEREAL_SS_REVATI:
+        return ayanamsa_from_fixed_star(jd_et, "Revati", 0.0, ayan, error);
+    case JME_SIDEREAL_GALCENT_0SAG:
+        return ayanamsa_from_j2000_equatorial(jd_et, 266.4168085291667, -29.0078377805556, 240.0, ayan, error);
+    case JME_SIDEREAL_TRUE_MULA:
+        return ayanamsa_from_fixed_star(jd_et, "Shaula", 240.0, ayan, error);
+    case JME_SIDEREAL_TRUE_PUSHYA:
+        return ayanamsa_from_fixed_star(jd_et, "Delta Cancri", 106.0, ayan, error);
     case JME_SIDEREAL_USER:
         if (ctx->sidereal_t0 == 0.0) {
             *ayan = ctx->sidereal_ayan_t0;
             return JME_OK;
         }
-        t = (jd_et - ctx->sidereal_t0) / 36525.0;
+        t0 = ctx->sidereal_t0;
         offset = ctx->sidereal_ayan_t0;
         break;
     default:
@@ -149,12 +274,8 @@ int jme_get_ayanamsa_ex(double jd_et, int model, double *ayan, char *error)
         return JME_ERR;
     }
 
-    /* Precession in longitude (simplified Lieske for ayanamsa) */
-    /* p_a = 5029.0966t + 1.11113t^2 ... arcsec */
-    prec = (5029.0966 * t + 1.11113 * t * t) / 3600.0;
-
     if (ayan != 0) {
-        *ayan = offset + prec;
+        *ayan = jme_degree_normalize(offset + ayanamsa_precession_degrees(jd_et, t0));
     }
 
     return JME_OK;

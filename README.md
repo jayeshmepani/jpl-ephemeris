@@ -25,6 +25,7 @@ Current status summary:
 - Julian day conversion API
 - CALCEPH backend boundary
 - analytical fallback engines for Moshier, VSOP87, ELP2000, and Meeus
+- C-level engine selection for wrapper/config use: `ENGINE=JPL`, `ENGINE=MOSHIER`, `ENGINE=VSOP_ELP_MEEUS`, or `JME_ENGINE` environment selection
 - eclipse, occultation, heliacal, house, and physical-phenomena coverage with remaining validation gaps documented in `docs/IMPLEMENTATION_STATUS.md` and `docs/REFERENCE_FUNCTION_COVERAGE.md`
 
 No public calculation function may return approximate production output. A function is either exact for its documented contract or it returns `JME_ERR` with a clear error message.
@@ -54,6 +55,19 @@ Use JPL `.bsp` kernels such as `de440s.bsp`, `de440.bsp`, or `de441.bsp`.
 ```c
 jme_set_jpl_file("path/to/de440s.bsp");
 ```
+
+## Engine Selection
+
+Wrappers should not reimplement backend selection. Configure the C library directly:
+
+```c
+jme_set_astro_models("ENGINE=JPL", 0);             /* strict JPL/CALCEPH, no analytical fallback */
+jme_set_astro_models("ENGINE=MOSHIER", 0);         /* Moshier-first analytical planets */
+jme_set_astro_models("ENGINE=VSOP_ELP_MEEUS", 0);  /* VSOP87 + ELP2000 + Meeus analytical stack */
+jme_set_astro_models("ENGINE=AUTO", 0);            /* JPL first, then analytical fallback */
+```
+
+If no explicit engine token is set, the library also reads `JME_ENGINE=JPL`, `JME_ENGINE=MOSHIER`, `JME_ENGINE=VSOP_ELP_MEEUS`, or `JME_ENGINE=ANALYTICAL`.
 
 ## License
 

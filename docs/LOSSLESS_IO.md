@@ -11,6 +11,7 @@ This project must not publish approximate production outputs.
 - Do not drop error buffers or status information.
 - Do not convert raw backend vectors into public longitude/latitude output until the complete, audited reduction path is implemented.
 - Do not claim completed behavior for a function until it has tests.
+- Direct engine APIs must not silently fall back to a different theory for unsupported bodies; fallback selection belongs in the explicit high-level calculation pipeline.
 
 ## Incomplete Functions
 

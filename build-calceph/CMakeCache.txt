@@ -213,8 +213,8 @@ JME_REQUIRE_CALCEPH:BOOL=ON
 //Path to a program.
 PWSH_EXECUTABLE:FILEPATH=/usr/bin/pwsh
 
-//No help, variable specified on the command line.
-calceph_DIR:UNINITIALIZED=/tmp/jme-calceph-cmake/calceph
+//The directory containing a CMake configuration file for calceph.
+calceph_DIR:PATH=calceph_DIR-NOTFOUND
 
 //Value Computed by CMake
 jme_BINARY_DIR:STATIC=/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build-calceph

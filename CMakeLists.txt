@@ -97,6 +97,10 @@ if (JME_BUILD_TESTS)
     target_link_libraries(test_analytical_validation PRIVATE jme)
     add_test(NAME analytical_validation COMMAND test_analytical_validation)
 
+    add_executable(test_extra_contract tests/test_extra_contract.c)
+    target_link_libraries(test_extra_contract PRIVATE jme)
+    add_test(NAME extra_contract COMMAND test_extra_contract)
+
     find_program(PWSH_EXECUTABLE NAMES pwsh powershell)
     if (PWSH_EXECUTABLE)
         add_test(

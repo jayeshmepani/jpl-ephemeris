@@ -159,7 +159,7 @@ static int lunar_node_spherical_state(double jd_et, int body, double *state)
     return JME_OK;
 }
 
-static int analytic_body_state(double jd_et, int body, double *state)
+static int analytic_body_state(double jd_et, int body, double *state, int engine_policy)
 {
     double pos[6];
     int rc;
@@ -176,69 +176,97 @@ static int analytic_body_state(double jd_et, int body, double *state)
         double moon_geo[6];
         double earth_helio[6];
         if (jme_elp2000_moon_state(jd_et, moon_geo) != JME_OK) {
-            jme_meeus_moon_state(jd_et, moon_geo);
-        }
-        jme_vsop87_planet_state(jd_et, JME_BODY_EARTH, earth_helio);
-        if (state != 0) {
-            int i;
-            for (i = 0; i < 3; i++) { state[i] = moon_geo[i] + earth_helio[i]; }
-            for (i = 3; i < 6; i++) { state[i] = earth_helio[i]; }
-
-            {
-                double step = 1.0e-3;
-                double moon_prev[6], moon_next[6], earth_prev[6], earth_next[6];
-                if ((jme_elp2000_moon_state(jd_et - step, moon_prev) == JME_OK || jme_meeus_moon_state(jd_et - step, moon_prev) == JME_OK)
-                    && (jme_elp2000_moon_state(jd_et + step, moon_next) == JME_OK || jme_meeus_moon_state(jd_et + step, moon_next) == JME_OK)
-                    && jme_vsop87_planet_state(jd_et - step, JME_BODY_EARTH, earth_prev) == JME_OK
-                    && jme_vsop87_planet_state(jd_et + step, JME_BODY_EARTH, earth_next) == JME_OK) {
-                    for (i = 0; i < 3; i++) {
-                        state[i + 3] = ((moon_next[i] + earth_next[i]) - (moon_prev[i] + earth_prev[i])) / (2.0 * step);
-                    }
-                }
+            if (jme_meeus_moon_state(jd_et, moon_geo) != JME_OK) {
+                return JME_ERR;
             }
+        }
+        if (engine_policy == JME_ENGINE_VSOP_ELP_MEEUS) {
+            if (jme_vsop87_planet_state(jd_et, JME_BODY_EARTH, earth_helio) != JME_OK
+                && jme_meeus_planet_state(jd_et, JME_BODY_EARTH, earth_helio) != JME_OK) {
+                return JME_ERR;
+            }
+        } else if (jme_moshier_planet_state(jd_et, JME_BODY_EARTH, earth_helio) != JME_OK
+            && (engine_policy == JME_ENGINE_MOSHIER
+                || (jme_vsop87_planet_state(jd_et, JME_BODY_EARTH, earth_helio) != JME_OK
+                    && jme_meeus_planet_state(jd_et, JME_BODY_EARTH, earth_helio) != JME_OK))) {
+            return JME_ERR;
+        }
+        if (state != 0) {
+            for (i = 0; i < 6; i++) { state[i] = moon_geo[i] + earth_helio[i]; }
         }
         return JME_OK;
     }
 
-    rc = jme_vsop87_planet_state(jd_et, body, pos);
-    if (rc != JME_OK) {
+    if (engine_policy == JME_ENGINE_VSOP_ELP_MEEUS) {
+        rc = jme_vsop87_planet_state(jd_et, body, pos);
+        if (rc != JME_OK) {
+            rc = jme_meeus_planet_state(jd_et, body, pos);
+        }
+    } else {
         rc = jme_moshier_planet_state(jd_et, body, pos);
-    }
-    if (rc != JME_OK) {
-        rc = jme_meeus_planet_state(jd_et, body, pos);
+        if (rc != JME_OK && engine_policy != JME_ENGINE_MOSHIER) {
+            rc = jme_vsop87_planet_state(jd_et, body, pos);
+        }
+        if (rc != JME_OK && engine_policy != JME_ENGINE_MOSHIER) {
+            rc = jme_meeus_planet_state(jd_et, body, pos);
+        }
     }
     if (rc != JME_OK) {
         return JME_ERR;
     }
 
     if (state != 0) {
-        double prev[6];
-        double next[6];
-        double step = 1.0e-3;
-
         for (i = 0; i < 3; i++) {
             state[i] = pos[i];
             state[i + 3] = pos[i + 3];
         }
+    }
 
-        if (jme_vsop87_planet_state(jd_et - step, body, prev) == JME_OK
-            && jme_vsop87_planet_state(jd_et + step, body, next) == JME_OK) {
-            for (i = 0; i < 3; i++) {
-                state[i + 3] = (next[i] - prev[i]) / (2.0 * step);
-            }
-        } else if (jme_moshier_planet_state(jd_et - step, body, prev) == JME_OK
-            && jme_moshier_planet_state(jd_et + step, body, next) == JME_OK) {
-            for (i = 0; i < 3; i++) {
-                state[i + 3] = (next[i] - prev[i]) / (2.0 * step);
-            }
-        } else if (jme_meeus_planet_state(jd_et - step, body, prev) == JME_OK
-            && jme_meeus_planet_state(jd_et + step, body, next) == JME_OK) {
-            for (i = 0; i < 3; i++) {
-                state[i + 3] = (next[i] - prev[i]) / (2.0 * step);
-            }
+    return JME_OK;
+}
+
+static int selected_body_state(
+    double jd_et,
+    int body,
+    int center,
+    int engine_policy,
+    double *state,
+    char *error,
+    int *is_ecliptic
+)
+{
+    int i;
+
+    if (engine_policy == JME_ENGINE_AUTO || engine_policy == JME_ENGINE_JPL) {
+        if (jme_jpl_body_state(jd_et, body, center, JME_VECTOR_AU_PER_DAY, state, error) == JME_OK) {
+            if (is_ecliptic != 0) { *is_ecliptic = 0; }
+            return JME_OK;
+        }
+        if (engine_policy == JME_ENGINE_JPL) {
+            return JME_ERR;
         }
     }
 
+    if (center != JME_BODY_SUN && center != JME_BODY_EARTH) {
+        jme_set_error(error, "Selected analytical engine does not support requested center");
+        return JME_ERR;
+    }
+
+    if (analytic_body_state(jd_et, body, state, engine_policy) != JME_OK) {
+        jme_set_error(error, "Selected analytical engine cannot compute requested body");
+        return JME_ERR;
+    }
+
+    if (center == JME_BODY_EARTH) {
+        double earth_helio[6];
+        if (analytic_body_state(jd_et, JME_BODY_EARTH, earth_helio, engine_policy) != JME_OK) {
+            jme_set_error(error, "Selected analytical engine cannot compute Earth state");
+            return JME_ERR;
+        }
+        for (i = 0; i < 6; i++) { state[i] -= earth_helio[i]; }
+    }
+
+    if (is_ecliptic != 0) { *is_ecliptic = 1; }
     return JME_OK;
 }
 
@@ -495,6 +523,7 @@ int jme_calc(double jd_et, int body, int flags, double *results, char *error)
     double dist, light_time;
     int center = JME_BODY_EARTH;
     int target_is_ecliptic = 0;
+    int engine_policy = jme_context_engine_policy();
     int i;
 
     if (results == 0) {
@@ -522,19 +551,8 @@ int jme_calc(double jd_et, int body, int flags, double *results, char *error)
     }
 
     /* 1. Geometric position (Target - Center) at t */
-    if (jme_jpl_body_state(jd_et, body, center, JME_VECTOR_AU_PER_DAY, target_pos, error) != JME_OK) {
-        if (analytic_body_state(jd_et, body, target_pos) != JME_OK) {
-            return JME_ERR;
-        }
-        target_is_ecliptic = 1;
-
-        if (center == JME_BODY_EARTH) {
-            double earth_helio[6];
-            if (analytic_body_state(jd_et, JME_BODY_EARTH, earth_helio) != JME_OK) {
-                return JME_ERR;
-            }
-            for (i = 0; i < 6; i++) { target_pos[i] -= earth_helio[i]; }
-        }
+    if (selected_body_state(jd_et, body, center, engine_policy, target_pos, error, &target_is_ecliptic) != JME_OK) {
+        return JME_ERR;
     }
 
     /* Apply topocentric correction to geometric position if needed */
@@ -549,18 +567,8 @@ int jme_calc(double jd_et, int body, int flags, double *results, char *error)
         }
         light_time = dist / JME_C_AU_PER_DAY;
 
-        if (jme_jpl_body_state(jd_et - light_time, body, center, JME_VECTOR_AU_PER_DAY, target_pos, error) != JME_OK) {
-            if (analytic_body_state(jd_et - light_time, body, target_pos) != JME_OK) {
-                return JME_ERR;
-            }
-            target_is_ecliptic = 1;
-            if (center == JME_BODY_EARTH) {
-                double earth_helio[6];
-                if (analytic_body_state(jd_et - light_time, JME_BODY_EARTH, earth_helio) != JME_OK) {
-                    return JME_ERR;
-                }
-                for (i = 0; i < 6; i++) { target_pos[i] -= earth_helio[i]; }
-            }
+        if (selected_body_state(jd_et - light_time, body, center, engine_policy, target_pos, error, &target_is_ecliptic) != JME_OK) {
+            return JME_ERR;
         }
 
         /* Second iteration */
@@ -568,18 +576,8 @@ int jme_calc(double jd_et, int body, int flags, double *results, char *error)
             return JME_ERR;
         }
         light_time = dist / JME_C_AU_PER_DAY;
-        if (jme_jpl_body_state(jd_et - light_time, body, center, JME_VECTOR_AU_PER_DAY, target_pos, error) != JME_OK) {
-            if (analytic_body_state(jd_et - light_time, body, target_pos) != JME_OK) {
-                return JME_ERR;
-            }
-            target_is_ecliptic = 1;
-            if (center == JME_BODY_EARTH) {
-                double earth_helio[6];
-                if (analytic_body_state(jd_et - light_time, JME_BODY_EARTH, earth_helio) != JME_OK) {
-                    return JME_ERR;
-                }
-                for (i = 0; i < 6; i++) { target_pos[i] -= earth_helio[i]; }
-            }
+        if (selected_body_state(jd_et - light_time, body, center, engine_policy, target_pos, error, &target_is_ecliptic) != JME_OK) {
+            return JME_ERR;
         }
 
         /* 2.1 Aberration */
@@ -592,7 +590,7 @@ int jme_calc(double jd_et, int body, int flags, double *results, char *error)
 
             /* Need Earth's barycentric velocity for stellar aberration */
             if (jme_jpl_body_state(jd_et, JME_BODY_EARTH, JME_BODY_SOLAR_SYSTEM_BARYCENTER, JME_VECTOR_AU_PER_DAY, earth_state, error) != JME_OK) {
-                if (analytic_body_state(jd_et, JME_BODY_EARTH, earth_state) != JME_OK) {
+                if (engine_policy == JME_ENGINE_JPL || analytic_body_state(jd_et, JME_BODY_EARTH, earth_state, engine_policy) != JME_OK) {
                     return JME_ERR;
                 }
             }

@@ -5,6 +5,13 @@
 
 #define JME_PATH_MAX 1024
 
+typedef enum jme_engine_policy {
+    JME_ENGINE_AUTO = 0,
+    JME_ENGINE_JPL = 1,
+    JME_ENGINE_MOSHIER = 2,
+    JME_ENGINE_VSOP_ELP_MEEUS = 3
+} jme_engine_policy;
+
 typedef struct jme_context {
     char ephemeris_path[JME_PATH_MAX];
     char jpl_file[JME_PATH_MAX];
@@ -21,6 +28,8 @@ typedef struct jme_context {
     int model_prec;
     int model_sidt;
     int model_deltat;
+    int engine_policy;
+    int engine_policy_is_explicit;
     double lapse_rate;
     int interpolate_nut;
     double tidal_acceleration;
@@ -37,6 +46,7 @@ int jme_context_obliquity_model(void);
 int jme_context_precession_model(void);
 int jme_context_sidereal_time_model(void);
 int jme_context_deltat_model(void);
+int jme_context_engine_policy(void);
 int jme_context_interpolate_nut(void);
 int jme_get_frame_bias_matrix(int model, double *m);
 

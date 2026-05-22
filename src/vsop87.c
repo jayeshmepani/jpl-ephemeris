@@ -71,7 +71,7 @@ int jme_vsop87_planet_state(double jd_et, int body, double *results)
     }
 
     if (vsop87_position(jd_et, body, results) != JME_OK) {
-        return jme_meeus_planet_state(jd_et, body, results);
+        return JME_ERR;
     }
 
     if (vsop87_position(jd_et - step, body, prev) == JME_OK
