@@ -6,5 +6,5 @@ C_DEFINES =
 
 C_INCLUDES = -I/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/include
 
-C_FLAGS = -std=c99
+C_FLAGS = -O3 -DNDEBUG -std=c99
 

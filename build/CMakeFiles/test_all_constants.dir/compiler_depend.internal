@@ -24,7 +24,11 @@ CMakeFiles/test_all_constants.dir/tests/test_all_constants.c.o
  /usr/include/x86_64-linux-gnu/bits/mathcalls-helper-functions.h
  /usr/include/x86_64-linux-gnu/bits/mathcalls-macros.h
  /usr/include/x86_64-linux-gnu/bits/mathcalls.h
+ /usr/include/x86_64-linux-gnu/bits/stdio.h
+ /usr/include/x86_64-linux-gnu/bits/stdio2-decl.h
+ /usr/include/x86_64-linux-gnu/bits/stdio2.h
  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h
+ /usr/include/x86_64-linux-gnu/bits/string_fortified.h
  /usr/include/x86_64-linux-gnu/bits/time64.h
  /usr/include/x86_64-linux-gnu/bits/timesize.h
  /usr/include/x86_64-linux-gnu/bits/types.h

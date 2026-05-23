@@ -1,1 +1,1 @@
-/usr/bin/cc -Wl,--dependency-file=CMakeFiles/jme_call_probe.dir/link.d CMakeFiles/jme_call_probe.dir/tests/jme_call_probe.c.o -o jme_call_probe  -Wl,-rpath,/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build libjme.so -lm
+/usr/bin/cc -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/jme_call_probe.dir/link.d CMakeFiles/jme_call_probe.dir/tests/jme_call_probe.c.o -o jme_call_probe  -Wl,-rpath,/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build libjme.so -lm

@@ -6,5 +6,5 @@ C_DEFINES = -Djme_EXPORTS
 
 C_INCLUDES = -I/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/include -I/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src -I/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/elp2000 -I/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/src/moshier
 
-C_FLAGS = -std=c99 -fPIC -Wall -Wextra -Wpedantic
+C_FLAGS = -O3 -DNDEBUG -std=c99 -fPIC -Wall -Wextra -Wpedantic
 

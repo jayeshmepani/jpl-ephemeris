@@ -22,6 +22,9 @@ CMakeFiles/test_analytical_validation.dir/tests/test_analytical_validation.c.o
  /usr/include/x86_64-linux-gnu/bits/mathcalls-helper-functions.h
  /usr/include/x86_64-linux-gnu/bits/mathcalls-macros.h
  /usr/include/x86_64-linux-gnu/bits/mathcalls.h
+ /usr/include/x86_64-linux-gnu/bits/stdio.h
+ /usr/include/x86_64-linux-gnu/bits/stdio2-decl.h
+ /usr/include/x86_64-linux-gnu/bits/stdio2.h
  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h
  /usr/include/x86_64-linux-gnu/bits/time64.h
  /usr/include/x86_64-linux-gnu/bits/timesize.h

@@ -1,1 +1,1 @@
-/usr/bin/cc -Wl,--dependency-file=CMakeFiles/test_mapped_adversarial.dir/link.d CMakeFiles/test_mapped_adversarial.dir/tests/test_mapped_adversarial.c.o -o test_mapped_adversarial  -Wl,-rpath,/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build libjme.so -lm
+/usr/bin/cc -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/test_mapped_adversarial.dir/link.d CMakeFiles/test_mapped_adversarial.dir/tests/test_mapped_adversarial.c.o -o test_mapped_adversarial  -Wl,-rpath,/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build libjme.so -lm
