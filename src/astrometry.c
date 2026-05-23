@@ -534,7 +534,7 @@ void jme_get_nutation_matrix(double dpsi_rad, double deps_rad, double eps_rad, d
     jme_matrix_rotate_x(-(eps_rad + deps_rad), m);
 }
 
-int jme_get_topo_pos(double jd_et, double *pos_au, char *error)
+int jme_get_topo_pos_true_equator(double jd_et, double *pos_au, char *error)
 {
     jme_context *ctx = jme_get_context();
     double eps, dpsi, deps;
@@ -568,16 +568,38 @@ int jme_get_topo_pos(double jd_et, double *pos_au, char *error)
     y_km = (a * c + ctx->topo_alt * 0.001) * cos_phi * sin(lst_rad);
     z_km = (a * s + ctx->topo_alt * 0.001) * sin_phi;
 
+    pos_au[0] = x_km / JME_AU_KM;
+    pos_au[1] = y_km / JME_AU_KM;
+    pos_au[2] = z_km / JME_AU_KM;
+    return JME_OK;
+}
+
+int jme_get_topo_pos(double jd_et, double *pos_au, char *error)
+{
+    double state[6];
+
+    if (pos_au == 0) {
+        jme_set_error(error, "Topocentric position output is required");
+        return JME_ERR;
+    }
+
+    if (jme_get_topo_pos_true_equator(jd_et, pos_au, error) != JME_OK) {
+        return JME_ERR;
+    }
+
     /* x_km, y_km, z_km are in True Equatorial system of date.
        Need to convert to Mean Equatorial J2000 for relative vector arithmetic. */
     {
+        double eps, dpsi, deps;
         double prec_mat[9];
         double nut_mat[9];
-        double state[6];
 
-        state[0] = x_km;
-        state[1] = y_km;
-        state[2] = z_km;
+        if (jme_get_obliquity(jd_et, jme_context_obliquity_model(), &eps, error) != JME_OK) { return JME_ERR; }
+        if (jme_get_nutation(jd_et, jme_context_nutation_model(), &dpsi, &deps, error) != JME_OK) { return JME_ERR; }
+
+        state[0] = pos_au[0] * JME_AU_KM;
+        state[1] = pos_au[1] * JME_AU_KM;
+        state[2] = pos_au[2] * JME_AU_KM;
         state[3] = 0.0;
         state[4] = 0.0;
         state[5] = 0.0;

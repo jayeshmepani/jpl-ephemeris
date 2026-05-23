@@ -1,7 +1,10 @@
 #include "jme/jme.h"
 #include "context.h"
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
 
 #define JME_EVENTS_RAD_TO_DEG 57.295779513082320876798154814105170332405472466565
 #define JME_EVENTS_DEG_TO_RAD 0.017453292519943295769236907684886127134428718885417
@@ -9,6 +12,44 @@
 #define JME_EVENTS_EARTH_RADIUS_KM 6378.137
 #define JME_EVENTS_MOON_RADIUS_KM 1737.4
 #define JME_EVENTS_SUN_RADIUS_KM 695700.0
+
+static unsigned long long g_profile_rise_trans_calls = 0ULL;
+static double g_profile_rise_trans_seconds = 0.0;
+static unsigned long long g_profile_altitude_calls = 0ULL;
+static double g_profile_altitude_seconds = 0.0;
+static int g_profile_events_enabled = 0;
+static int g_profile_events_init = 0;
+
+static double jme_profile_events_now_seconds(void)
+{
+    struct timeval tv;
+    gettimeofday(&tv, 0);
+    return (double)tv.tv_sec + ((double)tv.tv_usec / 1000000.0);
+}
+
+static void jme_profile_events_report(void)
+{
+    fprintf(stderr, "[jme-profile] rise_trans calls=%llu total_s=%.6f per_call_s=%.9f\n",
+        g_profile_rise_trans_calls,
+        g_profile_rise_trans_seconds,
+        g_profile_rise_trans_calls > 0ULL ? (g_profile_rise_trans_seconds / (double)g_profile_rise_trans_calls) : 0.0);
+    fprintf(stderr, "[jme-profile] altitude calls=%llu total_s=%.6f per_call_s=%.9f\n",
+        g_profile_altitude_calls,
+        g_profile_altitude_seconds,
+        g_profile_altitude_calls > 0ULL ? (g_profile_altitude_seconds / (double)g_profile_altitude_calls) : 0.0);
+}
+
+static void jme_profile_events_maybe_init(void)
+{
+    if (g_profile_events_init) {
+        return;
+    }
+    g_profile_events_init = 1;
+    g_profile_events_enabled = getenv("JME_PROFILE") != 0;
+    if (g_profile_events_enabled) {
+        atexit(jme_profile_events_report);
+    }
+}
 
 static double vec_dot(const double *a, const double *b)
 {
@@ -1317,15 +1358,23 @@ static int find_solar_contact_time(double tmid, double threshold_deg, double *ge
     return JME_ERR;
 }
 
-static double get_altitude(double jd_ut, int body, const char *starname, int flags, double *geopos, double atpress, double attemp, char *error)
+static double get_altitude_internal(double jd_ut, int body, const char *starname, int flags, double *geopos, double atpress, double attemp, int set_topo, char *error)
 {
+    double t0 = 0.0;
     double results[6];
     double ra, dec, hour_angle, azimuth, altitude;
-    double eps, gst;
+    double gst;
     int equatorial_flag = (int)JME_CALC_EQUATORIAL;
     int res;
 
-    jme_set_topo(geopos[0], geopos[1], geopos[2]);
+    if (set_topo) {
+        jme_set_topo(geopos[0], geopos[1], geopos[2]);
+    }
+
+    jme_profile_events_maybe_init();
+    if (g_profile_events_enabled) {
+        t0 = jme_profile_events_now_seconds();
+    }
 
     if (starname != 0 && starname[0] != '\0') {
         flags = flags | (int)JME_CALC_TOPOCENTRIC | equatorial_flag;
@@ -1335,12 +1384,17 @@ static double get_altitude(double jd_ut, int body, const char *starname, int fla
         res = jme_calc_ut(jd_ut, body, flags, results, error);
     }
 
-    if (res != JME_OK) { return -100.0; }
+    if (res != JME_OK) {
+        if (g_profile_events_enabled) {
+            g_profile_altitude_calls += 1ULL;
+            g_profile_altitude_seconds += (jme_profile_events_now_seconds() - t0);
+        }
+        return -100.0;
+    }
 
     ra = results[0];
     dec = results[1];
 
-    jme_get_obliquity(jd_ut, jme_context_obliquity_model(), &eps, 0);
     gst = jme_sidereal_time(jd_ut);
     hour_angle = jme_degree_normalize(gst * 15.0 + geopos[0] - ra);
 
@@ -1358,7 +1412,16 @@ static double get_altitude(double jd_ut, int body, const char *starname, int fla
         );
     }
 
+    if (g_profile_events_enabled) {
+        g_profile_altitude_calls += 1ULL;
+        g_profile_altitude_seconds += (jme_profile_events_now_seconds() - t0);
+    }
     return altitude;
+}
+
+static double get_altitude(double jd_ut, int body, const char *starname, int flags, double *geopos, double atpress, double attemp, char *error)
+{
+    return get_altitude_internal(jd_ut, body, starname, flags, geopos, atpress, attemp, 1, error);
 }
 
 static int refine_altitude_crossing(
@@ -1381,18 +1444,19 @@ static int refine_altitude_crossing(
     double amid;
     int i;
 
-    a0 = get_altitude(t0, body, starname, flags, geopos, atpress, attemp, error) - h0;
-    a1 = get_altitude(t1, body, starname, flags, geopos, atpress, attemp, error) - h0;
+    jme_set_topo(geopos[0], geopos[1], geopos[2]);
+    a0 = get_altitude_internal(t0, body, starname, flags, geopos, atpress, attemp, 0, error) - h0;
+    a1 = get_altitude_internal(t1, body, starname, flags, geopos, atpress, attemp, 0, error) - h0;
 
     if (a0 == -100.0 - h0 || a1 == -100.0 - h0 || a0 * a1 > 0.0) {
         return JME_ERR;
     }
 
-    for (i = 0; i < 32; i++) {
+    for (i = 0; i < 20; i++) {
         mid = (t0 + t1) / 2.0;
-        amid = get_altitude(mid, body, starname, flags, geopos, atpress, attemp, error) - h0;
+        amid = get_altitude_internal(mid, body, starname, flags, geopos, atpress, attemp, 0, error) - h0;
 
-        if (fabs(amid) < 1e-7 || fabs(t1 - t0) < 1e-8) {
+        if (fabs(amid) < 1e-6 || fabs(t1 - t0) < 1e-6) {
             *tret = mid;
             return JME_OK;
         }
@@ -1425,11 +1489,39 @@ static int refine_meridian_transit(
 {
     double ha0;
     double ha1;
+    double results[6];
     int i;
 
-    for (i = 0; i < 32; i++) {
+    if (starname != 0 && starname[0] != '\0') {
+        if (jme_fixstar_ut(starname, t0, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
+            return JME_ERR;
+        }
+    } else if (jme_calc_ut(t0, body, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
+        return JME_ERR;
+    }
+    ha0 = jme_degrees_difference_signed(
+        jme_degrees_difference_signed(jme_sidereal_time(t0) * 15.0 + geopos[0], results[0]),
+        target_hour_angle
+    );
+
+    if (starname != 0 && starname[0] != '\0') {
+        if (jme_fixstar_ut(starname, t1, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
+            return JME_ERR;
+        }
+    } else if (jme_calc_ut(t1, body, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
+        return JME_ERR;
+    }
+    ha1 = jme_degrees_difference_signed(
+        jme_degrees_difference_signed(jme_sidereal_time(t1) * 15.0 + geopos[0], results[0]),
+        target_hour_angle
+    );
+
+    if (ha0 * ha1 > 0.0) {
+        return JME_ERR;
+    }
+
+    for (i = 0; i < 20; i++) {
         double tm = (t0 + t1) / 2.0;
-        double results[6];
         double ra;
         double ham;
 
@@ -1444,33 +1536,17 @@ static int refine_meridian_transit(
         ra = results[0];
         ham = jme_degrees_difference_signed(jme_degrees_difference_signed(jme_sidereal_time(tm) * 15.0 + geopos[0], ra), target_hour_angle);
 
-        if (fabs(ham) < 1e-5 || fabs(t1 - t0) < 1e-8) {
+        if (fabs(ham) < 1e-4 || fabs(t1 - t0) < 1e-6) {
             *tret = tm;
             return JME_OK;
         }
 
-        if (starname != 0 && starname[0] != '\0') {
-            if (jme_fixstar_ut(starname, t0, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
-                return JME_ERR;
-            }
-        } else if (jme_calc_ut(t0, body, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
-            return JME_ERR;
-        }
-        ha0 = jme_degrees_difference_signed(jme_degrees_difference_signed(jme_sidereal_time(t0) * 15.0 + geopos[0], results[0]), target_hour_angle);
-
-        if (starname != 0 && starname[0] != '\0') {
-            if (jme_fixstar_ut(starname, t1, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
-                return JME_ERR;
-            }
-        } else if (jme_calc_ut(t1, body, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
-            return JME_ERR;
-        }
-        ha1 = jme_degrees_difference_signed(jme_degrees_difference_signed(jme_sidereal_time(t1) * 15.0 + geopos[0], results[0]), target_hour_angle);
-
         if (ha0 * ham <= 0.0) {
             t1 = tm;
+            ha1 = ham;
         } else if (ha1 * ham <= 0.0) {
             t0 = tm;
+            ha0 = ham;
         } else {
             *tret = tm;
             return JME_OK;
@@ -1483,6 +1559,7 @@ static int refine_meridian_transit(
 
 static int rise_trans_search(double jd_ut, int body, const char *starname, int flags, int rsmi, double *geopos, double atpress, double attemp, int use_true_horizon, double true_horizon, double *tret, char *error)
 {
+    double search_t0 = 0.0;
     double t = jd_ut;
     double h0 = -0.5667; /* Standard for stars (refraction only) */
     double search_atpress = atpress;
@@ -1490,8 +1567,16 @@ static int rise_trans_search(double jd_ut, int body, const char *starname, int f
     int i;
 
     if (tret != 0) { *tret = 0.0; }
+    jme_profile_events_maybe_init();
+    if (g_profile_events_enabled) {
+        search_t0 = jme_profile_events_now_seconds();
+    }
     if (geopos == 0 || tret == 0) {
         jme_set_error(error, "Rise and transit output arguments are required");
+        if (g_profile_events_enabled) {
+            g_profile_rise_trans_calls += 1ULL;
+            g_profile_rise_trans_seconds += (jme_profile_events_now_seconds() - search_t0);
+        }
         return JME_ERR;
     }
 
@@ -1516,26 +1601,29 @@ static int rise_trans_search(double jd_ut, int body, const char *starname, int f
         h0 = true_horizon;
     }
 
+    jme_set_topo(geopos[0], geopos[1], geopos[2]);
+
     if (rsmi & (JME_RISE_MERIDIAN_TRANSIT | JME_RISE_ANTI_MERIDIAN_TRANSIT)) {
         double target_hour_angle = (rsmi & JME_RISE_ANTI_MERIDIAN_TRANSIT) ? 180.0 : 0.0;
+        double dt = 0.01;
         /* Search for transit from the supplied Julian day across one day. */
-        for (i = 0; i < 240; i++) {
-            double results[6];
-            double ra, gst, ha, ha_next;
-            if (starname != 0 && starname[0] != '\0') {
-                if (jme_fixstar_ut(starname, t, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
-                    return JME_ERR;
-                }
-            } else {
-                if (jme_calc_ut(t, body, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
-                    return JME_ERR;
-                }
+        double results[6];
+        double ra, gst, ha, ha_next;
+        if (starname != 0 && starname[0] != '\0') {
+            if (jme_fixstar_ut(starname, t, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
+                return JME_ERR;
             }
-            ra = results[0];
-            gst = jme_sidereal_time(t);
-            ha = jme_degrees_difference_signed(jme_degrees_difference_signed(gst * 15.0 + geopos[0], ra), target_hour_angle);
-            
-            t += 0.01; /* 14.4 mins */
+        } else {
+            if (jme_calc_ut(t, body, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
+                return JME_ERR;
+            }
+        }
+        ra = results[0];
+        gst = jme_sidereal_time(t);
+        ha = jme_degrees_difference_signed(jme_degrees_difference_signed(gst * 15.0 + geopos[0], ra), target_hour_angle);
+
+        for (i = 0; i < 240; i++) {
+            t += dt; /* 14.4 mins */
             gst = jme_sidereal_time(t);
             if (starname != 0 && starname[0] != '\0') {
                 if (jme_fixstar_ut(starname, t, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
@@ -1550,29 +1638,56 @@ static int rise_trans_search(double jd_ut, int body, const char *starname, int f
             ha_next = jme_degrees_difference_signed(jme_degrees_difference_signed(gst * 15.0 + geopos[0], ra), target_hour_angle);
 
             if (ha < 0 && ha_next >= 0) {
-                return refine_meridian_transit(t - 0.01, t, body, starname, flags, geopos, target_hour_angle, tret, error);
+                {
+                    int rc = refine_meridian_transit(t - dt, t, body, starname, flags, geopos, target_hour_angle, tret, error);
+                    if (g_profile_events_enabled) {
+                        g_profile_rise_trans_calls += 1ULL;
+                        g_profile_rise_trans_seconds += (jme_profile_events_now_seconds() - search_t0);
+                    }
+                    return rc;
+                }
             }
+            ha = ha_next;
         }
     }
 
     /* Rise/set search across one day. */
+    alt = get_altitude_internal(t, body, starname, flags, geopos, search_atpress, attemp, 0, error);
     for (i = 0; i < 24; i++) {
-        alt = get_altitude(t, body, starname, flags, geopos, search_atpress, attemp, error);
         t += 1.0 / 24.0;
-        alt_next = get_altitude(t, body, starname, flags, geopos, search_atpress, attemp, error);
+        alt_next = get_altitude_internal(t, body, starname, flags, geopos, search_atpress, attemp, 0, error);
 
         if (rsmi & JME_RISE_RISE) {
             if (alt < h0 && alt_next >= h0) {
-                return refine_altitude_crossing(t - 1.0 / 24.0, t, h0, body, starname, flags, geopos, search_atpress, attemp, tret, error);
+                {
+                    int rc = refine_altitude_crossing(t - 1.0 / 24.0, t, h0, body, starname, flags, geopos, search_atpress, attemp, tret, error);
+                    if (g_profile_events_enabled) {
+                        g_profile_rise_trans_calls += 1ULL;
+                        g_profile_rise_trans_seconds += (jme_profile_events_now_seconds() - search_t0);
+                    }
+                    return rc;
+                }
             }
         } else if (rsmi & JME_RISE_SET) {
             if (alt > h0 && alt_next <= h0) {
-                return refine_altitude_crossing(t - 1.0 / 24.0, t, h0, body, starname, flags, geopos, search_atpress, attemp, tret, error);
+                {
+                    int rc = refine_altitude_crossing(t - 1.0 / 24.0, t, h0, body, starname, flags, geopos, search_atpress, attemp, tret, error);
+                    if (g_profile_events_enabled) {
+                        g_profile_rise_trans_calls += 1ULL;
+                        g_profile_rise_trans_seconds += (jme_profile_events_now_seconds() - search_t0);
+                    }
+                    return rc;
+                }
             }
         }
+        alt = alt_next;
     }
 
     jme_set_error(error, "Event not found in 24h search window");
+    if (g_profile_events_enabled) {
+        g_profile_rise_trans_calls += 1ULL;
+        g_profile_rise_trans_seconds += (jme_profile_events_now_seconds() - search_t0);
+    }
     return JME_ERR;
 }
 

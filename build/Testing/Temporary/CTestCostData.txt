@@ -1,13 +1,13 @@
-julian 183 4.07572e-05
-api_contract 177 0.253313
-jpl_runtime 184 5.15465e-05
-api_inventory 182 0.0084263
-symbol_coverage 163 0.0115597
-all_constants 173 8.45233e-06
-all_functions 172 0.01347
-analytical_validation 123 0.00442727
-extra_contract 30 0.000850665
-mapped_adversarial 12 0.151645
-extra_adversarial 10 0.0189195
-engine_matrix 7 6.2275
+julian 192 3.48502e-05
+api_contract 186 0.128242
+jpl_runtime 193 9.85677e-06
+api_inventory 191 0.00463538
+symbol_coverage 171 0.0108991
+all_constants 182 6.91537e-06
+all_functions 181 0.00826269
+analytical_validation 131 0.00288685
+extra_contract 39 0.000648107
+mapped_adversarial 21 0.0557287
+extra_adversarial 19 0.0144573
+engine_matrix 15 2.14404
 ---

@@ -1,10 +1,45 @@
 #include "jme/jme.h"
 #include "context.h"
 #include <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/time.h>
 
 #define JME_C_AU_PER_DAY 173.1446326846693
 #define JME_DEG_TO_RAD 0.017453292519943295769236907684886127134428718885417
 #define JME_PI 3.14159265358979323846264338327950288419716939937510
+
+static unsigned long long g_profile_calc_ut_calls = 0ULL;
+static double g_profile_calc_ut_seconds = 0.0;
+static int g_profile_calc_ut_enabled = 0;
+static int g_profile_calc_ut_init = 0;
+
+static double jme_profile_now_seconds_local(void)
+{
+    struct timeval tv;
+    gettimeofday(&tv, 0);
+    return (double)tv.tv_sec + ((double)tv.tv_usec / 1000000.0);
+}
+
+static void jme_profile_calc_ut_report(void)
+{
+    fprintf(stderr, "[jme-profile] calc_ut calls=%llu total_s=%.6f per_call_s=%.9f\n",
+        g_profile_calc_ut_calls,
+        g_profile_calc_ut_seconds,
+        g_profile_calc_ut_calls > 0ULL ? (g_profile_calc_ut_seconds / (double)g_profile_calc_ut_calls) : 0.0);
+}
+
+static void jme_profile_calc_ut_maybe_init(void)
+{
+    if (g_profile_calc_ut_init) {
+        return;
+    }
+    g_profile_calc_ut_init = 1;
+    g_profile_calc_ut_enabled = getenv("JME_PROFILE") != 0;
+    if (g_profile_calc_ut_enabled) {
+        atexit(jme_profile_calc_ut_report);
+    }
+}
 
 static double angle_to_output_unit(double degrees, int flags)
 {
@@ -58,6 +93,32 @@ static double vector_angle_degrees(const double *a, const double *b)
     if (c > 1.0) { c = 1.0; }
     if (c < -1.0) { c = -1.0; }
     return acos(c) * 180.0 / JME_PI;
+}
+
+static int apply_reference_frame_transform(double jd_et, int flags, int target_is_ecliptic, double *target_pos, char *error)
+{
+    if (!target_is_ecliptic && !(flags & JME_CALC_J2000)) {
+        double bias_mat[9];
+        double prec_mat[9];
+
+        if (jme_get_frame_bias_matrix(jme_context_bias_model(), bias_mat) == JME_OK) {
+            jme_matrix_transform_state(bias_mat, target_pos, target_pos);
+        }
+
+        jme_get_precession_matrix(2451545.0, jd_et, jme_context_precession_model(), prec_mat);
+        jme_matrix_transform_state(prec_mat, target_pos, target_pos);
+
+        if (!(flags & JME_CALC_NO_NUTATION)) {
+            double dpsi, deps, eps;
+            double nut_mat[9];
+            jme_get_nutation(jd_et, jme_context_nutation_model(), &dpsi, &deps, error);
+            jme_get_obliquity(jd_et, jme_context_obliquity_model(), &eps, error);
+            jme_get_nutation_matrix(dpsi * JME_DEG_TO_RAD, deps * JME_DEG_TO_RAD, eps * JME_DEG_TO_RAD, nut_mat);
+            jme_matrix_transform_state(nut_mat, target_pos, target_pos);
+        }
+    }
+
+    return JME_OK;
 }
 
 static double body_equatorial_radius_km(int body)
@@ -348,9 +409,17 @@ int jme_pheno_ut(double jd_ut, int body, int flags, double *attr, char *error)
 
 int jme_calc_ut(double jd_ut, int body, int flags, double *results, char *error)
 {
+    double t0;
     double dt = jme_delta_t(jd_ut);
     double jd_et = jd_ut + dt / 86400.0;
-    return jme_calc(jd_et, body, flags, results, error);
+    jme_profile_calc_ut_maybe_init();
+    t0 = g_profile_calc_ut_enabled ? jme_profile_now_seconds_local() : 0.0;
+    int rc = jme_calc(jd_et, body, flags, results, error);
+    if (g_profile_calc_ut_enabled) {
+        g_profile_calc_ut_calls += 1ULL;
+        g_profile_calc_ut_seconds += (jme_profile_now_seconds_local() - t0);
+    }
+    return rc;
 }
 
 int jme_calc_pctr(double jd_et, int body, int center, int flags, double *results, char *error)
@@ -538,6 +607,8 @@ int jme_calc(double jd_et, int body, int flags, double *results, char *error)
     int center = JME_BODY_EARTH;
     int target_is_ecliptic = 0;
     int engine_policy = jme_context_engine_policy();
+    int frame_already_applied = 0;
+    int observer_pos_ready = 0;
     int i;
 
     if (results == 0) {
@@ -558,10 +629,13 @@ int jme_calc(double jd_et, int body, int flags, double *results, char *error)
         center = JME_BODY_SOLAR_SYSTEM_BARYCENTER;
     } else if (flags & JME_CALC_HELIOCENTRIC) {
         center = JME_BODY_SUN;
-    } else if (flags & JME_CALC_TOPOCENTRIC) {
+    } else if ((flags & JME_CALC_TOPOCENTRIC)
+        && !(flags & JME_CALC_TRUE_POSITION)
+        && !(flags & JME_CALC_J2000)) {
         if (jme_get_topo_pos(jd_et, observer_pos_au, error) != JME_OK) {
             return JME_ERR;
         }
+        observer_pos_ready = 1;
     }
 
     /* 1. Geometric position (Target - Center) at t */
@@ -570,7 +644,7 @@ int jme_calc(double jd_et, int body, int flags, double *results, char *error)
     }
 
     /* Apply topocentric correction to geometric position if needed */
-    if (flags & JME_CALC_TOPOCENTRIC) {
+    if ((flags & JME_CALC_TOPOCENTRIC) && observer_pos_ready) {
         for (i = 0; i < 3; i++) { target_pos[i] -= observer_pos_au[i]; }
     }
 
@@ -673,27 +747,27 @@ int jme_calc(double jd_et, int body, int flags, double *results, char *error)
         }
     }
 
-    /* 3. Reference Frame / Transformation */
-    if (!target_is_ecliptic && !(flags & JME_CALC_J2000)) {
-        double bias_mat[9];
-        /* Precession to date */
-        double prec_mat[9];
-
-        if (jme_get_frame_bias_matrix(jme_context_bias_model(), bias_mat) == JME_OK) {
-            jme_matrix_transform_state(bias_mat, target_pos, target_pos);
+    if ((flags & JME_CALC_TOPOCENTRIC)
+        && (flags & JME_CALC_TRUE_POSITION)
+        && !(flags & JME_CALC_J2000)
+        && !target_is_ecliptic) {
+        if (apply_reference_frame_transform(jd_et, flags, target_is_ecliptic, target_pos, error) != JME_OK) {
+            return JME_ERR;
         }
+        if (jme_get_topo_pos_true_equator(jd_et, observer_pos_au, error) != JME_OK) {
+            return JME_ERR;
+        }
+        for (i = 0; i < 3; i++) {
+            target_pos[i] -= observer_pos_au[i];
+        }
+        frame_already_applied = 1;
+        observer_pos_ready = 1;
+    }
 
-        jme_get_precession_matrix(2451545.0, jd_et, jme_context_precession_model(), prec_mat);
-        jme_matrix_transform_state(prec_mat, target_pos, target_pos);
-
-        if (!(flags & JME_CALC_NO_NUTATION)) {
-            /* Nutation to date */
-            double dpsi, deps, eps;
-            double nut_mat[9];
-            jme_get_nutation(jd_et, jme_context_nutation_model(), &dpsi, &deps, error);
-            jme_get_obliquity(jd_et, jme_context_obliquity_model(), &eps, error);
-            jme_get_nutation_matrix(dpsi * JME_DEG_TO_RAD, deps * JME_DEG_TO_RAD, eps * JME_DEG_TO_RAD, nut_mat);
-            jme_matrix_transform_state(nut_mat, target_pos, target_pos);
+    /* 3. Reference Frame / Transformation */
+    if (!frame_already_applied) {
+        if (apply_reference_frame_transform(jd_et, flags, target_is_ecliptic, target_pos, error) != JME_OK) {
+            return JME_ERR;
         }
     }
 

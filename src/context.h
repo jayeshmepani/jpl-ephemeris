@@ -49,5 +49,6 @@ int jme_context_deltat_model(void);
 int jme_context_engine_policy(void);
 int jme_context_interpolate_nut(void);
 int jme_get_frame_bias_matrix(int model, double *m);
+int jme_get_topo_pos_true_equator(double jd_et, double *pos_au, char *error);
 
 #endif
