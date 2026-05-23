@@ -19,6 +19,24 @@ static int elp2000_position(double jd_et, double *out)
     return isfinite(out[0]) && isfinite(out[1]) && isfinite(out[2]) ? JME_OK : JME_ERR;
 }
 
+#if defined(__GNUC__)
+__attribute__((visibility("hidden")))
+#endif
+int jme_internal_elp2000_moon_position(double jd_et, double *results)
+{
+    int i;
+
+    if (results != 0) {
+        for (i = 0; i < 6; i++) { results[i] = 0.0; }
+    }
+
+    if (results == 0) {
+        return JME_ERR;
+    }
+
+    return elp2000_position(jd_et, results);
+}
+
 int jme_elp2000_moon_state(double jd_et, double *results)
 {
     double prev[3];

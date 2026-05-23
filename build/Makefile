@@ -701,6 +701,54 @@ src/moshier.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/moshier.c.s
 .PHONY : src/moshier.c.s
 
+src/moshier/moonlat404.o: src/moshier/moonlat404.c.o
+.PHONY : src/moshier/moonlat404.o
+
+# target to build an object file
+src/moshier/moonlat404.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/moshier/moonlat404.c.o
+.PHONY : src/moshier/moonlat404.c.o
+
+src/moshier/moonlat404.i: src/moshier/moonlat404.c.i
+.PHONY : src/moshier/moonlat404.i
+
+# target to preprocess a source file
+src/moshier/moonlat404.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/moshier/moonlat404.c.i
+.PHONY : src/moshier/moonlat404.c.i
+
+src/moshier/moonlat404.s: src/moshier/moonlat404.c.s
+.PHONY : src/moshier/moonlat404.s
+
+# target to generate assembly for a file
+src/moshier/moonlat404.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/moshier/moonlat404.c.s
+.PHONY : src/moshier/moonlat404.c.s
+
+src/moshier/moonlr404.o: src/moshier/moonlr404.c.o
+.PHONY : src/moshier/moonlr404.o
+
+# target to build an object file
+src/moshier/moonlr404.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/moshier/moonlr404.c.o
+.PHONY : src/moshier/moonlr404.c.o
+
+src/moshier/moonlr404.i: src/moshier/moonlr404.c.i
+.PHONY : src/moshier/moonlr404.i
+
+# target to preprocess a source file
+src/moshier/moonlr404.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/moshier/moonlr404.c.i
+.PHONY : src/moshier/moonlr404.c.i
+
+src/moshier/moonlr404.s: src/moshier/moonlr404.c.s
+.PHONY : src/moshier/moonlr404.s
+
+# target to generate assembly for a file
+src/moshier/moonlr404.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/moshier/moonlr404.c.s
+.PHONY : src/moshier/moonlr404.c.s
+
 src/moshier_full.o: src/moshier_full.c.o
 .PHONY : src/moshier_full.o
 
@@ -724,6 +772,30 @@ src/moshier_full.s: src/moshier_full.c.s
 src/moshier_full.c.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/moshier_full.c.s
 .PHONY : src/moshier_full.c.s
+
+src/moshier_moon.o: src/moshier_moon.c.o
+.PHONY : src/moshier_moon.o
+
+# target to build an object file
+src/moshier_moon.c.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/moshier_moon.c.o
+.PHONY : src/moshier_moon.c.o
+
+src/moshier_moon.i: src/moshier_moon.c.i
+.PHONY : src/moshier_moon.i
+
+# target to preprocess a source file
+src/moshier_moon.c.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/moshier_moon.c.i
+.PHONY : src/moshier_moon.c.i
+
+src/moshier_moon.s: src/moshier_moon.c.s
+.PHONY : src/moshier_moon.s
+
+# target to generate assembly for a file
+src/moshier_moon.c.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/jme.dir/build.make CMakeFiles/jme.dir/src/moshier_moon.c.s
+.PHONY : src/moshier_moon.c.s
 
 src/sidereal.o: src/sidereal.c.o
 .PHONY : src/sidereal.o
@@ -1159,9 +1231,18 @@ help:
 	@echo "... src/moshier.o"
 	@echo "... src/moshier.i"
 	@echo "... src/moshier.s"
+	@echo "... src/moshier/moonlat404.o"
+	@echo "... src/moshier/moonlat404.i"
+	@echo "... src/moshier/moonlat404.s"
+	@echo "... src/moshier/moonlr404.o"
+	@echo "... src/moshier/moonlr404.i"
+	@echo "... src/moshier/moonlr404.s"
 	@echo "... src/moshier_full.o"
 	@echo "... src/moshier_full.i"
 	@echo "... src/moshier_full.s"
+	@echo "... src/moshier_moon.o"
+	@echo "... src/moshier_moon.i"
+	@echo "... src/moshier_moon.s"
 	@echo "... src/sidereal.o"
 	@echo "... src/sidereal.i"
 	@echo "... src/sidereal.s"

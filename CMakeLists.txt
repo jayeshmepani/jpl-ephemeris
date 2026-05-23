@@ -36,6 +36,9 @@ add_library(jme SHARED
     src/meeus.c
     src/moshier.c
     src/moshier_full.c
+    src/moshier_moon.c
+    src/moshier/moonlat404.c
+    src/moshier/moonlr404.c
     src/sidereal.c
     src/time.c
     src/vsop87.c

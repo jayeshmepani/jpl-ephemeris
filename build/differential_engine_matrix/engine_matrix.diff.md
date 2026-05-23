@@ -12,32 +12,32 @@
 
 ## Per-Engine Timing
 
-- `JPL` calls with timing: `204`, total ns: `48813142`, avg ns: `239280`, max ns: `7187334`
-- `MOSHIER` calls with timing: `204`, total ns: `7897621049`, avg ns: `38713828`, max ns: `1337429695`
-- `VSOP_ELP_MEEUS` calls with timing: `204`, total ns: `21477333481`, avg ns: `105281046`, max ns: `5796719840`
+- `JPL` calls with timing: `204`, total ns: `58116106`, avg ns: `284882`, max ns: `18061497`
+- `MOSHIER` calls with timing: `204`, total ns: `453052901`, avg ns: `2220847`, max ns: `159815688`
+- `VSOP_ELP_MEEUS` calls with timing: `204`, total ns: `15710191141`, avg ns: `77010740`, max ns: `4963549677`
 
 ## Slowest Function+Engine Calls
 
-- `jme_helio_cross` / `VSOP_ELP_MEEUS`: `5796719840` ns, status `OK`
-- `jme_helio_cross_ut` / `VSOP_ELP_MEEUS`: `5294054499` ns, status `OK`
-- `jme_mooncross_ut` / `VSOP_ELP_MEEUS`: `1616100345` ns, status `OK`
-- `jme_mooncross` / `VSOP_ELP_MEEUS`: `1540475618` ns, status `OK`
-- `jme_mooncross` / `MOSHIER`: `1337429695` ns, status `OK`
-- `jme_mooncross_ut` / `MOSHIER`: `1278835734` ns, status `OK`
-- `jme_solcross` / `VSOP_ELP_MEEUS`: `1241266241` ns, status `OK`
-- `jme_solcross_ut` / `VSOP_ELP_MEEUS`: `1153324126` ns, status `OK`
-- `jme_lun_occult_when_loc` / `VSOP_ELP_MEEUS`: `936471481` ns, status `ERROR`
-- `jme_lun_occult_when_loc` / `MOSHIER`: `848468189` ns, status `ERROR`
-- `jme_lun_occult_when_glob` / `VSOP_ELP_MEEUS`: `814867584` ns, status `ERROR`
-- `jme_mooncross_node_ut` / `MOSHIER`: `716763992` ns, status `OK`
-- `jme_sol_eclipse_when_glob` / `VSOP_ELP_MEEUS`: `670034984` ns, status `ERROR`
-- `jme_sol_eclipse_when_loc` / `MOSHIER`: `668807957` ns, status `ERROR`
-- `jme_sol_eclipse_when_glob` / `MOSHIER`: `607939968` ns, status `ERROR`
-- `jme_mooncross_node` / `MOSHIER`: `574516836` ns, status `OK`
-- `jme_lun_occult_when_glob` / `MOSHIER`: `543082829` ns, status `ERROR`
-- `jme_lun_eclipse_when` / `MOSHIER`: `494211793` ns, status `ERROR`
-- `jme_lun_eclipse_when` / `VSOP_ELP_MEEUS`: `439257704` ns, status `ERROR`
-- `jme_mooncross_node` / `VSOP_ELP_MEEUS`: `438728267` ns, status `OK`
+- `jme_helio_cross_ut` / `VSOP_ELP_MEEUS`: `4963549677` ns, status `OK`
+- `jme_helio_cross` / `VSOP_ELP_MEEUS`: `4701347229` ns, status `OK`
+- `jme_solcross` / `VSOP_ELP_MEEUS`: `1101990137` ns, status `OK`
+- `jme_solcross_ut` / `VSOP_ELP_MEEUS`: `966359842` ns, status `OK`
+- `jme_mooncross` / `VSOP_ELP_MEEUS`: `784424045` ns, status `OK`
+- `jme_mooncross_ut` / `VSOP_ELP_MEEUS`: `671155847` ns, status `OK`
+- `jme_lun_occult_when_loc` / `VSOP_ELP_MEEUS`: `412118850` ns, status `ERROR`
+- `jme_sol_eclipse_when_glob` / `VSOP_ELP_MEEUS`: `382072815` ns, status `ERROR`
+- `jme_mooncross_node_ut` / `VSOP_ELP_MEEUS`: `346512216` ns, status `OK`
+- `jme_lun_occult_when_glob` / `VSOP_ELP_MEEUS`: `305050638` ns, status `ERROR`
+- `jme_lun_eclipse_when` / `VSOP_ELP_MEEUS`: `292253344` ns, status `ERROR`
+- `jme_sol_eclipse_when_loc` / `VSOP_ELP_MEEUS`: `194628898` ns, status `ERROR`
+- `jme_helio_cross` / `MOSHIER`: `159815688` ns, status `OK`
+- `jme_mooncross_node` / `VSOP_ELP_MEEUS`: `156453673` ns, status `OK`
+- `jme_lun_eclipse_when_loc` / `VSOP_ELP_MEEUS`: `121962511` ns, status `ERROR`
+- `jme_helio_cross_ut` / `MOSHIER`: `94037941` ns, status `OK`
+- `jme_rise_trans_true_hor` / `VSOP_ELP_MEEUS`: `93642692` ns, status `ERROR`
+- `jme_rise_trans` / `VSOP_ELP_MEEUS`: `75868949` ns, status `ERROR`
+- `jme_solcross` / `MOSHIER`: `34252026` ns, status `OK`
+- `jme_solcross_ut` / `MOSHIER`: `29648822` ns, status `OK`
 
 ## Notes
 

@@ -8,22 +8,24 @@
 #define FAR
 #endif
 
-struct plantbl {
-  char max_harmonic[9];
-  char max_power_of_t;
-  char FAR *arg_tbl;
-  double FAR *lon_tbl;
-  double FAR *lat_tbl;
-  double FAR *rad_tbl;
-  double distance;
-};
-
-static double J2000 = 2451545.0;
-static double STR = 4.8481368110953599359e-6;	/* radians per arc second */
-
-static double DTR = 1.7453292519943295769e-2;
-static double RTD = 5.7295779513082320877e1;
-static double RTS = 2.0626480624709635516e5;	/* arc seconds per radian */
-
+#ifndef SIGNED
+#define SIGNED signed
 #endif
 
+struct plantbl {
+  char maxargs;
+  char max_harmonic[18];
+  char max_power_of_t;
+  signed char FAR *arg_tbl;
+  void FAR *lon_tbl;
+  void FAR *lat_tbl;
+  void FAR *rad_tbl;
+  double distance;
+  double timescale;
+  double trunclvl;
+};
+
+#define J2000 2451545.0
+#define STR 4.8481368110953599359e-6
+
+#endif

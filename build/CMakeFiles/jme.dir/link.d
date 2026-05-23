@@ -20,6 +20,9 @@ libjme.so: \
   CMakeFiles/jme.dir/src/meeus.c.o \
   CMakeFiles/jme.dir/src/moshier.c.o \
   CMakeFiles/jme.dir/src/moshier_full.c.o \
+  CMakeFiles/jme.dir/src/moshier_moon.c.o \
+  CMakeFiles/jme.dir/src/moshier/moonlat404.c.o \
+  CMakeFiles/jme.dir/src/moshier/moonlr404.c.o \
   CMakeFiles/jme.dir/src/sidereal.c.o \
   CMakeFiles/jme.dir/src/time.c.o \
   CMakeFiles/jme.dir/src/vsop87.c.o \
@@ -92,6 +95,12 @@ CMakeFiles/jme.dir/src/meeus.c.o:
 CMakeFiles/jme.dir/src/moshier.c.o:
 
 CMakeFiles/jme.dir/src/moshier_full.c.o:
+
+CMakeFiles/jme.dir/src/moshier_moon.c.o:
+
+CMakeFiles/jme.dir/src/moshier/moonlat404.c.o:
+
+CMakeFiles/jme.dir/src/moshier/moonlr404.c.o:
 
 CMakeFiles/jme.dir/src/sidereal.c.o:
 
