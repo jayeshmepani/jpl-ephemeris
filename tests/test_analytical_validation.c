@@ -606,6 +606,91 @@ static int check_horizons_observer_ecliptic_regression(void)
     return 0;
 }
 
+static int check_horizons_major_body_matrix(void)
+{
+    struct horizons_case {
+        double jd_ut;
+        const char *date_name;
+        int body;
+        const char *body_name;
+        double lon;
+        double lat;
+    } cases[] = {
+        {2451544.5, "2000-01-01T00:00:00Z", JME_BODY_SUN, "Sun", 279.8592049, 0.0002403},
+        {2451544.5, "2000-01-01T00:00:00Z", JME_BODY_MOON, "Moon", 217.2933209, 5.2312994},
+        {2451544.5, "2000-01-01T00:00:00Z", JME_BODY_MERCURY, "Mercury", 271.1117994, -0.9456805},
+        {2451544.5, "2000-01-01T00:00:00Z", JME_BODY_VENUS, "Venus", 240.9614017, 2.0802345},
+        {2451544.5, "2000-01-01T00:00:00Z", JME_BODY_MARS, "Mars", 327.5754592, -1.0740062},
+        {2451544.5, "2000-01-01T00:00:00Z", JME_BODY_JUPITER, "Jupiter", 25.2331086, -1.2647766},
+        {2451544.5, "2000-01-01T00:00:00Z", JME_BODY_SATURN, "Saturn", 40.4058374, -2.4472226},
+        {2451544.5, "2000-01-01T00:00:00Z", JME_BODY_URANUS, "Uranus", 314.7840519, -0.6584479},
+        {2451544.5, "2000-01-01T00:00:00Z", JME_BODY_NEPTUNE, "Neptune", 303.1752428, 0.2351174},
+        {2451544.5, "2000-01-01T00:00:00Z", JME_BODY_PLUTO, "Pluto", 251.4371500, 10.8545444},
+
+        {2461182.5, "2026-05-22T00:00:00Z", JME_BODY_SUN, "Sun", 60.9377788, 0.0000444},
+        {2461182.5, "2026-05-22T00:00:00Z", JME_BODY_MOON, "Moon", 132.4438470, 1.9106796},
+        {2461182.5, "2026-05-22T00:00:00Z", JME_BODY_MERCURY, "Mercury", 69.8371739, 1.3481608},
+        {2461182.5, "2026-05-22T00:00:00Z", JME_BODY_VENUS, "Venus", 93.5275757, 1.6891227},
+        {2461182.5, "2026-05-22T00:00:00Z", JME_BODY_MARS, "Mars", 32.3037968, -0.7195196},
+        {2461182.5, "2026-05-22T00:00:00Z", JME_BODY_JUPITER, "Jupiter", 112.2434940, 0.4045434},
+        {2461182.5, "2026-05-22T00:00:00Z", JME_BODY_SATURN, "Saturn", 11.3448285, -2.2275012},
+        {2461182.5, "2026-05-22T00:00:00Z", JME_BODY_URANUS, "Uranus", 61.4815444, -0.1607086},
+        {2461182.5, "2026-05-22T00:00:00Z", JME_BODY_NEPTUNE, "Neptune", 3.8455532, -1.3329376},
+        {2461182.5, "2026-05-22T00:00:00Z", JME_BODY_PLUTO, "Pluto", 305.4552740, -4.1118264},
+
+        {2469807.5, "2050-01-01T00:00:00Z", JME_BODY_SUN, "Sun", 280.7483803, 0.0001127},
+        {2469807.5, "2050-01-01T00:00:00Z", JME_BODY_MOON, "Moon", 18.6755950, 3.3912133},
+        {2469807.5, "2050-01-01T00:00:00Z", JME_BODY_MERCURY, "Mercury", 270.0594864, 3.1357631},
+        {2469807.5, "2050-01-01T00:00:00Z", JME_BODY_VENUS, "Venus", 281.2480360, -0.6060626},
+        {2469807.5, "2050-01-01T00:00:00Z", JME_BODY_MARS, "Mars", 227.7146917, 0.7726782},
+        {2469807.5, "2050-01-01T00:00:00Z", JME_BODY_JUPITER, "Jupiter", 121.6915463, 0.4580707},
+        {2469807.5, "2050-01-01T00:00:00Z", JME_BODY_SATURN, "Saturn", 297.5742782, -0.2035839},
+        {2469807.5, "2050-01-01T00:00:00Z", JME_BODY_URANUS, "Uranus", 170.7326082, 0.7867256},
+        {2469807.5, "2050-01-01T00:00:00Z", JME_BODY_NEPTUNE, "Neptune", 53.6034294, -1.7627912},
+        {2469807.5, "2050-01-01T00:00:00Z", JME_BODY_PLUTO, "Pluto", 337.5330656, -12.6913738}
+    };
+    struct engine_case {
+        const char *models;
+        const char *name;
+        double lon_tolerance;
+        double lat_tolerance;
+    } engines[] = {
+        {"ENGINE=MOSHIER", "MOSHIER", 0.02, 0.02},
+        {"ENGINE=VSOP_ELP_MEEUS", "VSOP_ELP_MEEUS", 0.03, 0.02}
+    };
+    char error[256];
+    int i;
+    int j;
+
+    for (j = 0; j < (int)(sizeof(engines) / sizeof(engines[0])); j++) {
+        jme_set_astro_models(engines[j].models, 0);
+        for (i = 0; i < (int)(sizeof(cases) / sizeof(cases[0])); i++) {
+            double result[6];
+            double lon_delta;
+            double lat_delta;
+
+            if (jme_calc_ut(cases[i].jd_ut, cases[i].body, 0, result, error) != JME_OK) {
+                fprintf(stderr, "Horizons major-body matrix %s %s failed: %s\n",
+                    engines[j].name, cases[i].body_name, error);
+                return 1;
+            }
+
+            lon_delta = fabs(jme_degrees_difference_signed(result[0], cases[i].lon));
+            lat_delta = fabs(result[1] - cases[i].lat);
+            if (lon_delta > engines[j].lon_tolerance || lat_delta > engines[j].lat_tolerance) {
+                fprintf(stderr,
+                    "Horizons major-body matrix %s %s %s mismatch: got lon %.10f lat %.10f, expected lon %.10f lat %.10f, delta lon %.10f lat %.10f\n",
+                    engines[j].name, cases[i].date_name, cases[i].body_name,
+                    result[0], result[1], cases[i].lon, cases[i].lat, lon_delta, lat_delta);
+                return 1;
+            }
+        }
+    }
+
+    jme_set_astro_models(0, 0);
+    return 0;
+}
+
 int main(void)
 {
     if (check_vsop87a_j2000() != 0) {
@@ -629,6 +714,10 @@ int main(void)
     }
 
     if (check_horizons_observer_ecliptic_regression() != 0) {
+        return 1;
+    }
+
+    if (check_horizons_major_body_matrix() != 0) {
         return 1;
     }
 

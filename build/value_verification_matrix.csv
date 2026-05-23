@@ -1,0 +1,205 @@
+function,verification_mode,status,note
+jme_body_id_from_name,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_body_naif_id,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_body_name,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_calc,external_web_numeric,web-source numeric verified,Checked against authoritative web/reference values in the current test suite.
+jme_calc_pctr,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_calc_ut,external_web_numeric,web-source numeric verified,Checked against authoritative web/reference values in the current test suite.
+jme_calendar_is_leap_year,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_centiseconds_difference,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_centiseconds_difference_signed,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_centiseconds_normalize,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_centiseconds_round_second,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_centiseconds_to_degree_string,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_centiseconds_to_lonlat_string,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_centiseconds_to_time_string,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_close,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_copy_body_name,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_date_is_valid,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_day_of_week,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_day_of_year,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_days_in_month,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_decimal_hour,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_degree_midpoint,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_degree_normalize,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_degrees_difference,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_degrees_difference_signed,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_degrees_to_hours,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_degrees_to_radians,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_delta_t,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_delta_t_ex,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_double_to_long,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_ecliptic_to_equatorial,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_ecliptic_to_equatorial_rectangular_state,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_elp2000_moon_state,embedded_reference_numeric,reference numeric verified,Checked against bundled known-value/reference datasets or derived reference cases.
+jme_ephemeris_path,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_equatorial_to_ecliptic,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_equatorial_to_ecliptic_rectangular_state,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_equatorial_to_horizontal,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_fixstar,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_fixstar2,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_fixstar2_mag,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_fixstar2_ut,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_fixstar_mag,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_fixstar_ut,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_gauquelin_sector,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_get_astro_models,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_get_ayanamsa,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_get_ayanamsa_ex,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_get_ayanamsa_ex_ut,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_get_ayanamsa_name,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_get_ayanamsa_ut,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_get_frame_bias_matrix,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_get_nutation,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_get_nutation_matrix,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_get_obliquity,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_get_orbital_elements,external_web_numeric,web-source numeric verified,Checked against authoritative web/reference values in the current test suite.
+jme_get_precession_matrix,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_get_sidereal_mode,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_get_tid_acc,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_get_topo_pos,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_heliacal_angle,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_heliacal_pheno_ut,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_heliacal_ut,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_helio_cross,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_helio_cross_ut,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_horizontal_to_equatorial,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_hours_normalize,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_hours_to_degrees,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_house_pos,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_house_system_name,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_houses,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_houses_armc,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_houses_armc_ex2,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_houses_ex,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_houses_ex2,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_jd_add_seconds,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_jd_difference_seconds,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_jd_to_utc,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_jpl_body_state,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_body_state_naif,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_body_state_native,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_body_state_native_naif,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_body_state_native_split,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_body_state_native_split_naif,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_body_state_order,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_body_state_order_naif,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_body_state_split,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_body_state_split_naif,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_body_state_utc,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_body_state_utc_naif,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_close,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_constant,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_constant_count,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_constant_index,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_constant_string,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_constant_string_vector,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_constant_vector,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_coverage,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_current_file_data,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_ecliptic_state,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_ecliptic_state_naif,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_ecliptic_state_split,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_ecliptic_state_split_naif,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_ecliptic_state_utc,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_ecliptic_state_utc_naif,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_engine_version,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_file,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_file_version,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_id_by_name,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_is_available,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_is_open,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_is_thread_safe,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_max_supported_order,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_name_by_id,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_open,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_open_array,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_orientation_record_count,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_orientation_record_index,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_orientation_state_naif,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_orientation_state_order_naif,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_orientation_state_split_naif,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_orientation_state_utc_naif,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_position_record_count,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_position_record_index,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_prefetch,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_rotational_angular_momentum_state_naif,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_rotational_angular_momentum_state_order_naif,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_rotational_angular_momentum_state_split_naif,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_rotational_angular_momentum_state_utc_naif,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_jpl_timescale,kernel_runtime_or_error_contract,runtime/error contract verified,Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts.
+jme_julian_day,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_lat_to_lmt,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_library_path,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_lmt_to_lat,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_lun_eclipse_how,external_web_numeric,web-source numeric verified,Checked against authoritative web/reference values in the current test suite.
+jme_lun_eclipse_when,external_web_numeric,web-source numeric verified,Checked against authoritative web/reference values in the current test suite.
+jme_lun_eclipse_when_loc,external_web_numeric,web-source numeric verified,Checked against authoritative web/reference values in the current test suite.
+jme_lun_occult_when_glob,external_web_numeric,web-source numeric verified,Checked against authoritative web/reference values in the current test suite.
+jme_lun_occult_when_loc,external_web_numeric,web-source numeric verified,Checked against authoritative web/reference values in the current test suite.
+jme_lun_occult_where,external_web_numeric,web-source numeric verified,Checked against authoritative web/reference values in the current test suite.
+jme_matrix_identity,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_matrix_multiply,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_matrix_rotate_x,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_matrix_rotate_y,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_matrix_rotate_z,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_matrix_transform_state,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_meeus_moon_state,embedded_reference_numeric,reference numeric verified,Checked against bundled known-value/reference datasets or derived reference cases.
+jme_meeus_planet_state,embedded_reference_numeric,reference numeric verified,Checked against bundled known-value/reference datasets or derived reference cases.
+jme_meeus_sun_state,embedded_reference_numeric,reference numeric verified,Checked against bundled known-value/reference datasets or derived reference cases.
+jme_mooncross,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_mooncross_node,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_mooncross_node_ut,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_mooncross_ut,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_moshier_planet_state,embedded_reference_numeric,reference numeric verified,Checked against bundled known-value/reference datasets or derived reference cases.
+jme_nod_aps,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_nod_aps_ut,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_orbit_max_min_true_distance,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_pheno,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_pheno_ut,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_radian_midpoint,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_radian_normalize,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_radians_difference_signed,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_radians_to_degrees,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_rectangular_to_spherical_state,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_refract,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_refract_extended,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_reverse_julian_day,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_rise_trans,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_rise_trans_true_hor,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_set_astro_models,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_set_delta_t_userdef,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_set_ephemeris_path,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_set_interpolate_nut,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_set_jpl_file,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_set_lapse_rate,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_set_sidereal_mode,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_set_tid_acc,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_set_topo,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_sidereal_time,external_web_numeric,web-source numeric verified,Checked against authoritative web/reference values in the current test suite.
+jme_sidereal_time0,external_web_numeric,web-source numeric verified,Checked against authoritative web/reference values in the current test suite.
+jme_sol_eclipse_how,external_web_numeric,web-source numeric verified,Checked against authoritative web/reference values in the current test suite.
+jme_sol_eclipse_when_glob,external_web_numeric,web-source numeric verified,Checked against authoritative web/reference values in the current test suite.
+jme_sol_eclipse_when_loc,external_web_numeric,web-source numeric verified,Checked against authoritative web/reference values in the current test suite.
+jme_sol_eclipse_where,external_web_numeric,web-source numeric verified,Checked against authoritative web/reference values in the current test suite.
+jme_solcross,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_solcross_ut,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_spherical_angular_separation,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_spherical_position_angle,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_spherical_to_rectangular_state,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_split_degree,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_state_add,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_state_convert_units,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_state_distance,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_state_light_time_days,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_state_position_velocity_dot,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_state_scale,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_state_speed,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_state_subtract,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_time_equ,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_topo_arcus_visionis,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_utc_time_zone,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_utc_to_jd,independent_formula_or_identity,formula/identity verified,"Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant."
+jme_version,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_vis_limit_mag,api_or_behavior_contract,contract verified only,"Directly tested, but not yet broadly externally value-certified against an independent web oracle."
+jme_vsop87_planet_state,embedded_reference_numeric,reference numeric verified,Checked against bundled known-value/reference datasets or derived reference cases.
