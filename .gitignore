@@ -1,0 +1,44 @@
+# Build outputs
+build*/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+CTestTestfile.cmake
+Testing/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.dir/
+x64/
+Debug/
+Release/
+RelWithDebInfo/
+MinSizeRel/
+
+# Compiled artifacts
+*.obj
+*.o
+*.lib
+*.exp
+*.dll
+*.exe
+*.pdb
+*.ilk
+
+# Local ephemeris kernels and downloaded archives
+data/
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+
+# Local/editor noise
+.vs/
+.idea/
+.vscode/
+*.log
+*.tmp
+*.bak
+*.user

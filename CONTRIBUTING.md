@@ -23,4 +23,4 @@ Examples:
 - independently derived formula
 - black-box behavior test result
 
-Do not submit code copied from Astrodienst Swiss Ephemeris.
+Code copied from Astrodienst Swiss Ephemeris is outside this repository's contribution boundary.

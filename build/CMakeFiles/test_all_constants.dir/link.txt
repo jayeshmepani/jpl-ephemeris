@@ -1,1 +1,0 @@
-/usr/bin/cc -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/test_all_constants.dir/link.d CMakeFiles/test_all_constants.dir/tests/test_all_constants.c.o -o test_all_constants  -Wl,-rpath,/home/shreesoftech/projects/test1/astro_packages/jpl-ephemeris-/build libjme.so -lm

@@ -4,10 +4,12 @@ Independent C ephemeris engine using JPL kernels through CALCEPH as the primary 
 
 This is not a wrapper around Astrodienst Swiss Ephemeris and does not use Swiss Ephemeris source code, headers, data files, comments, generated files, or implementation tables.
 
+This library is developed and owned by Jayesh Mepani. It was built to replace a prior Swiss Ephemeris dependency with an independently implemented JPL/Moshier/VSOP+ELP+Meeus engine and a project-owned API surface.
+
 ## Goal
 
-- Provide an independent ephemeris engine for astrology, panchang, astronomy, and calendrical calculations.
-- Use JPL `.bsp` kernels through CALCEPH for high-precision numerical ephemerides.
+- Provide an independent ephemeris engine for astrology, astronomy, and calendrical calculations.
+- JPL `.bsp` kernels through CALCEPH provide the high-precision numerical ephemeris path.
 - Add verified analytical/public-domain components only when provenance is clear.
 - Keep the primary public API under the project-owned `jme_*` prefix.
 - Preserve lossless I/O contracts: no presentation rounding, no hidden output reshaping, no dropped status values, and no silent downgrade to a different calculation contract.
@@ -26,11 +28,11 @@ Current status summary:
 - CALCEPH backend boundary
 - analytical fallback engines for Moshier, VSOP87, ELP2000, and Meeus
 - C-level engine selection for wrapper/config use: `ENGINE=JPL`, `ENGINE=MOSHIER`, `ENGINE=VSOP_ELP_MEEUS`, or `JME_ENGINE` environment selection
-- eclipse, occultation, heliacal, house, and physical-phenomena coverage with remaining validation gaps documented in `docs/IMPLEMENTATION_STATUS.md` and `docs/REFERENCE_FUNCTION_COVERAGE.md`
+- eclipse, occultation, heliacal, house, and physical-phenomena coverage with remaining validation gaps documented in `docs/STATUS_AND_DESIGN.md` and `docs/VALIDATION_AND_COVERAGE.md`
 
 No public calculation function may return approximate production output. A function is either exact for its documented contract or it returns `JME_ERR` with a clear error message.
 
-Read `INDEPENDENT_DEVELOPMENT_POLICY.md`, `CONTRIBUTING.md`, `docs/PROVENANCE.md`, and `docs/LOSSLESS_IO.md` before adding implementation code.
+Read `docs/POLICIES_AND_NOTICES.md`, `CONTRIBUTING.md`, and `docs/STATUS_AND_DESIGN.md` before adding implementation code.
 
 ## Build
 
@@ -50,7 +52,15 @@ If CALCEPH is installed and discoverable, the library builds with CALCEPH suppor
 
 ## Backend Data
 
-Use JPL `.bsp` kernels such as `de440s.bsp`, `de440.bsp`, or `de441.bsp`.
+Supported JPL kernel choices include `de440s.bsp`, `de440.bsp`, and `de441.bsp`.
+
+Kernel files are not vendored in this repository. Download release-packaged kernels from:
+
+```text
+https://github.com/jayeshmepani/jpl-ephemeris/releases/tag/jpl-kernels
+```
+
+`de441.bsp` is larger than GitHub's single release-asset limit, so the release publishes it as split parts with checksums.
 
 ```c
 jme_set_jpl_file("path/to/de440s.bsp");

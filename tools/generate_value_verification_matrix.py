@@ -8,8 +8,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 HEADERS = [ROOT / "include/jme/jme.h", ROOT / "include/jme/jme_extended.h"]
-DOC_PATH = ROOT / "docs/VALUE_VERIFICATION_MATRIX.md"
+DOC_PATH = ROOT / "docs/VALIDATION_AND_COVERAGE.md"
 CSV_PATH = ROOT / "build/value_verification_matrix.csv"
+SECTION_BEGIN = "<!-- BEGIN GENERATED VALUE VERIFICATION MATRIX -->"
+SECTION_END = "<!-- END GENERATED VALUE VERIFICATION MATRIX -->"
 
 
 def load_functions() -> list[str]:
@@ -185,9 +187,7 @@ def main() -> int:
         writer.writerows(rows)
 
     lines = [
-        "# Value Verification Matrix",
-        "",
-        "This file tracks how each public `jme_*` function is currently validated.",
+        "This section tracks how each public `jme_*` function is currently validated.",
         "",
         "It separates four different ideas that are often conflated:",
         "",
@@ -200,7 +200,7 @@ def main() -> int:
         "",
         "- `204` public functions from `include/jme/jme.h` and `include/jme/jme_extended.h`",
         "",
-        "## Summary",
+        "### Summary",
         "",
         "| Verification mode | Count | Meaning |",
         "|---|---:|---|",
@@ -226,13 +226,13 @@ def main() -> int:
     lines.extend(
         [
             "",
-            "## Interpretation",
+            "### Interpretation",
             "",
             "- `web-source numeric verified` is the strongest current category for public astronomical outputs.",
             "- `contract verified only` does not mean untested; it means the function is exercised and hardened, but not yet certified against an independent external numeric oracle.",
             "- Some functions are not meaningful candidates for web-value checks at all, such as setters, getters, serialization helpers, and unavailable-kernel boundary APIs.",
             "",
-            "## Per-Function Matrix",
+            "### Per-Function Matrix",
             "",
             "| Function | Verification mode | Current status | Note |",
             "|---|---|---|---|",
@@ -241,7 +241,21 @@ def main() -> int:
     for fn, mode, status, note in rows:
         lines.append(f"| `{fn}` | `{mode}` | {status} | {note} |")
 
-    DOC_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    generated = "\n".join(lines) + "\n"
+    if DOC_PATH.exists():
+        doc = DOC_PATH.read_text(encoding="utf-8")
+        pattern = re.compile(
+            re.escape(SECTION_BEGIN) + r".*?" + re.escape(SECTION_END),
+            re.DOTALL,
+        )
+        replacement = f"{SECTION_BEGIN}\n{generated.rstrip()}\n{SECTION_END}"
+        if pattern.search(doc):
+            doc = pattern.sub(replacement, doc, count=1)
+        else:
+            doc = doc.rstrip() + "\n\n" + replacement + "\n"
+        DOC_PATH.write_text(doc, encoding="utf-8")
+    else:
+        DOC_PATH.write_text(generated, encoding="utf-8")
     print(f"generated {DOC_PATH}")
     print(f"generated {CSV_PATH}")
     return 0

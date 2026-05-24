@@ -1,0 +1,99 @@
+name: Release JPL BSP Kernels
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Release tag to create or update
+        required: true
+        default: jpl-kernels
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-jpl-kernels
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Download and publish kernels
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download kernels
+        run: |
+          set -euo pipefail
+
+          mkdir -p dist
+          cd dist
+
+          curl -fL --retry 5 --retry-delay 10 -o de440s.bsp \
+            https://ssd.jpl.nasa.gov/ftp/eph/planets/bsp/de440s.bsp
+          curl -fL --retry 5 --retry-delay 10 -o de440.bsp \
+            https://ssd.jpl.nasa.gov/ftp/eph/planets/bsp/de440.bsp
+          curl -fL --retry 5 --retry-delay 10 -o de441.bsp \
+            https://ssd.jpl.nasa.gov/ftp/eph/planets/bsp/de441.bsp
+
+          sha256sum de440s.bsp de440.bsp de441.bsp > SHA256SUMS.txt
+
+          # GitHub release assets have a practical 2 GiB single-file limit.
+          # Keep de441 downloadable from this release by publishing split parts.
+          split -b 1900M -d -a 2 de441.bsp de441.bsp.part-
+          sha256sum de441.bsp.part-* >> SHA256SUMS.txt
+          rm de441.bsp
+
+          ls -lh
+
+      - name: Write release notes
+        run: |
+          cat > release-notes.md <<'EOF'
+          JPL planetary BSP kernels for use with the JME JPL/CALCEPH backend.
+
+          Assets:
+
+          - `de440s.bsp` - small kernel
+          - `de440.bsp` - medium kernel
+          - `de441.bsp.part-00`, `de441.bsp.part-01`, ... - split large kernel
+          - `SHA256SUMS.txt` - checksums for full kernels and split parts
+
+          The large `de441.bsp` kernel is published as split parts because it is larger than GitHub's single release-asset limit.
+
+          Reassemble `de441.bsp`:
+
+          ```sh
+          cat de441.bsp.part-* > de441.bsp
+          sha256sum -c SHA256SUMS.txt
+          ```
+
+          Windows PowerShell:
+
+          ```powershell
+          cmd /c copy /b de441.bsp.part-* de441.bsp
+          certutil -hashfile de441.bsp SHA256
+          ```
+
+          Source: https://ssd.jpl.nasa.gov/ftp/eph/planets/bsp/
+
+          JPL/NAIF kernel files are redistributed for user convenience. Users should review the source provider's terms and documentation before relying on these data files.
+          EOF
+
+      - name: Create or update release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" dist/* --clobber
+            gh release edit "$RELEASE_TAG" \
+              --title "JPL BSP Kernels" \
+              --notes-file release-notes.md
+          else
+            gh release create "$RELEASE_TAG" dist/* \
+              --title "JPL BSP Kernels" \
+              --notes-file release-notes.md
+          fi
