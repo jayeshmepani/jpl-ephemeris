@@ -1,20 +1,14 @@
 # Policies And Notices
 
-## Current Swiss Ephemeris Boundary
+## Project Boundary
 
-This repository is not a fork, clone, or source-derived copy of Astrodienst Swiss Ephemeris. The public C API is project-owned (`jme_*` functions and `JME_*` constants). Implementation work is based on independent/public sources such as JPL/NAIF data and documentation, CALCEPH API behavior, public-domain Moshier material, VSOP/ELP/Meeus references, peer-reviewed papers, public standards, and independently derived formulas.
+The public C API is project-owned: public functions use `jme_*`, public constants use `JME_*`, and internal symbols use `jme_*`.
 
-This C library is developed and owned by Jayesh Mepani. The motivation was to replace a prior AGPL Swiss Ephemeris dependency with an independently implemented ephemeris library suitable for non-AGPL application distribution. Swiss Ephemeris was used as an inspiration and broad capability benchmark because it exposes a mature astrology/astronomy surface, but this project is intended to be implemented from independent public sources rather than Swiss Ephemeris source, headers, comments, tables, generated files, or ephemeris data.
+This C library is developed and owned by Jayesh Mepani. It is designed as an independently implemented ephemeris engine with three calculation paths: JPL/CALCEPH, Moshier, and VSOP87+ELP2000+Meeus.
 
-The design goal is a superset-style project-owned API: cover the broad capability areas represented by the Swiss Ephemeris public surface, then add extra JME-specific functions and constants for JPL/CALCEPH, Moshier, VSOP87, ELP2000, Meeus, vector/state, metadata, and validation workflows. The current surface is 204 public functions and 462 public constants.
+Implementation work is based on independent and public sources such as JPL/NAIF data and documentation, CALCEPH API behavior, public-domain Moshier material, VSOP/ELP/Meeus references, peer-reviewed papers, public standards, and independently derived formulas.
 
-Source audit performed on 2026-05-24:
-
-```powershell
-rg -n -i "swiss|swisseph|swe_|swiss ephemeris|astrodienst|dieter koch|alois|treindl" -g "*.c" -g "*.h"
-```
-
-Result: no matches in current `.c` or `.h` files. Swiss Ephemeris is mentioned only in policy/validation documents as a black-box capability comparison target and as a prohibited source-code/data source.
+The design goal is a broad project-owned API for astrology, astronomy, vector/state, metadata, validation, and calendrical workflows. The current surface is 204 public functions and 462 public constants.
 
 ## Independent Development Policy
 
@@ -26,13 +20,12 @@ This is an engineering policy, not legal advice. Its purpose is to document the 
 
 | Area | Project position |
 |---|---|
-| Swiss Ephemeris source code | Excluded from this repository's implementation sources |
-| Swiss Ephemeris headers | Excluded as repository source |
-| Swiss comments, prose, generated files, tables, fixtures, and ephemeris data | Excluded from copied project material |
-| Line-by-line translation of Swiss implementation code | Outside the project boundary |
-| Swiss internal algorithms as implementation source | Outside the project boundary |
-| Vendored Swiss ephemeris files | Outside the project boundary |
-| AGPL Swiss Ephemeris code | Outside this repository unless the licensing strategy is deliberately changed and reviewed first |
+| Restricted third-party source code | Excluded from this repository's implementation sources |
+| Restricted third-party headers | Excluded as repository source |
+| Restricted comments, prose, generated files, tables, fixtures, and ephemeris data | Excluded from copied project material |
+| Line-by-line translation of restricted implementation code | Outside the project boundary |
+| Restricted internal algorithms as implementation source | Outside the project boundary |
+| Vendored restricted ephemeris files | Outside the project boundary |
 
 ### Implementation Sources
 

@@ -2,9 +2,7 @@
 
 Independent C ephemeris engine using JPL kernels through CALCEPH as the primary backend and independently verified Moshier-derived/public-domain algorithms as secondary components where appropriate.
 
-This is not a wrapper around Astrodienst Swiss Ephemeris and does not use Swiss Ephemeris source code, headers, data files, comments, generated files, or implementation tables.
-
-This library is developed and owned by Jayesh Mepani. It was built to replace a prior Swiss Ephemeris dependency with an independently implemented JPL/Moshier/VSOP+ELP+Meeus engine and a project-owned API surface.
+This library is developed and owned by Jayesh Mepani. It provides an independently implemented JPL/Moshier/VSOP+ELP+Meeus engine and a project-owned API surface.
 
 ## Goal
 
@@ -81,4 +79,4 @@ If no explicit engine token is set, the library also reads `JME_ENGINE=JPL`, `JM
 
 ## License
 
-The independent code in this repository is intended to be permissively licensed. Third-party backend libraries and data keep their own licenses/notices.
+The independent code in this repository is licensed under the MIT License. Third-party backend libraries and data keep their own licenses/notices.

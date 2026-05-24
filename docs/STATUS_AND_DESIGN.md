@@ -4,11 +4,11 @@
 
 The current public C surface is defined by `include/jme/jme.h` and `include/jme/jme_extended.h`: 204 public `jme_*` functions and 462 public `JME_*` constants.
 
-The current `.c` and `.h` source tree contains no Swiss Ephemeris, `swe_`, Astrodienst, or Swiss-author attribution references. Swiss Ephemeris remains only a black-box comparison target in the validation documentation, not an implementation source.
+The current `.c` and `.h` source tree contains only project-owned `jme_*` / `JME_*` symbols and independently maintained implementation code. External ephemeris engines may be used for black-box comparison, but not as implementation sources.
 
 Project ownership and context: this C library is developed and owned by Jayesh Mepani. It is intended as a native ephemeris engine for FFI wrappers and application-level astrology, astronomy, and calendrical software.
 
-Design motivation: the project exists to provide an independently implemented, non-Swiss ephemeris engine with three engine modes: JPL/CALCEPH, Moshier, and VSOP87+ELP2000+Meeus. The public API deliberately exceeds the older 106-row Swiss capability checklist, giving this library a larger project-owned surface for broader astrology and astronomy workflows.
+Design motivation: the project exists to provide an independently implemented ephemeris engine with three engine modes: JPL/CALCEPH, Moshier, and VSOP87+ELP2000+Meeus. The public API deliberately exceeds the older 106-row reference capability checklist, giving this library a larger project-owned surface for broader astrology and astronomy workflows.
 
 | Area | Current source files |
 |---|---|
@@ -145,7 +145,7 @@ Remaining work is above the JPL boundary, not inside kernel access:
 
 Status: JME-native only.
 
-The in-tree public surface is the project-owned `jme_*` / `JME_*` API. The former Swiss-style adapter layer is no longer part of this repository build.
+The in-tree public surface is the project-owned `jme_*` / `JME_*` API. The former legacy-style adapter layer is no longer part of this repository build.
 
 Current native hardening:
 
@@ -163,14 +163,14 @@ Current native hardening:
 - NASA/JPL Horizons observer ecliptic regression is now included for 2026-05-22 00:00 UTC geocentric Sun and Moon apparent ecliptic-of-date longitude/latitude. This external check found that no-kernel analytical fallback output was being returned in a J2000 ecliptic frame while user-facing `jme_calc` output was documented as date-frame apparent ecliptic. `src/calc.c` now converts analytical J2000 ecliptic vectors into the public reduction pipeline before final output. Current deltas against Horizons quantity 31 are about `0.0071°` for the Sun longitude and `0.0076°` for the Moon longitude in no-kernel Moshier/ELP fallback mode.
 - The external Horizons screen is now broader than the original Sun/Moon regression. `tests/test_analytical_validation.c` also checks geocentric apparent ecliptic-of-date longitude/latitude for Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, and Pluto at `2000-01-01 00:00 UTC`, `2026-05-22 00:00 UTC`, and `2050-01-01 00:00 UTC` under both `ENGINE=MOSHIER` and `ENGINE=VSOP_ELP_MEEUS`. Current observed deltas stay within the declared tolerances of `0.02°/0.02°` for Moshier mode and `0.03°/0.02°` for VSOP/ELP/Meeus mode.
 - The same contract block now checks `jme_calc_pctr()` for the Mercury/Sun difference contract using the same ET timescale, and also checks spherical conversion, radians, sidereal longitude, null-output rejection, unsupported body/center rejection, and distance-unit scaling against the direct heliocentric Mercury vector norm.
-- `jme_jpl_current_file_data` is now closed for the Swiss mapped metadata row: the CALCEPH runtime suite validates a real `de440s.bsp` success path, output coverage span, closed/unavailable error paths, reset behavior, and null metadata output rejection.
+- `jme_jpl_current_file_data` is now closed for the mapped metadata row: the CALCEPH runtime suite validates a real `de440s.bsp` success path, output coverage span, closed/unavailable error paths, reset behavior, and null metadata output rejection.
 - `jme_get_ayanamsa_ex` no longer silently maps unknown sidereal model IDs to Lahiri. Lahiri, Fagan-Bradley, user-defined mode, epoch-zero modes (`J2000`, `J1900`, `B1950`, `Aryabhata`, `J.N. Bhasin`, `Sassanian`), epoch-offset modes (`Babylonian ETPSC`, `Babylonian Huber`, `Babylonian Kugler 1/2/3`, `De Luce`, `Hipparchos`), fixed-star anchor modes (`Aldebaran 15 Tau`, `True/SS Citra`, `True/SS Revati`, `True Mula`, `True Pushya`, `Surya Siddhanta`, `Ushashashi`), `Galactic Center 0 Sagittarius`, Krishnamurti/Newcomb, Raman, Yukteshwar, UT wrapper behavior, null-output rejection, and unknown-model rejection are covered.
 - The stricter adversarial validation pass surfaced and fixed two concrete API-contract bugs: `jme_set_astro_models()` now accepts canonical key/value tokens for bias/nutation/obliquity/precession/sidereal-time/Delta-T model selection instead of only shorthand tokens for several families, and `jme_house_pos()` now returns `NaN` on null input / unavailable house-system error instead of a silent numeric zero.
-- The extra public surface beyond the Swiss mapping now has a dedicated adversarial suite (`test_extra_adversarial`) that stress-tests the 92 extra functions with randomized helpers, malformed/null input rejection, repeated determinism checks, production-like analytical sweeps, raw JPL no-kernel error-path checks, and multithreaded read-only execution.
-- The 112 unique mapped `jme_*` functions behind the 106 Swiss-reference rows now have an additional adversarial validation target. The pass adds randomized angle/coordinate round-trips, boundary calendar checks, malformed fixed-star strings including UTF-8 input, null/error contract checks, production-like date/location/body workflows, deterministic repeated calculations, model-state serialization/deserialization checks, and read-only multithreaded calls.
-- The full public `jme_*` surface now has a 204-function direct-test gate in `tests/test_symbol_coverage.ps1`, and the non-Swiss public surface is covered by `test_extra_adversarial` with calendar fuzzing, matrix/state round-trips, astrometry model checks, analytical state-provider sweeps, raw JPL no-kernel contracts, and read-only multithreaded calls.
+- The extra public surface beyond the reference mapping now has a dedicated adversarial suite (`test_extra_adversarial`) that stress-tests the 92 extra functions with randomized helpers, malformed/null input rejection, repeated determinism checks, production-like analytical sweeps, raw JPL no-kernel error-path checks, and multithreaded read-only execution.
+- The 112 unique mapped `jme_*` functions behind the 106 reference rows now have an additional adversarial validation target. The pass adds randomized angle/coordinate round-trips, boundary calendar checks, malformed fixed-star strings including UTF-8 input, null/error contract checks, production-like date/location/body workflows, deterministic repeated calculations, model-state serialization/deserialization checks, and read-only multithreaded calls.
+- The full public `jme_*` surface now has a 204-function direct-test gate in `tests/test_symbol_coverage.ps1`, and the extra public surface is covered by `test_extra_adversarial` with calendar fuzzing, matrix/state round-trips, astrometry model checks, analytical state-provider sweeps, raw JPL no-kernel contracts, and read-only multithreaded calls.
 - The adversarial pass found and fixed three API robustness issues: key/value model tokens such as `NUT=IAU2000B` now parse consistently with serialized `jme_get_astro_models` output; unknown body names now return deterministic `"Unknown"` instead of a null string; invalid `jme_house_pos` input now returns `NaN` instead of ambiguous zero.
-- `jme_fixstar*` is closed for the JME-native fixed-star contract: a generated 9,096-entry Bright Star/Yale-derived catalog is used for broad coverage; common-name aliases plus HR/HD/SAO/catalog-name lookup are supported; J2000 true-position coordinates, proper-motion speed output, radians and sidereal behavior, UT wrappers, alternate entry points, magnitude lookup, catalog endpoints, and invalid-input paths are covered. Exact Swiss catalog-name and black-box parity are still not claimed.
+- `jme_fixstar*` is closed for the JME-native fixed-star contract: a generated 9,096-entry Bright Star/Yale-derived catalog is used for broad coverage; common-name aliases plus HR/HD/SAO/catalog-name lookup are supported; J2000 true-position coordinates, proper-motion speed output, radians and sidereal behavior, UT wrappers, alternate entry points, magnitude lookup, catalog endpoints, and invalid-input paths are covered. Exact reference catalog-name and black-box parity are still not claimed.
 - The analytical validation suite also checks direct public state production for representative Moshier, VSOP87, and Meeus bodies at J2000 so the stack remains callable as state providers, not just through derived-element paths.
 - `jme_houses_ex2` and `jme_houses_armc_ex2` compute finite cusp and angle speeds by central difference instead of returning zero arrays.
 - `jme_pheno` and `jme_pheno_ut` return phase angle, illuminated fraction, elongation, apparent diameter, magnitude, internal distance fields, light-time, apparent radius, phase defect, and bright-limb position angle.
@@ -486,7 +486,7 @@ Recommended continuation order:
 1. Expand dense known-value validation for Moshier, VSOP87, ELP2000, and Meeus beyond the current representative cases.
 2. Decide whether Moshier Moon tables should become a production lunar fallback, then integrate and test them if yes.
 3. Add explicit frame/unit/date-range precision documentation for each analytical family.
-4. Continue closing the remaining Swiss-reference rows: full numeric ayanamsa model breadth.
+4. Continue closing the remaining reference rows: full numeric ayanamsa model breadth.
 5. Update `docs/API_REFERENCE.md`, `docs/VALIDATION_AND_COVERAGE.md`, and this file after each completed family.
 
 ---
@@ -1346,14 +1346,14 @@ Every public function has:
 
 The current implemented callable surface is tracked in `docs/API_REFERENCE.md`.
 
-The old 106-function list is not the public API target. It is a Swiss-reference coverage checklist used to make sure this product covers the same astronomy and astrology capability areas, with project-owned names and behavior.
+The old 106-function list is not the public API target. It is a reference coverage checklist used to make sure this product covers the same astronomy and astrology capability areas, with project-owned names and behavior.
 
-Current Swiss-reference tracking:
+Current reference tracking:
 
 - 106 reference behavior rows mapped to project-owned entry points
 - 348 reference constants inventoried
 - not all mapped rows are exact-complete yet
-- not all inventoried constants are guaranteed Swiss-semantic parity yet
+- not all inventoried constants are guaranteed reference-semantic parity yet
 
 ---
 
@@ -1363,9 +1363,9 @@ This document tracks allowed sources and disallowed sources for the independent 
 
 ## Disallowed Implementation Sources
 
-- Astrodienst Swiss Ephemeris C source code.
-- Astrodienst Swiss Ephemeris header files as copied repository source.
-- Astrodienst comments, documentation prose, generated files, tables, and ephemeris data files.
+- external reference engine C source code.
+- external reference engine header files as copied repository source.
+- third-party comments, documentation prose, generated files, tables, and ephemeris data files.
 - Line-by-line translations of restricted implementation code.
 
 ## Current Repository Sources
@@ -1383,7 +1383,7 @@ This document tracks allowed sources and disallowed sources for the independent 
 | Sidereal time | Independently implemented standard mean sidereal-time expression | Active |
 | Backend boundary | CALCEPH API boundary, optional external link | Implemented for the current raw JPL API surface |
 | Ephemeris data | NASA/JPL `.bsp` kernels | Not vendored |
-| Main ephemeris calculations | Independent JME calculation pipeline with JPL and analytical fallback paths | Implemented; full Swiss/reference parity remains tracked separately from native JME closure |
+| Main ephemeris calculations | Independent JME calculation pipeline with JPL and analytical fallback paths | Implemented; full reference parity remains tracked separately from native JME closure |
 | Analytical fallback | Moshier/public-domain source review completed enough to implement callable analytical paths; broader validation remains | Direct extra analytical APIs are implemented and contract-tested; model-wide dense precision certification remains separately tracked |
 | Heliacal visibility | Independent published/secondary visibility references describing linear arcus-visionis relations for heliacal events, including Schaefer-style visibility literature and Alcyone visibility documentation. Current code uses the explicit relation `required_arcus = 10.50 + 1.40 * visual_magnitude` and its inverse limiting-magnitude expression, revalidates found events through the phenomenon function, and rejects unsupported body/null-output paths. | Active for current JME-native contract |
 

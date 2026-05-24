@@ -4,7 +4,6 @@ This project has a strict independent-development rule.
 
 By contributing, you confirm that your contribution:
 
-- was not copied from Astrodienst Swiss Ephemeris source code, headers, comments, documentation, generated files, tables, or ephemeris data files
 - was not produced by line-by-line translation of restricted implementation code
 - uses independent/public sources for algorithms and behavior
 - preserves the lossless I/O contract
@@ -22,5 +21,3 @@ Examples:
 - Moshier/public-domain source with confirmed provenance
 - independently derived formula
 - black-box behavior test result
-
-Code copied from Astrodienst Swiss Ephemeris is outside this repository's contribution boundary.

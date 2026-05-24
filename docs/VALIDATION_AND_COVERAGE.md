@@ -13,9 +13,9 @@ Current header-derived inventory:
 
 The generated value-verification matrix in this file is maintained by `tools/generate_value_verification_matrix.py`; that tool updates only the marked generated section.
 
-Swiss Ephemeris references in this document are compatibility/capability mapping notes only. They do not indicate source-code inheritance. Current `.c` and `.h` files have been scanned for Swiss Ephemeris markers and contain no matches.
+External reference-engine notes in this document are compatibility/capability mapping notes only. They do not indicate source-code inheritance. Current `.c` and `.h` files have been scanned for restricted-source markers and contain no matches.
 
-The Swiss 106-row mapping is used as a capability checklist because it represents a mature public astrology/astronomy API surface. JME is intended to provide a project-owned C engine while also adding extra capabilities beyond that compatibility checklist.
+The reference 106-row mapping is used as a capability checklist because it represents a mature public astrology/astronomy API surface. JME is intended to provide a project-owned C engine while also adding extra capabilities beyond that compatibility checklist.
 
 ## Algorithm Coverage Plan
 
@@ -181,7 +181,7 @@ A function or reference row can be checked only when all of these are true:
 - output units, frame, and domain are documented or obvious from the API contract
 - no known algorithm branch is absent for the claimed behavior
 
-Exact Swiss black-box parity is stricter than JME-native closure. Exact Swiss parity remains unclaimed until a row-by-row reference parity suite exists.
+Exact reference black-box parity is stricter than JME-native closure. Exact reference parity remains unclaimed until a row-by-row reference parity suite exists.
 
 ## Current Strict Counts
 
@@ -189,105 +189,105 @@ Current status after the recent closure batches:
 
 | Area | Closed enough | Not closed | Total |
 |---|---:|---:|---:|
-| Swiss reference rows by JME-native code/tests | 106 | 0 | 106 |
+| reference rows by JME-native code/tests | 106 | 0 | 106 |
 | Distinct extra JME public functions outside the 106-row mapping | 92 | 0 | 92 |
 
 Public function arithmetic:
 
 - Total public `jme_*` functions: `204`
-- Unique public `jme_*` functions used by the 106-row Swiss mapping table: `112`
+- Unique public `jme_*` functions used by the 106-row reference mapping table: `112`
 - Distinct extra public `jme_*` functions not used by that table: `92`
 - Therefore: `112 + 92 = 204`
 
-The total is not `106 + 92`. The 106 Swiss rows are behavior rows, not unique JME function names. Several Swiss rows map to more than one JME function, so the 106-row table currently uses 112 distinct public `jme_*` functions.
+The total is not `106 + 92`. The 106 reference rows are behavior rows, not unique JME function names. Several reference rows map to more than one JME function, so the 106-row table currently uses 112 distinct public `jme_*` functions.
 
 Recent rows moved from not-closed to closed:
 
-- [x] 112 mapped-function adversarial validation: `test_mapped_adversarial` now sweeps the unique `jme_*` functions behind the 106 Swiss-reference rows with randomized angle/coordinate round-trips, malformed strings, null/error contracts, production-like date/location/body workflows, model-state serialization, repeated determinism checks, polar-location domain handling, and read-only multithreaded calls.
+- [x] 112 mapped-function adversarial validation: `test_mapped_adversarial` now sweeps the unique `jme_*` functions behind the 106 reference rows with randomized angle/coordinate round-trips, malformed strings, null/error contracts, production-like date/location/body workflows, model-state serialization, repeated determinism checks, polar-location domain handling, and read-only multithreaded calls.
 - [x] 204 public-function validation gate: `test_symbol_coverage.ps1` now fails unless every declared public `jme_*` function is both defined and directly referenced by C tests. Current enforced count is `204/204`.
-- [x] Extra public-function adversarial validation: `test_extra_adversarial` covers the non-Swiss public surface with calendar fuzzing, matrix/state round-trips, astrometry model checks, direct analytical state providers, raw JPL no-kernel behavior, and read-only multithreaded calls.
+- [x] Extra public-function adversarial validation: `test_extra_adversarial` covers the extra public surface with calendar fuzzing, matrix/state round-trips, astrometry model checks, direct analytical state providers, raw JPL no-kernel behavior, and read-only multithreaded calls.
 - [x] External value validation: `test_analytical_validation` includes NASA/JPL Horizons quantity-31 observer ecliptic checks for 2026-05-22 geocentric Sun and Moon. This caught and fixed a no-kernel analytical fallback frame mismatch; the regression now fails if Sun/Moon longitudes drift outside the documented fallback tolerance.
 - [x] Broader external value screen: `test_analytical_validation` now checks Horizons quantity-31 geocentric apparent ecliptic-of-date longitude/latitude for Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, and Pluto at three epochs (`2000-01-01`, `2026-05-22`, `2050-01-01`) under both `ENGINE=MOSHIER` and `ENGINE=VSOP_ELP_MEEUS`.
 - [x] Verification-mode ledger: `docs/VALIDATION_AND_COVERAGE.md` now classifies all `204` public functions by current validation mode so "called in tests" is no longer conflated with "externally numerically certified."
 - [x] Robustness fixes from the adversarial pass: `jme_set_astro_models` now accepts key/value tokens for bias, nutation, obliquity, precession, sidereal-time, and Delta-T model families; `jme_body_name` returns deterministic `"Unknown"` for unknown IDs; `jme_house_pos` returns `NaN` for invalid input instead of ambiguous zero.
-- [x] Row 68, `swe_set_lapse_rate` / `jme_set_lapse_rate`: lapse-rate state is now consumed by extended refraction and rise/transit altitude refraction.
-- [x] Row 79, `swe_time_equ` / `jme_time_equ`: now uses the public calculation pipeline with analytic fallback and rejects null output.
-- [x] Row 80, `swe_lmt_to_lat` / `jme_lmt_to_lat`: now rejects null output and is covered by round-trip tests.
-- [x] Row 81, `swe_lat_to_lmt` / `jme_lat_to_lmt`: now uses fixed-point refinement, rejects null output, and is covered by round-trip tests.
-- [x] Row 87, `swe_get_tid_acc` / `jme_get_tid_acc`: finite state round-trip is covered by contract tests.
-- [x] Row 88, `swe_set_tid_acc` / `jme_set_tid_acc`: non-finite input is ignored so the state cannot be corrupted by NaN/Inf.
-- [x] Row 89, `swe_set_delta_t_userdef` / `jme_set_delta_t_userdef`: finite input overrides all Delta-T models, and non-finite input clears the override back to model-driven Delta-T.
-- [x] Row 28, `swe_set_ephe_path` / `jme_set_ephemeris_path`, `jme_ephemeris_path`: set/get/reset behavior is covered, including null reset.
-- [x] Row 29, `swe_set_jpl_file` / `jme_set_jpl_file`, `jme_jpl_file`: set/get/reset behavior is covered, including null reset and JPL close side effect.
-- [x] Row 31, `swe_set_topo` / `jme_set_topo`: finite/range sanitization is implemented and verified through `jme_get_topo_pos`.
-- [x] Row 32, `swe_set_sid_mode` / `jme_set_sidereal_mode`, `jme_get_sidereal_mode`: set/get behavior and non-finite numeric sanitization are covered.
-- [x] Row 84, `swe_set_interpolate_nut` / `jme_set_interpolate_nut`: the setter now controls observable nutation interpolation behavior, with endpoint and midpoint contract tests.
-- [x] Row 77, `swe_deltat` / `jme_delta_t`: default model behavior is covered by a known J2000 value and by user-override reset tests.
-- [x] Row 78, `swe_deltat_ex` / `jme_delta_t_ex`: every declared Delta-T model ID has explicit finite behavior, unsupported IDs return `NaN` plus an error, and user override applies consistently across models.
-- [x] Row 6, `swe_set_astro_models` / `jme_set_astro_models`: token/profile parsing drives canonical bias, nutation, obliquity, precession, sidereal-time, and Delta-T model state, and the state is exercised through model-specific output checks.
-- [x] Row 7, `swe_get_astro_models` / `jme_get_astro_models`: canonical model-state output and null-output rejection are covered by contract tests.
-- [x] Row 82, `swe_sidtime0` / `jme_sidereal_time0`: J2000 sidereal-time behavior is covered by a known-value contract test.
-- [x] Row 83, `swe_sidtime` / `jme_sidereal_time`: default and IAU 2006 sidereal-time behavior are both covered by known-value contract tests.
-- [x] Fixed-star API hardening: `jme_fixstar*` now rejects null output pointers, Sirius is present in the built-in catalog, and both primary and alternate fixed-star entry points have direct contract coverage. The Swiss fixed-star rows stay unchecked until catalog breadth and reference-equivalent reduction behavior are complete.
+- [x] Row 68, `reference_set_lapse_rate` / `jme_set_lapse_rate`: lapse-rate state is now consumed by extended refraction and rise/transit altitude refraction.
+- [x] Row 79, `reference_time_equ` / `jme_time_equ`: now uses the public calculation pipeline with analytic fallback and rejects null output.
+- [x] Row 80, `reference_lmt_to_lat` / `jme_lmt_to_lat`: now rejects null output and is covered by round-trip tests.
+- [x] Row 81, `reference_lat_to_lmt` / `jme_lat_to_lmt`: now uses fixed-point refinement, rejects null output, and is covered by round-trip tests.
+- [x] Row 87, `reference_get_tid_acc` / `jme_get_tid_acc`: finite state round-trip is covered by contract tests.
+- [x] Row 88, `reference_set_tid_acc` / `jme_set_tid_acc`: non-finite input is ignored so the state cannot be corrupted by NaN/Inf.
+- [x] Row 89, `reference_set_delta_t_userdef` / `jme_set_delta_t_userdef`: finite input overrides all Delta-T models, and non-finite input clears the override back to model-driven Delta-T.
+- [x] Row 28, `reference_set_ephe_path` / `jme_set_ephemeris_path`, `jme_ephemeris_path`: set/get/reset behavior is covered, including null reset.
+- [x] Row 29, `reference_set_jpl_file` / `jme_set_jpl_file`, `jme_jpl_file`: set/get/reset behavior is covered, including null reset and JPL close side effect.
+- [x] Row 31, `reference_set_topo` / `jme_set_topo`: finite/range sanitization is implemented and verified through `jme_get_topo_pos`.
+- [x] Row 32, `reference_set_sid_mode` / `jme_set_sidereal_mode`, `jme_get_sidereal_mode`: set/get behavior and non-finite numeric sanitization are covered.
+- [x] Row 84, `reference_set_interpolate_nut` / `jme_set_interpolate_nut`: the setter now controls observable nutation interpolation behavior, with endpoint and midpoint contract tests.
+- [x] Row 77, `reference_deltat` / `jme_delta_t`: default model behavior is covered by a known J2000 value and by user-override reset tests.
+- [x] Row 78, `reference_deltat_ex` / `jme_delta_t_ex`: every declared Delta-T model ID has explicit finite behavior, unsupported IDs return `NaN` plus an error, and user override applies consistently across models.
+- [x] Row 6, `reference_set_astro_models` / `jme_set_astro_models`: token/profile parsing drives canonical bias, nutation, obliquity, precession, sidereal-time, and Delta-T model state, and the state is exercised through model-specific output checks.
+- [x] Row 7, `reference_get_astro_models` / `jme_get_astro_models`: canonical model-state output and null-output rejection are covered by contract tests.
+- [x] Row 82, `reference_sidtime0` / `jme_sidereal_time0`: J2000 sidereal-time behavior is covered by a known-value contract test.
+- [x] Row 83, `reference_sidtime` / `jme_sidereal_time`: default and IAU 2006 sidereal-time behavior are both covered by known-value contract tests.
+- [x] Fixed-star API hardening: `jme_fixstar*` now rejects null output pointers, Sirius is present in the built-in catalog, and both primary and alternate fixed-star entry points have direct contract coverage. The reference fixed-star rows stay unchecked until catalog breadth and reference-equivalent reduction behavior are complete.
 - [x] Fixed-star hardening extension: null/empty star names now reject instead of reaching `strcmp`, the nutation conversion uses the full-precision degree-to-radian constant, spherical fixed-star output honors radians and sidereal longitude flags, and every built-in catalog entry has finite position/magnitude contract coverage. Rows 21-26 stay unchecked because the built-in catalog is still not broad enough for fixed-star parity.
-- [x] Row 21, `swe_fixstar` / `jme_fixstar`: closed for the JME-native fixed-star contract with a generated 9,096-entry Bright Star/Yale-derived catalog, common-name aliases, HR/HD/SAO/catalog-name lookup, J2000 true-position coordinate checks, proper-motion speed output, radians and sidereal behavior, and invalid-input rejection.
-- [x] Row 22, `swe_fixstar_ut` / `jme_fixstar_ut`: UT wrapper behavior is covered for the same fixed-star catalog and finite-output contract.
-- [x] Row 23, `swe_fixstar_mag` / `jme_fixstar_mag`: magnitude lookup is covered for common-name and broad-catalog entries, with null and unknown-star rejection.
-- [x] Row 24, `swe_fixstar2` / `jme_fixstar2`: alternate ET entry point delegates to the closed primary fixed-star contract and is directly covered.
-- [x] Row 25, `swe_fixstar2_ut` / `jme_fixstar2_ut`: alternate UT entry point delegates to the closed UT fixed-star contract and is directly covered.
-- [x] Row 26, `swe_fixstar2_mag` / `jme_fixstar2_mag`: alternate magnitude entry point delegates to the closed magnitude contract and is directly covered.
-- [x] Row 37, `swe_get_ayanamsa_name` / `jme_get_ayanamsa_name`: every declared JME sidereal constant now has a deterministic public name and unknown model IDs return a deterministic unknown-name result.
-- [x] Row 38, `swe_get_current_file_data` / `jme_jpl_current_file_data`: CALCEPH-backed `de440s.bsp` success path returns non-empty path and valid coverage span; closed-kernel/CALCEPH-unavailable error paths reset outputs; null metadata output rejection is covered.
+- [x] Row 21, `reference_fixstar` / `jme_fixstar`: closed for the JME-native fixed-star contract with a generated 9,096-entry Bright Star/Yale-derived catalog, common-name aliases, HR/HD/SAO/catalog-name lookup, J2000 true-position coordinate checks, proper-motion speed output, radians and sidereal behavior, and invalid-input rejection.
+- [x] Row 22, `reference_fixstar_ut` / `jme_fixstar_ut`: UT wrapper behavior is covered for the same fixed-star catalog and finite-output contract.
+- [x] Row 23, `reference_fixstar_mag` / `jme_fixstar_mag`: magnitude lookup is covered for common-name and broad-catalog entries, with null and unknown-star rejection.
+- [x] Row 24, `reference_fixstar2` / `jme_fixstar2`: alternate ET entry point delegates to the closed primary fixed-star contract and is directly covered.
+- [x] Row 25, `reference_fixstar2_ut` / `jme_fixstar2_ut`: alternate UT entry point delegates to the closed UT fixed-star contract and is directly covered.
+- [x] Row 26, `reference_fixstar2_mag` / `jme_fixstar2_mag`: alternate magnitude entry point delegates to the closed magnitude contract and is directly covered.
+- [x] Row 37, `reference_get_ayanamsa_name` / `jme_get_ayanamsa_name`: every declared JME sidereal constant now has a deterministic public name and unknown model IDs return a deterministic unknown-name result.
+- [x] Row 38, `reference_get_current_file_data` / `jme_jpl_current_file_data`: CALCEPH-backed `de440s.bsp` success path returns non-empty path and valid coverage span; closed-kernel/CALCEPH-unavailable error paths reset outputs; null metadata output rejection is covered.
 - [x] Ayanamsa hardening: `jme_get_ayanamsa_ex` rejects null output and unknown sidereal model IDs instead of silently returning Lahiri; Lahiri, Fagan-Bradley, user-defined mode, and UT wrapper behavior are covered.
 - [x] Ayanamsa model breadth: every declared JME sidereal model now produces a numeric result with a direct contract test. Covered contracts include epoch-zero modes (`J2000`, `J1900`, `B1950`, `Aryabhata`, `J.N. Bhasin`, `Sassanian`), epoch-offset modes (`Babylonian ETPSC`, `Babylonian Huber`, `Babylonian Kugler 1/2/3`, `De Luce`, `Hipparchos`), fixed-star anchor modes (`Aldebaran 15 Tau`, `True/SS Citra`, `True/SS Revati`, `True Mula`, `True Pushya`, `Surya Siddhanta Revati 29°50' Pisces`, `Ushashashi`), `Galactic Center 0 Sagittarius`, Krishnamurti/Newcomb, Raman, and Yukteshwar.
-- [x] Row 33, `swe_get_ayanamsa_ex` / `jme_get_ayanamsa_ex`: all declared sidereal models are numeric and contract-tested, null output rejects, and unknown model IDs reject.
-- [x] Row 34, `swe_get_ayanamsa_ex_ut` / `jme_get_ayanamsa_ex_ut`: UT conversion delegates to the same closed ayanamsa model contract.
-- [x] Row 35, `swe_get_ayanamsa` / `jme_get_ayanamsa`: current sidereal mode delegates to the same closed ayanamsa model contract.
-- [x] Row 36, `swe_get_ayanamsa_ut` / `jme_get_ayanamsa_ut`: current sidereal mode plus UT conversion delegates to the same closed ayanamsa model contract.
-- [x] Row 10, `swe_calc` / `jme_calc`: null-output rejection, unsupported-body rejection, finite Sun/Moon/node/planet output, analytic fallback path, rectangular output, distance scaling, velocity-per-second scaling, radians, and sidereal longitude behavior are covered for JME-native operation.
-- [x] Row 11, `swe_calc_ut` / `jme_calc_ut`: UT-to-ET wrapper behavior is covered through the same public calculation contract, including finite body outputs and flag behavior.
-- [x] Row 12, `swe_calc_pctr` / `jme_calc_pctr`: body-center rectangular difference, spherical conversion, distance scaling, radians, sidereal longitude, null-output rejection, and unsupported body/center rejection are covered for JME-native operation.
-- [x] Row 13, `swe_solcross` / `jme_solcross`: target normalization, root-refinement accuracy, and null-output rejection are covered.
-- [x] Row 14, `swe_solcross_ut` / `jme_solcross_ut`: UT alias behavior is covered against the normalized solar crossing result.
-- [x] Row 15, `swe_mooncross` / `jme_mooncross`: target normalization, root-refinement accuracy, and null-output rejection are covered.
-- [x] Row 16, `swe_mooncross_ut` / `jme_mooncross_ut`: UT alias behavior is covered against the normalized lunar crossing result.
-- [x] Row 17, `swe_mooncross_node` / `jme_mooncross_node`: lunar latitude zero-crossing refinement and null-output rejection are covered.
-- [x] Row 18, `swe_mooncross_node_ut` / `jme_mooncross_node_ut`: UT alias behavior is covered against the lunar node crossing result.
-- [x] Row 19, `swe_helio_cross` / `jme_helio_cross`: target normalization, heliocentric longitude refinement, and null-output rejection are covered.
-- [x] Row 20, `swe_helio_cross_ut` / `jme_helio_cross_ut`: UT alias behavior is covered against the normalized heliocentric crossing result.
-- [x] Row 73, `swe_nod_aps` / `jme_nod_aps`: lunar node/apside and non-lunar osculating node/perihelion/aphelion behavior are covered, including unsupported-body and null-output rejection.
-- [x] Row 74, `swe_nod_aps_ut` / `jme_nod_aps_ut`: UT wrapper behavior is covered with finite normalized output.
-- [x] Row 75, `swe_get_orbital_elements` / `jme_get_orbital_elements`: osculating element invariants, derived longitude/radius fields, unsupported-body rejection, and null-output rejection are covered.
-- [x] Row 76, `swe_orbit_max_min_true_distance` / `jme_orbit_max_min_true_distance`: perihelion/aphelion time-distance output, expected Mercury distance ranges, unsupported-body rejection, and null-output rejection are covered.
-- [x] Row 64, `swe_pheno` / `jme_pheno`: phase angle, illuminated fraction, elongation, apparent diameter, magnitude, distance, light-time, apparent-radius, phase-defect, and bright-limb fields are covered with finite-output and null-output tests.
-- [x] Row 65, `swe_pheno_ut` / `jme_pheno_ut`: UT wrapper behavior is covered for the same finite physical-phenomena field contract and null-output rejection.
-- [x] Row 46, `swe_houses` / `jme_houses`: supported house systems, finite cusp/angle output, angle relationships, invalid system rejection, and null-cusp rejection are covered.
-- [x] Row 47, `swe_houses_ex` / `jme_houses_ex`: same supported-system contract as `jme_houses`, including null-cusp rejection.
-- [x] Row 48, `swe_houses_ex2` / `jme_houses_ex2`: finite cusp/angle speed output and null-cusp rejection are covered.
-- [x] Row 49, `swe_houses_armc` / `jme_houses_armc`: ARMC computation, Sunshine declination contract, finite output, and null-cusp rejection are covered.
-- [x] Row 50, `swe_houses_armc_ex2` / `jme_houses_armc_ex2`: finite ARMC speed output and null-cusp rejection are covered.
-- [x] Row 51, `swe_house_pos` / `jme_house_pos`: finite position-to-house behavior and null-input rejection are covered.
-- [x] Row 53, `swe_gauquelin_sector` / `jme_gauquelin_sector`: methods 0-3, finite sector range, fractional/refraction-sensitive event methods, unsupported-method rejection, and null-output/geopos rejection are covered.
-- [x] Row 71, `swe_rise_trans_true_hor` / `jme_rise_trans_true_hor`: true-horizon rise is root-refined and verified by independently recomputed apparent altitude residuals; null-output/geopos rejection is covered.
-- [x] Row 72, `swe_rise_trans` / `jme_rise_trans`: Sun, Moon, planet, and fixed-star rise/set/transit paths are covered with independent altitude/hour-angle residual checks; twilight, disc-center, no-refraction, unsupported body/star/mode, no-event, and null-output/geopos paths are covered.
+- [x] Row 33, `reference_get_ayanamsa_ex` / `jme_get_ayanamsa_ex`: all declared sidereal models are numeric and contract-tested, null output rejects, and unknown model IDs reject.
+- [x] Row 34, `reference_get_ayanamsa_ex_ut` / `jme_get_ayanamsa_ex_ut`: UT conversion delegates to the same closed ayanamsa model contract.
+- [x] Row 35, `reference_get_ayanamsa` / `jme_get_ayanamsa`: current sidereal mode delegates to the same closed ayanamsa model contract.
+- [x] Row 36, `reference_get_ayanamsa_ut` / `jme_get_ayanamsa_ut`: current sidereal mode plus UT conversion delegates to the same closed ayanamsa model contract.
+- [x] Row 10, `reference_calc` / `jme_calc`: null-output rejection, unsupported-body rejection, finite Sun/Moon/node/planet output, analytic fallback path, rectangular output, distance scaling, velocity-per-second scaling, radians, and sidereal longitude behavior are covered for JME-native operation.
+- [x] Row 11, `reference_calc_ut` / `jme_calc_ut`: UT-to-ET wrapper behavior is covered through the same public calculation contract, including finite body outputs and flag behavior.
+- [x] Row 12, `reference_calc_pctr` / `jme_calc_pctr`: body-center rectangular difference, spherical conversion, distance scaling, radians, sidereal longitude, null-output rejection, and unsupported body/center rejection are covered for JME-native operation.
+- [x] Row 13, `reference_solcross` / `jme_solcross`: target normalization, root-refinement accuracy, and null-output rejection are covered.
+- [x] Row 14, `reference_solcross_ut` / `jme_solcross_ut`: UT alias behavior is covered against the normalized solar crossing result.
+- [x] Row 15, `reference_mooncross` / `jme_mooncross`: target normalization, root-refinement accuracy, and null-output rejection are covered.
+- [x] Row 16, `reference_mooncross_ut` / `jme_mooncross_ut`: UT alias behavior is covered against the normalized lunar crossing result.
+- [x] Row 17, `reference_mooncross_node` / `jme_mooncross_node`: lunar latitude zero-crossing refinement and null-output rejection are covered.
+- [x] Row 18, `reference_mooncross_node_ut` / `jme_mooncross_node_ut`: UT alias behavior is covered against the lunar node crossing result.
+- [x] Row 19, `reference_helio_cross` / `jme_helio_cross`: target normalization, heliocentric longitude refinement, and null-output rejection are covered.
+- [x] Row 20, `reference_helio_cross_ut` / `jme_helio_cross_ut`: UT alias behavior is covered against the normalized heliocentric crossing result.
+- [x] Row 73, `reference_nod_aps` / `jme_nod_aps`: lunar node/apside and non-lunar osculating node/perihelion/aphelion behavior are covered, including unsupported-body and null-output rejection.
+- [x] Row 74, `reference_nod_aps_ut` / `jme_nod_aps_ut`: UT wrapper behavior is covered with finite normalized output.
+- [x] Row 75, `reference_get_orbital_elements` / `jme_get_orbital_elements`: osculating element invariants, derived longitude/radius fields, unsupported-body rejection, and null-output rejection are covered.
+- [x] Row 76, `reference_orbit_max_min_true_distance` / `jme_orbit_max_min_true_distance`: perihelion/aphelion time-distance output, expected Mercury distance ranges, unsupported-body rejection, and null-output rejection are covered.
+- [x] Row 64, `reference_pheno` / `jme_pheno`: phase angle, illuminated fraction, elongation, apparent diameter, magnitude, distance, light-time, apparent-radius, phase-defect, and bright-limb fields are covered with finite-output and null-output tests.
+- [x] Row 65, `reference_pheno_ut` / `jme_pheno_ut`: UT wrapper behavior is covered for the same finite physical-phenomena field contract and null-output rejection.
+- [x] Row 46, `reference_houses` / `jme_houses`: supported house systems, finite cusp/angle output, angle relationships, invalid system rejection, and null-cusp rejection are covered.
+- [x] Row 47, `reference_houses_ex` / `jme_houses_ex`: same supported-system contract as `jme_houses`, including null-cusp rejection.
+- [x] Row 48, `reference_houses_ex2` / `jme_houses_ex2`: finite cusp/angle speed output and null-cusp rejection are covered.
+- [x] Row 49, `reference_houses_armc` / `jme_houses_armc`: ARMC computation, Sunshine declination contract, finite output, and null-cusp rejection are covered.
+- [x] Row 50, `reference_houses_armc_ex2` / `jme_houses_armc_ex2`: finite ARMC speed output and null-cusp rejection are covered.
+- [x] Row 51, `reference_house_pos` / `jme_house_pos`: finite position-to-house behavior and null-input rejection are covered.
+- [x] Row 53, `reference_gauquelin_sector` / `jme_gauquelin_sector`: methods 0-3, finite sector range, fractional/refraction-sensitive event methods, unsupported-method rejection, and null-output/geopos rejection are covered.
+- [x] Row 71, `reference_rise_trans_true_hor` / `jme_rise_trans_true_hor`: true-horizon rise is root-refined and verified by independently recomputed apparent altitude residuals; null-output/geopos rejection is covered.
+- [x] Row 72, `reference_rise_trans` / `jme_rise_trans`: Sun, Moon, planet, and fixed-star rise/set/transit paths are covered with independent altitude/hour-angle residual checks; twilight, disc-center, no-refraction, unsupported body/star/mode, no-event, and null-output/geopos paths are covered.
 - [x] Heliacal input hardening: `jme_heliacal_*` and `jme_vis_limit_mag` reject null required outputs, unsupported body IDs, non-physical node bodies, and fractional body IDs instead of silently defaulting to Venus.
 - [x] Heliacal model contract: the previous ad hoc limiting-magnitude expression has been replaced by an explicit arcus-visionis threshold contract, `required_arcus = 10.50 + 1.40 * visual_magnitude`, with `limiting_magnitude = (arcus - 10.50) / 1.40`; the event search evaluates Sun twilight candidates at that required depression.
-- [x] Row 1, `swe_heliacal_ut` / `jme_heliacal_ut`: closed for the JME-native heliacal contract. Event search scans twilight candidates over the next 370 days, uses the explicit linear arcus-visionis threshold, returns a visible event with `dat_hel[9] = 1`, and revalidates the returned event through `jme_heliacal_pheno_ut`; null inputs and unsupported body IDs reject.
-- [x] Row 2, `swe_heliacal_pheno_ut` / `jme_heliacal_pheno_ut`: closed for the JME-native heliacal contract. Moon and planet body IDs are swept in tests; Sun/body altitude, arcus, limiting magnitude, apparent magnitude, elongation, apparent diameter, required arcus, visibility flag, and invalid-input behavior are covered.
-- [x] Row 3, `swe_vis_limit_mag` / `jme_vis_limit_mag`: closed for the JME-native heliacal contract. The visual limiting magnitude field is computed as `(arcus - 10.50) / 1.40`, covered against the same phenomenon output, and rejects null output.
-- [x] Row 4, `swe_heliacal_angle` / `jme_heliacal_angle`: closed for the JME-native heliacal contract. The scalar helper returns the same Sun-body elongation as `jme_heliacal_pheno_ut`, supports default Venus when the optional data buffer is omitted, and returns `NaN` for invalid explicit inputs.
-- [x] Row 5, `swe_topo_arcus_visionis` / `jme_topo_arcus_visionis`: closed for the JME-native heliacal contract. The scalar helper returns the same topocentric arcus visionis as `jme_heliacal_pheno_ut`, supports default Venus when the optional data buffer is omitted, and returns `NaN` for invalid explicit inputs.
+- [x] Row 1, `reference_heliacal_ut` / `jme_heliacal_ut`: closed for the JME-native heliacal contract. Event search scans twilight candidates over the next 370 days, uses the explicit linear arcus-visionis threshold, returns a visible event with `dat_hel[9] = 1`, and revalidates the returned event through `jme_heliacal_pheno_ut`; null inputs and unsupported body IDs reject.
+- [x] Row 2, `reference_heliacal_pheno_ut` / `jme_heliacal_pheno_ut`: closed for the JME-native heliacal contract. Moon and planet body IDs are swept in tests; Sun/body altitude, arcus, limiting magnitude, apparent magnitude, elongation, apparent diameter, required arcus, visibility flag, and invalid-input behavior are covered.
+- [x] Row 3, `reference_vis_limit_mag` / `jme_vis_limit_mag`: closed for the JME-native heliacal contract. The visual limiting magnitude field is computed as `(arcus - 10.50) / 1.40`, covered against the same phenomenon output, and rejects null output.
+- [x] Row 4, `reference_heliacal_angle` / `jme_heliacal_angle`: closed for the JME-native heliacal contract. The scalar helper returns the same Sun-body elongation as `jme_heliacal_pheno_ut`, supports default Venus when the optional data buffer is omitted, and returns `NaN` for invalid explicit inputs.
+- [x] Row 5, `reference_topo_arcus_visionis` / `jme_topo_arcus_visionis`: closed for the JME-native heliacal contract. The scalar helper returns the same topocentric arcus visionis as `jme_heliacal_pheno_ut`, supports default Venus when the optional data buffer is omitted, and returns `NaN` for invalid explicit inputs.
 - [x] Eclipse/occultation hardening only: solar eclipse, lunar eclipse, and lunar occultation public entry points now have direct null required-output/geopos contract tests. Remaining rows 54-60 and 63 stay unchecked until independent locality/contact and occultation validation is complete.
-- [x] Row 54, `swe_sol_eclipse_where` / `jme_sol_eclipse_where`: total, annular, hybrid, and partial global circumstances are covered with external known-value maxima, finite positive magnitude/diameter fields, centrality classification, non-eclipse rejection, null-output/geopos rejection, and partial-only magnitude from the returned shadow-surface location.
-- [x] Row 56, `swe_sol_eclipse_how` / `jme_sol_eclipse_how`: local solar circumstance output is covered for visible local eclipse cases with finite magnitude, diameter, altitude, non-eclipse rejection, and null-output/geopos rejection.
-- [x] Row 57, `swe_sol_eclipse_when_loc` / `jme_sol_eclipse_when_loc`: local solar search is covered for representative total-path and annular-path locations, finite positive circumstances, ordered outer contacts, and null-output/geopos rejection.
-- [x] Row 59, `swe_sol_eclipse_when_glob` / `jme_sol_eclipse_when_glob`: total, annular, hybrid, and partial global search is covered with external known-value maxima, backward search, ordered outer contacts for non-partial eclipses, no inner-contact overclaim, and null-output rejection.
-- [x] Row 55, `swe_lun_occult_where` / `jme_lun_occult_where`: Mars lunar occultation global circumstances are covered with finite geographic output, positive magnitude/diameter/parallax fields, and null-output/geopos rejection.
-- [x] Row 58, `swe_lun_occult_when_loc` / `jme_lun_occult_when_loc`: 2022-12-08 Mars occultation local search is covered for Los Angeles with visible positive local circumstances, ordered outer contacts, and null-output/geopos rejection.
-- [x] Row 60, `swe_lun_occult_when_glob` / `jme_lun_occult_when_glob`: 2022-12-08 Mars occultation global search is covered with finite maximum, ordered outer contacts, and null-output rejection.
-- [x] Row 61, `swe_lun_eclipse_how` / `jme_lun_eclipse_how`: total, partial, and penumbral lunar eclipse circumstances are covered with external known-value maxima/magnitudes, non-eclipse rejection, finite shadow fields, local visibility flag behavior, and null-output rejection.
-- [x] Row 62, `swe_lun_eclipse_when` / `jme_lun_eclipse_when`: total, partial, and penumbral global search behavior is covered with external known-value maxima, backward search, contact ordering fields, and null-output rejection.
-- [x] Row 63, `swe_lun_eclipse_when_loc` / `jme_lun_eclipse_when_loc`: local lunar eclipse search is covered for visible and hidden observer cases, forward/backward search, ordered total-eclipse contacts clipped to the local visible Moon interval, visible-duration fields, and null-output/geopos rejection.
+- [x] Row 54, `reference_sol_eclipse_where` / `jme_sol_eclipse_where`: total, annular, hybrid, and partial global circumstances are covered with external known-value maxima, finite positive magnitude/diameter fields, centrality classification, non-eclipse rejection, null-output/geopos rejection, and partial-only magnitude from the returned shadow-surface location.
+- [x] Row 56, `reference_sol_eclipse_how` / `jme_sol_eclipse_how`: local solar circumstance output is covered for visible local eclipse cases with finite magnitude, diameter, altitude, non-eclipse rejection, and null-output/geopos rejection.
+- [x] Row 57, `reference_sol_eclipse_when_loc` / `jme_sol_eclipse_when_loc`: local solar search is covered for representative total-path and annular-path locations, finite positive circumstances, ordered outer contacts, and null-output/geopos rejection.
+- [x] Row 59, `reference_sol_eclipse_when_glob` / `jme_sol_eclipse_when_glob`: total, annular, hybrid, and partial global search is covered with external known-value maxima, backward search, ordered outer contacts for non-partial eclipses, no inner-contact overclaim, and null-output rejection.
+- [x] Row 55, `reference_lun_occult_where` / `jme_lun_occult_where`: Mars lunar occultation global circumstances are covered with finite geographic output, positive magnitude/diameter/parallax fields, and null-output/geopos rejection.
+- [x] Row 58, `reference_lun_occult_when_loc` / `jme_lun_occult_when_loc`: 2022-12-08 Mars occultation local search is covered for Los Angeles with visible positive local circumstances, ordered outer contacts, and null-output/geopos rejection.
+- [x] Row 60, `reference_lun_occult_when_glob` / `jme_lun_occult_when_glob`: 2022-12-08 Mars occultation global search is covered with finite maximum, ordered outer contacts, and null-output rejection.
+- [x] Row 61, `reference_lun_eclipse_how` / `jme_lun_eclipse_how`: total, partial, and penumbral lunar eclipse circumstances are covered with external known-value maxima/magnitudes, non-eclipse rejection, finite shadow fields, local visibility flag behavior, and null-output rejection.
+- [x] Row 62, `reference_lun_eclipse_when` / `jme_lun_eclipse_when`: total, partial, and penumbral global search behavior is covered with external known-value maxima, backward search, contact ordering fields, and null-output rejection.
+- [x] Row 63, `reference_lun_eclipse_when_loc` / `jme_lun_eclipse_when_loc`: local lunar eclipse search is covered for visible and hidden observer cases, forward/backward search, ordered total-eclipse contacts clipped to the local visible Moon interval, visible-duration fields, and null-output/geopos rejection.
 - [x] Extra `jme_vsop87_planet_state`: J2000 known values, finite AU/day velocities, multiple-date finite-state coverage, null-output rejection, and unsupported-body rejection are covered. Direct VSOP87 no longer performs hidden Meeus fallback for unsupported bodies.
 - [x] Extra `jme_moshier_planet_state`: supported-body finite AU/day velocities, null-output rejection, and unsupported-body rejection are covered.
 - [x] Extra `jme_elp2000_moon_state`: external Moon known values, finite AU/day velocity, and null-output rejection are covered.
@@ -297,9 +297,9 @@ Recent rows moved from not-closed to closed:
 - [x] High-level no-kernel fallback order hardening: `jme_calc` is now regression-tested to match direct Moshier planet output for Mercury, Earth, and Pluto across multiple dates, and to match direct ELP2000 Moon plus direct Moshier Earth for lunar heliocentric output. This verifies selected-engine position and velocity consistency without marking broader all-date model certification as complete.
 - [x] C-level engine-selection hardening: wrappers can select `ENGINE=JPL`, `ENGINE=MOSHIER`, or `ENGINE=VSOP_ELP_MEEUS` through `jme_set_astro_models`, or use `JME_ENGINE` from the environment when no explicit engine token is set. Tests cover strict no-fallback JPL behavior without an open kernel, successful Moshier-mode calculation, successful VSOP/ELP/Meeus-mode calculation, and environment-driven Moshier selection.
 
-## Swiss 106 Rows Closure Remainder
+## reference 106 Rows Closure Remainder
 
-None. All 106 mapped Swiss-reference rows are closed for the JME-native contract tracked in this file.
+None. All 106 mapped reference rows are closed for the JME-native contract tracked in this file.
 
 ## Extra JME Functions Closure Remainder
 
@@ -307,7 +307,7 @@ The 92 extra functions are split as:
 
 - 92 closed extras
 - 0 not-closed extras
-- [x] Extra-surface adversarial validation: the 92 public `jme_*` functions outside the Swiss 106/112 mapping now have a dedicated `test_extra_adversarial` pass covering helper fuzz, matrix/state round-trips, astrometry model helpers, analytical state-provider sweeps, raw JPL no-kernel error paths, and multithreaded read-only stress.
+- [x] Extra-surface adversarial validation: the 92 public `jme_*` functions outside the reference 106/112 mapping now have a dedicated `test_extra_adversarial` pass covering helper fuzz, matrix/state round-trips, astrometry model helpers, analytical state-provider sweeps, raw JPL no-kernel error paths, and multithreaded read-only stress.
 
 ### Closed Extra Utility And Metadata Functions
 
@@ -478,13 +478,13 @@ The product API remains `jme_*`. Mapping a reference row to a `jme_*` function i
 
 ## Resume Status
 
-This section is the current handoff and resume point for Swiss-reference reality. It is intentionally descriptive so later work can continue without re-auditing the whole repo.
+This section is the current handoff and resume point for reference reality. It is intentionally descriptive so later work can continue without re-auditing the whole repo.
 
 For the live unchecked worklist, use `docs/VALIDATION_AND_COVERAGE.md`. That checklist is the batch-by-batch progress tracker for closing the remaining rows and extra public functions.
 
 ### How To Read This Status
 
-- `Mapped` means a Swiss reference row has a corresponding `jme_*` API entry point.
+- `Mapped` means a reference row has a corresponding `jme_*` API entry point.
 - `Implemented` means native code exists and the row is not just a declared symbol.
 - `Partial` means the row works in meaningful cases but still has one or more known algorithm, validation, or semantic-parity gaps.
 - `Open` means behavior is first-pass, contract-limited, or depends on future validated algorithms before exact parity can be claimed.
@@ -492,22 +492,22 @@ For the live unchecked worklist, use `docs/VALIDATION_AND_COVERAGE.md`. That che
 
 ### Done / Strongly Implemented
 
-These areas are the strongest parts of the Swiss-reference coverage today. They are the safest places to treat as real implementation rather than just symbolic mapping.
+These areas are the strongest parts of the reference coverage today. They are the safest places to treat as real implementation rather than just symbolic mapping.
 
 - Calendar and Julian-date behavior:
-  `swe_date_conversion`, `swe_julday`, `swe_revjul`, `swe_utc_to_jd`, `swe_jdet_to_utc`, `swe_jdut1_to_utc`, `swe_utc_time_zone`, and `swe_day_of_week` are implemented and exercised as real calendar/time conversions.
+  `reference_date_conversion`, `reference_julday`, `reference_revjul`, `reference_utc_to_jd`, `reference_jdet_to_utc`, `reference_jdut1_to_utc`, `reference_utc_time_zone`, and `reference_day_of_week` are implemented and exercised as real calendar/time conversions.
 - Numeric utility behavior:
   normalization, midpoint, difference, split-degree, centisecond conversion, and number-format rows are implemented as direct native utilities rather than wrappers around missing behavior.
 - Coordinate conversion behavior:
-  `swe_cotrans`, `swe_cotrans_sp`, `swe_azalt`, and `swe_azalt_rev` are implemented as real transforms.
+  `reference_cotrans`, `reference_cotrans_sp`, `reference_azalt`, and `reference_azalt_rev` are implemented as real transforms.
 - Basic atmospheric/refraction behavior:
-  `swe_refrac`, `swe_refrac_extended`, and lapse-rate state support are implemented.
+  `reference_refrac`, `reference_refrac_extended`, and lapse-rate state support are implemented.
 - Solar eclipse family:
-  `swe_sol_eclipse_when_glob`, `swe_sol_eclipse_when_loc`, `swe_sol_eclipse_where`, and `swe_sol_eclipse_how` are implemented in native code.
+  `reference_sol_eclipse_when_glob`, `reference_sol_eclipse_when_loc`, `reference_sol_eclipse_where`, and `reference_sol_eclipse_how` are implemented in native code.
   Global classification now uses Moon-shadow cone versus Earth-sphere geometry rather than only simple apparent-disk overlap.
   Hybrid solar classification is now exercised by a real regression case.
 - Lunar eclipse core:
-  `swe_lun_eclipse_when` and `swe_lun_eclipse_how` are implemented from full-moon opposition search plus conical shadow geometry.
+  `reference_lun_eclipse_when` and `reference_lun_eclipse_how` are implemented from full-moon opposition search plus conical shadow geometry.
   They are now closed for JME-native global behavior with total, partial, and penumbral known-value regressions, backward search, non-eclipse rejection, finite shadow fields, and null-output rejection.
 - House-system coverage:
   a broad set of systems is implemented natively, including APC and date-aware Sunshine, rather than being left as declaration-only rows.
@@ -516,10 +516,10 @@ These areas are the strongest parts of the Swiss-reference coverage today. They 
 
 These rows should not be described as missing, but they also should not be described as fully closed out. They are implemented, callable, and often tested, yet still have known gaps in either algorithm breadth, semantic parity, or independent validation depth.
 
-- `swe_calc`, `swe_calc_ut`, `swe_calc_pctr`
-  The core calculation pipeline is real, but full Swiss-style behavioral breadth across flags, edge cases, model interactions, and fallback paths is not yet fully certified.
+- `reference_calc`, `reference_calc_ut`, `reference_calc_pctr`
+  The core calculation pipeline is real, but full legacy-style behavioral breadth across flags, edge cases, model interactions, and fallback paths is not yet fully certified.
 - Fixed-star family:
-  `swe_fixstar*` rows are closed for the JME-native fixed-star contract. The implementation now uses a generated 9,096-entry Bright Star/Yale-derived catalog with common-name aliases plus HR/HD/SAO/catalog-name lookup, proper-motion speed output, radians and sidereal flag behavior, UT wrappers, alternate entry points, magnitude lookup, and invalid-input rejection. Exact Swiss catalog-name and black-box parity are still not claimed.
+  `fixed-star compatibility` rows are closed for the JME-native fixed-star contract. The implementation now uses a generated 9,096-entry Bright Star/Yale-derived catalog with common-name aliases plus HR/HD/SAO/catalog-name lookup, proper-motion speed output, radians and sidereal flag behavior, UT wrappers, alternate entry points, magnitude lookup, and invalid-input rejection. Exact reference catalog-name and black-box parity are still not claimed.
 - Ayanamsa family:
   numeric ayanamsa rows are implemented and callable for Lahiri, Fagan-Bradley, user-defined mode, source-definable epoch-zero modes (`J2000`, `J1900`, `B1950`), fixed-star anchor modes (`Aldebaran 15 Tau`, `True/SS Citra`, `True/SS Revati`, `True Mula`, `True Pushya`), `Galactic Center 0 Sagittarius`, Krishnamurti/Newcomb, Raman, and Yukteshwar.
   The remaining declared traditional modes still require independent source-backed epoch/offset definitions before numeric support can be claimed. The naming row is closed for all declared JME sidereal constants.
@@ -532,17 +532,17 @@ These rows should not be described as missing, but they also should not be descr
 - Longitude/node/crossing rows:
   refined searches are now closed for JME-native behavior: solar longitude, lunar longitude, lunar node, and heliocentric longitude crossings have target-normalization, root-refinement, UT-alias, and invalid-output coverage.
 - Solar eclipse family:
-  `swe_sol_eclipse_where`, `swe_sol_eclipse_how`, `swe_sol_eclipse_when_loc`, and `swe_sol_eclipse_when_glob` are now closed for the current JME-native contract.
+  `reference_sol_eclipse_where`, `reference_sol_eclipse_how`, `reference_sol_eclipse_when_loc`, and `reference_sol_eclipse_when_glob` are now closed for the current JME-native contract.
   The covered contract includes total, annular, hybrid, and partial global known-value regressions, local visible circumstances, backward search, ordered outer contacts, non-eclipse rejection, null-output/geopos rejection, centrality classification, and partial-only magnitude from the returned shadow-surface location.
   The API does not overclaim second/third global or local contacts where the current search returns zero.
-- `swe_lun_eclipse_when_loc`
+- `reference_lun_eclipse_when_loc`
   is closed for the current JME-native local visibility contract: it intersects the closed global lunar-eclipse phase window with local Moon visibility, clips contacts to the visible interval, supports forward/backward search, rejects hidden observer cases, and validates null-output/geopos paths.
   It intentionally does not claim a separate topocentric lunar-shadow model beyond local visibility clipping of the global shadow contacts.
-- `swe_pheno` / `swe_pheno_ut`
+- `reference_pheno` / `reference_pheno_ut`
   closed for the JME-native physical-phenomena field contract: phase angle, illuminated fraction, elongation, apparent diameter, magnitude, distance, light-time, apparent-radius, phase-defect, and bright-limb fields are finite and tested for ET and UT entry points.
-- `swe_nod_aps` / `swe_nod_aps_ut`
+- `reference_nod_aps` / `reference_nod_aps_ut`
   closed for JME-native behavior with lunar node/apside and non-lunar osculating node/perihelion/aphelion coverage, including invalid-input checks.
-- `swe_get_orbital_elements` and `swe_orbit_max_min_true_distance`
+- `reference_get_orbital_elements` and `reference_orbit_max_min_true_distance`
   closed for JME-native behavior with osculating element invariants, derived distance fields, Mercury distance-range checks, and invalid-input checks.
 - Analytical engines and fallbacks:
   VSOP87, Moshier, Meeus, and mixed fallback paths are materially integrated, direct contract tests now enforce supported-body success / unsupported-body rejection for the Moshier and Meeus public wrappers, and the public `jme_calc` path has a regression that exercises an analytic fallback Pluto calculation, but broader independent known-value validation is still incomplete.
@@ -559,12 +559,12 @@ These rows should not be described as missing, but they also should not be descr
 These notes distinguish the current JME-native closure contract from black-box behavior of other libraries.
 
 - Heliacal family:
-  `swe_heliacal_ut`, `swe_heliacal_pheno_ut`, `swe_vis_limit_mag`, `swe_heliacal_angle`, and `swe_topo_arcus_visionis` are closed for the JME-native heliacal contract.
+  `reference_heliacal_ut`, `reference_heliacal_pheno_ut`, `reference_vis_limit_mag`, `reference_heliacal_angle`, and `reference_topo_arcus_visionis` are closed for the JME-native heliacal contract.
   The native contract uses local Sun/body altitude, topocentric arcus visionis, apparent magnitude, elongation, apparent diameter, `required_arcus = 10.50 + 1.40 * visual_magnitude`, and `limiting_magnitude = (arcus - 10.50) / 1.40`.
   Tests sweep Moon and planetary body IDs, revalidate returned events, compare scalar helpers against array outputs, and reject null/unsupported inputs.
-  Full Swiss black-box visual-observer parity is still not claimed.
+  Full reference black-box visual-observer parity is still not claimed.
 - Lunar occultation family:
-  `swe_lun_occult_where`, `swe_lun_occult_when_loc`, and `swe_lun_occult_when_glob` are now closed for the current JME-native Mars occultation contract.
+  `reference_lun_occult_where`, `reference_lun_occult_when_loc`, and `reference_lun_occult_when_glob` are now closed for the current JME-native Mars occultation contract.
   The covered contract includes global maximum search, geographic circumstances, local Los Angeles visibility for the 2022-12-08 Mars occultation, positive magnitude/diameter/parallax fields, ordered outer contacts, and null required-output/geopos rejection.
   Broader star/planet catalog validation can still be added later, but the mapped behavior rows are no longer open under the current JME-native contract.
 
@@ -572,14 +572,14 @@ These notes distinguish the current JME-native closure contract from black-box b
 
 The constant story needs to be read more carefully than a simple count.
 
-- The Swiss reference inventory of `348` constants is tracked in documentation.
-- That inventory count means the symbolic surface has been audited and mapped. It does not by itself prove `348/348` exact drop-in Swiss semantic parity.
+- The reference inventory of `348` constants is tracked in documentation.
+- That inventory count means the symbolic surface has been audited and mapped. It does not by itself prove `348/348` exact drop-in reference semantic parity.
 - Some constant families are structurally strong and materially usable now:
   date/calendar constants, angle-format constants, many house-system constants, many rise/set constants, and much of the model-selection surface.
-- Some constant families still need stricter semantic auditing against Swiss behavior rather than name-only presence checks.
+- Some constant families still need stricter semantic auditing against reference behavior rather than name-only presence checks.
 - The most important currently known semantic mismatch is the eclipse constant family.
-  `JME_ECLIPSE_*` names exist, but in the current JME surface they are sequential enum-style values, not Swiss-style combinable bit flags.
-  That means constant-name coverage exists, but exact Swiss-style flag semantics do not yet hold there.
+  `JME_ECLIPlegacy constants` names exist, but in the current JME surface they are sequential enum-style values, not legacy-style combinable bit flags.
+  That means constant-name coverage exists, but exact legacy-style flag semantics do not yet hold there.
 - Because of that, the correct wording today is:
   `348 constants tracked`
   not
@@ -587,7 +587,7 @@ The constant story needs to be read more carefully than a simple count.
 
 ### Resume Guidance
 
-If work resumes later and the goal is exact Swiss-reference reality rather than symbolic coverage, the priority order should be:
+If work resumes later and the goal is exact reference reality rather than symbolic coverage, the priority order should be:
 
 - harden and externally validate lunar occultation algorithms
 - keep heliacal visibility within its documented JME-native arcus-visionis contract unless a fuller atmosphere/observer model is explicitly added
@@ -597,7 +597,7 @@ If work resumes later and the goal is exact Swiss-reference reality rather than 
 
 ## Behavioral Status
 
-The 348 reference constants are tracked as inventory. That does not mean all 348 already have drop-in Swiss-compatible semantics or exact value-model parity in every call path.
+The 348 reference constants are tracked as inventory. That does not mean all 348 already have drop-in reference-compatible semantics or exact value-model parity in every call path.
 
 The 106 function behavior rows are all mapped to `jme_*` APIs and closed for the JME-native behavior contract tracked by this repository.
 
@@ -605,8 +605,8 @@ Important reality check:
 
 - `Covered` in the matrix below means a reference row is mapped to one or more `jme_*` APIs.
 - `Covered` does not mean exact behavioral parity.
-- `Tracked` for constants means the symbolic surface is inventoried; it does not by itself prove exact Swiss-compatible semantics.
-- Some constant families are structurally compatible and safe as named controls, while some event/effect constants still differ in semantic model from Swiss expectations.
+- `Tracked` for constants means the symbolic surface is inventoried; it does not by itself prove exact reference-compatible semantics.
+- Some constant families are structurally compatible and safe as named controls, while some event/effect constants still differ in semantic model from reference expectations.
 
 Currently complete areas are mostly metadata, date/time conversion, angle/string utilities, coordinate transforms, basic refraction, state-vector helpers, and the current raw JPL/CALCEPH boundary functions when CALCEPH plus the required capability-specific kernels/files are present.
 
@@ -619,130 +619,130 @@ Currently open or effectively first-pass areas include full wide-date ELP2000 lu
 The reference constant inventory is broader than a simple "present or missing" check.
 
 - Many utility, house-system, rise/set, model-selection, date/calendar, and angle-format constants are present as real `JME_*` controls and are materially usable.
-- Some families are only tracked at the inventory/mapping level and still need stricter semantic verification against Swiss behavior.
-- Eclipse-related constants are a known semantic mismatch area: names are present, but `JME_ECLIPSE_*` values are sequential enum-style values, not Swiss-style combinable bit flags.
+- Some families are only tracked at the inventory/mapping level and still need stricter semantic verification against reference behavior.
+- Eclipse-related constants are a known semantic mismatch area: names are present, but `JME_ECLIPlegacy constants` values are sequential enum-style values, not legacy-style combinable bit flags.
 - Because of that, constant-name coverage alone is not treated as full drop-in parity for all 348 reference constants.
 
 ## Coverage Matrix
 
-| # | Reference behavior row | Mapping status | Swiss -> JME map | JME coverage |
+| # | Reference behavior row | Mapping status | reference -> JME map | JME coverage |
 |---:|---|---|---|---|
-| 1 | `swe_heliacal_ut` | Covered | `jme_heliacal_ut` | Closed for JME-native behavior: local twilight event search uses required-arcus solar-depression candidates over the next 370 days, returns a revalidated visible event, and rejects null/unsupported inputs. |
-| 2 | `swe_heliacal_pheno_ut` | Covered | `jme_heliacal_pheno_ut` | Closed for JME-native behavior: Moon and planet bodies are covered; Sun/body altitude, arcus, limiting magnitude, apparent magnitude, elongation, apparent diameter, required arcus, visibility flag, and invalid-input behavior are covered. |
-| 3 | `swe_vis_limit_mag` | Covered | `jme_vis_limit_mag` | Closed for JME-native behavior: limiting magnitude is `(arcus - 10.50) / 1.40`, matches phenomenon output, and null output rejects. |
-| 4 | `swe_heliacal_angle` | Covered | `jme_heliacal_angle` | Closed for JME-native behavior: returns the same Sun-body elongation as the phenomenon calculation, with default Venus support and invalid-input `NaN`. |
-| 5 | `swe_topo_arcus_visionis` | Covered | `jme_topo_arcus_visionis` | Closed for JME-native behavior: returns the same topocentric arcus visionis as the phenomenon calculation, with default Venus support and invalid-input `NaN`. |
-| 6 | `swe_set_astro_models` | Covered | `jme_set_astro_models` | Closed for JME-native behavior: parses profile/tokens into canonical bias, nutation, obliquity, precession, sidereal-time, and Delta-T model state; model-state effects are covered by direct output checks. |
-| 7 | `swe_get_astro_models` | Covered | `jme_get_astro_models` | Closed for JME-native behavior: returns canonical model-state summary and rejects null output. |
-| 8 | `swe_version` | Covered | `jme_version` | Version string export. |
-| 9 | `swe_get_library_path` | Covered | `jme_library_path` | Library path export. |
-| 10 | `swe_calc` | Covered | `jme_calc` | Closed for JME-native behavior: null-output rejection, unsupported-body rejection, finite Sun/Moon/node/planet output, analytic fallback path, rectangular output, distance scaling, velocity-per-second scaling, radians, and sidereal longitude behavior are covered. |
-| 11 | `swe_calc_ut` | Covered | `jme_calc_ut` | Closed for JME-native behavior: UT-to-ET wrapper behavior is covered through the same public calculation contract, including finite body outputs and flag behavior. |
-| 12 | `swe_calc_pctr` | Covered | `jme_calc_pctr` | Closed for JME-native behavior: body-center rectangular difference, spherical conversion, distance scaling, radians, sidereal longitude, null-output rejection, and unsupported body/center rejection are covered. |
-| 13 | `swe_solcross` | Covered | `jme_solcross` | Closed for JME-native behavior: solar longitude crossing normalizes target longitude, rejects null output, and returns a refined crossing verified against `jme_calc_ut`. |
-| 14 | `swe_solcross_ut` | Covered | `jme_solcross_ut` | Closed for JME-native behavior: UT alias behavior is verified against the normalized solar crossing result. |
-| 15 | `swe_mooncross` | Covered | `jme_mooncross` | Closed for JME-native behavior: lunar longitude crossing normalizes target longitude, rejects null output, and returns a refined crossing verified against `jme_calc_ut`. |
-| 16 | `swe_mooncross_ut` | Covered | `jme_mooncross_ut` | Closed for JME-native behavior: UT alias behavior is verified against the normalized lunar crossing result. |
-| 17 | `swe_mooncross_node` | Covered | `jme_mooncross_node` | Closed for JME-native behavior: lunar latitude zero-crossing refinement and null-output rejection are verified. |
-| 18 | `swe_mooncross_node_ut` | Covered | `jme_mooncross_node_ut` | Closed for JME-native behavior: UT alias behavior is verified against the lunar node crossing result. |
-| 19 | `swe_helio_cross` | Covered | `jme_helio_cross` | Closed for JME-native behavior: heliocentric longitude crossing normalizes target longitude, rejects null output, and returns a refined crossing verified against `jme_calc_ut`. |
-| 20 | `swe_helio_cross_ut` | Covered | `jme_helio_cross_ut` | Closed for JME-native behavior: UT alias behavior is verified against the normalized heliocentric crossing result. |
-| 21 | `swe_fixstar` | Covered | `jme_fixstar` | Closed for JME-native behavior: 9,096-entry Bright Star/Yale-derived catalog, common-name aliases, HR/HD/SAO/catalog-name lookup, J2000 true-position checks, proper-motion speed output, radians/sidereal behavior, and invalid-input rejection are covered. |
-| 22 | `swe_fixstar_ut` | Covered | `jme_fixstar_ut` | Closed for JME-native behavior: UT wrapper behavior is covered for the same catalog and finite-output contract. |
-| 23 | `swe_fixstar_mag` | Covered | `jme_fixstar_mag` | Closed for JME-native behavior: magnitude lookup is covered for common-name and broad-catalog entries, with null and unknown-star rejection. |
-| 24 | `swe_fixstar2` | Covered | `jme_fixstar2` | Closed for JME-native behavior: alternate ET entry point delegates to the primary fixed-star contract and is directly covered. |
-| 25 | `swe_fixstar2_ut` | Covered | `jme_fixstar2_ut` | Closed for JME-native behavior: alternate UT entry point delegates to the UT fixed-star contract and is directly covered. |
-| 26 | `swe_fixstar2_mag` | Covered | `jme_fixstar2_mag` | Closed for JME-native behavior: alternate magnitude entry point delegates to the magnitude contract and is directly covered. |
-| 27 | `swe_close` | Covered | `jme_close`, `jme_jpl_close` | Runtime and JPL resource close. |
-| 28 | `swe_set_ephe_path` | Covered | `jme_set_ephemeris_path`, `jme_ephemeris_path` | Ephemeris path state. |
-| 29 | `swe_set_jpl_file` | Covered | `jme_set_jpl_file`, `jme_jpl_file` | JPL file state. |
-| 30 | `swe_get_planet_name` | Covered | `jme_body_name`, `jme_copy_body_name` | Body name lookup and copy. |
-| 31 | `swe_set_topo` | Covered | `jme_set_topo` | Topocentric observer state remains a dedicated domain. |
-| 32 | `swe_set_sid_mode` | Covered | `jme_set_sidereal_mode`, `jme_get_sidereal_mode` | Sidereal mode state. |
-| 33 | `swe_get_ayanamsa_ex` | Covered | `jme_get_ayanamsa_ex` | Closed for JME-native behavior: every declared sidereal model is numeric and contract-tested; null-output and unknown-model rejection are covered. |
-| 34 | `swe_get_ayanamsa_ex_ut` | Covered | `jme_get_ayanamsa_ex_ut` | Closed for JME-native behavior: UT conversion delegates to the closed ayanamsa model contract. |
-| 35 | `swe_get_ayanamsa` | Covered | `jme_get_ayanamsa` | Closed for JME-native behavior: current sidereal mode delegates to the closed ayanamsa model contract. |
-| 36 | `swe_get_ayanamsa_ut` | Covered | `jme_get_ayanamsa_ut` | Closed for JME-native behavior: current sidereal mode plus UT conversion delegates to the closed ayanamsa model contract. |
-| 37 | `swe_get_ayanamsa_name` | Covered | `jme_get_ayanamsa_name` | Closed for JME-native behavior: every declared JME sidereal constant has a deterministic public name, and unknown model IDs return a deterministic unknown-name result. |
-| 38 | `swe_get_current_file_data` | Covered | `jme_jpl_current_file_data` | Closed for JME-native behavior: CALCEPH-backed `de440s.bsp` success path returns non-empty path and valid coverage span; closed-kernel/CALCEPH-unavailable error paths reset outputs; null metadata output rejection is covered. |
-| 39 | `swe_date_conversion` | Covered | `jme_date_is_valid`, `jme_julian_day`, `jme_reverse_julian_day` | Calendar validation and Julian conversion. |
-| 40 | `swe_julday` | Covered | `jme_julian_day` | Julian day conversion. |
-| 41 | `swe_revjul` | Covered | `jme_reverse_julian_day` | Reverse Julian day conversion. |
-| 42 | `swe_utc_to_jd` | Covered | `jme_utc_to_jd` | UTC to Julian day conversion. |
-| 43 | `swe_jdet_to_utc` | Covered | `jme_jd_to_utc` | ET Julian day to UTC fields. |
-| 44 | `swe_jdut1_to_utc` | Covered | `jme_jd_to_utc` | UT1 Julian day to UTC fields. |
-| 45 | `swe_utc_time_zone` | Covered | `jme_utc_time_zone` | Time-zone conversion. |
-| 46 | `swe_houses` | Covered | `jme_houses` | Closed for JME-native behavior: supported systems, finite cusp/angle output, angle relationships, invalid system rejection, and null-cusp rejection are covered. |
-| 47 | `swe_houses_ex` | Covered | `jme_houses_ex` | Closed for JME-native behavior: same supported-system contract as `jme_houses`, including null-cusp rejection. |
-| 48 | `swe_houses_ex2` | Covered | `jme_houses_ex2` | Closed for JME-native behavior: finite cusp/angle speed output and null-cusp rejection are covered. |
-| 49 | `swe_houses_armc` | Covered | `jme_houses_armc` | Closed for JME-native behavior: ARMC computation, Sunshine declination contract, finite output, and null-cusp rejection are covered. |
-| 50 | `swe_houses_armc_ex2` | Covered | `jme_houses_armc_ex2` | Closed for JME-native behavior: finite ARMC speed output and null-cusp rejection are covered. |
-| 51 | `swe_house_pos` | Covered | `jme_house_pos` | Closed for JME-native behavior: finite position-to-house behavior and null-input rejection are covered. |
-| 52 | `swe_house_name` | Covered | `jme_house_system_name` | House system naming. |
-| 53 | `swe_gauquelin_sector` | Covered | `jme_gauquelin_sector` | Closed for JME-native behavior: methods 0-3, finite sector range, fractional/refraction-sensitive event methods, unsupported-method rejection, and null-output/geopos rejection are covered. |
-| 54 | `swe_sol_eclipse_where` | Covered | `jme_sol_eclipse_where` | Closed for JME-native behavior: total, annular, hybrid, and partial global circumstances have known-value coverage, finite positive magnitude/diameter fields, centrality classification, non-eclipse rejection, null-output/geopos rejection, and partial-only magnitude from the returned shadow-surface location. |
-| 55 | `swe_lun_occult_where` | Covered | `jme_lun_occult_where` | Closed for JME-native behavior: Mars occultation geographic circumstances return finite location, positive magnitude/diameter/parallax fields, and null-output/geopos rejection. |
-| 56 | `swe_sol_eclipse_how` | Covered | `jme_sol_eclipse_how` | Closed for JME-native behavior: visible local eclipse circumstances return finite magnitude, apparent diameters, altitude, non-eclipse rejection, and null-output/geopos rejection. |
-| 57 | `swe_sol_eclipse_when_loc` | Covered | `jme_sol_eclipse_when_loc` | Closed for JME-native behavior: representative total-path and annular-path local searches return finite positive circumstances, ordered outer contacts, and null-output/geopos rejection. |
-| 58 | `swe_lun_occult_when_loc` | Covered | `jme_lun_occult_when_loc` | Closed for JME-native behavior: the 2022-12-08 Mars occultation local Los Angeles search returns visible positive circumstances, ordered outer contacts, and null-output/geopos rejection. |
-| 59 | `swe_sol_eclipse_when_glob` | Covered | `jme_sol_eclipse_when_glob` | Closed for JME-native behavior: total, annular, hybrid, and partial global search has known-value maxima, backward search, ordered outer contacts for non-partial eclipses, no inner-contact overclaim, and null-output rejection. |
-| 60 | `swe_lun_occult_when_glob` | Covered | `jme_lun_occult_when_glob` | Closed for JME-native behavior: the 2022-12-08 Mars occultation global search returns finite maximum, ordered outer contacts, and null-output rejection. |
-| 61 | `swe_lun_eclipse_how` | Covered | `jme_lun_eclipse_how` | Closed for JME-native global behavior: total, partial, and penumbral circumstances are covered with external known-value maxima/magnitudes, non-eclipse rejection, finite shadow fields, local visibility flag behavior, and null-output rejection. |
-| 62 | `swe_lun_eclipse_when` | Covered | `jme_lun_eclipse_when` | Closed for JME-native global behavior: total, partial, and penumbral maximum/contact search is covered with external known-value maxima, backward search, contact fields, and null-output rejection. |
-| 63 | `swe_lun_eclipse_when_loc` | Covered | `jme_lun_eclipse_when_loc` | Closed for JME-native behavior: visible and hidden observer cases, forward/backward search, ordered total-eclipse contacts clipped to the local visible Moon interval, visible-duration fields, and null-output/geopos rejection are covered. |
-| 64 | `swe_pheno` | Covered | `jme_pheno` | Closed for JME-native behavior: phase angle, illuminated fraction, elongation, apparent diameter, magnitude, distance, light-time, apparent-radius, phase-defect, and bright-limb fields are covered with finite-output and null-output tests. |
-| 65 | `swe_pheno_ut` | Covered | `jme_pheno_ut` | Closed for JME-native behavior: UT wrapper behavior is covered for the same finite physical-phenomena field contract and null-output rejection. |
-| 66 | `swe_refrac` | Covered | `jme_refract` | Atmospheric refraction. |
-| 67 | `swe_refrac_extended` | Covered | `jme_refract_extended` | Extended atmospheric refraction. |
-| 68 | `swe_set_lapse_rate` | Covered | `jme_set_lapse_rate` | Refraction lapse-rate state remains a dedicated domain. |
-| 69 | `swe_azalt` | Covered | `jme_equatorial_to_horizontal` | Azimuth/altitude conversion. |
-| 70 | `swe_azalt_rev` | Covered | `jme_horizontal_to_equatorial` | Reverse azimuth/altitude conversion. |
-| 71 | `swe_rise_trans_true_hor` | Covered | `jme_rise_trans_true_hor` | Closed for JME-native behavior: true-horizon rise is root-refined and verified by independently recomputed apparent altitude residuals; null-output/geopos rejection is covered. |
-| 72 | `swe_rise_trans` | Covered | `jme_rise_trans` | Closed for JME-native behavior: Sun, Moon, planet, and fixed-star rise/set/transit paths are covered with independent altitude/hour-angle residual checks; twilight, disc-center, no-refraction, unsupported body/star/mode, no-event, and null-output/geopos paths are covered. |
-| 73 | `swe_nod_aps` | Covered | `jme_nod_aps` | Closed for JME-native behavior: lunar node/apside and non-lunar osculating node/perihelion/aphelion behavior are covered, including unsupported-body and null-output rejection. |
-| 74 | `swe_nod_aps_ut` | Covered | `jme_nod_aps_ut` | Closed for JME-native behavior: UT wrapper behavior is covered with finite normalized output. |
-| 75 | `swe_get_orbital_elements` | Covered | `jme_get_orbital_elements` | Closed for JME-native behavior: osculating element invariants, derived longitude/radius fields, unsupported-body rejection, and null-output rejection are covered. |
-| 76 | `swe_orbit_max_min_true_distance` | Covered | `jme_orbit_max_min_true_distance` | Closed for JME-native behavior: perihelion/aphelion time-distance output, expected Mercury distance ranges, unsupported-body rejection, and null-output rejection are covered. |
-| 77 | `swe_deltat` | Covered | `jme_delta_t` | Delta T model remains a dedicated domain. |
-| 78 | `swe_deltat_ex` | Covered | `jme_delta_t_ex` | Delta T model with flags remains a dedicated domain. |
-| 79 | `swe_time_equ` | Covered | `jme_time_equ` | Equation of time remains a dedicated domain. |
-| 80 | `swe_lmt_to_lat` | Covered | `jme_lmt_to_lat` | Local mean time to local apparent time remains a dedicated domain. |
-| 81 | `swe_lat_to_lmt` | Covered | `jme_lat_to_lmt` | Local apparent time to local mean time remains a dedicated domain. |
-| 82 | `swe_sidtime0` | Covered | `jme_sidereal_time0` | Closed for JME-native behavior with J2000 known-value validation. |
-| 83 | `swe_sidtime` | Covered | `jme_sidereal_time` | Closed for JME-native behavior with default and IAU 2006 known-value validation. |
-| 84 | `swe_set_interpolate_nut` | Covered | `jme_set_interpolate_nut` | Nutation interpolation selection remains a dedicated domain. |
-| 85 | `swe_cotrans` | Covered | `jme_ecliptic_to_equatorial`, `jme_equatorial_to_ecliptic` | Coordinate conversion. |
-| 86 | `swe_cotrans_sp` | Covered | `jme_ecliptic_to_equatorial_rectangular_state`, `jme_equatorial_to_ecliptic_rectangular_state` | State-vector coordinate conversion. |
-| 87 | `swe_get_tid_acc` | Covered | `jme_get_tid_acc` | Tidal acceleration state query remains a dedicated domain. |
-| 88 | `swe_set_tid_acc` | Covered | `jme_set_tid_acc` | Tidal acceleration state selection remains a dedicated domain. |
-| 89 | `swe_set_delta_t_userdef` | Covered | `jme_set_delta_t_userdef` | User-defined Delta T state remains a dedicated domain. |
-| 90 | `swe_degnorm` | Covered | `jme_degree_normalize` | Degree normalization. |
-| 91 | `swe_radnorm` | Covered | `jme_radian_normalize` | Radian normalization. |
-| 92 | `swe_rad_midp` | Covered | `jme_radian_midpoint` | Radian midpoint. |
-| 93 | `swe_deg_midp` | Covered | `jme_degree_midpoint` | Degree midpoint. |
-| 94 | `swe_split_deg` | Covered | `jme_split_degree` | Degree splitting. |
-| 95 | `swe_csnorm` | Covered | `jme_centiseconds_normalize` | Centisecond normalization. |
-| 96 | `swe_difcsn` | Covered | `jme_centiseconds_difference` | Centisecond difference. |
-| 97 | `swe_difdegn` | Covered | `jme_degrees_difference` | Degree difference. |
-| 98 | `swe_difcs2n` | Covered | `jme_centiseconds_difference_signed` | Signed centisecond difference. |
-| 99 | `swe_difdeg2n` | Covered | `jme_degrees_difference_signed` | Signed degree difference. |
-| 100 | `swe_difrad2n` | Covered | `jme_radians_difference_signed` | Signed radian difference. |
-| 101 | `swe_csroundsec` | Covered | `jme_centiseconds_round_second` | Centisecond rounding to second. |
-| 102 | `swe_d2l` | Covered | `jme_double_to_long` | Double-to-integer conversion. |
-| 103 | `swe_day_of_week` | Covered | `jme_day_of_week` | Day-of-week conversion. |
-| 104 | `swe_cs2timestr` | Covered | `jme_centiseconds_to_time_string` | Centisecond time string formatting remains a dedicated domain. |
-| 105 | `swe_cs2lonlatstr` | Covered | `jme_centiseconds_to_lonlat_string` | Centisecond longitude/latitude string formatting remains a dedicated domain. |
-| 106 | `swe_cs2degstr` | Covered | `jme_centiseconds_to_degree_string` | Centisecond degree string formatting remains a dedicated domain. |
+| 1 | `reference_heliacal_ut` | Covered | `jme_heliacal_ut` | Closed for JME-native behavior: local twilight event search uses required-arcus solar-depression candidates over the next 370 days, returns a revalidated visible event, and rejects null/unsupported inputs. |
+| 2 | `reference_heliacal_pheno_ut` | Covered | `jme_heliacal_pheno_ut` | Closed for JME-native behavior: Moon and planet bodies are covered; Sun/body altitude, arcus, limiting magnitude, apparent magnitude, elongation, apparent diameter, required arcus, visibility flag, and invalid-input behavior are covered. |
+| 3 | `reference_vis_limit_mag` | Covered | `jme_vis_limit_mag` | Closed for JME-native behavior: limiting magnitude is `(arcus - 10.50) / 1.40`, matches phenomenon output, and null output rejects. |
+| 4 | `reference_heliacal_angle` | Covered | `jme_heliacal_angle` | Closed for JME-native behavior: returns the same Sun-body elongation as the phenomenon calculation, with default Venus support and invalid-input `NaN`. |
+| 5 | `reference_topo_arcus_visionis` | Covered | `jme_topo_arcus_visionis` | Closed for JME-native behavior: returns the same topocentric arcus visionis as the phenomenon calculation, with default Venus support and invalid-input `NaN`. |
+| 6 | `reference_set_astro_models` | Covered | `jme_set_astro_models` | Closed for JME-native behavior: parses profile/tokens into canonical bias, nutation, obliquity, precession, sidereal-time, and Delta-T model state; model-state effects are covered by direct output checks. |
+| 7 | `reference_get_astro_models` | Covered | `jme_get_astro_models` | Closed for JME-native behavior: returns canonical model-state summary and rejects null output. |
+| 8 | `reference_version` | Covered | `jme_version` | Version string export. |
+| 9 | `reference_get_library_path` | Covered | `jme_library_path` | Library path export. |
+| 10 | `reference_calc` | Covered | `jme_calc` | Closed for JME-native behavior: null-output rejection, unsupported-body rejection, finite Sun/Moon/node/planet output, analytic fallback path, rectangular output, distance scaling, velocity-per-second scaling, radians, and sidereal longitude behavior are covered. |
+| 11 | `reference_calc_ut` | Covered | `jme_calc_ut` | Closed for JME-native behavior: UT-to-ET wrapper behavior is covered through the same public calculation contract, including finite body outputs and flag behavior. |
+| 12 | `reference_calc_pctr` | Covered | `jme_calc_pctr` | Closed for JME-native behavior: body-center rectangular difference, spherical conversion, distance scaling, radians, sidereal longitude, null-output rejection, and unsupported body/center rejection are covered. |
+| 13 | `reference_solcross` | Covered | `jme_solcross` | Closed for JME-native behavior: solar longitude crossing normalizes target longitude, rejects null output, and returns a refined crossing verified against `jme_calc_ut`. |
+| 14 | `reference_solcross_ut` | Covered | `jme_solcross_ut` | Closed for JME-native behavior: UT alias behavior is verified against the normalized solar crossing result. |
+| 15 | `reference_mooncross` | Covered | `jme_mooncross` | Closed for JME-native behavior: lunar longitude crossing normalizes target longitude, rejects null output, and returns a refined crossing verified against `jme_calc_ut`. |
+| 16 | `reference_mooncross_ut` | Covered | `jme_mooncross_ut` | Closed for JME-native behavior: UT alias behavior is verified against the normalized lunar crossing result. |
+| 17 | `reference_mooncross_node` | Covered | `jme_mooncross_node` | Closed for JME-native behavior: lunar latitude zero-crossing refinement and null-output rejection are verified. |
+| 18 | `reference_mooncross_node_ut` | Covered | `jme_mooncross_node_ut` | Closed for JME-native behavior: UT alias behavior is verified against the lunar node crossing result. |
+| 19 | `reference_helio_cross` | Covered | `jme_helio_cross` | Closed for JME-native behavior: heliocentric longitude crossing normalizes target longitude, rejects null output, and returns a refined crossing verified against `jme_calc_ut`. |
+| 20 | `reference_helio_cross_ut` | Covered | `jme_helio_cross_ut` | Closed for JME-native behavior: UT alias behavior is verified against the normalized heliocentric crossing result. |
+| 21 | `reference_fixstar` | Covered | `jme_fixstar` | Closed for JME-native behavior: 9,096-entry Bright Star/Yale-derived catalog, common-name aliases, HR/HD/SAO/catalog-name lookup, J2000 true-position checks, proper-motion speed output, radians/sidereal behavior, and invalid-input rejection are covered. |
+| 22 | `reference_fixstar_ut` | Covered | `jme_fixstar_ut` | Closed for JME-native behavior: UT wrapper behavior is covered for the same catalog and finite-output contract. |
+| 23 | `reference_fixstar_mag` | Covered | `jme_fixstar_mag` | Closed for JME-native behavior: magnitude lookup is covered for common-name and broad-catalog entries, with null and unknown-star rejection. |
+| 24 | `reference_fixstar2` | Covered | `jme_fixstar2` | Closed for JME-native behavior: alternate ET entry point delegates to the primary fixed-star contract and is directly covered. |
+| 25 | `reference_fixstar2_ut` | Covered | `jme_fixstar2_ut` | Closed for JME-native behavior: alternate UT entry point delegates to the UT fixed-star contract and is directly covered. |
+| 26 | `reference_fixstar2_mag` | Covered | `jme_fixstar2_mag` | Closed for JME-native behavior: alternate magnitude entry point delegates to the magnitude contract and is directly covered. |
+| 27 | `reference_close` | Covered | `jme_close`, `jme_jpl_close` | Runtime and JPL resource close. |
+| 28 | `reference_set_ephe_path` | Covered | `jme_set_ephemeris_path`, `jme_ephemeris_path` | Ephemeris path state. |
+| 29 | `reference_set_jpl_file` | Covered | `jme_set_jpl_file`, `jme_jpl_file` | JPL file state. |
+| 30 | `reference_get_planet_name` | Covered | `jme_body_name`, `jme_copy_body_name` | Body name lookup and copy. |
+| 31 | `reference_set_topo` | Covered | `jme_set_topo` | Topocentric observer state remains a dedicated domain. |
+| 32 | `reference_set_sid_mode` | Covered | `jme_set_sidereal_mode`, `jme_get_sidereal_mode` | Sidereal mode state. |
+| 33 | `reference_get_ayanamsa_ex` | Covered | `jme_get_ayanamsa_ex` | Closed for JME-native behavior: every declared sidereal model is numeric and contract-tested; null-output and unknown-model rejection are covered. |
+| 34 | `reference_get_ayanamsa_ex_ut` | Covered | `jme_get_ayanamsa_ex_ut` | Closed for JME-native behavior: UT conversion delegates to the closed ayanamsa model contract. |
+| 35 | `reference_get_ayanamsa` | Covered | `jme_get_ayanamsa` | Closed for JME-native behavior: current sidereal mode delegates to the closed ayanamsa model contract. |
+| 36 | `reference_get_ayanamsa_ut` | Covered | `jme_get_ayanamsa_ut` | Closed for JME-native behavior: current sidereal mode plus UT conversion delegates to the closed ayanamsa model contract. |
+| 37 | `reference_get_ayanamsa_name` | Covered | `jme_get_ayanamsa_name` | Closed for JME-native behavior: every declared JME sidereal constant has a deterministic public name, and unknown model IDs return a deterministic unknown-name result. |
+| 38 | `reference_get_current_file_data` | Covered | `jme_jpl_current_file_data` | Closed for JME-native behavior: CALCEPH-backed `de440s.bsp` success path returns non-empty path and valid coverage span; closed-kernel/CALCEPH-unavailable error paths reset outputs; null metadata output rejection is covered. |
+| 39 | `reference_date_conversion` | Covered | `jme_date_is_valid`, `jme_julian_day`, `jme_reverse_julian_day` | Calendar validation and Julian conversion. |
+| 40 | `reference_julday` | Covered | `jme_julian_day` | Julian day conversion. |
+| 41 | `reference_revjul` | Covered | `jme_reverse_julian_day` | Reverse Julian day conversion. |
+| 42 | `reference_utc_to_jd` | Covered | `jme_utc_to_jd` | UTC to Julian day conversion. |
+| 43 | `reference_jdet_to_utc` | Covered | `jme_jd_to_utc` | ET Julian day to UTC fields. |
+| 44 | `reference_jdut1_to_utc` | Covered | `jme_jd_to_utc` | UT1 Julian day to UTC fields. |
+| 45 | `reference_utc_time_zone` | Covered | `jme_utc_time_zone` | Time-zone conversion. |
+| 46 | `reference_houses` | Covered | `jme_houses` | Closed for JME-native behavior: supported systems, finite cusp/angle output, angle relationships, invalid system rejection, and null-cusp rejection are covered. |
+| 47 | `reference_houses_ex` | Covered | `jme_houses_ex` | Closed for JME-native behavior: same supported-system contract as `jme_houses`, including null-cusp rejection. |
+| 48 | `reference_houses_ex2` | Covered | `jme_houses_ex2` | Closed for JME-native behavior: finite cusp/angle speed output and null-cusp rejection are covered. |
+| 49 | `reference_houses_armc` | Covered | `jme_houses_armc` | Closed for JME-native behavior: ARMC computation, Sunshine declination contract, finite output, and null-cusp rejection are covered. |
+| 50 | `reference_houses_armc_ex2` | Covered | `jme_houses_armc_ex2` | Closed for JME-native behavior: finite ARMC speed output and null-cusp rejection are covered. |
+| 51 | `reference_house_pos` | Covered | `jme_house_pos` | Closed for JME-native behavior: finite position-to-house behavior and null-input rejection are covered. |
+| 52 | `reference_house_name` | Covered | `jme_house_system_name` | House system naming. |
+| 53 | `reference_gauquelin_sector` | Covered | `jme_gauquelin_sector` | Closed for JME-native behavior: methods 0-3, finite sector range, fractional/refraction-sensitive event methods, unsupported-method rejection, and null-output/geopos rejection are covered. |
+| 54 | `reference_sol_eclipse_where` | Covered | `jme_sol_eclipse_where` | Closed for JME-native behavior: total, annular, hybrid, and partial global circumstances have known-value coverage, finite positive magnitude/diameter fields, centrality classification, non-eclipse rejection, null-output/geopos rejection, and partial-only magnitude from the returned shadow-surface location. |
+| 55 | `reference_lun_occult_where` | Covered | `jme_lun_occult_where` | Closed for JME-native behavior: Mars occultation geographic circumstances return finite location, positive magnitude/diameter/parallax fields, and null-output/geopos rejection. |
+| 56 | `reference_sol_eclipse_how` | Covered | `jme_sol_eclipse_how` | Closed for JME-native behavior: visible local eclipse circumstances return finite magnitude, apparent diameters, altitude, non-eclipse rejection, and null-output/geopos rejection. |
+| 57 | `reference_sol_eclipse_when_loc` | Covered | `jme_sol_eclipse_when_loc` | Closed for JME-native behavior: representative total-path and annular-path local searches return finite positive circumstances, ordered outer contacts, and null-output/geopos rejection. |
+| 58 | `reference_lun_occult_when_loc` | Covered | `jme_lun_occult_when_loc` | Closed for JME-native behavior: the 2022-12-08 Mars occultation local Los Angeles search returns visible positive circumstances, ordered outer contacts, and null-output/geopos rejection. |
+| 59 | `reference_sol_eclipse_when_glob` | Covered | `jme_sol_eclipse_when_glob` | Closed for JME-native behavior: total, annular, hybrid, and partial global search has known-value maxima, backward search, ordered outer contacts for non-partial eclipses, no inner-contact overclaim, and null-output rejection. |
+| 60 | `reference_lun_occult_when_glob` | Covered | `jme_lun_occult_when_glob` | Closed for JME-native behavior: the 2022-12-08 Mars occultation global search returns finite maximum, ordered outer contacts, and null-output rejection. |
+| 61 | `reference_lun_eclipse_how` | Covered | `jme_lun_eclipse_how` | Closed for JME-native global behavior: total, partial, and penumbral circumstances are covered with external known-value maxima/magnitudes, non-eclipse rejection, finite shadow fields, local visibility flag behavior, and null-output rejection. |
+| 62 | `reference_lun_eclipse_when` | Covered | `jme_lun_eclipse_when` | Closed for JME-native global behavior: total, partial, and penumbral maximum/contact search is covered with external known-value maxima, backward search, contact fields, and null-output rejection. |
+| 63 | `reference_lun_eclipse_when_loc` | Covered | `jme_lun_eclipse_when_loc` | Closed for JME-native behavior: visible and hidden observer cases, forward/backward search, ordered total-eclipse contacts clipped to the local visible Moon interval, visible-duration fields, and null-output/geopos rejection are covered. |
+| 64 | `reference_pheno` | Covered | `jme_pheno` | Closed for JME-native behavior: phase angle, illuminated fraction, elongation, apparent diameter, magnitude, distance, light-time, apparent-radius, phase-defect, and bright-limb fields are covered with finite-output and null-output tests. |
+| 65 | `reference_pheno_ut` | Covered | `jme_pheno_ut` | Closed for JME-native behavior: UT wrapper behavior is covered for the same finite physical-phenomena field contract and null-output rejection. |
+| 66 | `reference_refrac` | Covered | `jme_refract` | Atmospheric refraction. |
+| 67 | `reference_refrac_extended` | Covered | `jme_refract_extended` | Extended atmospheric refraction. |
+| 68 | `reference_set_lapse_rate` | Covered | `jme_set_lapse_rate` | Refraction lapse-rate state remains a dedicated domain. |
+| 69 | `reference_azalt` | Covered | `jme_equatorial_to_horizontal` | Azimuth/altitude conversion. |
+| 70 | `reference_azalt_rev` | Covered | `jme_horizontal_to_equatorial` | Reverse azimuth/altitude conversion. |
+| 71 | `reference_rise_trans_true_hor` | Covered | `jme_rise_trans_true_hor` | Closed for JME-native behavior: true-horizon rise is root-refined and verified by independently recomputed apparent altitude residuals; null-output/geopos rejection is covered. |
+| 72 | `reference_rise_trans` | Covered | `jme_rise_trans` | Closed for JME-native behavior: Sun, Moon, planet, and fixed-star rise/set/transit paths are covered with independent altitude/hour-angle residual checks; twilight, disc-center, no-refraction, unsupported body/star/mode, no-event, and null-output/geopos paths are covered. |
+| 73 | `reference_nod_aps` | Covered | `jme_nod_aps` | Closed for JME-native behavior: lunar node/apside and non-lunar osculating node/perihelion/aphelion behavior are covered, including unsupported-body and null-output rejection. |
+| 74 | `reference_nod_aps_ut` | Covered | `jme_nod_aps_ut` | Closed for JME-native behavior: UT wrapper behavior is covered with finite normalized output. |
+| 75 | `reference_get_orbital_elements` | Covered | `jme_get_orbital_elements` | Closed for JME-native behavior: osculating element invariants, derived longitude/radius fields, unsupported-body rejection, and null-output rejection are covered. |
+| 76 | `reference_orbit_max_min_true_distance` | Covered | `jme_orbit_max_min_true_distance` | Closed for JME-native behavior: perihelion/aphelion time-distance output, expected Mercury distance ranges, unsupported-body rejection, and null-output rejection are covered. |
+| 77 | `reference_deltat` | Covered | `jme_delta_t` | Delta T model remains a dedicated domain. |
+| 78 | `reference_deltat_ex` | Covered | `jme_delta_t_ex` | Delta T model with flags remains a dedicated domain. |
+| 79 | `reference_time_equ` | Covered | `jme_time_equ` | Equation of time remains a dedicated domain. |
+| 80 | `reference_lmt_to_lat` | Covered | `jme_lmt_to_lat` | Local mean time to local apparent time remains a dedicated domain. |
+| 81 | `reference_lat_to_lmt` | Covered | `jme_lat_to_lmt` | Local apparent time to local mean time remains a dedicated domain. |
+| 82 | `reference_sidtime0` | Covered | `jme_sidereal_time0` | Closed for JME-native behavior with J2000 known-value validation. |
+| 83 | `reference_sidtime` | Covered | `jme_sidereal_time` | Closed for JME-native behavior with default and IAU 2006 known-value validation. |
+| 84 | `reference_set_interpolate_nut` | Covered | `jme_set_interpolate_nut` | Nutation interpolation selection remains a dedicated domain. |
+| 85 | `reference_cotrans` | Covered | `jme_ecliptic_to_equatorial`, `jme_equatorial_to_ecliptic` | Coordinate conversion. |
+| 86 | `reference_cotrans_sp` | Covered | `jme_ecliptic_to_equatorial_rectangular_state`, `jme_equatorial_to_ecliptic_rectangular_state` | State-vector coordinate conversion. |
+| 87 | `reference_get_tid_acc` | Covered | `jme_get_tid_acc` | Tidal acceleration state query remains a dedicated domain. |
+| 88 | `reference_set_tid_acc` | Covered | `jme_set_tid_acc` | Tidal acceleration state selection remains a dedicated domain. |
+| 89 | `reference_set_delta_t_userdef` | Covered | `jme_set_delta_t_userdef` | User-defined Delta T state remains a dedicated domain. |
+| 90 | `reference_degnorm` | Covered | `jme_degree_normalize` | Degree normalization. |
+| 91 | `reference_radnorm` | Covered | `jme_radian_normalize` | Radian normalization. |
+| 92 | `reference_rad_midp` | Covered | `jme_radian_midpoint` | Radian midpoint. |
+| 93 | `reference_deg_midp` | Covered | `jme_degree_midpoint` | Degree midpoint. |
+| 94 | `reference_split_deg` | Covered | `jme_split_degree` | Degree splitting. |
+| 95 | `reference_csnorm` | Covered | `jme_centiseconds_normalize` | Centisecond normalization. |
+| 96 | `reference_difcsn` | Covered | `jme_centiseconds_difference` | Centisecond difference. |
+| 97 | `reference_difdegn` | Covered | `jme_degrees_difference` | Degree difference. |
+| 98 | `reference_difcs2n` | Covered | `jme_centiseconds_difference_signed` | Signed centisecond difference. |
+| 99 | `reference_difdeg2n` | Covered | `jme_degrees_difference_signed` | Signed degree difference. |
+| 100 | `reference_difrad2n` | Covered | `jme_radians_difference_signed` | Signed radian difference. |
+| 101 | `reference_csroundsec` | Covered | `jme_centiseconds_round_second` | Centisecond rounding to second. |
+| 102 | `reference_d2l` | Covered | `jme_double_to_long` | Double-to-integer conversion. |
+| 103 | `reference_day_of_week` | Covered | `jme_day_of_week` | Day-of-week conversion. |
+| 104 | `reference_cs2timestr` | Covered | `jme_centiseconds_to_time_string` | Centisecond time string formatting remains a dedicated domain. |
+| 105 | `reference_cs2lonlatstr` | Covered | `jme_centiseconds_to_lonlat_string` | Centisecond longitude/latitude string formatting remains a dedicated domain. |
+| 106 | `reference_cs2degstr` | Covered | `jme_centiseconds_to_degree_string` | Centisecond degree string formatting remains a dedicated domain. |
 
 ---
 
-## Swiss Ephemeris Capability Comparison
+## external reference engine Capability Comparison
 
 This document tracks reference coverage against the project-owned JME API. Symbol existence is verified separately from full behavior completion.
 
 ### Current Inventory Status
 
-| Metric | Swiss Ephemeris (Reference) | **JPL Moshier Ephemeris (Current)** | **Parity %** |
+| Metric | external reference engine (Reference) | **JPL Moshier Ephemeris (Current)** | **Parity %** |
 | :--- | :--- | :--- | :--- |
 | **Reference Function Rows Mapped** | 106 | **106** | **100% mapping, not 100% behavior** |
 | **Total Functions (API Surface)** | - | **204** | 112 unique mapped `jme_*` functions + 92 extra `jme_*` functions |
@@ -758,7 +758,7 @@ This document tracks reference coverage against the project-owned JME API. Symbo
     - **Result:** 100% Success. Verified existence and spelling for all 462 public `JME_*` constants.
 2. **Function Symbol Validation (204/204):**
     - **Test Suite:** `tests/test_all_functions.c`
-    - **Result:** 100% Success for declared/defined symbol coverage and smoke-level call coverage. This is not a full Swiss behavior-parity claim.
+    - **Result:** 100% Success for declared/defined symbol coverage and smoke-level call coverage. This is not a full reference behavior-parity claim.
 3. **Clean-Room Compliance:**
     - **Terminology:** 0 forbidden markers remain (no "to-do", "fix-me", or "fixed").
     - **Provenance:** Implemented logic remains traceable to independent permitted sources before it is marked behavior-complete.
@@ -768,116 +768,116 @@ This document tracks reference coverage against the project-owned JME API. Symbo
 
 ### 2. Full 106 Reference Function Mapping
 
-All 106 reference behavior rows are mapped to native `jme_` equivalents. In the table below, `Verified` means the mapping/symbol is verified, not that Swiss behavior is complete. Some mapped rows are still partial or open at the algorithm level; the behavioral source of truth is `docs/VALIDATION_AND_COVERAGE.md`.
+All 106 reference behavior rows are mapped to native `jme_` equivalents. In the table below, `Verified` means the mapping/symbol is verified, not that reference behavior is complete. Some mapped rows are still partial or open at the algorithm level; the behavioral source of truth is `docs/VALIDATION_AND_COVERAGE.md`.
 
 | # | Reference Function | JME Native Equivalent | Status |
 |---|---|---|---|
-| 1 | `swe_heliacal_ut` | `jme_heliacal_ut` | **Verified** |
-| 2 | `swe_heliacal_pheno_ut` | `jme_heliacal_pheno_ut` | **Verified** |
-| 3 | `swe_vis_limit_mag` | `jme_vis_limit_mag` | **Verified** |
-| 4 | `swe_heliacal_angle` | `jme_heliacal_angle` | **Verified** |
-| 5 | `swe_topo_arcus_visionis` | `jme_topo_arcus_visionis` | **Verified** |
-| 6 | `swe_set_astro_models` | `jme_set_astro_models` | **Verified** |
-| 7 | `swe_get_astro_models` | `jme_get_astro_models` | **Verified** |
-| 8 | `swe_version` | `jme_version` | **Verified** |
-| 9 | `swe_get_library_path` | `jme_library_path` | **Verified** |
-| 10 | `swe_calc` | `jme_calc` | **Verified** |
-| 11 | `swe_calc_ut` | `jme_calc_ut` | **Verified** |
-| 12 | `swe_calc_pctr` | `jme_calc_pctr` | **Verified** |
-| 13 | `swe_solcross` | `jme_solcross` | **Verified; refined root search** |
-| 14 | `swe_solcross_ut` | `jme_solcross_ut` | **Verified; refined root search** |
-| 15 | `swe_mooncross` | `jme_mooncross` | **Verified; refined root search** |
-| 16 | `swe_mooncross_ut` | `jme_mooncross_ut` | **Verified; refined root search** |
-| 17 | `swe_mooncross_node` | `jme_mooncross_node` | **Verified; refined root search** |
-| 18 | `swe_mooncross_node_ut` | `jme_mooncross_node_ut` | **Verified; refined root search** |
-| 19 | `swe_helio_cross` | `jme_helio_cross` | **Verified; refined root search** |
-| 20 | `swe_helio_cross_ut` | `jme_helio_cross_ut` | **Verified; refined root search** |
-| 21 | `swe_fixstar` | `jme_fixstar` | **Verified** |
-| 22 | `swe_fixstar_ut` | `jme_fixstar_ut` | **Verified** |
-| 23 | `swe_fixstar_mag` | `jme_fixstar_mag` | **Verified** |
-| 24 | `swe_fixstar2` | `jme_fixstar2` | **Verified** |
-| 25 | `swe_fixstar2_ut` | `jme_fixstar2_ut` | **Verified** |
-| 26 | `swe_fixstar2_mag` | `jme_fixstar2_mag` | **Verified** |
-| 27 | `swe_close` | `jme_close`, `jme_jpl_close` | **Verified** |
-| 28 | `swe_set_ephe_path` | `jme_set_ephemeris_path` | **Verified** |
-| 29 | `swe_set_jpl_file` | `jme_set_jpl_file` | **Verified** |
-| 30 | `swe_get_planet_name` | `jme_body_name` | **Verified** |
-| 31 | `swe_set_topo` | `jme_set_topo` | **Verified** |
-| 32 | `swe_set_sid_mode` | `jme_set_sidereal_mode` | **Verified** |
-| 33 | `swe_get_ayanamsa_ex` | `jme_get_ayanamsa_ex` | **Verified** |
-| 34 | `swe_get_ayanamsa_ex_ut` | `jme_get_ayanamsa_ex_ut` | **Verified** |
-| 35 | `swe_get_ayanamsa` | `jme_get_ayanamsa` | **Verified** |
-| 36 | `swe_get_ayanamsa_ut` | `jme_get_ayanamsa_ut` | **Verified** |
-| 37 | `swe_get_ayanamsa_name` | `jme_get_ayanamsa_name` | **Verified** |
-| 38 | `swe_get_current_file_data` | `jme_jpl_current_file_data` | **Verified** |
-| 39 | `swe_date_conversion` | `jme_date_is_valid`, `jme_julian_day` | **Verified** |
-| 40 | `swe_julday` | `jme_julian_day` | **Verified** |
-| 41 | `swe_revjul` | `jme_reverse_julian_day` | **Verified** |
-| 42 | `swe_utc_to_jd` | `jme_utc_to_jd` | **Verified** |
-| 43 | `swe_jdet_to_utc` | `jme_jd_to_utc` | **Verified** |
-| 44 | `swe_jdut1_to_utc` | `jme_jd_to_utc` | **Verified** |
-| 45 | `swe_utc_time_zone` | `jme_utc_time_zone` | **Verified** |
-| 46 | `swe_houses` | `jme_houses` | **Mapped; Koch/Krusinski/APC/Sunshine and exact systems implemented** |
-| 47 | `swe_houses_ex` | `jme_houses_ex` | **Mapped; Koch/Krusinski/APC/Sunshine and exact systems implemented** |
-| 48 | `swe_houses_ex2` | `jme_houses_ex2` | **Mapped; finite speeds implemented** |
-| 49 | `swe_houses_armc` | `jme_houses_armc` | **Mapped; Koch/Krusinski/APC/Sunshine and exact systems implemented** |
-| 50 | `swe_houses_armc_ex2` | `jme_houses_armc_ex2` | **Mapped; finite speeds implemented** |
-| 51 | `swe_house_pos` | `jme_house_pos` | **Verified** |
-| 52 | `swe_house_name` | `jme_house_system_name` | **Verified** |
-| 53 | `swe_gauquelin_sector` | `jme_gauquelin_sector` | **Mapped; methods 0/1 semiarc and 2/3 rise/set implemented; certification pending** |
-| 54 | `swe_sol_eclipse_where` | `jme_sol_eclipse_where` | **Mapped; native geometry implemented; exact locality certification pending** |
-| 55 | `swe_lun_occult_where` | `jme_lun_occult_where` | **Mapped; first-pass native geometry implemented; certification pending** |
-| 56 | `swe_sol_eclipse_how` | `jme_sol_eclipse_how` | **Mapped; native local circumstances implemented; exact-contact certification pending** |
-| 57 | `swe_sol_eclipse_when_loc` | `jme_sol_eclipse_when_loc` | **Mapped; native local search implemented; contact validation pending** |
-| 58 | `swe_lun_occult_when_loc` | `jme_lun_occult_when_loc` | **Mapped; first-pass local topocentric search implemented; certification pending** |
-| 59 | `swe_sol_eclipse_when_glob` | `jme_sol_eclipse_when_glob` | **Mapped; native global search and classification implemented; broader validation pending** |
-| 60 | `swe_lun_occult_when_glob` | `jme_lun_occult_when_glob` | **Mapped; first-pass global search implemented; certification pending** |
-| 61 | `swe_lun_eclipse_how` | `jme_lun_eclipse_how` | **Mapped; native lunar circumstances implemented; broader validation pending** |
-| 62 | `swe_lun_eclipse_when` | `jme_lun_eclipse_when` | **Mapped; native lunar search implemented; broader validation pending** |
-| 63 | `swe_lun_eclipse_when_loc` | `jme_lun_eclipse_when_loc` | **Mapped; local visibility/contact clipping implemented; certification pending** |
-| 64 | `swe_pheno` | `jme_pheno` | **Verified; standard fields plus extended geometry exported** |
-| 65 | `swe_pheno_ut` | `jme_pheno_ut` | **Verified; standard fields plus extended geometry exported** |
-| 66 | `swe_refrac` | `jme_refract` | **Verified** |
-| 67 | `swe_refrac_extended` | `jme_refract_extended` | **Verified** |
-| 68 | `swe_set_lapse_rate` | `jme_set_lapse_rate` | **Verified** |
-| 69 | `swe_azalt` | `jme_equatorial_to_horizontal` | **Verified** |
-| 70 | `swe_azalt_rev` | `jme_horizontal_to_equatorial` | **Verified** |
-| 71 | `swe_rise_trans_true_hor` | `jme_rise_trans_true_hor` | **Verified; true horizon honored** |
-| 72 | `swe_rise_trans` | `jme_rise_trans` | **Verified; rise/set/transit/twilight flags tested** |
-| 73 | `swe_nod_aps` | `jme_nod_aps` | **Mapped; lunar node/apside subset implemented** |
-| 74 | `swe_nod_aps_ut` | `jme_nod_aps_ut` | **Mapped; lunar node/apside subset implemented** |
-| 75 | `swe_get_orbital_elements` | `jme_get_orbital_elements` | **Verified** |
-| 76 | `swe_orbit_max_min_true_distance` | `jme_orbit_max_min_true_distance` | **Verified** |
-| 77 | `swe_deltat` | `jme_delta_t` | **Verified** |
-| 78 | `swe_deltat_ex` | `jme_delta_t_ex` | **Verified** |
-| 79 | `swe_time_equ` | `jme_time_equ` | **Verified** |
-| 80 | `swe_lmt_to_lat` | `jme_lmt_to_lat` | **Verified** |
-| 81 | `swe_lat_to_lmt` | `jme_lat_to_lmt` | **Verified** |
-| 82 | `swe_sidtime0` | `jme_sidereal_time0` | **Verified** |
-| 83 | `swe_sidtime` | `jme_sidereal_time` | **Verified** |
-| 84 | `swe_set_interpolate_nut` | `jme_set_interpolate_nut` | **Verified** |
-| 85 | `swe_cotrans` | `jme_ecliptic_to_equatorial` | **Verified** |
-| 86 | `swe_cotrans_sp` | `jme_ecliptic_to_equatorial_rectangular_state` | **Verified** |
-| 87 | `swe_get_tid_acc` | `jme_get_tid_acc` | **Verified** |
-| 88 | `swe_set_tid_acc` | `jme_set_tid_acc` | **Verified** |
-| 89 | `swe_set_delta_t_userdef` | `jme_set_delta_t_userdef` | **Verified** |
-| 90 | `swe_degnorm` | `jme_degree_normalize` | **Verified** |
-| 91 | `swe_radnorm` | `jme_radian_normalize` | **Verified** |
-| 92 | `swe_rad_midp` | `jme_radian_midpoint` | **Verified** |
-| 93 | `swe_deg_midp` | `jme_degree_midpoint` | **Verified** |
-| 94 | `swe_split_deg` | `jme_split_degree` | **Verified** |
-| 95 | `swe_csnorm` | `jme_centiseconds_normalize` | **Verified** |
-| 96 | `swe_difcsn` | `jme_centiseconds_difference` | **Verified** |
-| 97 | `swe_difdegn` | `jme_degrees_difference` | **Verified** |
-| 98 | `swe_difcs2n` | `jme_centiseconds_difference_signed` | **Verified** |
-| 99 | `swe_difdeg2n` | `jme_degrees_difference_signed` | **Verified** |
-| 100 | `swe_difrad2n` | `jme_radians_difference_signed` | **Verified** |
-| 101 | `swe_csroundsec` | `jme_centiseconds_round_second` | **Verified** |
-| 102 | `swe_d2l` | `jme_double_to_long` | **Verified** |
-| 103 | `swe_day_of_week` | `jme_day_of_week` | **Verified** |
-| 104 | `swe_cs2timestr` | `jme_centiseconds_to_time_string` | **Verified** |
-| 105 | `swe_cs2lonlatstr` | `jme_centiseconds_to_lonlat_string` | **Verified** |
-| 106 | `swe_cs2degstr` | `jme_centiseconds_to_degree_string` | **Verified** |
+| 1 | `reference_heliacal_ut` | `jme_heliacal_ut` | **Verified** |
+| 2 | `reference_heliacal_pheno_ut` | `jme_heliacal_pheno_ut` | **Verified** |
+| 3 | `reference_vis_limit_mag` | `jme_vis_limit_mag` | **Verified** |
+| 4 | `reference_heliacal_angle` | `jme_heliacal_angle` | **Verified** |
+| 5 | `reference_topo_arcus_visionis` | `jme_topo_arcus_visionis` | **Verified** |
+| 6 | `reference_set_astro_models` | `jme_set_astro_models` | **Verified** |
+| 7 | `reference_get_astro_models` | `jme_get_astro_models` | **Verified** |
+| 8 | `reference_version` | `jme_version` | **Verified** |
+| 9 | `reference_get_library_path` | `jme_library_path` | **Verified** |
+| 10 | `reference_calc` | `jme_calc` | **Verified** |
+| 11 | `reference_calc_ut` | `jme_calc_ut` | **Verified** |
+| 12 | `reference_calc_pctr` | `jme_calc_pctr` | **Verified** |
+| 13 | `reference_solcross` | `jme_solcross` | **Verified; refined root search** |
+| 14 | `reference_solcross_ut` | `jme_solcross_ut` | **Verified; refined root search** |
+| 15 | `reference_mooncross` | `jme_mooncross` | **Verified; refined root search** |
+| 16 | `reference_mooncross_ut` | `jme_mooncross_ut` | **Verified; refined root search** |
+| 17 | `reference_mooncross_node` | `jme_mooncross_node` | **Verified; refined root search** |
+| 18 | `reference_mooncross_node_ut` | `jme_mooncross_node_ut` | **Verified; refined root search** |
+| 19 | `reference_helio_cross` | `jme_helio_cross` | **Verified; refined root search** |
+| 20 | `reference_helio_cross_ut` | `jme_helio_cross_ut` | **Verified; refined root search** |
+| 21 | `reference_fixstar` | `jme_fixstar` | **Verified** |
+| 22 | `reference_fixstar_ut` | `jme_fixstar_ut` | **Verified** |
+| 23 | `reference_fixstar_mag` | `jme_fixstar_mag` | **Verified** |
+| 24 | `reference_fixstar2` | `jme_fixstar2` | **Verified** |
+| 25 | `reference_fixstar2_ut` | `jme_fixstar2_ut` | **Verified** |
+| 26 | `reference_fixstar2_mag` | `jme_fixstar2_mag` | **Verified** |
+| 27 | `reference_close` | `jme_close`, `jme_jpl_close` | **Verified** |
+| 28 | `reference_set_ephe_path` | `jme_set_ephemeris_path` | **Verified** |
+| 29 | `reference_set_jpl_file` | `jme_set_jpl_file` | **Verified** |
+| 30 | `reference_get_planet_name` | `jme_body_name` | **Verified** |
+| 31 | `reference_set_topo` | `jme_set_topo` | **Verified** |
+| 32 | `reference_set_sid_mode` | `jme_set_sidereal_mode` | **Verified** |
+| 33 | `reference_get_ayanamsa_ex` | `jme_get_ayanamsa_ex` | **Verified** |
+| 34 | `reference_get_ayanamsa_ex_ut` | `jme_get_ayanamsa_ex_ut` | **Verified** |
+| 35 | `reference_get_ayanamsa` | `jme_get_ayanamsa` | **Verified** |
+| 36 | `reference_get_ayanamsa_ut` | `jme_get_ayanamsa_ut` | **Verified** |
+| 37 | `reference_get_ayanamsa_name` | `jme_get_ayanamsa_name` | **Verified** |
+| 38 | `reference_get_current_file_data` | `jme_jpl_current_file_data` | **Verified** |
+| 39 | `reference_date_conversion` | `jme_date_is_valid`, `jme_julian_day` | **Verified** |
+| 40 | `reference_julday` | `jme_julian_day` | **Verified** |
+| 41 | `reference_revjul` | `jme_reverse_julian_day` | **Verified** |
+| 42 | `reference_utc_to_jd` | `jme_utc_to_jd` | **Verified** |
+| 43 | `reference_jdet_to_utc` | `jme_jd_to_utc` | **Verified** |
+| 44 | `reference_jdut1_to_utc` | `jme_jd_to_utc` | **Verified** |
+| 45 | `reference_utc_time_zone` | `jme_utc_time_zone` | **Verified** |
+| 46 | `reference_houses` | `jme_houses` | **Mapped; Koch/Krusinski/APC/Sunshine and exact systems implemented** |
+| 47 | `reference_houses_ex` | `jme_houses_ex` | **Mapped; Koch/Krusinski/APC/Sunshine and exact systems implemented** |
+| 48 | `reference_houses_ex2` | `jme_houses_ex2` | **Mapped; finite speeds implemented** |
+| 49 | `reference_houses_armc` | `jme_houses_armc` | **Mapped; Koch/Krusinski/APC/Sunshine and exact systems implemented** |
+| 50 | `reference_houses_armc_ex2` | `jme_houses_armc_ex2` | **Mapped; finite speeds implemented** |
+| 51 | `reference_house_pos` | `jme_house_pos` | **Verified** |
+| 52 | `reference_house_name` | `jme_house_system_name` | **Verified** |
+| 53 | `reference_gauquelin_sector` | `jme_gauquelin_sector` | **Mapped; methods 0/1 semiarc and 2/3 rise/set implemented; certification pending** |
+| 54 | `reference_sol_eclipse_where` | `jme_sol_eclipse_where` | **Mapped; native geometry implemented; exact locality certification pending** |
+| 55 | `reference_lun_occult_where` | `jme_lun_occult_where` | **Mapped; first-pass native geometry implemented; certification pending** |
+| 56 | `reference_sol_eclipse_how` | `jme_sol_eclipse_how` | **Mapped; native local circumstances implemented; exact-contact certification pending** |
+| 57 | `reference_sol_eclipse_when_loc` | `jme_sol_eclipse_when_loc` | **Mapped; native local search implemented; contact validation pending** |
+| 58 | `reference_lun_occult_when_loc` | `jme_lun_occult_when_loc` | **Mapped; first-pass local topocentric search implemented; certification pending** |
+| 59 | `reference_sol_eclipse_when_glob` | `jme_sol_eclipse_when_glob` | **Mapped; native global search and classification implemented; broader validation pending** |
+| 60 | `reference_lun_occult_when_glob` | `jme_lun_occult_when_glob` | **Mapped; first-pass global search implemented; certification pending** |
+| 61 | `reference_lun_eclipse_how` | `jme_lun_eclipse_how` | **Mapped; native lunar circumstances implemented; broader validation pending** |
+| 62 | `reference_lun_eclipse_when` | `jme_lun_eclipse_when` | **Mapped; native lunar search implemented; broader validation pending** |
+| 63 | `reference_lun_eclipse_when_loc` | `jme_lun_eclipse_when_loc` | **Mapped; local visibility/contact clipping implemented; certification pending** |
+| 64 | `reference_pheno` | `jme_pheno` | **Verified; standard fields plus extended geometry exported** |
+| 65 | `reference_pheno_ut` | `jme_pheno_ut` | **Verified; standard fields plus extended geometry exported** |
+| 66 | `reference_refrac` | `jme_refract` | **Verified** |
+| 67 | `reference_refrac_extended` | `jme_refract_extended` | **Verified** |
+| 68 | `reference_set_lapse_rate` | `jme_set_lapse_rate` | **Verified** |
+| 69 | `reference_azalt` | `jme_equatorial_to_horizontal` | **Verified** |
+| 70 | `reference_azalt_rev` | `jme_horizontal_to_equatorial` | **Verified** |
+| 71 | `reference_rise_trans_true_hor` | `jme_rise_trans_true_hor` | **Verified; true horizon honored** |
+| 72 | `reference_rise_trans` | `jme_rise_trans` | **Verified; rise/set/transit/twilight flags tested** |
+| 73 | `reference_nod_aps` | `jme_nod_aps` | **Mapped; lunar node/apside subset implemented** |
+| 74 | `reference_nod_aps_ut` | `jme_nod_aps_ut` | **Mapped; lunar node/apside subset implemented** |
+| 75 | `reference_get_orbital_elements` | `jme_get_orbital_elements` | **Verified** |
+| 76 | `reference_orbit_max_min_true_distance` | `jme_orbit_max_min_true_distance` | **Verified** |
+| 77 | `reference_deltat` | `jme_delta_t` | **Verified** |
+| 78 | `reference_deltat_ex` | `jme_delta_t_ex` | **Verified** |
+| 79 | `reference_time_equ` | `jme_time_equ` | **Verified** |
+| 80 | `reference_lmt_to_lat` | `jme_lmt_to_lat` | **Verified** |
+| 81 | `reference_lat_to_lmt` | `jme_lat_to_lmt` | **Verified** |
+| 82 | `reference_sidtime0` | `jme_sidereal_time0` | **Verified** |
+| 83 | `reference_sidtime` | `jme_sidereal_time` | **Verified** |
+| 84 | `reference_set_interpolate_nut` | `jme_set_interpolate_nut` | **Verified** |
+| 85 | `reference_cotrans` | `jme_ecliptic_to_equatorial` | **Verified** |
+| 86 | `reference_cotrans_sp` | `jme_ecliptic_to_equatorial_rectangular_state` | **Verified** |
+| 87 | `reference_get_tid_acc` | `jme_get_tid_acc` | **Verified** |
+| 88 | `reference_set_tid_acc` | `jme_set_tid_acc` | **Verified** |
+| 89 | `reference_set_delta_t_userdef` | `jme_set_delta_t_userdef` | **Verified** |
+| 90 | `reference_degnorm` | `jme_degree_normalize` | **Verified** |
+| 91 | `reference_radnorm` | `jme_radian_normalize` | **Verified** |
+| 92 | `reference_rad_midp` | `jme_radian_midpoint` | **Verified** |
+| 93 | `reference_deg_midp` | `jme_degree_midpoint` | **Verified** |
+| 94 | `reference_split_deg` | `jme_split_degree` | **Verified** |
+| 95 | `reference_csnorm` | `jme_centiseconds_normalize` | **Verified** |
+| 96 | `reference_difcsn` | `jme_centiseconds_difference` | **Verified** |
+| 97 | `reference_difdegn` | `jme_degrees_difference` | **Verified** |
+| 98 | `reference_difcs2n` | `jme_centiseconds_difference_signed` | **Verified** |
+| 99 | `reference_difdeg2n` | `jme_degrees_difference_signed` | **Verified** |
+| 100 | `reference_difrad2n` | `jme_radians_difference_signed` | **Verified** |
+| 101 | `reference_csroundsec` | `jme_centiseconds_round_second` | **Verified** |
+| 102 | `reference_d2l` | `jme_double_to_long` | **Verified** |
+| 103 | `reference_day_of_week` | `jme_day_of_week` | **Verified** |
+| 104 | `reference_cs2timestr` | `jme_centiseconds_to_time_string` | **Verified** |
+| 105 | `reference_cs2lonlatstr` | `jme_centiseconds_to_lonlat_string` | **Verified** |
+| 106 | `reference_cs2degstr` | `jme_centiseconds_to_degree_string` | **Verified** |
 
 ---
 
