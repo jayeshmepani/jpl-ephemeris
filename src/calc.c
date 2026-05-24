@@ -3,7 +3,11 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <sys/time.h>
+#endif
 
 #define JME_C_AU_PER_DAY 173.1446326846693
 #define JME_DEG_TO_RAD 0.017453292519943295769236907684886127134428718885417
@@ -20,9 +24,17 @@ static int g_profile_calc_ut_init = 0;
 
 static double jme_profile_now_seconds_local(void)
 {
+#ifdef _WIN32
+    LARGE_INTEGER frequency;
+    LARGE_INTEGER counter;
+    QueryPerformanceFrequency(&frequency);
+    QueryPerformanceCounter(&counter);
+    return (double)counter.QuadPart / (double)frequency.QuadPart;
+#else
     struct timeval tv;
     gettimeofday(&tv, 0);
     return (double)tv.tv_sec + ((double)tv.tv_usec / 1000000.0);
+#endif
 }
 
 static void jme_profile_calc_ut_report(void)
@@ -801,10 +813,33 @@ int jme_calc(double jd_et, int body, int flags, double *results, char *error)
 
     if ((flags & JME_CALC_TOPOCENTRIC)
         && (flags & JME_CALC_TRUE_POSITION)
-        && !(flags & JME_CALC_J2000)
-        && !target_is_ecliptic) {
-        if (apply_reference_frame_transform(jd_et, flags, target_is_ecliptic, target_pos, error) != JME_OK) {
-            return JME_ERR;
+        && !(flags & JME_CALC_J2000)) {
+        if (target_is_ecliptic) {
+            double equatorial_rect[6];
+            double eps;
+            if (jme_get_obliquity(jd_et, jme_context_obliquity_model(), &eps, error) != JME_OK) {
+                return JME_ERR;
+            }
+            if (!(flags & JME_CALC_NO_NUTATION)) {
+                double dpsi, deps;
+                if (jme_get_nutation(jd_et, jme_context_nutation_model(), &dpsi, &deps, error) != JME_OK) {
+                    return JME_ERR;
+                }
+                (void)dpsi;
+                eps += deps;
+            }
+            if (jme_ecliptic_to_equatorial_rectangular_state(target_pos, eps, equatorial_rect) != JME_OK) {
+                jme_set_error(error, "Topocentric ecliptic-to-equatorial conversion failed");
+                return JME_ERR;
+            }
+            for (i = 0; i < 6; i++) {
+                target_pos[i] = equatorial_rect[i];
+            }
+            target_is_ecliptic = 0;
+        } else {
+            if (apply_reference_frame_transform(jd_et, flags, target_is_ecliptic, target_pos, error) != JME_OK) {
+                return JME_ERR;
+            }
         }
         if (jme_get_topo_pos_true_equator(jd_et, observer_pos_au, error) != JME_OK) {
             return JME_ERR;

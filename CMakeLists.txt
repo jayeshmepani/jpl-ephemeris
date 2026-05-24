@@ -46,6 +46,10 @@ add_library(jme SHARED
     src/vsop87d_full.c
 )
 
+set_target_properties(jme PROPERTIES
+    WINDOWS_EXPORT_ALL_SYMBOLS ON
+)
+
 target_include_directories(jme
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -69,6 +73,15 @@ endif()
 
 if (MSVC)
     target_compile_options(jme PRIVATE /W4)
+    set_source_files_properties(
+        src/elp2000/elp2000-82b.c
+        src/moshier_full.c
+        src/moshier/moonlat404.c
+        src/moshier/moonlr404.c
+        src/vsop87a_full.c
+        src/vsop87d_full.c
+        PROPERTIES COMPILE_FLAGS "/Od"
+    )
 else()
     target_compile_options(jme PRIVATE -Wall -Wextra -Wpedantic)
     target_link_libraries(jme PUBLIC m)

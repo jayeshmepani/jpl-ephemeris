@@ -4,6 +4,11 @@ E:/project/astrology/JPL-Moshier-Ephemeris/build-local/CMakeFiles/test_api_contr
 E:/project/astrology/JPL-Moshier-Ephemeris/build-local/CMakeFiles/test_jpl_runtime.dir
 E:/project/astrology/JPL-Moshier-Ephemeris/build-local/CMakeFiles/test_all_constants.dir
 E:/project/astrology/JPL-Moshier-Ephemeris/build-local/CMakeFiles/test_all_functions.dir
+E:/project/astrology/JPL-Moshier-Ephemeris/build-local/CMakeFiles/test_analytical_validation.dir
+E:/project/astrology/JPL-Moshier-Ephemeris/build-local/CMakeFiles/test_extra_contract.dir
+E:/project/astrology/JPL-Moshier-Ephemeris/build-local/CMakeFiles/test_mapped_adversarial.dir
+E:/project/astrology/JPL-Moshier-Ephemeris/build-local/CMakeFiles/test_extra_adversarial.dir
+E:/project/astrology/JPL-Moshier-Ephemeris/build-local/CMakeFiles/jme_call_probe.dir
 E:/project/astrology/JPL-Moshier-Ephemeris/build-local/CMakeFiles/RUN_TESTS.dir
 E:/project/astrology/JPL-Moshier-Ephemeris/build-local/CMakeFiles/ALL_BUILD.dir
 E:/project/astrology/JPL-Moshier-Ephemeris/build-local/CMakeFiles/ZERO_CHECK.dir

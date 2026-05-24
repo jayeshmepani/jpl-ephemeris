@@ -12,6 +12,27 @@
 #include <string.h>
 #include <time.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#ifndef CLOCK_MONOTONIC
+#define CLOCK_MONOTONIC 1
+#endif
+static int jme_probe_clock_gettime(int clock_id, struct timespec *ts)
+{
+    LARGE_INTEGER freq;
+    LARGE_INTEGER counter;
+    (void)clock_id;
+    if (ts == NULL || !QueryPerformanceFrequency(&freq) || !QueryPerformanceCounter(&counter)) {
+        return -1;
+    }
+
+    ts->tv_sec = (time_t)(counter.QuadPart / freq.QuadPart);
+    ts->tv_nsec = (long)(((counter.QuadPart % freq.QuadPart) * 1000000000LL) / freq.QuadPart);
+    return 0;
+}
+#define clock_gettime jme_probe_clock_gettime
+#endif
+
 #ifndef M_PI
 #define M_PI 3.141592653589793238462643383279502884
 #endif

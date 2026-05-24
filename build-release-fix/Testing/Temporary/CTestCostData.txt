@@ -1,0 +1,11 @@
+julian 1 0.0350604
+api_contract 1 5.95348
+jpl_runtime 1 0.0159711
+all_constants 1 0.0155893
+all_functions 1 1.15673
+analytical_validation 1 0.0960026
+extra_contract 1 0.0310822
+mapped_adversarial 1 0.191443
+api_inventory 1 0.54352
+symbol_coverage 1 1.31778
+---

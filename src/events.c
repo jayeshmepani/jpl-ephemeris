@@ -4,7 +4,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <sys/time.h>
+#endif
 
 #define JME_EVENTS_RAD_TO_DEG 57.295779513082320876798154814105170332405472466565
 #define JME_EVENTS_DEG_TO_RAD 0.017453292519943295769236907684886127134428718885417
@@ -22,9 +26,17 @@ static int g_profile_events_init = 0;
 
 static double jme_profile_events_now_seconds(void)
 {
+#ifdef _WIN32
+    LARGE_INTEGER frequency;
+    LARGE_INTEGER counter;
+    QueryPerformanceFrequency(&frequency);
+    QueryPerformanceCounter(&counter);
+    return (double)counter.QuadPart / (double)frequency.QuadPart;
+#else
     struct timeval tv;
     gettimeofday(&tv, 0);
     return (double)tv.tv_sec + ((double)tv.tv_usec / 1000000.0);
+#endif
 }
 
 static void jme_profile_events_report(void)
@@ -141,6 +153,8 @@ static int heliacal_visibility_flag(double body_alt, double sun_alt, double arcu
         && arcus >= required_arcus;
 }
 
+#define JME_SOLAR_VISIBLE_UPPER_LIMB_ALTITUDE_DEG (-0.8333)
+
 static int lunar_eclipse_geometry(double jd_ut, double *umbral_mag, double *penumbral_mag, double *umbral_radius_km, double *penumbral_radius_km, double *offset_km, double *axis_distance_km, char *error)
 {
     double sun_state[6];
@@ -158,8 +172,10 @@ static int lunar_eclipse_geometry(double jd_ut, double *umbral_mag, double *penu
     double offset;
     int i;
 
-    if (jme_calc_ut(jd_ut, JME_BODY_SUN, JME_CALC_TRUE_POSITION | JME_CALC_XYZ, sun_state, error) != JME_OK
-        || jme_calc_ut(jd_ut, JME_BODY_MOON, JME_CALC_TRUE_POSITION | JME_CALC_XYZ, moon_state, error) != JME_OK) {
+    if (jme_calc_ut(jd_ut, JME_BODY_SUN, JME_CALC_TRUE_POSITION, sun_state, error) != JME_OK
+        || jme_calc_ut(jd_ut, JME_BODY_MOON, JME_CALC_TRUE_POSITION, moon_state, error) != JME_OK
+        || jme_spherical_to_rectangular_state(sun_state, sun_state) != JME_OK
+        || jme_spherical_to_rectangular_state(moon_state, moon_state) != JME_OK) {
         return JME_ERR;
     }
 
@@ -787,8 +803,10 @@ static int solar_shadow_global_geometry(double jd_ut, int *rc_out, int *class_ou
     int shadow_class = 0;
     int i;
 
-    if (jme_calc_ut(jd_ut, JME_BODY_SUN, JME_CALC_TRUE_POSITION | JME_CALC_XYZ, sun_xyz, error) != JME_OK
-        || jme_calc_ut(jd_ut, JME_BODY_MOON, JME_CALC_TRUE_POSITION | JME_CALC_XYZ, moon_xyz, error) != JME_OK) {
+    if (jme_calc_ut(jd_ut, JME_BODY_SUN, JME_CALC_TRUE_POSITION, sun_xyz, error) != JME_OK
+        || jme_calc_ut(jd_ut, JME_BODY_MOON, JME_CALC_TRUE_POSITION, moon_xyz, error) != JME_OK
+        || jme_spherical_to_rectangular_state(sun_xyz, sun_xyz) != JME_OK
+        || jme_spherical_to_rectangular_state(moon_xyz, moon_xyz) != JME_OK) {
         return JME_ERR;
     }
 
@@ -912,7 +930,7 @@ static double solar_eclipse_local_metric(double jd_ut, double *geopos, char *err
         return NAN;
     }
 
-    if (sun_alt <= 0.0) {
+    if (sun_alt <= JME_SOLAR_VISIBLE_UPPER_LIMB_ALTITUDE_DEG) {
         return sep + 180.0 + fabs(sun_alt);
     }
 
@@ -1845,7 +1863,7 @@ int jme_sol_eclipse_when_loc(double jd_start, int flags, double *geopos, double 
     }
 
     rc = classify_solar_eclipse(sep, sun_r, moon_r);
-    if (rc == 0 || sun_alt <= 0.0) {
+    if (rc == 0 || sun_alt <= JME_SOLAR_VISIBLE_UPPER_LIMB_ALTITUDE_DEG) {
         jme_set_error(error, "No local solar eclipse found near the supplied date");
         return JME_ERR;
     }
@@ -1945,12 +1963,15 @@ int jme_sol_eclipse_where(double jd_ut, int flags, double *geopos, double *attr,
 int jme_sol_eclipse_when_glob(double jd_start, int flags, int epheflag, double *tret, int backward, char *error)
 {
     double guess = 0.0;
+    double search_jd = jd_start;
+    double direction = backward ? -1.0 : 1.0;
     double tmax = 0.0;
     double sep = 0.0;
     double sun_r = 0.0;
     double moon_r = 0.0;
     double shadow_distance_km = NAN;
     int rc;
+    int attempt;
     (void)epheflag;
     (void)flags;
 
@@ -1959,39 +1980,45 @@ int jme_sol_eclipse_when_glob(double jd_start, int flags, int epheflag, double *
         return JME_ERR;
     }
 
-    if (find_new_moon_conjunction(jd_start, backward, &guess, error) != JME_OK) {
-        return JME_ERR;
-    }
-    if (refine_solar_maximum(guess, 0, 0, &tmax, error) != JME_OK) {
-        return JME_ERR;
-    }
-    if (solar_eclipse_global_geometry(tmax, &sep, &sun_r, &moon_r, 0, 0, error) != JME_OK
-        || solar_shadow_global_geometry(tmax, &rc, 0, 0, 0, &shadow_distance_km, error) != JME_OK) {
-        return JME_ERR;
+    for (attempt = 0; attempt < 30; attempt++) {
+        if (find_new_moon_conjunction(search_jd, backward, &guess, error) != JME_OK) {
+            return JME_ERR;
+        }
+        if (refine_solar_maximum(guess, 0, 0, &tmax, error) != JME_OK) {
+            return JME_ERR;
+        }
+        if (solar_eclipse_global_geometry(tmax, &sep, &sun_r, &moon_r, 0, 0, error) != JME_OK
+            || solar_shadow_global_geometry(tmax, &rc, 0, 0, 0, &shadow_distance_km, error) != JME_OK) {
+            return JME_ERR;
+        }
+
+        if (rc != 0) {
+            memset(tret, 0, sizeof(double) * 10);
+            tret[0] = tmax;
+            tret[1] = tmax;
+            find_solar_contact_time(tmax, sun_r + moon_r, 0, 0, 1, &tret[2], error);
+            find_solar_contact_time(tmax, sun_r + moon_r, 0, 0, 0, &tret[3], error);
+            if (rc == JME_ECLIPSE_SOLAR_TOTAL || rc == JME_ECLIPSE_SOLAR_ANNULAR || rc == JME_ECLIPSE_SOLAR_HYBRID) {
+                double inner = fabs(sun_r - moon_r);
+                find_solar_contact_time(tmax, inner, 0, 0, 1, &tret[4], error);
+                find_solar_contact_time(tmax, inner, 0, 0, 0, &tret[5], error);
+            }
+
+            return rc;
+        }
+
+        search_jd = guess + direction;
     }
 
-    if (rc == 0) {
-        jme_set_error(error, "No solar eclipse found near the supplied date");
-        return JME_ERR;
-    }
-
-    memset(tret, 0, sizeof(double) * 10);
-    tret[0] = tmax;
-    tret[1] = tmax;
-    find_solar_contact_time(tmax, sun_r + moon_r, 0, 0, 1, &tret[2], error);
-    find_solar_contact_time(tmax, sun_r + moon_r, 0, 0, 0, &tret[3], error);
-    if (rc == JME_ECLIPSE_SOLAR_TOTAL || rc == JME_ECLIPSE_SOLAR_ANNULAR || rc == JME_ECLIPSE_SOLAR_HYBRID) {
-        double inner = fabs(sun_r - moon_r);
-        find_solar_contact_time(tmax, inner, 0, 0, 1, &tret[4], error);
-        find_solar_contact_time(tmax, inner, 0, 0, 0, &tret[5], error);
-    }
-
-    return rc;
+    jme_set_error(error, "No solar eclipse found in search window");
+    return JME_ERR;
 }
 
 int jme_lun_eclipse_when(double jd_start, int flags, int iflag, double *tret, int backward, char *error)
 {
     double guess = 0.0;
+    double search_jd = jd_start;
+    double direction = backward ? -1.0 : 1.0;
     double tmax = 0.0;
     double umbral_mag = 0.0;
     double penumbral_mag = 0.0;
@@ -2000,6 +2027,7 @@ int jme_lun_eclipse_when(double jd_start, int flags, int iflag, double *tret, in
     double offset_km = 0.0;
     double axis_km = 0.0;
     int eclipse_type;
+    int attempt;
     (void)flags;
     (void)iflag;
 
@@ -2008,40 +2036,44 @@ int jme_lun_eclipse_when(double jd_start, int flags, int iflag, double *tret, in
         return JME_ERR;
     }
 
-    if (find_full_moon_opposition(jd_start, backward, &guess, error) != JME_OK) {
-        return JME_ERR;
-    }
-    if (refine_lunar_eclipse_maximum(guess, &tmax, error) != JME_OK) {
-        return JME_ERR;
-    }
-    if (lunar_eclipse_geometry(tmax, &umbral_mag, &penumbral_mag, &umbra_km, &penumbra_km, &offset_km, &axis_km, error) != JME_OK) {
-        return JME_ERR;
+    for (attempt = 0; attempt < 30; attempt++) {
+        if (find_full_moon_opposition(search_jd, backward, &guess, error) != JME_OK) {
+            return JME_ERR;
+        }
+        if (refine_lunar_eclipse_maximum(guess, &tmax, error) != JME_OK) {
+            return JME_ERR;
+        }
+        if (lunar_eclipse_geometry(tmax, &umbral_mag, &penumbral_mag, &umbra_km, &penumbra_km, &offset_km, &axis_km, error) != JME_OK) {
+            return JME_ERR;
+        }
+
+        eclipse_type = classify_lunar_eclipse(umbral_mag, penumbral_mag);
+        if (eclipse_type != 0 && axis_km > 0.0) {
+            memset(tret, 0, sizeof(double) * 10);
+            tret[0] = tmax;
+            tret[1] = tmax;
+
+            if (penumbral_mag > 0.0) {
+                find_contact_time(tmax, penumbra_km + JME_EVENTS_MOON_RADIUS_KM, 1, &tret[2], error);
+                find_contact_time(tmax, penumbra_km + JME_EVENTS_MOON_RADIUS_KM, 0, &tret[3], error);
+            }
+            if (umbral_mag > 0.0) {
+                find_contact_time(tmax, umbra_km + JME_EVENTS_MOON_RADIUS_KM, 1, &tret[4], error);
+                find_contact_time(tmax, umbra_km + JME_EVENTS_MOON_RADIUS_KM, 0, &tret[5], error);
+            }
+            if (umbral_mag >= 1.0) {
+                find_contact_time(tmax, umbra_km - JME_EVENTS_MOON_RADIUS_KM, 1, &tret[6], error);
+                find_contact_time(tmax, umbra_km - JME_EVENTS_MOON_RADIUS_KM, 0, &tret[7], error);
+            }
+
+            return eclipse_type;
+        }
+
+        search_jd = guess + direction;
     }
 
-    eclipse_type = classify_lunar_eclipse(umbral_mag, penumbral_mag);
-    if (eclipse_type == 0 || axis_km <= 0.0) {
-        jme_set_error(error, "No lunar eclipse found near the supplied date");
-        return JME_ERR;
-    }
-
-    memset(tret, 0, sizeof(double) * 10);
-    tret[0] = tmax;
-    tret[1] = tmax;
-
-    if (penumbral_mag > 0.0) {
-        find_contact_time(tmax, penumbra_km + JME_EVENTS_MOON_RADIUS_KM, 1, &tret[2], error);
-        find_contact_time(tmax, penumbra_km + JME_EVENTS_MOON_RADIUS_KM, 0, &tret[3], error);
-    }
-    if (umbral_mag > 0.0) {
-        find_contact_time(tmax, umbra_km + JME_EVENTS_MOON_RADIUS_KM, 1, &tret[4], error);
-        find_contact_time(tmax, umbra_km + JME_EVENTS_MOON_RADIUS_KM, 0, &tret[5], error);
-    }
-    if (umbral_mag >= 1.0) {
-        find_contact_time(tmax, umbra_km - JME_EVENTS_MOON_RADIUS_KM, 1, &tret[6], error);
-        find_contact_time(tmax, umbra_km - JME_EVENTS_MOON_RADIUS_KM, 0, &tret[7], error);
-    }
-
-    return eclipse_type;
+    jme_set_error(error, "No lunar eclipse found in search window");
+    return JME_ERR;
 }
 
 int jme_lun_occult_where(double jd_ut, int body, const char *starname, int flags, double *geopos, double *attr, char *error)
@@ -2520,7 +2552,7 @@ int jme_sol_eclipse_how(double jd_ut, int flags, double *geopos, double *attr, c
     }
 
     rc = classify_solar_eclipse(sep, sun_r, moon_r);
-    if (rc == 0 || sun_alt <= 0.0) {
+    if (rc == 0 || sun_alt <= JME_SOLAR_VISIBLE_UPPER_LIMB_ALTITUDE_DEG) {
         jme_set_error(error, "No local solar eclipse is in progress at the supplied time");
         return JME_ERR;
     }

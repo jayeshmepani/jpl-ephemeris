@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ProjectOutputs>
+    <ProjectOutput>
+      <FullPath>E:\project\astrology\JPL-Moshier-Ephemeris\build-local\x64\Release\ZERO_CHECK</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>E:\project\astrology\JPL-Moshier-Ephemeris\build-local\Release\jme.dll</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>E:\project\astrology\JPL-Moshier-Ephemeris\build-local\Release\jme_call_probe.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>E:\project\astrology\JPL-Moshier-Ephemeris\build-local\Release\test_all_constants.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>E:\project\astrology\JPL-Moshier-Ephemeris\build-local\Release\test_all_functions.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>E:\project\astrology\JPL-Moshier-Ephemeris\build-local\Release\test_analytical_validation.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>E:\project\astrology\JPL-Moshier-Ephemeris\build-local\Release\test_api_contract.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>E:\project\astrology\JPL-Moshier-Ephemeris\build-local\Release\test_extra_adversarial.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>E:\project\astrology\JPL-Moshier-Ephemeris\build-local\Release\test_extra_contract.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>E:\project\astrology\JPL-Moshier-Ephemeris\build-local\Release\test_jpl_runtime.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>E:\project\astrology\JPL-Moshier-Ephemeris\build-local\Release\test_julian.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>E:\project\astrology\JPL-Moshier-Ephemeris\build-local\Release\test_mapped_adversarial.exe</FullPath>
+    </ProjectOutput>
+    <ProjectOutput>
+      <FullPath>E:\project\astrology\JPL-Moshier-Ephemeris\build-local\x64\Release\ALL_BUILD</FullPath>
+    </ProjectOutput>
+  </ProjectOutputs>
+  <ContentFiles />
+  <SatelliteDlls />
+  <NonRecipeFileRefs />
+</Project>
