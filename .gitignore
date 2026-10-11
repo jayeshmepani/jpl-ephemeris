@@ -42,3 +42,4 @@ data/
 *.tmp
 *.bak
 *.user
+!tools/data/
