@@ -147,18 +147,38 @@ double jme_delta_t_ex(double jd_ut, int model, char *error)
 {
     jme_context *ctx = jme_get_context();
 
+    if (error != 0) {
+        error[0] = '\0';
+    }
+
+    if (!isfinite(jd_ut)) {
+        jme_set_error(error, "Julian date for Delta-T must be finite");
+        return NAN;
+    }
+
     if (ctx->delta_t_userdef_enabled) {
         return ctx->delta_t_userdef;
     }
 
     switch (model) {
     case JME_TIME_DELTAT_AUTOMATIC:
+    case JME_MODEL_DELTAT_ESPENAK_MEEUS_2006:
+        return jme_delta_t_espenak_meeus(jd_ut);
+
     case JME_MODEL_DELTAT_STEPHENSON_MORRISON_1984:
     case JME_MODEL_DELTAT_STEPHENSON_1997:
     case JME_MODEL_DELTAT_STEPHENSON_MORRISON_2004:
-    case JME_MODEL_DELTAT_ESPENAK_MEEUS_2006:
     case JME_MODEL_DELTAT_STEPHENSON_ETC_2016:
-        return jme_delta_t_espenak_meeus(jd_ut);
+        /*
+         * These model identifiers are public, but their model-specific
+         * historical tables and transition rules are not implemented here.
+         * Returning the Espenak-Meeus polynomial under a different model
+         * name would silently return the wrong requested model. Fail closed
+         * until each model can be implemented and validated independently.
+         */
+        jme_set_error(error, "Requested Delta-T model is recognized but not implemented; refusing to substitute Espenak-Meeus 2006");
+        return NAN;
+
     default:
         jme_set_error(error, "Unsupported Delta-T model");
         return NAN;
