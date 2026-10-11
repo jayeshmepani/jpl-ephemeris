@@ -61,6 +61,8 @@ int internal_utc_to_tt_split(
     int year, int month, int day, int hour, int minute, double second, int calendar,
     double *jd0_tt, double *fraction_tt, char *error
 );
+int internal_tt_to_tdb_split(double jd0_tt, double fraction_tt, double *jd0_tdb, double *fraction_tdb, char *error);
+int internal_tdb_to_tcb_split(double jd0_tdb, double fraction_tdb, double *jd0_tcb, double *fraction_tcb, char *error);
 int internal_tt_to_jpl_time_split(double jd_tt, double *jd0_native, double *fraction_native, char *error);
 int internal_tt_split_to_jpl_time_split(
     double jd0_tt, double fraction_tt, double *jd0_native, double *fraction_native, char *error
