@@ -200,8 +200,8 @@ int jme_fixstar_ut(const char *star, double jd_ut, int flags, double *results, c
 
 int jme_fixstar(const char *star, double jd_et, int flags, double *results, char *error)
 {
-    const jme_star_entry *entry = find_star(star);
-    double t = (jd_et - 2451545.0) / 365.25; /* years from J2000 */
+    const jme_star_entry *entry;
+    double t;
     double pos[6];
     double spherical[6];
     double ra, dec;
@@ -213,12 +213,18 @@ int jme_fixstar(const char *star, double jd_et, int flags, double *results, char
     }
 
     for (i = 0; i < 6; i++) { results[i] = 0.0; }
+    if (!isfinite(jd_et)) {
+        jme_set_error(error, "Terrestrial-time Julian date must be finite");
+        return JME_ERR;
+    }
 
+    entry = find_star(star);
     if (entry == 0) {
         jme_set_error(error, "Star not found in catalog");
         return JME_ERR;
     }
 
+    t = (jd_et - 2451545.0) / 365.25;
     /* 1. Apply Proper Motion */
     ra = entry->ra + (entry->pm_ra / 3600.0) * t;
     dec = entry->dec + (entry->pm_dec / 3600.0) * t;
