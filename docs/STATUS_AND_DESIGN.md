@@ -1,5 +1,27 @@
 # Status And Design
 
+> **Status update (October 2026, PR #3).** The following statements further
+> down this document are superseded:
+>
+> * IAU 2000A nutation is implemented, as is IAU 2006/2000A with P03
+>   (`JME_MODEL_NUT_IAU_2006A`).
+> * Lunar occultations cover planets and fixed stars with a generalised
+>   Besselian construction and multi-conjunction searches. They are
+>   certified against Skyfield in `occult_reference` (local 0.08 ms,
+>   global 7.9 ms).
+> * Gauquelin sectors have a 36-cusp API (`jme_houses_gauquelin`), certified
+>   in `houses_reference`.
+> * Eclipse and occultation contacts use astrometric geometry
+>   (`ACCURACY.md` §5.1).
+> * ΔT defaults to AUTOMATIC (IERS table, then SMHZ 2016/2021 and
+>   Espenak–Meeus). SM1984, S1997 and SM2004 are refused with an explicit
+>   error (`TIME_SCALES.md`).
+>
+> Current accuracy and certification: `ACCURACY.md`,
+> `VALIDATION_AND_COVERAGE.md` (Reference certification),
+> `CENGINE_COMPLETION_REPORT.md`.
+
+
 ## Current Design Snapshot
 
 The current public C surface is defined by `include/jme/jme.h` and `include/jme/jme_extended.h`: 204 public `jme_*` functions and 462 public `JME_*` constants.

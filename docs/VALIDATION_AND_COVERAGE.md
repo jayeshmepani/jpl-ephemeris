@@ -6,16 +6,37 @@ Current header-derived inventory:
 
 | Area | Count | Verification command |
 |---|---:|---|
-| Public `jme_*` functions | 204 | `pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1` |
-| Defined public `jme_*` functions | 204 | `pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1` |
-| Directly C-test-referenced public `jme_*` functions | 204 | `pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1` |
-| Public `JME_*` constants | 462 | `pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1` |
+| Public `jme_*` functions | 219 | `pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1` |
+| Defined public `jme_*` functions | 219 | `pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1` |
+| Directly C-test-referenced public `jme_*` functions | 219 | `pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1` |
+| Public `JME_*` constants | 478 | `pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1` |
 
 The generated value-verification matrix in this file is maintained by `tools/generate_value_verification_matrix.py`; that tool updates only the marked generated section.
 
 External reference-engine notes in this document are compatibility/capability mapping notes only. They do not indicate source-code inheritance. Current `.c` and `.h` files have been scanned for restricted-source markers and contain no matches.
 
 The reference 106-row mapping is used as a capability checklist because it represents a mature public astrology/astronomy API surface. JME is intended to provide a project-owned C engine while also adding extra capabilities beyond that compatibility checklist.
+
+## Reference certification (CTest, October 2026)
+
+These tests compare against independent references. The fixtures are
+produced by the generators in `tools/`. Accuracy statements and floors are
+in `ACCURACY.md`.
+
+| CTest | Reference | Cases | Worst residual |
+|---|---|---:|---|
+| `apparent_reference` | Skyfield + ERFA, DE440s (`gen_apparent_fixtures.py`) | 130 places | 0.0087 mas |
+| `star_reference` | ERFA `pmsafe`/`atci13`/`fk52h` (`gen_star_fixtures.py`) | 5 frames × stars incl. FK5-only | 0.0004 mas |
+| `riseset_reference` | Skyfield (`gen_riseset_fixtures.py`) | 320 events | 0.16 ms |
+| `occult_reference` | Skyfield + DE440s (`gen_occult_fixtures.py`) | 27 local, 8 global | 0.08 ms local, 7.9 ms global |
+| `houses_reference` | Independent vector geometry + ERFA time chain (`gen_houses_fixtures.py`); Gauquelin sector identity | 2354 + 936 sets | 2.3e−13°; 3e−14 sector |
+| `delta_t_reference` | IERS/astropy, NASA Espenak–Meeus, SMHZ 2016/2021 (`gen_deltat_fixtures.py`) | | exact transcription |
+| `vsop87_reference` | IMCCE `vsop87.chk` | 90 epochs | 5e−11 au |
+| `time_scale_contract` | pyerfa (`gen_time_fixtures.py`) | | |
+
+The reference tests need `JME_TEST_JPL_KERNEL` (DE440s) and CALCEPH; other
+builds report them as skipped (code 77). CI runs them with the cached kernel
+on GCC and Clang (Ubuntu) and AppleClang (macOS).
 
 ## Algorithm Coverage Plan
 
