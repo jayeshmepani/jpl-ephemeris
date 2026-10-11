@@ -105,6 +105,14 @@ if (JME_BUILD_TESTS)
     target_link_libraries(test_precision_contract PRIVATE jme)
     add_test(NAME precision_contract COMMAND test_precision_contract)
 
+    add_executable(test_time_scale_contract tests/test_time_scale_contract.c)
+    target_include_directories(test_time_scale_contract PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/erfa
+    )
+    target_link_libraries(test_time_scale_contract PRIVATE jme)
+    add_test(NAME time_scale_contract COMMAND test_time_scale_contract)
+
     add_executable(test_jpl_runtime tests/test_jpl_runtime.c)
     target_link_libraries(test_jpl_runtime PRIVATE jme)
     add_test(NAME jpl_runtime COMMAND test_jpl_runtime)
