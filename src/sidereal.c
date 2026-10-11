@@ -53,6 +53,26 @@ static double normalize_radians(double angle)
     return value;
 }
 
+/*
+ * Ayanamsa parameter sources (comments only; values below are unchanged).
+ *
+ * Where a value is marked "source to be verified", the original publication
+ * defining that ayanamsa has not yet been checked first-hand by this project;
+ * the value is a commonly published astrological convention and must be
+ * traced to a primary source before it is described as such.
+ *
+ * Epoch-based models use: ayanamsa(t) = offset(t0) + general precession in
+ * longitude accumulated from t0 (see ayanamsa_precession_degrees()).
+ */
+
+/*
+ * General precession in longitude, p_A = 5029.0966" T + 1.11113" T^2
+ * (T in Julian centuries from t0): IAU 1976 precession, J. H. Lieske,
+ * T. Lederle, W. Fricke, B. Morando, "Expressions for the precession
+ * quantities based upon the IAU (1976) system of astronomical constants",
+ * Astron. Astrophys. 58, 1-16 (1977). The cubic term (-0.000006" T^3) is
+ * omitted here.
+ */
 static double ayanamsa_precession_degrees(double jd_et, double t0)
 {
     double t = (jd_et - t0) / 36525.0;
@@ -60,6 +80,15 @@ static double ayanamsa_precession_degrees(double jd_et, double t0)
     return (5029.0966 * t + 1.11113 * t * t) / 3600.0;
 }
 
+/*
+ * Krishnamurti (KP) ayanamsa: K. S. Krishnamurti's Krishnamurti Paddhati,
+ * stated as a Newcomb-precession formula in Besselian years from B1900:
+ * 80564.38104" (22 deg 22' 44.38") at B1900.0 + 50.2564" t + 0.000111" t^2.
+ * The exact KP publication and edition for these coefficients: source to be
+ * verified. B1900.0 = JD 2415020.31352 and the tropical (Besselian) year of
+ * 365.242198781 days follow the standard Besselian epoch definitions
+ * (Lieske 1979, Astron. Astrophys. 73, 282).
+ */
 static double krishnamurti_newcomb_ayanamsa_degrees(double jd_et)
 {
     const double b1900_jd = 2415020.31352;
@@ -145,6 +174,11 @@ static int ayanamsa_from_j2000_equatorial(double jd_et, double ra, double dec, d
     return JME_OK;
 }
 
+/*
+ * Earth Rotation Angle, IAU 2000 Resolution B1.8: N. Capitaine, B. Guinot,
+ * D. D. McCarthy, Astron. Astrophys. 355, 398 (2000); IERS Conventions (2010),
+ * eq. (5.15).
+ */
 static double earth_rotation_angle_iau2000(double jd_ut)
 {
     double d1 = floor(jd_ut);
@@ -155,6 +189,11 @@ static double earth_rotation_angle_iau2000(double jd_ut)
     return normalize_radians(JME_TWO_PI * (f + 0.7790572732640 + 0.00273781191135448 * t));
 }
 
+/*
+ * GMST consistent with IAU 2006 precession: N. Capitaine, P. T. Wallace,
+ * J. Chapront, Astron. Astrophys. 412, 567 (2003); IERS Conventions (2010),
+ * eq. (5.32).
+ */
 static double sidereal_time_iau2006(double jd_ut)
 {
     double jd_tt = jd_ut + jme_delta_t(jd_ut) / 86400.0;
@@ -170,6 +209,11 @@ static double sidereal_time_iau2006(double jd_ut)
     return jme_hours_normalize(jme_degrees_to_hours(normalize_radians(gmst) / JME_DEG_TO_RAD));
 }
 
+/*
+ * GMST, IAU 1982 expression (S. Aoki et al., Astron. Astrophys. 105, 359,
+ * 1982) in the degree form given by J. Meeus, Astronomical Algorithms,
+ * 2nd ed., eq. (12.4); the nutation term gives apparent sidereal time.
+ */
 double jme_sidereal_time0(double jd_ut, double eps, double nut)
 {
     double t = (jd_ut - 2451545.0) / 36525.0;
@@ -222,33 +266,57 @@ int jme_get_ayanamsa_ex(double jd_et, int model, double *ayan, char *error)
 
     switch (model) {
     case JME_SIDEREAL_FAGAN_BRADLEY:
+        /* Fagan-Bradley "Synetic Vernal Point" (C. Fagan, D. Bradley, Western
+         * sidereal astrology, 1950s). Offset is the value at J2000 (24 deg 44');
+         * original epoch definition and value: source to be verified. */
         offset = 24.733333333;
         break;
     case JME_SIDEREAL_LAHIRI:
+        /* Lahiri (Chitrapaksha) ayanamsa adopted by the Indian Calendar Reform
+         * Committee, Report of the Calendar Reform Committee, Government of
+         * India (CSIR), New Delhi, 1955 (chair M. N. Saha; N. C. Lahiri),
+         * defined as 23 deg 15' 00" on 1956 March 21, 0h ET. The J2000 offset
+         * used here (23.8570 deg) is that definition carried to J2000; the exact
+         * reduction behind this rounded value: source to be verified. */
         offset = 23.8570;
         break;
     case JME_SIDEREAL_KRISHNAMURTI:
+        /* See krishnamurti_newcomb_ayanamsa_degrees(). */
         *ayan = krishnamurti_newcomb_ayanamsa_degrees(jd_et);
         return JME_OK;
     case JME_SIDEREAL_RAMAN:
+        /* B. V. Raman's ayanamsa: zero in 397 CE, 50.333" per year
+         * (B. V. Raman, Hindu Predictive Astrology / A Manual of Hindu
+         * Astrology; edition and page: source to be verified). */
         *ayan = jme_degree_normalize(((double)(gregorian_year_from_jd(jd_et) - 397) * (151.0 / 3.0)) / 3600.0);
         return JME_OK;
     case JME_SIDEREAL_YUKTESHWAR:
+        /* Sri Yukteswar Giri, The Holy Science (1894): equinox at the start of
+         * sidereal Aries in 499 CE and precession taken as 54" per year.
+         * Edition and page reference: source to be verified. */
         *ayan = jme_degree_normalize(((double)(gregorian_year_from_jd(jd_et) - 499) * 54.0) / 3600.0);
         return JME_OK;
     case JME_SIDEREAL_ARYABHATA:
+        /* Zero ayanamsa in 499 CE (era of Aryabhata's Aryabhatiya);
+         * t0 = JD 1903396.789532. Exact epoch convention: source to be verified. */
         t0 = 1903396.789532;
         offset = 0.0;
         break;
     case JME_SIDEREAL_BABYL_ETPSC:
+        /* Babylonian sidereal zodiac, "ETPSC" variant; epoch -129 and offset
+         * -5 deg 04' 46" at that epoch: source to be verified. */
         t0 = jme_julian_day(-129, 1, 1, 0.0, JME_CALENDAR_JULIAN);
         offset = -(5.0 + 4.0 / 60.0 + 46.0 / 3600.0);
         break;
     case JME_SIDEREAL_BABYL_HUBER:
+        /* Babylonian zodiac after P. J. Huber; offset -4 deg 28' at -100:
+         * source to be verified. */
         t0 = jme_julian_day(-100, 1, 1, 0.0, JME_CALENDAR_JULIAN);
         offset = -(4.0 + 28.0 / 60.0);
         break;
     case JME_SIDEREAL_BABYL_KUGLER1:
+        /* Babylonian zodiac after F. X. Kugler, Sternkunde und Sterndienst in
+         * Babel; Kugler 1/2/3 offsets at -100: source to be verified. */
         t0 = jme_julian_day(-100, 1, 1, 0.0, JME_CALENDAR_JULIAN);
         offset = -(5.0 + 40.0 / 60.0);
         break;
@@ -261,33 +329,50 @@ int jme_get_ayanamsa_ex(double jd_et, int model, double *ayan, char *error)
         offset = -(3.0 + 25.0 / 60.0);
         break;
     case JME_SIDEREAL_DELUCE:
+        /* Robert DeLuce's ayanamsa; offset 26 deg 24' 47" at JD 2415020.5
+         * (1900 Jan 1): source to be verified. */
         t0 = 2415020.5;
         offset = 26.0 + 24.0 / 60.0 + 47.0 / 3600.0;
         break;
     case JME_SIDEREAL_HIPPARCHOS:
+        /* "Hipparchos" ayanamsa (zodiac referred to Hipparchus' era);
+         * t0 = JD 1674484.0 and offset -9 deg 20': source to be verified. */
         t0 = 1674484.0;
         offset = -(9.0 + 20.0 / 60.0);
         break;
     case JME_SIDEREAL_JN_BHASIN:
+        /* J. N. Bhasin's ayanamsa; zero at JD 1854239.3: source to be verified. */
         t0 = 1854239.3;
         offset = 0.0;
         break;
     case JME_SIDEREAL_SASSANIAN:
+        /* Sassanian (Zij-i Shah) zodiac; zero at JD 1927135.8747793: source to be verified. */
         t0 = 1927135.8747793;
         offset = 0.0;
         break;
     case JME_SIDEREAL_J2000:
+        /* Ayanamsa zero at J2000.0 = JD 2451545.0 TT (IAU 1976 System). */
         offset = 0.0;
         break;
     case JME_SIDEREAL_J1900:
+        /* Ayanamsa zero at J1900.0 = JD 2415020.0. */
         offset = 0.0;
         t0 = 2415020.0;
         break;
     case JME_SIDEREAL_B1950:
+        /* Ayanamsa zero at Besselian epoch B1950.0 = JD 2433282.42345905
+         * (J. H. Lieske, Astron. Astrophys. 73, 282, 1979). */
         offset = 0.0;
         t0 = 2433282.42345905;
         break;
     case JME_SIDEREAL_ALDEBARAN_15TAU:
+        /* Star-anchored models below are definitions, not fitted constants:
+         * the named star is placed at the stated sidereal longitude (e.g.
+         * Aldebaran at 15 Taurus = 45 deg; Spica at 180 deg for Citra; Revati
+         * star at 0 deg; Shaula at 240 deg for Mula; Delta Cancri at 106 deg
+         * for Pushya). Star positions come from the fixed-star catalogue
+         * (Yale Bright Star Catalogue, see THIRD_PARTY_NOTICES.md). Who first
+         * defined each individual anchor: source to be verified. */
         return ayanamsa_from_fixed_star(jd_et, "Aldebaran", 45.0, ayan, error);
     case JME_SIDEREAL_TRUE_CITRA:
     case JME_SIDEREAL_SS_CITRA:
@@ -296,10 +381,16 @@ int jme_get_ayanamsa_ex(double jd_et, int model, double *ayan, char *error)
     case JME_SIDEREAL_SS_REVATI:
         return ayanamsa_from_fixed_star(jd_et, "Revati", 0.0, ayan, error);
     case JME_SIDEREAL_SURYASIDDHANTA:
+        /* Surya Siddhanta and Ushashashi variants: Revati star at 359 deg 50'
+         * (10' before the initial point); anchor convention: source to be verified. */
         return ayanamsa_from_fixed_star(jd_et, "Revati", 359.8333333333333, ayan, error);
     case JME_SIDEREAL_USHASHASHI:
         return ayanamsa_from_fixed_star(jd_et, "Revati", 359.8333333333333, ayan, error);
     case JME_SIDEREAL_GALCENT_0SAG:
+        /* Galactic Center at 0 Sagittarius (240 deg). J2000 position
+         * RA 266.4168085 deg, Dec -29.0078378 deg corresponds to Sgr A*
+         * (cf. M. J. Reid, A. Brunthaler, ApJ 616, 872, 2004); exact catalogue
+         * origin of these digits: source to be verified. */
         return ayanamsa_from_j2000_equatorial(jd_et, 266.4168085291667, -29.0078377805556, 240.0, ayan, error);
     case JME_SIDEREAL_TRUE_MULA:
         return ayanamsa_from_fixed_star(jd_et, "Shaula", 240.0, ayan, error);
