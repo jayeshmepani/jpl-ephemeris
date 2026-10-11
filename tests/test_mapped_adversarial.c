@@ -147,7 +147,13 @@ static int test_malformed_inputs_and_null_contracts(void)
     ASSERT_ERR(jme_lun_eclipse_when(2451545.0, 0, 0, 0, 0, error));
     ASSERT_ERR(jme_lun_occult_where(2451545.0, JME_BODY_MARS, 0, 0, 0, attr, error));
     ASSERT_ERR(jme_lun_occult_when_loc(2451545.0, JME_BODY_MARS, 0, 0, geopos, 0, attr, 0, error));
-    ASSERT_ERR(jme_lun_occult_when_glob(2451545.0, JME_BODY_MARS, 0, 0, 0, tret, 0, error));
+    ASSERT_ERR(jme_lun_occult_when_glob(2451545.0, JME_BODY_MARS, 0, 0, 0, 0, 0, error));
+    ASSERT_ERR(jme_lun_occult_when_glob(NAN, JME_BODY_MARS, 0, 0, 0, tret, 0, error));
+    ASSERT_ERR(jme_lun_occult_when_glob(2451545.0, JME_BODY_MOON, 0, 0, 0, tret, 0, error));
+    /* valid input: the search continues past conjunctions without an
+     * occultation to the next Mars occultation */
+    ASSERT_OK(jme_lun_occult_when_glob(2451545.0, JME_BODY_MARS, 0, 0, 0, tret, 0, error));
+    ASSERT_TRUE(tret[0] > 2451545.0 && tret[2] < tret[0] && tret[0] < tret[3]);
     ASSERT_ERR(jme_rise_trans(2451545.0, JME_BODY_SUN, 0, 0, JME_RISE_RISE, 0, 1013.25, 15.0, values, error));
     ASSERT_ERR(jme_rise_trans_true_hor(2451545.0, JME_BODY_SUN, 0, 0, JME_RISE_RISE, geopos, 1013.25, 15.0, 0.0, 0, error));
     ASSERT_ERR(jme_solcross(0.0, 2451545.0, 0, 0, error));

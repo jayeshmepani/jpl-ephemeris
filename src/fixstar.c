@@ -287,6 +287,30 @@ static int fixstar_output_position(const char *star, double jd_et, int flags, do
     return internal_rotate_to_output(jd_et, flags, 1, v, pos, error);
 }
 
+/*
+ * Position-only evaluation for internal event searches: the same complete
+ * reduction as jme_fixstar_ut (identical position bits), rectangular, in the
+ * frame selected by flags, without the rate stencil. *dist_au receives the
+ * catalogue distance (0 when the parallax is unknown; pos is then a unit
+ * vector).
+ */
+int internal_fixstar_position_ut(const char *star, double jd_ut, int flags, double *pos, double *dist_au, char *error)
+{
+    double jd_et, dist = 0.0;
+    if (pos == 0) {
+        jme_set_error(error, "Fixed-star output is required");
+        return JME_ERR;
+    }
+    if (find_star(star) == 0) {
+        jme_set_error(error, "Star not found in catalog");
+        return JME_ERR;
+    }
+    if (internal_ut_to_et(jd_ut, &jd_et, error) != JME_OK) return JME_ERR;
+    if (fixstar_output_position(star, jd_et, flags, pos, &dist, error) != JME_OK) return JME_ERR;
+    if (dist_au != 0) *dist_au = dist;
+    return JME_OK;
+}
+
 int jme_fixstar_ut(const char *star, double jd_ut, int flags, double *results, char *error)
 {
     double jd_et;

@@ -18,6 +18,22 @@
 #define JME_EVENTS_SUN_RADIUS_KM 695700.0
 
 /*
+ * Contact geometry of eclipses and occultations uses astrometric places
+ * (light time and gravitational deflection, no aberration) compared with
+ * geometric angular radii asin(R/d). This is the exact condition in the
+ * barycentric frame: the ray from the target (or the Sun's limb) grazes the
+ * Moon at its light-time position and reaches the observer. Aberration is
+ * the same change of frame for every direction but does not preserve
+ * angles (it scales them by about 1 - (v/c) cos(theta)), so comparing
+ * apparent separations with unaberrated radii misplaces contacts by up to
+ * ~0.1" (~0.2 s); and the aberrated geocentric Moon vector is a direction,
+ * not a position, so using it as a position on the fundamental plane is
+ * wrong by (R_earth / d_moon) x 20" (~0.3", ~0.6 s at the limb).
+ * Altitudes (visibility) still use complete apparent places.
+ */
+#define JME_EVENTS_GEOMETRY_FLAGS ((int)JME_CALC_NO_ABERRATION)
+
+/*
  * Greenwich sidereal time (hours) consistent with the coordinates being
  * compared: apparent (equation of the equinoxes included) for apparent
  * true-equator-of-date positions, mean when JME_CALC_NO_NUTATION is set.
@@ -700,8 +716,8 @@ static int solar_eclipse_local_geometry(double jd_ut, double *geopos, double *se
 
     internal_topo_override_set(geopos[0], geopos[1], geopos[2]);
 
-    if (internal_calc_position_ut(jd_ut, JME_BODY_SUN, JME_CALC_EQUATORIAL | JME_CALC_TOPOCENTRIC, sun_eq, error) != JME_OK
-        || internal_calc_position_ut(jd_ut, JME_BODY_MOON, JME_CALC_EQUATORIAL | JME_CALC_TOPOCENTRIC, moon_eq, error) != JME_OK) {
+    if (internal_calc_position_ut(jd_ut, JME_BODY_SUN, JME_CALC_EQUATORIAL | JME_CALC_TOPOCENTRIC | JME_EVENTS_GEOMETRY_FLAGS, sun_eq, error) != JME_OK
+        || internal_calc_position_ut(jd_ut, JME_BODY_MOON, JME_CALC_EQUATORIAL | JME_CALC_TOPOCENTRIC | JME_EVENTS_GEOMETRY_FLAGS, moon_eq, error) != JME_OK) {
         return JME_ERR;
     }
 
@@ -764,8 +780,8 @@ static double solar_eclipse_global_metric(double jd_ut, char *error)
     double sun[6], moon[6], axis[3], closest[3], d, s;
     int i;
 
-    if (internal_calc_position_ut(jd_ut, JME_BODY_SUN, 0, sun, error) != JME_OK
-        || internal_calc_position_ut(jd_ut, JME_BODY_MOON, 0, moon, error) != JME_OK) {
+    if (internal_calc_position_ut(jd_ut, JME_BODY_SUN, JME_EVENTS_GEOMETRY_FLAGS, sun, error) != JME_OK
+        || internal_calc_position_ut(jd_ut, JME_BODY_MOON, JME_EVENTS_GEOMETRY_FLAGS, moon, error) != JME_OK) {
         return NAN;
     }
     for (i = 0; i < 3; i++) axis[i] = moon[i] - sun[i];
@@ -804,6 +820,40 @@ static int refine_solar_maximum(double guess, double *geopos, int local_mode, do
     return events_minimize_precise(solar_max_fn, &c, guess - 0.75, guess + 0.75, tmax, error);
 }
 
+/*
+ * Occultation / eclipse target: a body (JME body id) or a catalogue star
+ * (star != NULL and non-empty). Body = JME_BODY_SUN with no star is the Sun.
+ */
+typedef struct events_target { int body; const char *star; } events_target;
+
+static int events_target_is_star(const events_target *t)
+{
+    return t != 0 && t->star != 0 && t->star[0] != '\0';
+}
+
+static double event_body_radius_km(int body);
+
+static double events_target_radius_km(const events_target *t)
+{
+    if (t == 0) return JME_EVENTS_SUN_RADIUS_KM;
+    return events_target_is_star(t) ? 0.0 : event_body_radius_km(t->body);
+}
+
+/* Complete apparent place, position only, rectangular (au) in the frame
+ * selected by flags. *dist_known is 0 for a star without parallax (pos is
+ * then a unit vector, the star being at infinity). */
+static int events_target_position(double jd_ut, const events_target *t, int flags, double *pos, int *dist_known, char *error)
+{
+    if (events_target_is_star(t)) {
+        double dist = 0.0;
+        if (internal_fixstar_position_ut(t->star, jd_ut, flags, pos, &dist, error) != JME_OK) return JME_ERR;
+        if (dist_known != 0) *dist_known = dist > 0.0;
+        return JME_OK;
+    }
+    if (dist_known != 0) *dist_known = 1;
+    return internal_calc_position_ut(jd_ut, t == 0 ? JME_BODY_SUN : t->body, flags, pos, error);
+}
+
 static double event_body_radius_km(int body)
 {
     switch (body) {
@@ -831,289 +881,6 @@ static double lunar_horizontal_parallax_deg(double moon_radius_deg)
 
     moon_distance_km = JME_EVENTS_MOON_RADIUS_KM / sin(moon_radius_deg * JME_EVENTS_DEG_TO_RAD);
     return angular_radius_deg(JME_EVENTS_EARTH_RADIUS_KM, moon_distance_km);
-}
-
-static int moon_target_state(double jd_ut, int body, const char *starname, int flags, int local_mode, double *geopos, double *moon_eq, double *target_eq, double *moon_radius_deg, double *target_radius_deg, double *moon_alt_deg, double *target_alt_deg, char *error)
-{
-    double moon_eq_xyz[6];
-    double target_eq_xyz[6];
-    double moon_topo_xyz[6];
-    double target_topo_xyz[6];
-    double moon_dist_km;
-    double target_dist_km;
-    int i;
-
-    if (local_mode && geopos == 0) {
-        jme_set_error(error, "Occultation local geometry requires geopos");
-        return JME_ERR;
-    }
-    (void)flags;
-
-    {
-        /* Complete apparent places (geocentric, or topocentric with the
-         * observer's own light time, aberration and deflection) of the Moon
-         * and the target, true equator and equinox of date. */
-        int geom_flags = JME_CALC_XYZ | JME_CALC_EQUATORIAL;
-        if (local_mode) {
-            internal_topo_override_set(geopos[0], geopos[1], geopos[2]);
-            geom_flags |= JME_CALC_TOPOCENTRIC;
-        }
-        if (internal_calc_position_ut(jd_ut, JME_BODY_MOON, geom_flags, moon_eq_xyz, error) != JME_OK) {
-            return JME_ERR;
-        }
-        if (starname != 0 && starname[0] != '\0') {
-            if (jme_fixstar_ut(starname, jd_ut, geom_flags, target_eq_xyz, error) != JME_OK) {
-                return JME_ERR;
-            }
-        } else if (internal_calc_position_ut(jd_ut, body, geom_flags, target_eq_xyz, error) != JME_OK) {
-            return JME_ERR;
-        }
-        for (i = 0; i < 3; i++) {
-            moon_topo_xyz[i] = moon_eq_xyz[i];
-            target_topo_xyz[i] = target_eq_xyz[i];
-            moon_topo_xyz[i + 3] = 0.0;
-            target_topo_xyz[i + 3] = 0.0;
-        }
-    }
-
-    if (jme_rectangular_to_spherical_state(moon_topo_xyz, moon_eq) != JME_OK
-        || jme_rectangular_to_spherical_state(target_topo_xyz, target_eq) != JME_OK) {
-        jme_set_error(error, "Occultation geometry rectangular-to-spherical conversion failed");
-        return JME_ERR;
-    }
-
-    moon_dist_km = jme_state_distance(moon_topo_xyz) * JME_AU_KM;
-    if (moon_radius_deg != 0) {
-        *moon_radius_deg = angular_radius_deg(JME_EVENTS_MOON_RADIUS_KM, moon_dist_km);
-    }
-
-    if (target_radius_deg != 0) {
-        if (starname != 0 && starname[0] != '\0') {
-            *target_radius_deg = 0.0;
-        } else {
-            target_dist_km = jme_state_distance(target_topo_xyz) * JME_AU_KM;
-            *target_radius_deg = angular_radius_deg(event_body_radius_km(body), target_dist_km);
-        }
-    }
-
-    if (moon_alt_deg != 0) {
-        *moon_alt_deg = local_mode ? get_altitude(jd_ut, JME_BODY_MOON, 0, 0, geopos, 0.0, 0.0, error) : NAN;
-    }
-    if (target_alt_deg != 0) {
-        *target_alt_deg = local_mode
-            ? get_altitude(jd_ut, body, starname, 0, geopos, 0.0, 0.0, error)
-            : NAN;
-    }
-
-    return JME_OK;
-}
-
-static double occultation_metric(double jd_ut, int body, const char *starname, double *geopos, int local_mode, char *error)
-{
-    double moon_eq[6];
-    double target_eq[6];
-    double moon_r = 0.0;
-    double target_r = 0.0;
-    double moon_alt = -90.0;
-    double target_alt = -90.0;
-    double sep;
-
-    if (moon_target_state(jd_ut, body, starname, 0, local_mode, geopos, moon_eq, target_eq, &moon_r, &target_r, &moon_alt, &target_alt, error) != JME_OK) {
-        return NAN;
-    }
-
-    sep = jme_spherical_angular_separation(moon_eq[0], moon_eq[1], target_eq[0], target_eq[1]);
-    if (local_mode && (moon_alt <= 0.0 || target_alt <= 0.0)) {
-        return sep + 180.0 + fabs(moon_alt < target_alt ? moon_alt : target_alt);
-    }
-
-    return sep;
-}
-
-static int find_moon_target_conjunction(double jd_start, int body, const char *starname, int backward, double *tret, char *error)
-{
-    double direction = backward ? -1.0 : 1.0;
-    double t0 = jd_start;
-    double prev_diff;
-    int i;
-
-    {
-        double moon_state[6];
-        double target_state[6];
-
-        if (internal_calc_ut_positions(t0, JME_BODY_MOON, 0, moon_state, error) != JME_OK) {
-            return JME_ERR;
-        }
-        if (starname != 0 && starname[0] != '\0') {
-            if (jme_fixstar_ut(starname, t0, 0, target_state, error) != JME_OK) {
-                return JME_ERR;
-            }
-        } else if (internal_calc_ut_positions(t0, body, 0, target_state, error) != JME_OK) {
-            return JME_ERR;
-        }
-        prev_diff = jme_degrees_difference_signed(moon_state[0], target_state[0]);
-    }
-
-    for (i = 1; i <= 240; i++) {
-        double t1 = jd_start + direction * (0.25 * i);
-        double moon_state[6];
-        double target_state[6];
-        double diff;
-        int j;
-
-        if (internal_calc_ut_positions(t1, JME_BODY_MOON, 0, moon_state, error) != JME_OK) {
-            return JME_ERR;
-        }
-        if (starname != 0 && starname[0] != '\0') {
-            if (jme_fixstar_ut(starname, t1, 0, target_state, error) != JME_OK) {
-                return JME_ERR;
-            }
-        } else if (internal_calc_ut_positions(t1, body, 0, target_state, error) != JME_OK) {
-            return JME_ERR;
-        }
-        diff = jme_degrees_difference_signed(moon_state[0], target_state[0]);
-
-        if ((prev_diff <= 0.0 && diff >= 0.0) || (prev_diff >= 0.0 && diff <= 0.0)) {
-            double a = t0;
-            double b = t1;
-            double fa = prev_diff;
-
-            for (j = 0; j < 48; j++) {
-                double m = 0.5 * (a + b);
-                double moon_mid[6];
-                double target_mid[6];
-                double fm;
-
-                if (internal_calc_ut_positions(m, JME_BODY_MOON, 0, moon_mid, error) != JME_OK) {
-                    return JME_ERR;
-                }
-                if (starname != 0 && starname[0] != '\0') {
-                    if (jme_fixstar_ut(starname, m, 0, target_mid, error) != JME_OK) {
-                        return JME_ERR;
-                    }
-                } else if (internal_calc_ut_positions(m, body, 0, target_mid, error) != JME_OK) {
-                    return JME_ERR;
-                }
-                fm = jme_degrees_difference_signed(moon_mid[0], target_mid[0]);
-
-                if (fabs(fm) < 1e-8 || fabs(b - a) < 1e-8) {
-                    *tret = m;
-                    return JME_OK;
-                }
-
-                if ((fa <= 0.0 && fm >= 0.0) || (fa >= 0.0 && fm <= 0.0)) {
-                    b = m;
-                } else {
-                    a = m;
-                    fa = fm;
-                }
-            }
-
-            *tret = 0.5 * (a + b);
-            return JME_OK;
-        }
-
-        t0 = t1;
-        prev_diff = diff;
-    }
-
-    jme_set_error(error, "Moon-target conjunction not found in search window");
-    return JME_ERR;
-}
-
-static int refine_occultation_maximum(double guess, int body, const char *starname, double *geopos, int local_mode, double *tmax, char *error)
-{
-    double a = guess - 0.75;
-    double b = guess + 0.75;
-    double gr = 0.6180339887498948482;
-    double x1 = b - gr * (b - a);
-    double x2 = a + gr * (b - a);
-    double f1 = occultation_metric(x1, body, starname, geopos, local_mode, error);
-    double f2 = occultation_metric(x2, body, starname, geopos, local_mode, error);
-    int i;
-
-    if (!isfinite(f1) || !isfinite(f2)) {
-        return JME_ERR;
-    }
-
-    for (i = 0; i < 64; i++) {
-        if (f1 > f2) {
-            a = x1;
-            x1 = x2;
-            f1 = f2;
-            x2 = a + gr * (b - a);
-            f2 = occultation_metric(x2, body, starname, geopos, local_mode, error);
-        } else {
-            b = x2;
-            x2 = x1;
-            f2 = f1;
-            x1 = b - gr * (b - a);
-            f1 = occultation_metric(x1, body, starname, geopos, local_mode, error);
-        }
-        if (!isfinite(f1) || !isfinite(f2)) {
-            return JME_ERR;
-        }
-    }
-
-    *tmax = 0.5 * (a + b);
-    return JME_OK;
-}
-
-static int find_occultation_contact_time(double tmid, int body, const char *starname, double threshold_deg, double *geopos, int local_mode, int left_side, double *tret, char *error)
-{
-    double t_prev = tmid;
-    double f_prev = occultation_metric(tmid, body, starname, geopos, local_mode, error) - threshold_deg;
-    double direction = left_side ? -1.0 : 1.0;
-    int i;
-
-    if (!isfinite(f_prev)) {
-        return JME_ERR;
-    }
-    if (f_prev > 0.0) {
-        return JME_ERR;
-    }
-
-    for (i = 1; i <= 96; i++) {
-        double t = tmid + direction * (i / 96.0);
-        double f = occultation_metric(t, body, starname, geopos, local_mode, error) - threshold_deg;
-        int j;
-
-        if (!isfinite(f)) {
-            return JME_ERR;
-        }
-
-        if (f >= 0.0) {
-            double a = left_side ? t : t_prev;
-            double b = left_side ? t_prev : t;
-
-            for (j = 0; j < 48; j++) {
-                double m = 0.5 * (a + b);
-                double fm = occultation_metric(m, body, starname, geopos, local_mode, error) - threshold_deg;
-
-                if (!isfinite(fm)) {
-                    return JME_ERR;
-                }
-                if (fabs(fm) < 1e-8 || fabs(b - a) < 1e-8) {
-                    *tret = m;
-                    return JME_OK;
-                }
-
-                if ((occultation_metric(a, body, starname, geopos, local_mode, error) - threshold_deg) * fm <= 0.0) {
-                    b = m;
-                } else {
-                    a = m;
-                }
-            }
-
-            *tret = 0.5 * (a + b);
-            return JME_OK;
-        }
-
-        t_prev = t;
-        f_prev = f;
-    }
-
-    return JME_ERR;
 }
 
 /*
@@ -1196,8 +963,16 @@ static double get_altitude_internal(double jd_ut, int body, const char *starname
     }
 
     if (starname != 0 && starname[0] != '\0') {
+        double xyz[6];
         flags = flags | (int)JME_CALC_TOPOCENTRIC | equatorial_flag;
-        res = jme_fixstar_ut(starname, jd_ut, flags, results, error);
+        res = internal_fixstar_position_ut(starname, jd_ut, flags, xyz, 0, error);
+        if (res == JME_OK) {
+            xyz[3] = xyz[4] = xyz[5] = 0.0;
+            if (jme_rectangular_to_spherical_state(xyz, results) != JME_OK) {
+                jme_set_error(error, "Invalid star vector");
+                res = JME_ERR;
+            }
+        }
     } else {
         flags = flags | (int)JME_CALC_TOPOCENTRIC | equatorial_flag;
         res = internal_calc_ut_positions(jd_ut, body, flags, results, error);
@@ -1736,23 +1511,34 @@ typedef struct solar_bessel {
     double gast;      /* Greenwich apparent sidereal time, rad */
 } solar_bessel;
 
-static int solar_bessel_at(double jd_ut, solar_bessel *b, char *error)
+/*
+ * Fundamental-plane geometry for the Moon and a target (the Sun for solar
+ * eclipses; a planet or star for lunar occultations). The shadow cones are
+ * tangent to the Moon and the target: sin f1 = (R_t + R_m)/G,
+ * sin f2 = (R_t - R_m)/G, G = |target - Moon|; the radii on the plane are
+ * l1 = z tan f1 + k / cos f1 and l2 = z tan f2 - k / cos f2 (k = R_m in
+ * Earth radii), which equal the classical (z + k/sin f1) tan f1 and
+ * (z - k/sin f2) tan f2 and remain valid as f -> 0: a star without parallax
+ * (at infinity) has a cylindrical shadow of radius k along its direction.
+ */
+static int bessel_at(double jd_ut, const events_target *tg, solar_bessel *b, char *error)
 {
-    double sun[6], moon[6], g[3], gn, sinf1, sinf2, kk, d, a;
-    int i;
+    double tgt[3], moon[3], g[3], gn, sinf1, sinf2, cosf1, cosf2, kk, d, a, rt;
+    int i, known = 1;
 
-    if (internal_calc_position_ut(jd_ut, JME_BODY_SUN, JME_CALC_EQUATORIAL, sun, error) != JME_OK
-        || internal_calc_position_ut(jd_ut, JME_BODY_MOON, JME_CALC_EQUATORIAL, moon, error) != JME_OK) {
+    if (events_target_position(jd_ut, tg, JME_CALC_EQUATORIAL | JME_EVENTS_GEOMETRY_FLAGS, tgt, &known, error) != JME_OK
+        || internal_calc_position_ut(jd_ut, JME_BODY_MOON, JME_CALC_EQUATORIAL | JME_EVENTS_GEOMETRY_FLAGS, moon, error) != JME_OK) {
         return JME_ERR;
     }
-    for (i = 0; i < 3; i++) {
-        sun[i] *= JME_AU_KM / JME_BESSEL_EARTH_A_KM;
-        b->moon[i] = moon[i] * JME_AU_KM / JME_BESSEL_EARTH_A_KM;
-        g[i] = sun[i] - b->moon[i];
+    for (i = 0; i < 3; i++) b->moon[i] = moon[i] * JME_AU_KM / JME_BESSEL_EARTH_A_KM;
+    if (known) {
+        for (i = 0; i < 3; i++) g[i] = tgt[i] * JME_AU_KM / JME_BESSEL_EARTH_A_KM - b->moon[i];
+    } else {
+        for (i = 0; i < 3; i++) g[i] = tgt[i];
     }
     gn = vec_norm(g);
     if (!isfinite(gn) || gn <= 0.0) {
-        jme_set_error(error, "Solar eclipse geometry requires a valid Sun-Moon vector");
+        jme_set_error(error, "Shadow geometry requires a valid Moon-target vector");
         return JME_ERR;
     }
     for (i = 0; i < 3; i++) b->k[i] = g[i] / gn;
@@ -1763,16 +1549,24 @@ static int solar_bessel_at(double jd_ut, solar_bessel *b, char *error)
     b->x = vec_dot(b->moon, b->xhat);
     b->y = vec_dot(b->moon, b->yhat);
     b->z = vec_dot(b->moon, b->k);
-    sinf1 = (JME_EVENTS_SUN_RADIUS_KM + JME_EVENTS_MOON_RADIUS_KM) / (gn * JME_BESSEL_EARTH_A_KM);
-    sinf2 = (JME_EVENTS_SUN_RADIUS_KM - JME_EVENTS_MOON_RADIUS_KM) / (gn * JME_BESSEL_EARTH_A_KM);
-    b->tanf1 = sinf1 / sqrt(1.0 - sinf1 * sinf1);
-    b->tanf2 = sinf2 / sqrt(1.0 - sinf2 * sinf2);
+    rt = events_target_radius_km(tg);
+    if (known) {
+        sinf1 = (rt + JME_EVENTS_MOON_RADIUS_KM) / (gn * JME_BESSEL_EARTH_A_KM);
+        sinf2 = (rt - JME_EVENTS_MOON_RADIUS_KM) / (gn * JME_BESSEL_EARTH_A_KM);
+    } else {
+        sinf1 = 0.0;
+        sinf2 = 0.0;
+    }
+    cosf1 = sqrt((1.0 - sinf1) * (1.0 + sinf1));
+    cosf2 = sqrt((1.0 - sinf2) * (1.0 + sinf2));
+    b->tanf1 = sinf1 / cosf1;
+    b->tanf2 = sinf2 / cosf2;
     kk = JME_EVENTS_MOON_RADIUS_KM / JME_BESSEL_EARTH_A_KM;
-    b->l1 = (b->z + kk / sinf1) * b->tanf1;
-    b->l2 = (b->z - kk / sinf2) * b->tanf2;
+    b->l1 = b->z * b->tanf1 + kk / cosf1;
+    b->l2 = b->z * b->tanf2 - kk / cosf2;
     b->gast = events_gst_hours(jd_ut, 0) * 15.0 * JME_EVENTS_DEG_TO_RAD;
     if (!isfinite(b->gast)) {
-        jme_set_error(error, "Sidereal time unavailable for eclipse geometry");
+        jme_set_error(error, "Sidereal time unavailable for shadow geometry");
         return JME_ERR;
     }
     return JME_OK;
@@ -1889,13 +1683,13 @@ static double solar_bessel_silhouette_min(const solar_bessel *b, int kind, doubl
 /* Signed contact functions: negative while the condition holds.
  * kind 0: penumbra on Earth; 1: umbra/antumbra on Earth; 2: axis on Earth;
  * 3: L2' at the central point (sign changes = hybrid transitions). */
-static double solar_bessel_condition(double jd_ut, int kind, char *error)
+static double bessel_condition(double jd_ut, const events_target *tg, int kind, char *error)
 {
     solar_bessel b;
     double disc, p[3];
     int central;
 
-    if (solar_bessel_at(jd_ut, &b, error) != JME_OK) return NAN;
+    if (bessel_at(jd_ut, tg, &b, error) != JME_OK) return NAN;
     central = solar_bessel_axis_point(&b, p, &disc);
     if (kind == 2) return -disc;
     if (kind == 3) {
@@ -1906,34 +1700,46 @@ static double solar_bessel_condition(double jd_ut, int kind, char *error)
     return solar_bessel_silhouette_min(&b, kind, 0);
 }
 
-/* Find the instant, on one side of t0 (where condition(t0) < 0), at which
- * the condition becomes >= 0. Bisection to 1e-10 d (8.6 microseconds). */
-typedef struct solar_bessel_ctx { int kind; } solar_bessel_ctx;
-static double solar_bessel_root_fn(double t, const void *ctx, char *error)
+static double solar_bessel_condition(double jd_ut, int kind, char *error)
 {
-    return solar_bessel_condition(t, ((const solar_bessel_ctx *)ctx)->kind, error);
+    return bessel_condition(jd_ut, 0, kind, error);
 }
 
-static int solar_bessel_contact(double t0, int kind, int left_side, double max_span, double *tret, char *error)
+/* Find the instant, on one side of t0 (where condition(t0) < 0), at which
+ * the condition becomes >= 0. Illinois refinement to 1e-10 d (8.6 us). */
+typedef struct bessel_ctx { const events_target *tg; int kind; } bessel_ctx;
+static double bessel_root_fn(double t, const void *ctx, char *error)
+{
+    const bessel_ctx *c = (const bessel_ctx *)ctx;
+    return bessel_condition(t, c->tg, c->kind, error);
+}
+
+static int bessel_contact(const events_target *tg, double t0, int kind, int left_side, double max_span, double *tret, char *error)
 {
     double step = 0.005, prev = t0, f;
     int i;
 
-    f = solar_bessel_condition(t0, kind, error);
+    f = bessel_condition(t0, tg, kind, error);
     if (!isfinite(f) || f >= 0.0) return JME_ERR;
     for (i = 1; i * step <= max_span; i++) {
         double t = t0 + (left_side ? -1.0 : 1.0) * step * i;
         double fprev = f;
-        f = solar_bessel_condition(t, kind, error);
+        f = bessel_condition(t, tg, kind, error);
         if (!isfinite(f)) return JME_ERR;
         if (f >= 0.0) {
-            solar_bessel_ctx c;
+            bessel_ctx c;
+            c.tg = tg;
             c.kind = kind;
-            return events_refine_root(solar_bessel_root_fn, &c, prev, fprev, t, f, tret, error);
+            return events_refine_root(bessel_root_fn, &c, prev, fprev, t, f, tret, error);
         }
         prev = t;
     }
     return JME_ERR;
+}
+
+static int solar_bessel_contact(double t0, int kind, int left_side, double max_span, double *tret, char *error)
+{
+    return bessel_contact(0, t0, kind, left_side, max_span, tret, error);
 }
 
 /* Root of L2'(central point) between a and b (sign change assumed). */
@@ -1957,13 +1763,13 @@ static int solar_bessel_hybrid_transition(double a, double b, double *tret, char
  * rc: TOTAL/ANNULAR (central or not), PARTIAL or 0. class: CENTRAL,
  * NONCENTRAL or 0. distance_km: distance of the axis from the surface
  * silhouette (0 when central). */
-static int solar_bessel_classify(double jd_ut, int *rc_out, int *class_out, double *lon, double *lat, double *distance_km, char *error)
+static int bessel_classify(double jd_ut, const events_target *tg, int *rc_out, int *class_out, double *lon, double *lat, double *distance_km, char *error)
 {
     solar_bessel b;
     double p[3], disc, f;
     int rc = 0, cls = 0;
 
-    if (solar_bessel_at(jd_ut, &b, error) != JME_OK) return JME_ERR;
+    if (bessel_at(jd_ut, tg, &b, error) != JME_OK) return JME_ERR;
     if (solar_bessel_axis_point(&b, p, &disc)) {
         double l2p = b.l2 - vec_dot(p, b.k) * b.tanf2;
         rc = l2p < 0.0 ? JME_ECLIPSE_SOLAR_TOTAL : JME_ECLIPSE_SOLAR_ANNULAR;
@@ -1988,6 +1794,11 @@ static int solar_bessel_classify(double jd_ut, int *rc_out, int *class_out, doub
     if (rc_out != 0) *rc_out = rc;
     if (class_out != 0) *class_out = cls;
     return JME_OK;
+}
+
+static int solar_bessel_classify(double jd_ut, int *rc_out, int *class_out, double *lon, double *lat, double *distance_km, char *error)
+{
+    return bessel_classify(jd_ut, 0, rc_out, class_out, lon, lat, distance_km, error);
 }
 
 static int jme_sol_eclipse_where_impl(double jd_ut, int flags, double *geopos, double *attr, char *error)
@@ -2245,128 +2056,362 @@ static int jme_lun_eclipse_when_impl(double jd_start, int flags, int iflag, doub
     return JME_ERR;
 }
 
+/* ------------------------------------------------------------------------
+ * Lunar occultations of planets and stars.
+ *
+ * Global circumstances use the fundamental-plane (Besselian) construction
+ * of the solar-eclipse code with the target in place of the Sun
+ * (Explanatory Supplement to the Astronomical Almanac, 1992, ch. 8 and
+ * 9.4): shadow cones tangent to the Moon and the target (a cylinder for a
+ * star at infinity), WGS84 ellipsoid treated exactly in 3-D. Local
+ * circumstances use complete topocentric apparent places (the observer's
+ * own light time, deflection and aberration) with the angular radii
+ * re-evaluated at each trial instant. Radii: Moon 1737.4 km (IAU mean
+ * radius; the IOTA/IAU k = 0.2725076 Earth radii), planets IAU WGCCRE
+ * mean equatorial radii (event_body_radius_km), stars 0 (point sources).
+ * ---------------------------------------------------------------------- */
+
+/* angle between two vectors, accurate at all separations */
+static double events_vector_angle_deg(const double *a, const double *b)
+{
+    double c[3];
+    vec_cross(a, b, c);
+    return atan2(vec_norm(c), vec_dot(a, b)) * JME_EVENTS_RAD_TO_DEG;
+}
+
+/* Geocentric conjunction in apparent ecliptic longitude of the Moon and the
+ * target (used only as the starting point of each search). Only genuine
+ * crossings are accepted (both bracket ends within 90 deg), so the +-180 deg
+ * wrap of the difference at opposition is never taken for a root. */
+typedef struct occ_conj_ctx { const events_target *tg; double sign; } occ_conj_ctx;
+
+static double occ_conj_fn(double t, const void *c, char *error)
+{
+    const occ_conj_ctx *x = (const occ_conj_ctx *)c;
+    double moon[3], tgt[3], d;
+    if (internal_calc_position_ut(t, JME_BODY_MOON, 0, moon, error) != JME_OK
+        || events_target_position(t, x->tg, 0, tgt, 0, error) != JME_OK) {
+        return NAN;
+    }
+    d = (atan2(moon[1], moon[0]) - atan2(tgt[1], tgt[0])) * JME_EVENTS_RAD_TO_DEG;
+    return x->sign * jme_degrees_difference_signed(jme_degree_normalize(d), 0.0);
+}
+
+static int find_moon_target_conjunction(double jd_start, const events_target *tg, int backward, double *tret, char *error)
+{
+    double direction = backward ? -1.0 : 1.0;
+    double t0 = jd_start, f0, t1, f1;
+    occ_conj_ctx c;
+    int i;
+
+    c.tg = tg;
+    c.sign = 1.0;
+    f0 = occ_conj_fn(t0, &c, error);
+    if (!isfinite(f0)) return JME_ERR;
+    for (i = 1; i <= 120; i++) {
+        t1 = jd_start + direction * (0.5 * i);
+        f1 = occ_conj_fn(t1, &c, error);
+        if (!isfinite(f1)) return JME_ERR;
+        if (fabs(f0) < 90.0 && fabs(f1) < 90.0 && ((f0 < 0.0) != (f1 < 0.0) || f1 == 0.0)) {
+            if (f1 == 0.0) { *tret = t1; return JME_OK; }
+            if (f0 < 0.0) return events_refine_root(occ_conj_fn, &c, t0, f0, t1, f1, tret, error);
+            c.sign = -1.0;
+            return events_refine_root(occ_conj_fn, &c, t1, -f1, t0, -f0, tret, error);
+        }
+        t0 = t1;
+        f0 = f1;
+    }
+    jme_set_error(error, "Moon-target conjunction not found in search window");
+    return JME_ERR;
+}
+
+/* Geocentric separation (deg) and Moon/target angular radii (deg). */
+static int occ_geocentric(double jd_ut, const events_target *tg, double *sep, double *moon_r, double *target_r, char *error)
+{
+    double moon[3], tgt[3];
+    int known = 1;
+    if (internal_calc_position_ut(jd_ut, JME_BODY_MOON, JME_CALC_EQUATORIAL | JME_EVENTS_GEOMETRY_FLAGS, moon, error) != JME_OK
+        || events_target_position(jd_ut, tg, JME_CALC_EQUATORIAL | JME_EVENTS_GEOMETRY_FLAGS, tgt, &known, error) != JME_OK) {
+        return JME_ERR;
+    }
+    if (sep != 0) *sep = events_vector_angle_deg(moon, tgt);
+    if (moon_r != 0) *moon_r = angular_radius_deg(JME_EVENTS_MOON_RADIUS_KM, vec_norm(moon) * JME_AU_KM);
+    if (target_r != 0) {
+        double rt = events_target_radius_km(tg);
+        *target_r = (rt > 0.0 && known) ? angular_radius_deg(rt, vec_norm(tgt) * JME_AU_KM) : 0.0;
+    }
+    return JME_OK;
+}
+
+/* Global maximum: instant at which the shadow axis passes closest to the
+ * Earth's centre (minimum gamma), as for solar eclipses. */
+static double occ_global_metric(double t, const void *c, char *error)
+{
+    const events_target *tg = (const events_target *)c;
+    solar_bessel b;
+    if (bessel_at(t, tg, &b, error) != JME_OK) return NAN;
+    return hypot(b.x, b.y);
+}
+
+/* Local geometry: complete topocentric apparent places. */
+typedef struct occ_local { double sep, moon_r, target_r; } occ_local;
+
+static int occ_local_geometry(double jd_ut, const events_target *tg, double *geopos, occ_local *g, char *error)
+{
+    double moon[3], tgt[3];
+    int known = 1;
+    internal_topo_override_set(geopos[0], geopos[1], geopos[2]);
+    if (internal_calc_position_ut(jd_ut, JME_BODY_MOON, JME_CALC_EQUATORIAL | JME_CALC_TOPOCENTRIC | JME_EVENTS_GEOMETRY_FLAGS, moon, error) != JME_OK
+        || events_target_position(jd_ut, tg, JME_CALC_EQUATORIAL | JME_CALC_TOPOCENTRIC | JME_EVENTS_GEOMETRY_FLAGS, tgt, &known, error) != JME_OK) {
+        return JME_ERR;
+    }
+    g->sep = events_vector_angle_deg(moon, tgt);
+    g->moon_r = angular_radius_deg(JME_EVENTS_MOON_RADIUS_KM, vec_norm(moon) * JME_AU_KM);
+    {
+        double rt = events_target_radius_km(tg);
+        g->target_r = (rt > 0.0 && known) ? angular_radius_deg(rt, vec_norm(tgt) * JME_AU_KM) : 0.0;
+    }
+    return JME_OK;
+}
+
+/* kind 0: local separation (minimised); 1: outer contact function
+ * sep - (r_m + r_t); 2: inner contact function sep - |r_m - r_t|. */
+typedef struct occ_local_ctx { const events_target *tg; double *geopos; int kind; } occ_local_ctx;
+
+static double occ_local_fn(double t, const void *c, char *error)
+{
+    const occ_local_ctx *x = (const occ_local_ctx *)c;
+    occ_local g;
+    if (occ_local_geometry(t, x->tg, x->geopos, &g, error) != JME_OK) return NAN;
+    if (x->kind == 1) return g.sep - (g.moon_r + g.target_r);
+    if (x->kind == 2) return g.sep - fabs(g.moon_r - g.target_r);
+    return g.sep;
+}
+
+static int occ_local_contact(const events_target *tg, double *geopos, double tmax, int kind, int left_side, double *tret, char *error)
+{
+    occ_local_ctx c;
+    double step = 0.005, prev = tmax, f, fprev;
+    int i;
+
+    c.tg = tg;
+    c.geopos = geopos;
+    c.kind = kind;
+    f = occ_local_fn(tmax, &c, error);
+    if (!isfinite(f) || f >= 0.0) return JME_ERR;
+    for (i = 1; i * step <= 0.5; i++) {
+        double t = tmax + (left_side ? -1.0 : 1.0) * step * i;
+        fprev = f;
+        f = occ_local_fn(t, &c, error);
+        if (!isfinite(f)) return JME_ERR;
+        if (f >= 0.0) return events_refine_root(occ_local_fn, &c, prev, fprev, t, f, tret, error);
+        prev = t;
+    }
+    jme_set_error(error, "Occultation contact not found");
+    return JME_ERR;
+}
+
+/* Geometric altitude (deg) of the target's centre for the observer. */
+typedef struct occ_alt_ctx { const events_target *tg; double *geopos; double sign; } occ_alt_ctx;
+
+static double occ_alt_fn(double t, const void *c, char *error)
+{
+    const occ_alt_ctx *x = (const occ_alt_ctx *)c;
+    double a = get_altitude(t, events_target_is_star(x->tg) ? 0 : x->tg->body,
+        events_target_is_star(x->tg) ? x->tg->star : 0, 0, x->geopos, 0.0, 0.0, error);
+    return x->sign * a;
+}
+
+/* Fraction of the target's disc area covered by the Moon (stars: 0 or 1). */
+static double occ_obscuration(double sep, double rt, double rm)
+{
+    if (rt <= 0.0) return sep < rm ? 1.0 : 0.0;
+    return solar_obscuration(sep, rt, rm);
+}
+
+static void occ_fill_attr(const occ_local *g, double moon_alt, double target_alt, double *attr)
+{
+    int i;
+    for (i = 0; i < 20; i++) attr[i] = 0.0;
+    /* magnitude: fraction of the target's diameter covered (stars: 1 when
+     * occulted, 0 otherwise) */
+    if (g->target_r > 0.0) {
+        attr[0] = (g->moon_r + g->target_r - g->sep) / (2.0 * g->target_r);
+        if (attr[0] < 0.0) attr[0] = 0.0;
+        if (attr[0] > 1.0) attr[0] = 1.0;
+    } else {
+        attr[0] = g->sep < g->moon_r ? 1.0 : 0.0;
+    }
+    attr[1] = occ_obscuration(g->sep, g->target_r, g->moon_r);
+    attr[2] = g->sep;
+    attr[3] = 2.0 * g->moon_r * 3600.0;
+    attr[4] = 2.0 * g->target_r * 3600.0;
+    attr[5] = moon_alt;
+    attr[6] = target_alt;
+    attr[7] = g->sep <= g->moon_r - g->target_r ? 1.0 : 0.0;
+}
+
+static int occ_target_valid(int body, const char *starname, events_target *tg, char *error)
+{
+    tg->body = body;
+    tg->star = starname;
+    if (!events_target_is_star(tg) && (body == JME_BODY_MOON || body == JME_BODY_EARTH)) {
+        jme_set_error(error, "Lunar occultation target must be a planet, the Sun or a star");
+        return JME_ERR;
+    }
+    return JME_OK;
+}
+
+/* Conservative pre-filter (never rejects an occultation): at the
+ * longitude conjunction the geocentric separation is within a factor
+ * cos(10 deg) of its minimum (relative-path inclination to the ecliptic
+ * < 7 deg), and an occultation anywhere on the Earth needs a geocentric
+ * separation below asin((R_earth + R_moon)/d_moon) + r_target < 1.32 deg
+ * + r_target. */
+static int occ_conjunction_may_occult(double guess, const events_target *tg, int *may, char *error)
+{
+    double sep, rm, rt;
+    if (occ_geocentric(guess, tg, &sep, &rm, &rt, error) != JME_OK) return JME_ERR;
+    *may = sep * 0.98480775301220805936674302458952 <= 1.32 + rt + 0.05;
+    return JME_OK;
+}
+
 static int jme_lun_occult_where_impl(double jd_ut, int body, const char *starname, int flags, double *geopos, double *attr, char *error)
 {
-    double moon_eq[6];
-    double target_eq[6];
-    double moon_r = 0.0;
-    double target_r = 0.0;
-    double sep = 0.0;
-    double threshold = 0.0;
-    double parallax = 0.0;
-    double gst;
-    int i;
+    events_target tg;
+    occ_local g;
+    double lon = 0.0, lat = 0.0, sep, rm, rt;
+    int rc = 0, cls = 0;
     (void)flags;
 
     if (geopos == 0 || attr == 0) {
         jme_set_error(error, "Lunar occultation geographic circumstance output is required");
         return JME_ERR;
     }
-
-    if (moon_target_state(jd_ut, body, starname, 0, 0, 0, moon_eq, target_eq, &moon_r, &target_r, 0, 0, error) != JME_OK) {
+    if (!isfinite(jd_ut)) {
+        jme_set_error(error, "Julian date must be finite");
         return JME_ERR;
     }
-
-    sep = jme_spherical_angular_separation(moon_eq[0], moon_eq[1], target_eq[0], target_eq[1]);
-    parallax = lunar_horizontal_parallax_deg(moon_r);
-    threshold = moon_r + target_r + parallax;
-    if (sep > threshold) {
+    if (occ_target_valid(body, starname, &tg, error) != JME_OK) return JME_ERR;
+    if (bessel_classify(jd_ut, &tg, &rc, &cls, &lon, &lat, 0, error) != JME_OK) return JME_ERR;
+    if (rc == 0) {
         jme_set_error(error, "No lunar occultation is in progress at the supplied time");
         return JME_ERR;
     }
-
-    gst = events_gst_hours(jd_ut, 0) * 15.0;
-    geopos[0] = normalize_lon_180(target_eq[0] - gst);
-    geopos[1] = target_eq[1];
+    geopos[0] = lon;
+    geopos[1] = lat;
     geopos[2] = 0.0;
-
-    for (i = 0; i < 20; i++) {
-        attr[i] = 0.0;
+    if (occ_local_geometry(jd_ut, &tg, geopos, &g, error) != JME_OK
+        || occ_geocentric(jd_ut, &tg, &sep, &rm, &rt, error) != JME_OK) {
+        return JME_ERR;
     }
-
-    attr[0] = (threshold - sep) / (2.0 * moon_r);
-    attr[1] = target_r > 0.0 ? (target_r * target_r) / (moon_r * moon_r) : 0.0;
-    attr[2] = sep;
-    attr[3] = 2.0 * moon_r * 3600.0;
-    attr[4] = 2.0 * target_r * 3600.0;
-    attr[7] = sep <= fabs(moon_r - target_r) ? 1.0 : 0.0;
-    attr[9] = parallax;
-
+    occ_fill_attr(&g,
+        get_altitude(jd_ut, JME_BODY_MOON, 0, 0, geopos, 0.0, 0.0, error),
+        get_altitude(jd_ut, events_target_is_star(&tg) ? 0 : body, events_target_is_star(&tg) ? starname : 0, 0, geopos, 0.0, 0.0, error),
+        attr);
+    attr[8] = cls == JME_ECLIPSE_SOLAR_CENTRAL ? 1.0 : 0.0;
+    attr[9] = lunar_horizontal_parallax_deg(rm);
+    if (error != 0) error[0] = '\0';
     return JME_OK;
 }
 
 static int jme_lun_occult_when_loc_impl(double jd_start, int body, const char *starname, int flags, double *geopos, double *tret, double *attr, int backward, char *error)
 {
-    double guess = 0.0;
-    double tmax = 0.0;
-    double moon_eq[6];
-    double target_eq[6];
-    double moon_r = 0.0;
-    double target_r = 0.0;
-    double moon_alt = -90.0;
-    double target_alt = -90.0;
-    double sep = 0.0;
-    double threshold = 0.0;
-    int i;
+    events_target tg;
+    double search_jd = jd_start;
+    double direction = backward ? -1.0 : 1.0;
+    int attempt;
     (void)flags;
 
     if (geopos == 0 || tret == 0 || attr == 0) {
         jme_set_error(error, "Lunar occultation local search requires geopos, tret, and attr outputs");
         return JME_ERR;
     }
-
-    if (find_moon_target_conjunction(jd_start, body, starname, backward, &guess, error) != JME_OK
-        || refine_occultation_maximum(guess, body, starname, geopos, 1, &tmax, error) != JME_OK
-        || moon_target_state(tmax, body, starname, 0, 1, geopos, moon_eq, target_eq, &moon_r, &target_r, &moon_alt, &target_alt, error) != JME_OK) {
+    if (!isfinite(jd_start) || !isfinite(geopos[0]) || !isfinite(geopos[1]) || !isfinite(geopos[2])
+        || geopos[1] < -90.0 || geopos[1] > 90.0) {
+        jme_set_error(error, "Lunar occultation local search inputs are invalid");
         return JME_ERR;
     }
+    if (occ_target_valid(body, starname, &tg, error) != JME_OK) return JME_ERR;
 
-    sep = jme_spherical_angular_separation(moon_eq[0], moon_eq[1], target_eq[0], target_eq[1]);
-    threshold = moon_r + target_r;
-    if (sep > threshold || moon_alt <= 0.0 || target_alt <= 0.0) {
-        jme_set_error(error, "No local lunar occultation found near the supplied date");
-        return JME_ERR;
+    /* about 13.4 conjunctions per year: 2000 covers ~150 years */
+    for (attempt = 0; attempt < 2000; attempt++) {
+        double guess = 0.0, gmax = 0.0, tmax = 0.0, c1 = 0.0, c4 = 0.0;
+        double moon_alt, target_alt;
+        int may = 0, grc = 0, visible;
+        occ_local g;
+        occ_local_ctx lc;
+        occ_alt_ctx ac;
+
+        if (find_moon_target_conjunction(search_jd, &tg, backward, &guess, error) != JME_OK) return JME_ERR;
+        search_jd = guess + direction;
+        if (occ_conjunction_may_occult(guess, &tg, &may, error) != JME_OK) return JME_ERR;
+        if (!may) continue;
+        if (events_minimize_precise(occ_global_metric, &tg, guess - 0.75, guess + 0.75, &gmax, error) != JME_OK
+            || bessel_classify(gmax, &tg, &grc, 0, 0, 0, 0, error) != JME_OK) {
+            return JME_ERR;
+        }
+        if (grc == 0) continue;
+        lc.tg = &tg;
+        lc.geopos = geopos;
+        lc.kind = 0;
+        if (events_minimize_precise(occ_local_fn, &lc, gmax - 0.3, gmax + 0.3, &tmax, error) != JME_OK
+            || occ_local_geometry(tmax, &tg, geopos, &g, error) != JME_OK) {
+            return JME_ERR;
+        }
+        if (!(g.sep < g.moon_r + g.target_r)) continue;
+        if (occ_local_contact(&tg, geopos, tmax, 1, 1, &c1, error) != JME_OK
+            || occ_local_contact(&tg, geopos, tmax, 1, 0, &c4, error) != JME_OK) {
+            return JME_ERR;
+        }
+        /* observable if the target is above the horizon at some instant of
+         * [c1, c4]: the altitude is smooth on this short interval, so its
+         * maximum (Brent) decides exactly. */
+        ac.tg = &tg;
+        ac.geopos = geopos;
+        ac.sign = 1.0;
+        visible = occ_alt_fn(c1, &ac, error) > 0.0 || occ_alt_fn(c4, &ac, error) > 0.0 || occ_alt_fn(tmax, &ac, error) > 0.0;
+        if (!visible) {
+            double tbest;
+            ac.sign = -1.0;
+            if (events_minimize(occ_alt_fn, &ac, c1, c4, 1e-7, &tbest, error) != JME_OK) return JME_ERR;
+            ac.sign = 1.0;
+            visible = occ_alt_fn(tbest, &ac, error) > 0.0;
+        }
+        if (!visible) continue;
+
+        memset(tret, 0, sizeof(double) * 10);
+        tret[0] = tmax;
+        tret[1] = tmax;
+        tret[2] = c1;
+        tret[3] = c4;
+        if (g.sep < fabs(g.moon_r - g.target_r) || g.target_r == 0.0) {
+            if (g.target_r == 0.0) {
+                tret[4] = c1;
+                tret[5] = c4;
+            } else if (occ_local_contact(&tg, geopos, tmax, 2, 1, &tret[4], error) != JME_OK
+                || occ_local_contact(&tg, geopos, tmax, 2, 0, &tret[5], error) != JME_OK) {
+                return JME_ERR;
+            }
+        }
+        moon_alt = get_altitude(tmax, JME_BODY_MOON, 0, 0, geopos, 0.0, 0.0, error);
+        target_alt = occ_alt_fn(tmax, &ac, error);
+        occ_fill_attr(&g, moon_alt, target_alt, attr);
+        attr[8] = JME_ECLIPSE_VISIBLE;
+        attr[9] = target_alt > 0.0 ? 1.0 : 0.0;
+        if (error != 0) error[0] = '\0';
+        return JME_OK;
     }
-
-    memset(tret, 0, sizeof(double) * 10);
-    for (i = 0; i < 20; i++) {
-        attr[i] = 0.0;
-    }
-
-    tret[0] = tmax;
-    tret[1] = tmax;
-    find_occultation_contact_time(tmax, body, starname, threshold, geopos, 1, 1, &tret[2], error);
-    find_occultation_contact_time(tmax, body, starname, threshold, geopos, 1, 0, &tret[3], error);
-    if (sep <= fabs(moon_r - target_r)) {
-        double inner = fabs(moon_r - target_r);
-        find_occultation_contact_time(tmax, body, starname, inner, geopos, 1, 1, &tret[4], error);
-        find_occultation_contact_time(tmax, body, starname, inner, geopos, 1, 0, &tret[5], error);
-    }
-
-    attr[0] = (threshold - sep) / (2.0 * moon_r);
-    attr[1] = target_r > 0.0 ? (target_r * target_r) / (moon_r * moon_r) : 0.0;
-    attr[2] = sep;
-    attr[3] = 2.0 * moon_r * 3600.0;
-    attr[4] = 2.0 * target_r * 3600.0;
-    attr[5] = moon_alt;
-    attr[6] = target_alt;
-    attr[7] = sep <= fabs(moon_r - target_r) ? 1.0 : 0.0;
-    attr[8] = JME_ECLIPSE_VISIBLE;
-
-    return JME_OK;
+    jme_set_error(error, "No local lunar occultation found in search window");
+    return JME_ERR;
 }
 
 static int jme_lun_occult_when_glob_impl(double jd_start, int body, const char *starname, int flags, int iflag, double *tret, int backward, char *error)
 {
-    double guess = 0.0;
-    double tmax = 0.0;
-    double moon_eq[6];
-    double target_eq[6];
-    double moon_r = 0.0;
-    double target_r = 0.0;
-    double sep = 0.0;
-    double threshold = 0.0;
-    double parallax = 0.0;
+    events_target tg;
+    double search_jd = jd_start;
+    double direction = backward ? -1.0 : 1.0;
+    int attempt;
     (void)flags;
     (void)iflag;
 
@@ -2374,33 +2419,47 @@ static int jme_lun_occult_when_glob_impl(double jd_start, int body, const char *
         jme_set_error(error, "Lunar occultation time output is required");
         return JME_ERR;
     }
-
-    if (find_moon_target_conjunction(jd_start, body, starname, backward, &guess, error) != JME_OK
-        || refine_occultation_maximum(guess, body, starname, 0, 0, &tmax, error) != JME_OK
-        || moon_target_state(tmax, body, starname, 0, 0, 0, moon_eq, target_eq, &moon_r, &target_r, 0, 0, error) != JME_OK) {
+    if (!isfinite(jd_start)) {
+        jme_set_error(error, "Julian date must be finite");
         return JME_ERR;
     }
+    if (occ_target_valid(body, starname, &tg, error) != JME_OK) return JME_ERR;
 
-    sep = jme_spherical_angular_separation(moon_eq[0], moon_eq[1], target_eq[0], target_eq[1]);
-    parallax = lunar_horizontal_parallax_deg(moon_r);
-    threshold = moon_r + target_r + parallax;
-    if (sep > threshold) {
-        jme_set_error(error, "No lunar occultation found near the supplied date");
-        return JME_ERR;
+    for (attempt = 0; attempt < 2000; attempt++) {
+        double guess = 0.0, tmax = 0.0;
+        int may = 0, rc = 0, cls = 0;
+
+        if (find_moon_target_conjunction(search_jd, &tg, backward, &guess, error) != JME_OK) return JME_ERR;
+        search_jd = guess + direction;
+        if (occ_conjunction_may_occult(guess, &tg, &may, error) != JME_OK) return JME_ERR;
+        if (!may) continue;
+        if (events_minimize_precise(occ_global_metric, &tg, guess - 0.75, guess + 0.75, &tmax, error) != JME_OK
+            || bessel_classify(tmax, &tg, &rc, &cls, 0, 0, 0, error) != JME_OK) {
+            return JME_ERR;
+        }
+        if (rc == 0) continue;
+        memset(tret, 0, sizeof(double) * 10);
+        tret[0] = tmax;
+        tret[1] = tmax;
+        if (bessel_contact(&tg, tmax, 0, 1, 0.5, &tret[2], error) != JME_OK
+            || bessel_contact(&tg, tmax, 0, 0, 0.5, &tret[3], error) != JME_OK) {
+            return JME_ERR;
+        }
+        if (rc == JME_ECLIPSE_SOLAR_TOTAL
+            && (bessel_contact(&tg, tmax, 1, 1, 0.5, &tret[4], error) != JME_OK
+                || bessel_contact(&tg, tmax, 1, 0, 0.5, &tret[5], error) != JME_OK)) {
+            return JME_ERR;
+        }
+        if (cls == JME_ECLIPSE_SOLAR_CENTRAL
+            && (bessel_contact(&tg, tmax, 2, 1, 0.4, &tret[6], error) != JME_OK
+                || bessel_contact(&tg, tmax, 2, 0, 0.4, &tret[7], error) != JME_OK)) {
+            return JME_ERR;
+        }
+        if (error != 0) error[0] = '\0';
+        return JME_OK;
     }
-
-    memset(tret, 0, sizeof(double) * 10);
-    tret[0] = tmax;
-    tret[1] = tmax;
-    find_occultation_contact_time(tmax, body, starname, threshold, 0, 0, 1, &tret[2], error);
-    find_occultation_contact_time(tmax, body, starname, threshold, 0, 0, 0, &tret[3], error);
-    if (sep <= fabs(moon_r - target_r)) {
-        double inner = fabs(moon_r - target_r);
-        find_occultation_contact_time(tmax, body, starname, inner, 0, 0, 1, &tret[4], error);
-        find_occultation_contact_time(tmax, body, starname, inner, 0, 0, 0, &tret[5], error);
-    }
-
-    return JME_OK;
+    jme_set_error(error, "No lunar occultation found in search window");
+    return JME_ERR;
 }
 
 static int jme_rise_trans_true_hor_impl(double jd_ut, int body, const char *starname, int flags, int rsmi, double *geopos, double atpress, double attemp, double horhgt, double *tret, char *error)
