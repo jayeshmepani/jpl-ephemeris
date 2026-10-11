@@ -5,6 +5,9 @@
 
 #define JME_PATH_MAX 1024
 
+/* Derived from exact SI constants; kept internal to avoid changing the FFI constant inventory. */
+#define JME_C_AU_PER_DAY ((JME_SPEED_OF_LIGHT_KM_PER_SEC * JME_SECONDS_PER_DAY) / JME_AU_KM)
+
 typedef enum jme_engine_policy {
     JME_ENGINE_AUTO = 0,
     JME_ENGINE_JPL = 1,
