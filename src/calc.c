@@ -9,7 +9,6 @@
 #include <sys/time.h>
 #endif
 
-#define JME_C_AU_PER_DAY 173.1446326846693
 #define JME_DEG_TO_RAD 0.017453292519943295769236907684886127134428718885417
 #define JME_PI 3.14159265358979323846264338327950288419716939937510
 
@@ -398,6 +397,62 @@ static int selected_body_state(
     return JME_OK;
 }
 
+int internal_earth_aberration_state(double jd_et, double *state, char *error)
+{
+    int engine_policy = jme_context_engine_policy();
+    int is_ecliptic = 0;
+
+    if (state == 0) {
+        jme_set_error(error, "Earth observer state output is required");
+        return JME_ERR;
+    }
+
+    if (error != 0) {
+        error[0] = '\0';
+    }
+
+    /*
+     * Prefer the full barycentric Earth state whenever the selected policy
+     * permits JPL. If AUTO cannot obtain it, the analytical path below returns
+     * the Earth state relative to the Sun in J2000 equatorial coordinates.
+     * Explicit JPL mode must not silently downgrade to an analytical backend.
+     */
+    if (engine_policy == JME_ENGINE_AUTO || engine_policy == JME_ENGINE_JPL) {
+        if (jme_jpl_body_state(
+                jd_et,
+                JME_BODY_EARTH,
+                JME_BODY_SOLAR_SYSTEM_BARYCENTER,
+                JME_VECTOR_AU_PER_DAY,
+                state,
+                error) == JME_OK) {
+            return JME_OK;
+        }
+
+        if (engine_policy == JME_ENGINE_JPL) {
+            return JME_ERR;
+        }
+    }
+
+    if (selected_body_state(
+            jd_et,
+            JME_BODY_EARTH,
+            JME_BODY_SUN,
+            engine_policy,
+            1,
+            state,
+            error,
+            &is_ecliptic) != JME_OK) {
+        if (error == 0 || error[0] == '\0') {
+            jme_set_error(error, "Selected engine cannot compute Earth observer velocity for aberration");
+        }
+        return JME_ERR;
+    }
+
+    /* AUTO may have succeeded after the initial JPL barycentric query failed. */
+    jme_set_error(error, "");
+    return JME_OK;
+}
+
 static int calc_lunar_node(double jd_et, int body, int flags, double *results, char *error)
 {
     double spherical[6];
@@ -729,14 +784,12 @@ int jme_calc(double jd_et, int body, int flags, double *results, char *error)
             double v_dot_u, beta;
             double v2 = 0.0;
 
-            /* Need Earth's observer velocity for stellar aberration. Do not probe JPL in explicit analytical modes. */
-            if (engine_policy == JME_ENGINE_AUTO || engine_policy == JME_ENGINE_JPL) {
-                if (jme_jpl_body_state(jd_et, JME_BODY_EARTH, JME_BODY_SOLAR_SYSTEM_BARYCENTER, JME_VECTOR_AU_PER_DAY, earth_state, error) != JME_OK) {
-                    if (engine_policy == JME_ENGINE_JPL || analytic_body_state(jd_et, JME_BODY_EARTH, earth_state, engine_policy) != JME_OK) {
-                        return JME_ERR;
-                    }
-                }
-            } else if (analytic_body_state(jd_et, JME_BODY_EARTH, earth_state, engine_policy) != JME_OK) {
+            /*
+             * Use the same observer-state helper as fixed-star calculations.
+             * Its analytical fallback converts the velocity to J2000
+             * equatorial coordinates before it is combined with target_pos.
+             */
+            if (internal_earth_aberration_state(jd_et, earth_state, error) != JME_OK) {
                 return JME_ERR;
             }
 
