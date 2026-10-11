@@ -165,3 +165,22 @@ POSSIBILITY OF SUCH DAMAGE.
 ## Contact
 
 Questions or corrections about these notices: open an issue at https://github.com/jayeshmepani/jpl-ephemeris/issues.
+
+## Test-fixture generators (not shipped in the library)
+
+The scripts in `tools/gen_*_fixtures.py` compute independent reference values for the CTest certification tests. They use:
+
+* Skyfield (Brandon Rhodes, MIT License);
+* pyerfa / ERFA (BSD-3-Clause);
+* astropy (BSD-3-Clause);
+* SciPy (BSD-3-Clause);
+* NumPy (BSD-3-Clause);
+* the JPL DE440s ephemeris (NASA/JPL, public).
+
+Only the numbers they produce are committed, as `tests/fixtures/*.h`, together with each generator's version line. No code from these packages is compiled into the engine.
+
+The following publications were consulted for definitions and are cited in the documentation:
+
+* J. Laskar, "Secular terms of classical planetary theories using the results of general theory", *A&A* 157, 59 (1986), Table 8 (see `CENGINE_COMPLETION_REPORT.md`; not implemented);
+* L. V. Morrison and F. R. Stephenson, *JHA* 35, 327 (2004) (ΔT; not implemented);
+* the Swiss Ephemeris General Documentation, §2.8, for the definitions of ayanamsa conventions only.
