@@ -13,7 +13,7 @@ This file is informational and is not legal advice.
 | Moshier planetary and lunar theories | Copyright Stephen L. Moshier; no explicit license; permission requested | Moshier engine (`src/moshier_full.c`, `src/moshier_moon.c`, `src/moshier/`) |
 | ELP2000-82B implementation | Code by Serhii Tsyba; no license file; permission requested. Theory/data: Chapront-Touzé & Chapront, CDS VI/79 | Moon in the VSOP87 + ELP2000 + Meeus engine (`src/elp2000/`) |
 | VSOP87 code (VSOP87-Multilang) | Greg A. Miller: public domain dedication. Theory/data: Bretagnon & Francou 1988, CDS VI/81 | Planets in the VSOP87 + ELP2000 + Meeus engine (`src/vsop87a_full.c`, `src/vsop87d_full.c`) |
-| ERFA (IAU 2000B nutation) | BSD 3-Clause, Copyright (C) 2013-2023 NumFOCUS Foundation | Nutation (`src/astrometry.c`) |
+| ERFA (IAU 2000B nutation and TT/TDB/TCB conversions) | BSD 3-Clause, Copyright (C) 2013-2023 NumFOCUS Foundation | Nutation (`src/astrometry.c`) and time-scale conversions (`src/erfa/`) |
 | Meeus, *Astronomical Algorithms* | Formulas cited; no text or programs copied | Low-precision Sun/Moon arguments and mean elements (`src/meeus.c`) |
 | Espenak & Meeus ΔT polynomials | NASA publication | ΔT model (`src/time.c`) |
 | Yale Bright Star Catalogue, 5th Rev. Ed. | NSSDC/ADC catalogue (CDS V/50) | Fixed stars (`src/fixstar_catalog.inc`) |
