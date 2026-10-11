@@ -11,12 +11,16 @@ This file is informational and is not legal advice.
 | CALCEPH 4.0.5 | CeCILL-B (CALCEPH is offered under CeCILL-C, CeCILL-B, or CeCILL v2.1; JME uses it under CeCILL-B) | Optional external library for the JPL engine; linked, not vendored in this repository |
 | JPL DE440 / DE440s / DE441 kernels | NAIF rules: redistribution permitted if unmodified | Kernel files published unmodified in the [`jpl-kernels` release](https://github.com/jayeshmepani/jpl-ephemeris/releases/tag/jpl-kernels); not in this repository |
 | Moshier planetary and lunar theories | Copyright Stephen L. Moshier; no explicit license; permission requested | Moshier engine (`src/moshier_full.c`, `src/moshier_moon.c`, `src/moshier/`) |
-| ELP2000-82B implementation | Code by Serhii Tsyba; no license file; permission requested. Theory/data: Chapront-Touzé & Chapront, CDS VI/79 | Moon in the VSOP87 + ELP2000 + Meeus engine (`src/elp2000/`) |
+| ELP 2000-82B lunar theory | Theory and series data: Chapront-Touzé & Chapront, CDS catalogue VI/79 (CDS data, attribution). Evaluator written for JME (MIT) from the published theory | Moon in the VSOP87 + ELP2000 + Meeus engine (`src/elp82b.c`, generated `src/elp82b_data.inc`, generator `tools/gen_elp82b.py`) |
 | VSOP87 code (VSOP87-Multilang) | Greg A. Miller: public domain dedication. Theory/data: Bretagnon & Francou 1988, CDS VI/81 | Planets in the VSOP87 + ELP2000 + Meeus engine (`src/vsop87a_full.c`, `src/vsop87d_full.c`) |
-| ERFA (IAU 2000B nutation and TT/TDB/TCB conversions) | BSD 3-Clause, Copyright (C) 2013-2023 NumFOCUS Foundation | Nutation (`src/astrometry.c`) and time-scale conversions (`src/erfa/`) |
+| ERFA 2.0.x (vendored subset, renamed `jme_era*`) | BSD 3-Clause, Copyright (C) 2013-2023 NumFOCUS Foundation | Precession, nutation, frame bias, sidereal time, light deflection, aberration, star space motion, TT/TDB/TCB/TCG and calendar conversions (`src/erfa/`, `src/erfa/vendor/`) |
 | Meeus, *Astronomical Algorithms* | Formulas cited; no text or programs copied | Low-precision Sun/Moon arguments and mean elements (`src/meeus.c`) |
 | Espenak & Meeus ΔT polynomials | NASA publication | ΔT model (`src/time.c`) |
-| Yale Bright Star Catalogue, 5th Rev. Ed. | NSSDC/ADC catalogue (CDS V/50) | Fixed stars (`src/fixstar_catalog.inc`) |
+| Yale Bright Star Catalogue, 5th Rev. Ed. | NSSDC/ADC catalogue (CDS V/50) | Fixed-star names, catalogue and radial velocities (`src/fixstar_catalog.inc`) |
+| Hipparcos, the New Reduction (van Leeuwen 2007) and Hipparcos 1997 HD index | ESA / CDS catalogues I/311 and I/239 (attribution) | Fixed-star astrometry overlay (`src/fixstar_hipparcos.inc`, generator `tools/gen_fixstar_hipparcos.py`, input `tools/data/bsc5_hipparcos2007.csv`) |
+| IAU 2009 System of Astronomical Constants | Published constants (Luzum et al. 2011) | Planetary mass ratios for the analytical solar-system barycentre (`src/calc.c`) |
+| IERS Bulletin C (leap seconds) | Public IERS data | Embedded TAI-UTC table (`src/time.c`) |
+| Ayanamsa reference definitions | Published values (cited in `docs/AYANAMSA_MODELS.md`) | Sidereal zodiac models (`src/sidereal.c`) |
 
 ## CALCEPH
 
@@ -48,11 +52,12 @@ The Moshier engine uses Stephen L. Moshier's analytical planetary theories ("pla
 - Status: written permission to redistribute this material with attribution **has been requested** from the author. Until a reply is received, this notice records the provenance and credit only; it does not claim that permission has been granted.
 - The underlying method (periodic series fitted to a numerical JPL integration) is credited to Moshier.
 
-## ELP2000-82B lunar theory and implementation
+## ELP 2000-82B lunar theory
 
-- Theory and data: M. Chapront-Touzé and J. Chapront, "The lunar ephemeris ELP 2000", *Astronomy & Astrophysics* 124, 50 (1983), and "ELP 2000-85: a semi-analytical lunar ephemeris adequate for historical times", *A&A* 190, 342 (1988). Series data: CDS catalogue VI/79 (https://cdsarc.cds.unistra.fr/viz-bin/cat/VI/79).
-- C implementation: the files in `src/elp2000/` come from Serhii Tsyba's `elp2000-82b` project (https://github.com/variar/elp2000-82b), "Created by Serhii Tsyba". That project has **no license file**, so this code is **not** covered by JME's MIT License.
-- Status: permission to redistribute this code with attribution **has been requested** from the author. This notice does not claim that permission has been granted.
+- Theory and data: M. Chapront-Touzé and J. Chapront, "The lunar ephemeris ELP 2000", *Astronomy & Astrophysics* 124, 50 (1983), and "ELP 2000-85: a semi-analytical lunar ephemeris adequate for historical times", *A&A* 190, 342 (1988). Series data: CDS catalogue VI/79 (https://cdsarc.cds.unistra.fr/viz-bin/cat/VI/79), files ELP1 to ELP36.
+- `src/elp82b_data.inc` is generated from the unmodified CDS files by `tools/gen_elp82b.py`, which verifies each file's SHA-256 digest before conversion. All terms of all 36 series are kept (no truncation).
+- `src/elp82b.c` is an evaluator written for JME from the published theory and the documented reference evaluation procedure distributed with VI/79; it was checked against the official reference program's output. It is JME code under the MIT License.
+- The earlier third-party ELP2000 C implementation (`src/elp2000/`, by Serhii Tsyba, no license file) has been **removed** from the repository.
 
 ## VSOP87
 
@@ -69,11 +74,22 @@ Some low-precision formulas (Sun and Moon fundamental arguments, mean orbital el
 
 ## Yale Bright Star Catalogue
 
-Fixed-star data are taken from the Bright Star Catalogue, 5th Revised Edition, D. Hoffleit and W. H. Warren Jr., NASA NSSDC/ADC (1991), CDS catalogue V/50 (https://cdsarc.cds.unistra.fr/viz-bin/cat/V/50).
+Fixed-star names, identifiers, magnitudes and radial velocities are taken from the Bright Star Catalogue, 5th Revised Edition, D. Hoffleit and W. H. Warren Jr., NASA NSSDC/ADC (1991), CDS catalogue V/50 (https://cdsarc.cds.unistra.fr/viz-bin/cat/V/50).
+
+## Hipparcos astrometry
+
+For bright stars with a Hipparcos counterpart, positions (ICRS, epoch J1991.25), proper motions and parallaxes are taken from *Hipparcos, the New Reduction of the Raw Data*, F. van Leeuwen, A&A 474, 653 (2007), CDS catalogue I/311, cross-identified through the HD numbers of *The Hipparcos and Tycho Catalogues*, ESA SP-1200 (1997), CDS catalogue I/239. The join was produced with the CDS VizieR TAP service (https://tapvizier.cds.unistra.fr/); the query is recorded in `tools/gen_fixstar_hipparcos.py`. This research has made use of the VizieR catalogue access tool, CDS, Strasbourg, France. Spot checks used the SIMBAD database, operated at CDS, Strasbourg, France.
+
+## IAU 2009 constants, IERS data and ayanamsa definitions
+
+- Sun/planet mass ratios: B. Luzum et al., "The IAU 2009 system of astronomical constants: the report of the IAU working group on numerical standards for Fundamental Astronomy", *Celestial Mechanics and Dynamical Astronomy* 110, 293 (2011).
+- Leap seconds (TAI-UTC): IERS Bulletin C (https://hpiers.obspm.fr/iers/bul/bulc/), latest used: Bulletin C 72 (no leap second at the end of December 2026).
+- Galactic-centre anchor: M. J. Reid and A. Brunthaler, "The Proper Motion of Sagittarius A*", *ApJ* 616, 872 (2004).
+- Lahiri / ICRC definition and the Indian Astronomical Ephemeris values used for verification: Positional Astronomy Centre, India Meteorological Department, *Indian Astronomical Ephemeris* (published values only). Other ayanamsa definitions and their sources are listed in `docs/AYANAMSA_MODELS.md`; only published defining constants are used. No Swiss Ephemeris source code was consulted or copied; its public documentation was read only for the names and defining conventions of some models, as cited there.
 
 ## ERFA (Essential Routines for Fundamental Astronomy)
 
-JME's IAU 2000B nutation routine in `src/astrometry.c` is ported from ERFA's `nut00b.c` (https://github.com/liberfa/erfa), which is derived from the IAU SOFA library. ERFA's terms require the following notice to be kept with source and binary redistributions:
+JME vendors an unmodified-in-substance subset of ERFA (https://github.com/liberfa/erfa), which is derived from the IAU SOFA library. The files are in `src/erfa/` and `src/erfa/vendor/`; public symbols were renamed from `era*` to `jme_era*` to avoid link clashes, and the ERFA licence is kept in `src/erfa/vendor/LICENSE.ERFA`. The vendored routines cover frame bias, precession (IAU 1976, IAU 2006, Vondrák et al. 2011 long-term), nutation (IAU 1980, 2000A, 2000B, 2006A), obliquity, sidereal time and equation of the equinoxes, Earth rotation angle, light deflection, aberration, star space motion, Earth position/velocity (`epv00`, used for checks only), TT/TDB/TCB/TCG conversions and calendar conversions. ERFA's terms require the following notice to be kept with source and binary redistributions:
 
 ```text
 Copyright (C) 2013-2023, NumFOCUS Foundation.

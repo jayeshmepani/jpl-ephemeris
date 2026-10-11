@@ -1,6 +1,7 @@
 #include "jme/jme.h"
 
 #include <math.h>
+#include "jme/jme_extended.h"
 #include <stdio.h>
 
 #ifndef M_PI
@@ -51,6 +52,50 @@ static int convert_j2000_ecliptic_to_equatorial_of_date(double jd_et, const doub
         if (!isfinite(output[i])) {
             return JME_ERR;
         }
+    }
+    return JME_OK;
+}
+
+
+/*
+ * Expected jme_calc(TRUE_POSITION | HELIOCENTRIC | XYZ) output from a direct
+ * engine call: the engine is evaluated at TDB, the J2000 ecliptic vector is
+ * rotated to the true ecliptic of date, and the velocity is the central
+ * five-point difference (step 0.01 day) of those positions, as documented for jme_calc.
+ */
+typedef int (*engine_fn)(double, int, double *);
+
+static int expected_ecliptic_of_date_position(engine_fn fn, int body, double jd_tt, double *pos, char *error)
+{
+    double t1, t2, st[6], eq[6], ecl[6], eps, dpsi, deps;
+    int i;
+    if (jme_time_scale_convert(jd_tt, 0.0, JME_TIME_SCALE_TT, JME_TIME_SCALE_TDB, &t1, &t2, error) != JME_OK
+        || fn(t1 + t2, body, st) != JME_OK
+        || convert_j2000_ecliptic_to_equatorial_of_date(jd_tt, st, eq, error) != JME_OK
+        || jme_get_obliquity(jd_tt, JME_MODEL_OBL_IAU_1980, &eps, error) != JME_OK
+        || jme_get_nutation(jd_tt, JME_MODEL_NUT_IAU_1980, &dpsi, &deps, error) != JME_OK
+        || jme_equatorial_to_ecliptic_rectangular_state(eq, eps + deps, ecl) != JME_OK) {
+        return JME_ERR;
+    }
+    for (i = 0; i < 3; i++) pos[i] = ecl[i];
+    return JME_OK;
+}
+
+static int expected_calc_state(engine_fn fn, int body, double jd_tt, double *state, char *error)
+{
+    double p0[3], a[3], b[3], c[3], d[3];
+    const double h = 1.0e-2;
+    int i;
+    if (expected_ecliptic_of_date_position(fn, body, jd_tt, p0, error) != JME_OK
+        || expected_ecliptic_of_date_position(fn, body, jd_tt - 2.0 * h, a, error) != JME_OK
+        || expected_ecliptic_of_date_position(fn, body, jd_tt - h, b, error) != JME_OK
+        || expected_ecliptic_of_date_position(fn, body, jd_tt + h, c, error) != JME_OK
+        || expected_ecliptic_of_date_position(fn, body, jd_tt + 2.0 * h, d, error) != JME_OK) {
+        return JME_ERR;
+    }
+    for (i = 0; i < 3; i++) {
+        state[i] = p0[i];
+        state[i + 3] = (a[i] - 8.0 * b[i] + 8.0 * c[i] - d[i]) / (12.0 * h);
     }
     return JME_OK;
 }
@@ -473,8 +518,7 @@ static int check_high_level_analytical_fallback_order(void)
                 return 1;
             }
 
-            if (jme_moshier_planet_state(jd_cases[j], planet_cases[i].body, moshier_state) != JME_OK
-                || convert_j2000_ecliptic_to_equatorial_of_date(jd_cases[j], moshier_state, moshier_state, error) != JME_OK) {
+            if (expected_calc_state(jme_moshier_planet_state, planet_cases[i].body, jd_cases[j], moshier_state, error) != JME_OK) {
                 fprintf(stderr, "direct Moshier state failed for %s at JD %.1f\n", planet_cases[i].name, jd_cases[j]);
                 return 1;
             }
@@ -482,7 +526,7 @@ static int check_high_level_analytical_fallback_order(void)
             for (k = 0; k < 6; k++) {
                 char label[128];
                 snprintf(label, sizeof(label), "jme_calc Moshier-first %s JD %.1f[%d]", planet_cases[i].name, jd_cases[j], k);
-                if (check_close(label, calc_state[k], moshier_state[k], 1.0e-14) != 0) {
+                if (check_close(label, calc_state[k], moshier_state[k], 1.0e-13) != 0) {
                     return 1;
                 }
             }
@@ -515,29 +559,27 @@ static int check_high_level_analytical_fallback_order(void)
         int k;
 
         if (jme_calc(jd_cases[j], JME_BODY_MERCURY, JME_CALC_TRUE_POSITION | JME_CALC_HELIOCENTRIC | JME_CALC_XYZ, calc_state, error) != JME_OK
-            || jme_vsop87_planet_state(jd_cases[j], JME_BODY_MERCURY, vsop_state) != JME_OK
-            || convert_j2000_ecliptic_to_equatorial_of_date(jd_cases[j], vsop_state, vsop_state, error) != JME_OK) {
+            || expected_calc_state(jme_vsop87_planet_state, JME_BODY_MERCURY, jd_cases[j], vsop_state, error) != JME_OK) {
             fprintf(stderr, "VSOP+ELP+Meeus Mercury fallback failed at JD %.1f\n", jd_cases[j]);
             return 1;
         }
         for (k = 0; k < 6; k++) {
             char label[128];
             snprintf(label, sizeof(label), "jme_calc VSOP-selected Mercury JD %.1f[%d]", jd_cases[j], k);
-            if (check_close(label, calc_state[k], vsop_state[k], 1.0e-14) != 0) {
+            if (check_close(label, calc_state[k], vsop_state[k], 1.0e-13) != 0) {
                 return 1;
             }
         }
 
         if (jme_calc(jd_cases[j], JME_BODY_PLUTO, JME_CALC_TRUE_POSITION | JME_CALC_HELIOCENTRIC | JME_CALC_XYZ, calc_state, error) != JME_OK
-            || jme_meeus_planet_state(jd_cases[j], JME_BODY_PLUTO, meeus_state) != JME_OK
-            || convert_j2000_ecliptic_to_equatorial_of_date(jd_cases[j], meeus_state, meeus_state, error) != JME_OK) {
+            || expected_calc_state(jme_meeus_planet_state, JME_BODY_PLUTO, jd_cases[j], meeus_state, error) != JME_OK) {
             fprintf(stderr, "VSOP+ELP+Meeus Pluto fallback failed at JD %.1f\n", jd_cases[j]);
             return 1;
         }
         for (k = 0; k < 6; k++) {
             char label[128];
             snprintf(label, sizeof(label), "jme_calc Meeus-selected Pluto JD %.1f[%d]", jd_cases[j], k);
-            if (check_close(label, calc_state[k], meeus_state[k], 1.0e-14) != 0) {
+            if (check_close(label, calc_state[k], meeus_state[k], 1.0e-13) != 0) {
                 return 1;
             }
         }

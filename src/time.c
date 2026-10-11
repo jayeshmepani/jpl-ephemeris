@@ -226,9 +226,17 @@ static const jme_utc_drift_entry jme_utc_drifts[] = {
 };
 
 #define JME_UTC_PRE_LEAP_DRIFT_COUNT (sizeof(jme_utc_drifts) / sizeof(jme_utc_drifts[0]))
-#define JME_UTC_LAST_CONFIRMED_YEAR 2026
+/*
+ * Validity of the embedded TAI-UTC table. IERS Bulletin C 72 (Paris, 6 July
+ * 2026) announced that NO leap second will be introduced at the end of
+ * December 2026, so TAI-UTC = 37 s is known through 2027-06-30 23:59:59 UTC.
+ * Whether a leap second occurs at the end of June 2027 is not yet known.
+ * UPDATE PROCEDURE: see docs/TIME_SCALES.md ("Leap-second table update").
+ */
+#define JME_UTC_VALID_UNTIL_YEAR 2027
+#define JME_UTC_VALID_UNTIL_MONTH 6
 
-static int jme_utc_tai_minus_utc(
+int internal_tai_minus_utc(
     int gregorian_year,
     int gregorian_month,
     int gregorian_day,
@@ -251,8 +259,8 @@ static int jme_utc_tai_minus_utc(
         jme_set_error(error, "UTC-to-TT conversion before 1960-01-01 is outside the realized UTC time scale");
         return JME_ERR;
     }
-    if (gregorian_year > JME_UTC_LAST_CONFIRMED_YEAR) {
-        jme_set_error(error, "UTC-to-TT conversion after 2026-12-31 is uncertain because future leap seconds are not predictable; use a TT/TDB API or update the IERS table");
+    if (12 * gregorian_year + gregorian_month > 12 * JME_UTC_VALID_UNTIL_YEAR + JME_UTC_VALID_UNTIL_MONTH) {
+        jme_set_error(error, "UTC after 2027-06-30 is beyond the embedded leap-second table (IERS Bulletin C 72); future leap seconds are not predictable: use TT/TDB or update the table");
         return JME_ERR;
     }
     if (gregorian_month < 1 || gregorian_month > 12
@@ -312,6 +320,24 @@ static int jme_is_positive_leap_second_day(double jd_midnight)
         if (jd_midnight + 1.0 == effective_midnight) return 1;
     }
     return 0;
+}
+
+int jme_leap_second_table_info(double *jd_utc_valid_until, double *last_tai_minus_utc, char *error)
+{
+    const size_t count = sizeof(jme_utc_offsets) / sizeof(jme_utc_offsets[0]);
+    if (error != 0) error[0] = '\0';
+    if (jd_utc_valid_until == 0 && last_tai_minus_utc == 0) {
+        jme_set_error(error, "At least one output is required");
+        return JME_ERR;
+    }
+    if (jd_utc_valid_until != 0) {
+        int y = JME_UTC_VALID_UNTIL_YEAR, m = JME_UTC_VALID_UNTIL_MONTH + 1;
+        if (m > 12) { m = 1; y++; }
+        /* First instant (UTC JD) NOT covered by the table. */
+        *jd_utc_valid_until = jme_julian_day(y, m, 1, 0.0, JME_CALENDAR_GREGORIAN);
+    }
+    if (last_tai_minus_utc != 0) *last_tai_minus_utc = jme_utc_offsets[count - 1].tai_minus_utc_at_effective_month;
+    return JME_OK;
 }
 
 int internal_utc_to_tt_split(
@@ -375,7 +401,7 @@ int internal_utc_to_tt_split(
     jme_reverse_julian_day(
         jd_midnight, JME_CALENDAR_GREGORIAN, &gy, &gm, &gd, 0
     );
-    if (jme_utc_tai_minus_utc(
+    if (internal_tai_minus_utc(
             gy, gm, gd, fraction_for_offset, &tai_minus_utc, error) != JME_OK) {
         return JME_ERR;
     }
@@ -431,6 +457,46 @@ int internal_ut_to_et(double jd_ut, double *jd_et, char *error)
         return JME_ERR;
     }
     return JME_OK;
+}
+
+/*
+ * Invert UT1 -> TT for the selected Delta-T model: find jd_ut with
+ * jd_ut + DeltaT(jd_ut)/86400 = jd_tt. Delta-T varies by far less than one
+ * second per day, so fixed-point iteration contracts quickly; iterate until
+ * the residual is below 1e-9 s or fail.
+ */
+int internal_tt_to_ut(double jd_tt, double *jd_ut, char *error)
+{
+    double ut;
+    int i;
+
+    if (error != 0) error[0] = '\0';
+    if (jd_ut == 0) {
+        jme_set_error(error, "UT output is required");
+        return JME_ERR;
+    }
+    *jd_ut = NAN;
+    if (!isfinite(jd_tt)) {
+        jme_set_error(error, "TT Julian date must be finite");
+        return JME_ERR;
+    }
+    ut = jd_tt;
+    for (i = 0; i < 50; i++) {
+        double dt = jme_delta_t_ex(ut, jme_context_deltat_model(), error);
+        double next;
+        if (!isfinite(dt)) {
+            if (error == 0 || error[0] == '\0') jme_set_error(error, "Delta-T calculation failed");
+            return JME_ERR;
+        }
+        next = jd_tt - dt / JME_SECONDS_PER_DAY;
+        if (fabs(next - ut) * JME_SECONDS_PER_DAY < 1.0e-9) {
+            *jd_ut = next;
+            return JME_OK;
+        }
+        ut = next;
+    }
+    jme_set_error(error, "TT-to-UT inversion of the Delta-T model did not converge");
+    return JME_ERR;
 }
 
 int jme_time_equ(double jd_ut, double *e, char *error)

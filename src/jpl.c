@@ -918,6 +918,28 @@ int internal_tt_to_tdb_split(
     return JME_OK;
 }
 
+/* Single-double convenience wrapper: TT JD -> TDB JD (geocentre, ERFA dtdb). */
+int internal_tt_to_tdb_jd(double jd_tt, double *jd_tdb, char *error)
+{
+    double d0, f0;
+    if (jd_tdb == 0) {
+        jme_set_error(error, "TDB output is required");
+        return JME_ERR;
+    }
+    *jd_tdb = NAN;
+    if (!isfinite(jd_tt)) {
+        jme_set_error(error, "TT Julian date must be finite");
+        return JME_ERR;
+    }
+    {
+        double day = floor(jd_tt);
+        if (internal_tt_to_tdb_split(day, jd_tt - day, &d0, &f0, error) != JME_OK) return JME_ERR;
+    }
+    *jd_tdb = d0 + f0;
+    return JME_OK;
+}
+
+
 /* IAU 2006 time-scale relation, delegated to the ERFA implementation. */
 int internal_tdb_to_tcb_split(
     double jd0_tdb,

@@ -5,6 +5,8 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include "jme/jme_extended.h"
+#include "fixtures/time_scales_erfa.h"
 
 static int fail(const char *message, const char *error)
 {
@@ -85,9 +87,26 @@ int main(void)
         return fail("an unannounced second 60 was accepted", error);
     }
 
+    /* IERS Bulletin C 72: no leap second at end of 2026; table valid through 2027-06-30. */
     error[0] = '\0';
     rc = internal_utc_to_tt_split(
         2027, 1, 1, 0, 0, 0.0, JME_CALENDAR_GREGORIAN,
+        &tt_day, &tt_fraction, error
+    );
+    if (rc != JME_OK) {
+        return fail("UTC 2027-01-01 (covered by Bulletin C 72) was rejected", error);
+    }
+    error[0] = '\0';
+    rc = internal_utc_to_tt_split(
+        2026, 12, 31, 23, 59, 60.0, JME_CALENDAR_GREGORIAN,
+        &tt_day, &tt_fraction, error
+    );
+    if (rc != JME_ERR) {
+        return fail("non-existent leap second 2026-12-31T23:59:60 was accepted", error);
+    }
+    error[0] = '\0';
+    rc = internal_utc_to_tt_split(
+        2027, 7, 1, 0, 0, 0.0, JME_CALENDAR_GREGORIAN,
         &tt_day, &tt_fraction, error
     );
     if (rc != JME_ERR || strstr(error, "future leap seconds") == 0) {
@@ -152,6 +171,68 @@ int main(void)
     if (internal_tdb_to_tcb_split(2451545.0, 1.0, &tcb_day, &tcb_fraction, error) != JME_ERR
         || strstr(error, "normalized two-part") == 0) {
         return fail("non-normalized TDB date was accepted by TDB-to-TCB conversion", error);
+    }
+
+    /* jme_time_scale_convert against independent pyerfa values (tests/fixtures/time_scales_erfa.h). */
+    {
+        size_t i;
+        const int scales[6] = {JME_TIME_SCALE_UTC, JME_TIME_SCALE_TAI, JME_TIME_SCALE_TT,
+            JME_TIME_SCALE_TDB, JME_TIME_SCALE_TCB, JME_TIME_SCALE_TCG};
+        for (i = 0; i < sizeof(time_fixtures) / sizeof(time_fixtures[0]); i++) {
+            const jme_time_fixture *f = &time_fixtures[i];
+            const double *ref[6] = {f->utc, f->tai, f->tt, f->tdb, f->tcb, f->tcg};
+            int a, b;
+            for (a = 0; a < 6; a++) {
+                for (b = 0; b < 6; b++) {
+                    double o1, o2, diff;
+                    char msg[256];
+                    error[0] = '\0';
+                    if (jme_time_scale_convert(ref[a][0], ref[a][1], scales[a], scales[b], &o1, &o2, error) != JME_OK) {
+                        snprintf(msg, sizeof(msg), "time_scale_convert %s->%s failed for fixture %d",
+                            jme_time_scale_name(scales[a]), jme_time_scale_name(scales[b]), (int)i);
+                        return fail(msg, error);
+                    }
+                    diff = ((o1 - ref[b][0]) + (o2 - ref[b][1])) * 86400.0;
+                    if (!(fabs(diff) < 5.0e-11)) {
+                        snprintf(msg, sizeof(msg), "time_scale_convert %s->%s fixture %d differs by %.3e s",
+                            jme_time_scale_name(scales[a]), jme_time_scale_name(scales[b]), (int)i, diff);
+                        return fail(msg, error);
+                    }
+                }
+            }
+        }
+    }
+
+    /* Leap-second table expiry is reported and enforced. */
+    {
+        double until = 0.0, last = 0.0, o1, o2;
+        if (jme_leap_second_table_info(&until, &last, error) != JME_OK
+            || until != 2461587.5 || last != 37.0) {
+            return fail("leap-second table info mismatch", error);
+        }
+        if (jme_time_scale_convert(until, 0.25, JME_TIME_SCALE_UTC, JME_TIME_SCALE_TT, &o1, &o2, error) != JME_ERR
+            || !isnan(o1)) {
+            return fail("UTC beyond the leap-second table was converted", error);
+        }
+        if (jme_time_scale_convert(1959.0 * 365.25, 0.0, JME_TIME_SCALE_UTC, JME_TIME_SCALE_TT, &o1, &o2, error) != JME_ERR) {
+            return fail("UTC before 1960 was converted", error);
+        }
+        if (jme_time_scale_convert(NAN, 0.0, JME_TIME_SCALE_TT, JME_TIME_SCALE_TDB, &o1, &o2, error) != JME_ERR
+            || jme_time_scale_convert(2451545.0, 0.0, 99, JME_TIME_SCALE_TDB, &o1, &o2, error) != JME_ERR
+            || jme_time_scale_convert(2451545.0, 0.0, JME_TIME_SCALE_TT, -1, &o1, &o2, error) != JME_ERR) {
+            return fail("invalid time-scale inputs were accepted", error);
+        }
+        /* TT <-> UT1 round trip through the context Delta-T model. */
+        if (jme_time_scale_convert(2451545.0, 0.0, JME_TIME_SCALE_TT, JME_TIME_SCALE_UT1, &o1, &o2, error) != JME_OK) {
+            return fail("TT->UT1 failed", error);
+        }
+        {
+            double b1, b2;
+            if (jme_time_scale_convert(o1, o2, JME_TIME_SCALE_UT1, JME_TIME_SCALE_TT, &b1, &b2, error) != JME_OK
+                || fabs(((b1 - 2451545.0) + b2) * 86400.0) > 1.0e-8) {
+                return fail("UT1<->TT round trip mismatch", error);
+            }
+        }
     }
 
     return 0;

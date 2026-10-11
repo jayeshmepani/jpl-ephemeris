@@ -345,10 +345,18 @@ int main(void)
         double kp_zero_jd = 2415020.31352 + (291.21645153698 - 1900.0) * 365.242198781;
         double star_ecl[6] = {0.0};
 
-        if (jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_LAHIRI, &ayan_lahiri, error) != JME_OK
-            || fabs(ayan_lahiri - 23.8570) > 1e-12
-            || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_FAGAN_BRADLEY, &ayan_fagan, error) != JME_OK
-            || fabs(ayan_fagan - 24.733333333) > 1e-12) {
+        /*
+         * Lahiri (IAE): true ayanamsa 23d15'00.658" at 1956-03-21 0h TT with IAU 1980
+         * nutation; IAE 2019 p.427 prints 24d07'05.9864" for 2019-01-01 0h (true).
+         * Fagan-Bradley: 24d02'31.36" (mean) at B1950.0.
+         */
+        jme_set_astro_models("NUT1980", 0);
+        if (jme_get_ayanamsa_ex2(2435553.5, JME_SIDEREAL_LAHIRI, JME_AYANAMSA_TRUE, &ayan_lahiri, 0, error) != JME_OK
+            || fabs(ayan_lahiri - (23.0 + 15.0 / 60.0 + 0.658 / 3600.0)) > 1e-12
+            || jme_get_ayanamsa_ex2(2458484.5, JME_SIDEREAL_LAHIRI, JME_AYANAMSA_TRUE, &ayan_lahiri, 0, error) != JME_OK
+            || fabs(ayan_lahiri - (24.0 + 7.0 / 60.0 + 5.9864 / 3600.0)) > 0.00051 / 3600.0
+            || jme_get_ayanamsa_ex(2433282.42345905, JME_SIDEREAL_FAGAN_BRADLEY, &ayan_fagan, error) != JME_OK
+            || fabs(ayan_fagan - (24.0 + 2.0 / 60.0 + 31.36 / 3600.0)) > 1e-12) {
             fprintf(stderr, "built-in ayanamsa known-value mismatch\n");
             return 1;
         }
@@ -363,22 +371,22 @@ int main(void)
             return 1;
         }
 
-        if (jme_fixstar("Aldebaran", 2451545.0, JME_CALC_TRUE_POSITION, star_ecl, error) != JME_OK
+        if (jme_fixstar("Aldebaran", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_NO_NUTATION | JME_CALC_BARYCENTRIC, star_ecl, error) != JME_OK
             || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_ALDEBARAN_15TAU, &ayan_anchor, error) != JME_OK
             || fabs(jme_degrees_difference(star_ecl[0] - ayan_anchor, 45.0)) > 1.0e-9
-            || jme_fixstar("Spica", 2451545.0, JME_CALC_TRUE_POSITION, star_ecl, error) != JME_OK
+            || jme_fixstar("Spica", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_NO_NUTATION | JME_CALC_BARYCENTRIC, star_ecl, error) != JME_OK
             || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_TRUE_CITRA, &ayan_anchor, error) != JME_OK
             || fabs(jme_degrees_difference(star_ecl[0] - ayan_anchor, 180.0)) > 1.0e-9
-            || jme_fixstar("Revati", 2451545.0, JME_CALC_TRUE_POSITION, star_ecl, error) != JME_OK
+            || jme_fixstar("Revati", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_NO_NUTATION | JME_CALC_BARYCENTRIC, star_ecl, error) != JME_OK
             || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_TRUE_REVATI, &ayan_anchor, error) != JME_OK
             || fabs(jme_degrees_difference(star_ecl[0] - ayan_anchor, 359.8333333333333)) > 1.0e-9) {
             fprintf(stderr, "fixed-star anchored ayanamsa contract mismatch: %s %.17g %.17g\n", error, star_ecl[0], ayan_anchor);
             return 1;
         }
-        if (jme_fixstar("Shaula", 2451545.0, JME_CALC_TRUE_POSITION, star_ecl, error) != JME_OK
+        if (jme_fixstar("Shaula", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_NO_NUTATION | JME_CALC_BARYCENTRIC, star_ecl, error) != JME_OK
             || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_TRUE_MULA, &ayan_anchor, error) != JME_OK
             || fabs(jme_degrees_difference_signed(star_ecl[0] - ayan_anchor, 240.0)) > 1.0e-9
-            || jme_fixstar("Delta Cancri", 2451545.0, JME_CALC_TRUE_POSITION, star_ecl, error) != JME_OK
+            || jme_fixstar("Delta Cancri", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_NO_NUTATION | JME_CALC_BARYCENTRIC, star_ecl, error) != JME_OK
             || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_TRUE_PUSHYA, &ayan_anchor, error) != JME_OK
             || fabs(jme_degrees_difference_signed(star_ecl[0] - ayan_anchor, 106.0)) > 1.0e-9
             || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_GALCENT_0SAG, &ayan_anchor, error) != JME_OK
@@ -390,7 +398,8 @@ int main(void)
         }
         {
             const double epoch_hour = 7.0 + 30.0 / 60.0 + 31.57 / 3600.0;
-            double jd_ss_ut = jme_julian_day(499, 3, 21, epoch_hour, JME_CALENDAR_GREGORIAN);
+            /* Pre-1582 epochs are Julian-calendar dates (JD 1903396.81286539 UT). */
+            double jd_ss_ut = jme_julian_day(499, 3, 21, epoch_hour, JME_CALENDAR_JULIAN);
             double jd_ss_tt;
             double jd_ushashashi_ut = jme_julian_day(1900, 1, 1, 0.0, JME_CALENDAR_GREGORIAN);
             double jd_ushashashi_tt;
@@ -413,13 +422,16 @@ int main(void)
                 return 1;
             }
 
-            /* At J2000, the reference-epoch polynomial must be P(T)-P(T0). */
+            /*
+             * IAU 1976 two-epoch general precession in longitude (Lieske et al.
+             * 1977; IAE 1989 p.525): from T0 = J1900 to J2000, t = 1 century.
+             */
             {
-                double t = 0.0;
-                double t0 = (2415020.0 - 2451545.0) / 36525.0;
-                double p = 5029.0966 * t + 1.11113 * t * t - 0.000006 * t * t * t;
-                double p0 = 5029.0966 * t0 + 1.11113 * t0 * t0 - 0.000006 * t0 * t0 * t0;
-                double expected = jme_degree_normalize((p - p0) / 3600.0);
+                double big_t = (2415020.0 - 2451545.0) / 36525.0;
+                double t = 1.0;
+                double p = (5029.0966 + 2.22226 * big_t - 0.000042 * big_t * big_t) * t
+                    + (1.11161 - 0.000127 * big_t) * t * t - 0.000113 * t * t * t;
+                double expected = jme_degree_normalize(p / 3600.0);
                 if (jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_J1900, &ayan_anchor, error) != JME_OK
                     || fabs(jme_degrees_difference_signed(ayan_anchor, expected)) > 1.0e-10) {
                     fprintf(stderr, "reference-epoch precession polynomial mismatch: %s %.17g %.17g\n",
@@ -466,7 +478,10 @@ int main(void)
             return 1;
         }
 
-        if (jme_get_ayanamsa_ex(1903396.789532, JME_SIDEREAL_ARYABHATA, &ayan_source, error) != JME_OK
+        /* Aryabhata: 0 at 499-03-21 06:56:55.57 UT (Julian calendar) = JD 1903396.789532 UT. */
+        double arya_tt1 = 0.0, arya_tt2 = 0.0;
+        if (jme_time_scale_convert(1903396.5, 0.2895320604, JME_TIME_SCALE_UT1, JME_TIME_SCALE_TT, &arya_tt1, &arya_tt2, error) != JME_OK
+            || jme_get_ayanamsa_ex(arya_tt1 + arya_tt2, JME_SIDEREAL_ARYABHATA, &ayan_source, error) != JME_OK
             || fabs(jme_degrees_difference_signed(ayan_source, 0.0)) > 1.0e-12
             || jme_get_ayanamsa_ex(jme_julian_day(-129, 1, 1, 0.0, JME_CALENDAR_JULIAN), JME_SIDEREAL_BABYL_ETPSC, &ayan_source, error) != JME_OK
             || fabs(jme_degrees_difference_signed(ayan_source, -(5.0 + 4.0 / 60.0 + 46.0 / 3600.0))) > 1.0e-12
@@ -555,8 +570,8 @@ int main(void)
         }
     }
     if (jme_get_nutation(2451545.0, JME_MODEL_NUT_IAU_1980, &ra, &dec, error) != JME_OK
-        || fabs(ra - (-0.0038698621712391834)) > 1e-15
-        || fabs(dec - (-0.0016041131523510195)) > 1e-15) {
+        || fabs(ra - (-0.003867606991528501)) > 1e-15
+        || fabs(dec - (-0.001603835628823866)) > 1e-15) {
         fprintf(stderr, "IAU 1980 nutation mismatch: %s %.17g %.17g\n", error, ra, dec);
         return 1;
     }
@@ -566,8 +581,14 @@ int main(void)
         fprintf(stderr, "IAU 2000B nutation mismatch: %s %.17g %.17g\n", error, ra, dec);
         return 1;
     }
-    if (jme_get_nutation(2451545.0, JME_MODEL_NUT_IAU_2000A, &ra, &dec, error) != JME_ERR
-        || jme_get_nutation(2451545.0, 999999, &ra, &dec, error) != JME_ERR
+    /* IAU 2000A reference: pyerfa eraNut00a(2451545.0, 0.0). */
+    if (jme_get_nutation(2451545.0, JME_MODEL_NUT_IAU_2000A, &ra, &dec, error) != JME_OK
+        || fabs(ra - (-0.0038699989808222398)) > 1e-15
+        || fabs(dec - (-0.001602610576795914)) > 1e-15) {
+        fprintf(stderr, "IAU 2000A nutation mismatch: %s %.17g %.17g\n", error, ra, dec);
+        return 1;
+    }
+    if (jme_get_nutation(2451545.0, 999999, &ra, &dec, error) != JME_ERR
         || jme_get_nutation(2451545.0, JME_MODEL_NUT_IAU_1980, 0, &dec, error) != JME_ERR
         || jme_get_nutation(2451545.0, JME_MODEL_NUT_IAU_1980, &ra, 0, error) != JME_ERR) {
         fprintf(stderr, "nutation accepted unavailable model or null output\n");
@@ -715,7 +736,8 @@ int main(void)
         }
         if (jme_get_precession_matrix(2451545.0, 2451545.0 + 36525.0, JME_MODEL_PREC_IAU_1976, p1976) != JME_OK
             || jme_get_precession_matrix(2451545.0, 2451545.0 + 36525.0, JME_MODEL_PREC_IAU_2006, p2006) != JME_OK
-            || jme_get_precession_matrix(2451545.0, 2451545.0 + 36525.0, JME_MODEL_PREC_LASKAR_1986, p_alt) != JME_OK
+            /* Laskar 1986 has no complete published equator precession: refused, never substituted. */
+            || jme_get_precession_matrix(2451545.0, 2451545.0 + 36525.0, JME_MODEL_PREC_LASKAR_1986, p_alt) != JME_ERR
             || jme_get_precession_matrix(2451545.0, 2451545.0 + 36525.0, JME_MODEL_PREC_VONDRAK_2011, p_alt) != JME_OK) {
             fprintf(stderr, "precession model coverage mismatch\n");
             return 1;
@@ -771,28 +793,36 @@ int main(void)
         }
         jme_set_astro_models(0, 0);
 
-        if (jme_fixstar("Sirius", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL | JME_CALC_J2000, star_default, error) != JME_OK
+        /*
+         * Independent reference: SIMBAD basic table (CDS), ICRS J2000 position of
+         * alf CMa from Hipparcos 2007 (2007A&A...474..653V): 101.28715533333335,
+         * -16.71611586111111. Barycentric astrometric (no parallax, deflection or
+         * aberration) ICRS output must agree within 1 mas; distance from the
+         * 379.21 mas parallax (~543900 AU).
+         */
+        if (jme_fixstar("Sirius", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL | JME_CALC_ICRS | JME_CALC_BARYCENTRIC, star_default, error) != JME_OK
             || !finite_values(star_default, 6)
-            || fabs(star_default[0] - 101.287083333333) > 1.0e-10
-            || fabs(star_default[1] - (-16.716111111111)) > 1.0e-10
-            || fabs(star_default[3] - ((-0.553 / 3600.0) / 365.25)) > 1.0e-14
-            || fabs(star_default[4] - ((-1.205 / 3600.0) / 365.25)) > 1.0e-14) {
+            || fabs(star_default[0] - 101.28715533333335) * cos(-16.716 * 0.017453292519943295) > 1.0 / 3600000.0
+            || fabs(star_default[1] - (-16.71611586111111)) > 1.0 / 3600000.0
+            || fabs(star_default[2] - 206264.80624709636 / 0.37921) > 100.0
+            || star_default[3] >= 0.0
+            || star_default[4] >= 0.0) {
             fprintf(stderr, "Sirius fixed-star catalog contract mismatch: %s %.17g %.17g\n", error, star_default[0], star_default[1]);
             return 1;
         }
-        if (jme_fixstar("HR 2491", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL | JME_CALC_J2000, star_hr, error) != JME_OK
+        if (jme_fixstar("HR 2491", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL | JME_CALC_ICRS | JME_CALC_BARYCENTRIC, star_hr, error) != JME_OK
             || fabs(star_hr[0] - star_default[0]) > 1.0e-12
             || fabs(star_hr[1] - star_default[1]) > 1.0e-12
-            || jme_fixstar("HD48915", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL | JME_CALC_J2000, star_hr, error) != JME_OK
+            || jme_fixstar("HD48915", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL | JME_CALC_ICRS | JME_CALC_BARYCENTRIC, star_hr, error) != JME_OK
             || fabs(star_hr[0] - star_default[0]) > 1.0e-12
             || fabs(star_hr[1] - star_default[1]) > 1.0e-12
-            || jme_fixstar("SAO 151881", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL | JME_CALC_J2000, star_hr, error) != JME_OK
+            || jme_fixstar("SAO 151881", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL | JME_CALC_ICRS | JME_CALC_BARYCENTRIC, star_hr, error) != JME_OK
             || fabs(star_hr[0] - star_default[0]) > 1.0e-12
             || fabs(star_hr[1] - star_default[1]) > 1.0e-12
-            || jme_fixstar("9Alp CMa", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL | JME_CALC_J2000, star_hr, error) != JME_OK
+            || jme_fixstar("9Alp CMa", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL | JME_CALC_ICRS | JME_CALC_BARYCENTRIC, star_hr, error) != JME_OK
             || fabs(star_hr[0] - star_default[0]) > 1.0e-12
             || fabs(star_hr[1] - star_default[1]) > 1.0e-12
-            || jme_fixstar("sirius", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL | JME_CALC_J2000, star_hr, error) != JME_OK
+            || jme_fixstar("sirius", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_EQUATORIAL | JME_CALC_ICRS | JME_CALC_BARYCENTRIC, star_hr, error) != JME_OK
             || fabs(star_hr[0] - star_default[0]) > 1.0e-12
             || fabs(star_hr[1] - star_default[1]) > 1.0e-12) {
             fprintf(stderr, "fixed-star identifier/alias lookup mismatch: %s\n", error);
@@ -842,11 +872,15 @@ int main(void)
             return 1;
         }
 
-        if (jme_fixstar("Sirius", 2451545.0, JME_CALC_TRUE_POSITION, star_default, error) != JME_OK
+        /*
+         * Sidereal longitude = mean-of-date longitude minus MEAN ayanamsa
+         * = true-of-date longitude minus TRUE ayanamsa (nutation cancels).
+         */
+        if (jme_fixstar("Sirius", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_NO_NUTATION, star_default, error) != JME_OK
             || jme_fixstar("Sirius", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_SIDEREAL, star_sidereal, error) != JME_OK
-            || fabs(jme_degrees_difference(star_sidereal[0], star_default[0] - jme_get_ayanamsa(2451545.0))) > 1e-9
+            || fabs(jme_degrees_difference_signed(star_sidereal[0], star_default[0] - jme_get_ayanamsa(2451545.0))) > 1e-9
             || fabs(star_sidereal[3] - star_default[3]) < 1.0e-7) {
-            fprintf(stderr, "fixed-star sidereal contract mismatch\n");
+            fprintf(stderr, "fixed-star sidereal contract mismatch: %s %.17g %.17g %.17g %.17g\n", error, star_sidereal[0], star_default[0], jme_get_ayanamsa(2451545.0), star_sidereal[3]);
             return 1;
         }
 
@@ -1247,9 +1281,10 @@ int main(void)
                 return 1;
             }
 
-            if (jme_calc_ut(2451545.0, JME_BODY_MERCURY, JME_CALC_TRUE_POSITION, deg_results, error) == JME_OK
+            /* Sidereal = mean-of-date longitude - mean ayanamsa (= true - true ayanamsa). */
+            if (jme_calc_ut(2451545.0, JME_BODY_MERCURY, JME_CALC_TRUE_POSITION | JME_CALC_NO_NUTATION, deg_results, error) == JME_OK
                 && jme_calc_ut(2451545.0, JME_BODY_MERCURY, JME_CALC_TRUE_POSITION | JME_CALC_SIDEREAL, sidereal_results, error) == JME_OK
-                && fabs(jme_degrees_difference(sidereal_results[0], deg_results[0] - jme_get_ayanamsa_ut(2451545.0))) > 1e-9) {
+                && fabs(jme_degrees_difference_signed(sidereal_results[0], deg_results[0] - jme_get_ayanamsa_ut(2451545.0))) > 1e-9) {
                 fprintf(stderr, "sidereal output flag mismatch\n");
                 return 1;
             }
@@ -1317,8 +1352,9 @@ int main(void)
                 return 1;
             }
 
-            if (jme_calc_pctr(2451545.0, JME_BODY_MERCURY, JME_BODY_SUN, JME_CALC_TRUE_POSITION | JME_CALC_SIDEREAL, pctr_sph_sidereal, error) != JME_OK
-                || fabs(jme_degrees_difference(pctr_sph_sidereal[0], pctr_sph_deg[0] - jme_get_ayanamsa(2451545.0))) > 1e-9) {
+            if (jme_calc_pctr(2451545.0, JME_BODY_MERCURY, JME_BODY_SUN, JME_CALC_TRUE_POSITION | JME_CALC_NO_NUTATION, pctr_sph_deg, error) != JME_OK
+                || jme_calc_pctr(2451545.0, JME_BODY_MERCURY, JME_BODY_SUN, JME_CALC_TRUE_POSITION | JME_CALC_SIDEREAL, pctr_sph_sidereal, error) != JME_OK
+                || fabs(jme_degrees_difference_signed(pctr_sph_sidereal[0], pctr_sph_deg[0] - jme_get_ayanamsa(2451545.0))) > 1e-9) {
                 fprintf(stderr, "planet-center sidereal contract mismatch: %s\n", error);
                 return 1;
             }

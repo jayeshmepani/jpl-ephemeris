@@ -57,6 +57,21 @@ int jme_get_topo_pos_true_equator(double jd_et, double *pos_au, char *error);
 /* Internal helper shared by the main and fixed-star apparent-position paths. */
 int internal_earth_aberration_state(double jd_et, double *state, char *error);
 int internal_ut_to_et(double jd_ut, double *jd_et, char *error);
+int internal_tt_to_ut(double jd_tt, double *jd_ut, char *error);
+int internal_get_nutation_rad(double jd_et, int model, int interpolate, double *dpsi, double *deps, char *error);
+int internal_bias_precession_matrix(double jd_et, double *bp, char *error);
+int internal_nutation_matrix(double jd_et, double *nm, double *dpsi_deg, double *eps_mean_deg, double *deps_deg, char *error);
+int internal_ayanamsa(double jd_et, int model, int flags, double *ayan, double *rate, char *error);
+int internal_context_ayanamsa(double jd_et, double *mean, double *rate, char *error);
+int internal_fixstar_mean_ecliptic_of_date(const char *star, double jd_et, double *ecl, char *error);
+int internal_rotate_to_output(double jd_et, int flags, int icrs_axes, const double *in, double *out, char *error);
+int internal_finish_output(const double *p0, const double *const *stencil, double h, int flags, double *results, char *error);
+int internal_star_observer_vector(double jd_et, int flags, const double *u, double dist_au, double *out, char *error);
+int internal_tt_to_tdb_jd(double jd_tt, double *jd_tdb, char *error);
+int internal_tai_minus_utc(int gregorian_year, int gregorian_month, int gregorian_day, double fraction_of_utc_day, double *tai_minus_utc, char *error);
+int internal_sidereal_time_rad(double jd_ut, double jd_tt, int apparent, double *gst, char *error);
+int internal_topo_state_true_equator(double jd_et, double *pos_au, double *vel_au_per_day, char *error);
+int internal_topo_state_j2000(double jd_et, double *state_au, char *error);
 int internal_utc_to_tt_split(
     int year, int month, int day, int hour, int minute, double second, int calendar,
     double *jd0_tt, double *fraction_tt, char *error
@@ -72,5 +87,7 @@ int internal_jpl_body_state_tt(
 );
 double jme_erfa_dtdb(double date1, double date2, double ut, double elong, double u, double v);
 int jme_erfa_tdbtcb(double tdb1, double tdb2, double *tcb1, double *tcb2);
+
+#include "jme_tls.h"
 
 #endif

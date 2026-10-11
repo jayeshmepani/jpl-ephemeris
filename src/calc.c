@@ -1,6 +1,8 @@
 #include "jme/jme.h"
 #include "context.h"
+#include "jme_erfa_vendor.h"
 #include <math.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #ifdef _WIN32
@@ -82,16 +84,6 @@ static int state_is_finite(const double *state, int count)
     return 1;
 }
 
-static int state_distance_is_usable(const double *state, double *distance, char *error)
-{
-    *distance = jme_state_distance(state);
-    if (!isfinite(*distance) || *distance <= 0.0) {
-        jme_set_error(error, "Calculation produced invalid distance");
-        return JME_ERR;
-    }
-
-    return JME_OK;
-}
 
 static double vector_angle_degrees(const double *a, const double *b)
 {
@@ -110,31 +102,6 @@ static double vector_angle_degrees(const double *a, const double *b)
     return acos(c) * 180.0 / JME_PI;
 }
 
-static int apply_reference_frame_transform(double jd_et, int flags, int target_is_ecliptic, double *target_pos, char *error)
-{
-    if (!target_is_ecliptic && !(flags & JME_CALC_J2000)) {
-        double bias_mat[9];
-        double prec_mat[9];
-
-        if (jme_get_frame_bias_matrix(jme_context_bias_model(), bias_mat) == JME_OK) {
-            jme_matrix_transform_state(bias_mat, target_pos, target_pos);
-        }
-
-        jme_get_precession_matrix(2451545.0, jd_et, jme_context_precession_model(), prec_mat);
-        jme_matrix_transform_state(prec_mat, target_pos, target_pos);
-
-        if (!(flags & JME_CALC_NO_NUTATION)) {
-            double dpsi, deps, eps;
-            double nut_mat[9];
-            jme_get_nutation(jd_et, jme_context_nutation_model(), &dpsi, &deps, error);
-            jme_get_obliquity(jd_et, jme_context_obliquity_model(), &eps, error);
-            jme_get_nutation_matrix(dpsi * JME_DEG_TO_RAD, deps * JME_DEG_TO_RAD, eps * JME_DEG_TO_RAD, nut_mat);
-            jme_matrix_transform_state(nut_mat, target_pos, target_pos);
-        }
-    }
-
-    return JME_OK;
-}
 
 static double body_equatorial_radius_km(int body)
 {
@@ -305,196 +272,6 @@ static int analytic_body_state(double jd_et, int body, double *state, int engine
     return JME_OK;
 }
 
-static int selected_body_state(
-    double jd_et,
-    int body,
-    int center,
-    int engine_policy,
-    int need_velocity,
-    double *state,
-    char *error,
-    int *is_ecliptic
-)
-{
-    int i;
-
-    if (engine_policy == JME_ENGINE_AUTO || engine_policy == JME_ENGINE_JPL) {
-        if (internal_jpl_body_state_tt(jd_et, body, center, JME_VECTOR_AU_PER_DAY, state, error) == JME_OK) {
-            if (is_ecliptic != 0) { *is_ecliptic = 0; }
-            return JME_OK;
-        }
-        if (engine_policy == JME_ENGINE_JPL) {
-            return JME_ERR;
-        }
-    }
-
-    if (center != JME_BODY_SUN && center != JME_BODY_EARTH) {
-        jme_set_error(error, "Selected analytical engine does not support requested center");
-        return JME_ERR;
-    }
-
-    if (body == JME_BODY_MOON && center == JME_BODY_EARTH) {
-        double moon_geo[6];
-        double eps = 0.0;
-        double equatorial[6];
-
-        if (engine_policy == JME_ENGINE_MOSHIER) {
-            if ((need_velocity ? jme_internal_moshier_moon_state(jd_et, moon_geo) : jme_internal_moshier_moon_position(jd_et, moon_geo)) != JME_OK) {
-                jme_set_error(error, "Moshier engine cannot compute Moon state");
-                return JME_ERR;
-            }
-            for (i = 0; i < 6; i++) {
-                state[i] = moon_geo[i];
-            }
-            if (is_ecliptic != 0) { *is_ecliptic = 1; }
-            return JME_OK;
-        } else if ((need_velocity ? jme_elp2000_moon_state(jd_et, moon_geo) : jme_internal_elp2000_moon_position(jd_et, moon_geo)) != JME_OK
-            && jme_meeus_moon_state(jd_et, moon_geo) != JME_OK) {
-            jme_set_error(error, "Selected analytical engine cannot compute Moon state");
-            return JME_ERR;
-        }
-        if (jme_get_obliquity(2451545.0, jme_context_obliquity_model(), &eps, error) != JME_OK
-            || jme_ecliptic_to_equatorial_rectangular_state(moon_geo, eps, equatorial) != JME_OK) {
-            jme_set_error(error, "Analytical Moon frame conversion failed");
-            return JME_ERR;
-        }
-        for (i = 0; i < 6; i++) {
-            state[i] = equatorial[i];
-        }
-        if (is_ecliptic != 0) { *is_ecliptic = 0; }
-        return JME_OK;
-    }
-
-    if (analytic_body_state(jd_et, body, state, engine_policy) != JME_OK) {
-        jme_set_error(error, "Selected analytical engine cannot compute requested body");
-        return JME_ERR;
-    }
-
-    if (center == JME_BODY_EARTH) {
-        double earth_helio[6];
-        if (analytic_body_state(jd_et, JME_BODY_EARTH, earth_helio, engine_policy) != JME_OK) {
-            jme_set_error(error, "Selected analytical engine cannot compute Earth state");
-            return JME_ERR;
-        }
-        for (i = 0; i < 6; i++) { state[i] -= earth_helio[i]; }
-    }
-
-    {
-        double eps = 0.0;
-        double equatorial[6];
-
-        if (jme_get_obliquity(2451545.0, jme_context_obliquity_model(), &eps, error) != JME_OK
-            || jme_ecliptic_to_equatorial_rectangular_state(state, eps, equatorial) != JME_OK) {
-            jme_set_error(error, "Analytical ecliptic-to-equatorial frame conversion failed");
-            return JME_ERR;
-        }
-        for (i = 0; i < 6; i++) {
-            state[i] = equatorial[i];
-        }
-    }
-
-    if (is_ecliptic != 0) { *is_ecliptic = 0; }
-    return JME_OK;
-}
-
-static int transform_j2000_equatorial_state_to_ecliptic_date(
-    double jd_et,
-    double state[6],
-    char *error
-)
-{
-    double bias[9];
-    double precession[9];
-    double stage[6];
-    double date_equatorial[6];
-    double date_ecliptic[6];
-    double obliquity = 0.0;
-    int i;
-
-    if (state == 0 || !isfinite(jd_et) || !state_is_finite(state, 6)) {
-        jme_set_error(error, "Coordinate-frame transform requires finite state and Julian date");
-        return JME_ERR;
-    }
-
-    for (i = 0; i < 6; i++) {
-        stage[i] = state[i];
-    }
-    if (jme_get_frame_bias_matrix(jme_context_bias_model(), bias) == JME_OK) {
-        jme_matrix_transform_state(bias, stage, stage);
-    }
-    jme_get_precession_matrix(2451545.0, jd_et, jme_context_precession_model(), precession);
-    jme_matrix_transform_state(precession, stage, date_equatorial);
-
-    if (jme_get_obliquity(jd_et, jme_context_obliquity_model(), &obliquity, error) != JME_OK) {
-        return JME_ERR;
-    }
-    if (jme_equatorial_to_ecliptic_rectangular_state(date_equatorial, obliquity, date_ecliptic) != JME_OK) {
-        jme_set_error(error, "Equatorial-to-ecliptic state conversion failed");
-        return JME_ERR;
-    }
-
-    for (i = 0; i < 6; i++) {
-        state[i] = date_ecliptic[i];
-    }
-    return JME_OK;
-}
-
-int internal_earth_aberration_state(double jd_et, double *state, char *error)
-{
-    int engine_policy = jme_context_engine_policy();
-    int is_ecliptic = 0;
-
-    if (state == 0) {
-        jme_set_error(error, "Earth observer state output is required");
-        return JME_ERR;
-    }
-
-    if (error != 0) {
-        error[0] = '\0';
-    }
-
-    /*
-     * Prefer the full barycentric Earth state whenever the selected policy
-     * permits JPL. If AUTO cannot obtain it, the analytical path below returns
-     * the Earth state relative to the Sun in J2000 equatorial coordinates.
-     * Explicit JPL mode must not silently downgrade to an analytical backend.
-     */
-    if (engine_policy == JME_ENGINE_AUTO || engine_policy == JME_ENGINE_JPL) {
-        if (internal_jpl_body_state_tt(
-                jd_et,
-                JME_BODY_EARTH,
-                JME_BODY_SOLAR_SYSTEM_BARYCENTER,
-                JME_VECTOR_AU_PER_DAY,
-                state,
-                error) == JME_OK) {
-            return JME_OK;
-        }
-
-        if (engine_policy == JME_ENGINE_JPL) {
-            return JME_ERR;
-        }
-    }
-
-    if (selected_body_state(
-            jd_et,
-            JME_BODY_EARTH,
-            JME_BODY_SUN,
-            engine_policy,
-            1,
-            state,
-            error,
-            &is_ecliptic) != JME_OK) {
-        if (error == 0 || error[0] == '\0') {
-            jme_set_error(error, "Selected engine cannot compute Earth observer velocity for aberration");
-        }
-        return JME_ERR;
-    }
-
-    /* AUTO may have succeeded after the initial JPL barycentric query failed. */
-    jme_set_error(error, "");
-    return JME_OK;
-}
-
 static int calc_lunar_node(double jd_et, int body, int flags, double *results, char *error)
 {
     double spherical[6];
@@ -508,7 +285,17 @@ static int calc_lunar_node(double jd_et, int body, int flags, double *results, c
     }
 
     if (flags & JME_CALC_SIDEREAL) {
-        spherical[0] = jme_degree_normalize(spherical[0] - jme_get_ayanamsa(jd_et));
+        double ayan, rate;
+        if ((flags & JME_CALC_EQUATORIAL) || (flags & JME_CALC_J2000) || (flags & JME_CALC_ICRS)) {
+            jme_set_error(error, "JME_CALC_SIDEREAL is defined only for ecliptic-of-date output");
+            return JME_ERR;
+        }
+        /* Node longitudes are referred to the mean equinox of date: subtract the mean ayanamsa. */
+        if (internal_context_ayanamsa(jd_et, &ayan, &rate, error) != JME_OK) {
+            return JME_ERR;
+        }
+        spherical[0] = jme_degree_normalize(spherical[0] - ayan);
+        spherical[3] -= rate;
     }
 
     if (flags & JME_CALC_XYZ) {
@@ -518,7 +305,9 @@ static int calc_lunar_node(double jd_et, int body, int flags, double *results, c
         }
 
         if (flags & JME_CALC_EQUATORIAL) {
-            jme_get_obliquity((flags & JME_CALC_J2000) ? 2451545.0 : jd_et, jme_context_obliquity_model(), &eps, error);
+            if (jme_get_obliquity((flags & JME_CALC_J2000) ? 2451545.0 : jd_et, jme_context_obliquity_model(), &eps, error) != JME_OK) {
+                return JME_ERR;
+            }
             if (jme_ecliptic_to_equatorial_rectangular_state(rectangular, eps, equatorial) != JME_OK) {
                 jme_set_error(error, "Lunar node equatorial conversion failed");
                 return JME_ERR;
@@ -533,7 +322,9 @@ static int calc_lunar_node(double jd_et, int body, int flags, double *results, c
                 jme_set_error(error, "Lunar node rectangular conversion failed");
                 return JME_ERR;
             }
-            jme_get_obliquity((flags & JME_CALC_J2000) ? 2451545.0 : jd_et, jme_context_obliquity_model(), &eps, error);
+            if (jme_get_obliquity((flags & JME_CALC_J2000) ? 2451545.0 : jd_et, jme_context_obliquity_model(), &eps, error) != JME_OK) {
+                return JME_ERR;
+            }
             if (jme_ecliptic_to_equatorial_rectangular_state(rectangular, eps, equatorial) != JME_OK
                 || jme_rectangular_to_spherical_state(equatorial, spherical) != JME_OK) {
                 jme_set_error(error, "Lunar node equatorial conversion failed");
@@ -594,7 +385,19 @@ int jme_calc_pctr(double jd_et, int body, int center, int flags, double *results
         return JME_ERR;
     }
 
-    if (jme_calc(jd_et, body, flags | JME_CALC_HELIOCENTRIC | JME_CALC_XYZ | JME_CALC_TRUE_POSITION, body_state, error) != JME_OK) {
+    for (i = 0; i < 6; i++) results[i] = 0.0;
+    if (body == center) {
+        jme_set_error(error, "Target and centre are the same body");
+        return JME_ERR;
+    }
+    /*
+     * Geometric planet-centric vector (no light time, deflection or
+     * aberration): difference of heliocentric states in the requested frame.
+     * JME_CALC_SIDEREAL is applied by jme_calc as a rotation of the vectors.
+     */
+    if (body == JME_BODY_SUN) {
+        for (i = 0; i < 6; i++) body_state[i] = 0.0;
+    } else if (jme_calc(jd_et, body, flags | JME_CALC_HELIOCENTRIC | JME_CALC_XYZ | JME_CALC_TRUE_POSITION, body_state, error) != JME_OK) {
         return JME_ERR;
     }
 
@@ -613,13 +416,12 @@ int jme_calc_pctr(double jd_et, int body, int center, int flags, double *results
     if ((flags & JME_CALC_XYZ) == 0) {
         double spherical[6];
         if (jme_rectangular_to_spherical_state(results, spherical) != JME_OK) {
+            for (i = 0; i < 6; i++) results[i] = 0.0;
+            jme_set_error(error, "Rectangular-to-spherical conversion failed");
             return JME_ERR;
         }
         for (i = 0; i < 6; i++) {
             results[i] = spherical[i];
-        }
-        if (flags & JME_CALC_SIDEREAL) {
-            results[0] = jme_degree_normalize(results[0] - jme_get_ayanamsa(jd_et));
         }
         results[0] = angle_to_output_unit(results[0], flags);
         results[1] = angle_to_output_unit(results[1], flags);
@@ -763,267 +565,639 @@ int jme_pheno(double jd_et, int body, int flags, double *attr, char *error)
     return JME_OK;
 }
 
-int jme_calc(double jd_et, int body, int flags, double *results, char *error)
+/*
+ * ---------------------------------------------------------------------------
+ * Geometric state providers.
+ *
+ * All internal vectors use J2000-mean-equator axes:
+ *   JPL backend:        ICRF axes, origin = solar-system barycentre (SSB).
+ *   Analytical engines: dynamical J2000 mean equator (VSOP87/ELP2000/Moshier
+ *                       J2000 ecliptic rotated by the J2000 mean obliquity of
+ *                       the context obliquity model), origin = Sun centre.
+ * One backend is chosen per jme_calc() call so that target and observer are
+ * never mixed between engines.
+ * ---------------------------------------------------------------------------
+ */
+#define JME_BACKEND_JPL 1
+#define JME_BACKEND_ANALYTIC 2
+
+static int ecliptic_j2000_to_equatorial_j2000(double *state, char *error)
 {
-    double state[6];
-    double target_pos[6];
-    double observer_pos_au[3] = {0,0,0};
-    double dist, light_time;
-    int center = JME_BODY_EARTH;
-    int target_is_ecliptic = 0;
-    int engine_policy = jme_context_engine_policy();
-    int frame_already_applied = 0;
-    int observer_pos_ready = 0;
+    double eps = 0.0;
+    double equatorial[6];
     int i;
 
-    if (results == 0) {
-        jme_set_error(error, "Output buffer is required");
+    if (jme_get_obliquity(2451545.0, jme_context_obliquity_model(), &eps, error) != JME_OK
+        || jme_ecliptic_to_equatorial_rectangular_state(state, eps, equatorial) != JME_OK) {
+        if (error != 0 && error[0] == '\0') jme_set_error(error, "Analytical ecliptic-to-equatorial frame conversion failed");
         return JME_ERR;
     }
+    for (i = 0; i < 6; i++) state[i] = equatorial[i];
+    return JME_OK;
+}
 
-    for (i = 0; i < 6; i++) { results[i] = 0.0; }
-    if (!isfinite(jd_et)) {
-        jme_set_error(error, "Terrestrial-time Julian date must be finite");
+/* Geocentric Moon from the analytical engines, J2000 mean equatorial, AU, AU/day. */
+static int analytic_moon_geocentric_j2000_uncached(double jd_et, int engine_policy, double *state, char *error)
+{
+    double moon[6];
+    int i;
+
+    if (engine_policy == JME_ENGINE_MOSHIER) {
+        /*
+         * Moshier's lunar theory returns geocentric coordinates referred to
+         * the mean ecliptic and equinox of date. Rotate to the mean equator of
+         * date with the mean obliquity of date, then precess back to J2000.
+         */
+        double eps = 0.0, eq_date[6], prec[9], inv[9];
+        int r, c;
+        if (jme_internal_moshier_moon_state(jd_et, moon) != JME_OK) {
+            jme_set_error(error, "Moshier engine cannot compute Moon state");
+            return JME_ERR;
+        }
+        if (jme_get_obliquity(jd_et, jme_context_obliquity_model(), &eps, error) != JME_OK
+            || jme_ecliptic_to_equatorial_rectangular_state(moon, eps, eq_date) != JME_OK) {
+            return JME_ERR;
+        }
+        if (jme_get_precession_matrix(2451545.0, jd_et, jme_context_precession_model(), prec) != JME_OK) {
+            jme_set_error(error, "Unsupported precession model");
+            return JME_ERR;
+        }
+        for (r = 0; r < 3; r++) for (c = 0; c < 3; c++) inv[r * 3 + c] = prec[c * 3 + r];
+        jme_matrix_transform_state(inv, eq_date, state);
+        return JME_OK;
+    }
+
+    if (jme_elp2000_moon_state(jd_et, moon) != JME_OK) {
+        jme_set_error(error, "ELP2000-82B cannot compute Moon state");
         return JME_ERR;
     }
+    for (i = 0; i < 6; i++) state[i] = moon[i];
+    return ecliptic_j2000_to_equatorial_j2000(state, error);
+}
 
-    if (body == JME_BODY_MEAN_NODE || body == JME_BODY_TRUE_NODE) {
-        if (calc_lunar_node(jd_et, body, flags, results, error) != JME_OK) {
+/* Heliocentric J2000 mean-equatorial state from the analytical engines. */
+/*
+ * Exact-input memoisation of analytical evaluations (thread-local, lossless:
+ * a hit requires bit-identical date, body, engine and frame models). One
+ * apparent position evaluates the same bodies at the same instants several
+ * times (observer, Sun barycentre, deflection, rate stencil).
+ */
+#define JME_ANALYTIC_CACHE_SIZE 64
+typedef struct analytic_cache_entry {
+    double jd;
+    int body;
+    int engine;
+    int obl;
+    int prec;
+    int valid;
+    double state[6];
+} analytic_cache_entry;
+static JME_THREAD_LOCAL analytic_cache_entry g_analytic_cache[JME_ANALYTIC_CACHE_SIZE];
+static JME_THREAD_LOCAL int g_analytic_cache_next;
+
+static int analytic_cache_get(double jd, int body, int engine, double *state)
+{
+    int i, k, obl = jme_context_obliquity_model(), prec = jme_context_precession_model();
+    for (i = 0; i < JME_ANALYTIC_CACHE_SIZE; i++) {
+        const analytic_cache_entry *e = &g_analytic_cache[i];
+        if (e->valid && e->body == body && e->engine == engine && e->obl == obl && e->prec == prec
+            && memcmp(&e->jd, &jd, sizeof(double)) == 0) {
+            for (k = 0; k < 6; k++) state[k] = e->state[k];
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static void analytic_cache_put(double jd, int body, int engine, const double *state)
+{
+    analytic_cache_entry *e = &g_analytic_cache[g_analytic_cache_next];
+    int k;
+    g_analytic_cache_next = (g_analytic_cache_next + 1) % JME_ANALYTIC_CACHE_SIZE;
+    e->jd = jd;
+    e->body = body;
+    e->engine = engine;
+    e->obl = jme_context_obliquity_model();
+    e->prec = jme_context_precession_model();
+    for (k = 0; k < 6; k++) e->state[k] = state[k];
+    e->valid = 1;
+}
+
+#define JME_CACHE_MOON_GEO (-1000)
+
+static int analytic_moon_geocentric_j2000(double jd_et, int engine_policy, double *state, char *error)
+{
+    if (analytic_cache_get(jd_et, JME_CACHE_MOON_GEO, engine_policy, state)) return JME_OK;
+    if (analytic_moon_geocentric_j2000_uncached(jd_et, engine_policy, state, error) != JME_OK) return JME_ERR;
+    analytic_cache_put(jd_et, JME_CACHE_MOON_GEO, engine_policy, state);
+    return JME_OK;
+}
+
+static int analytic_heliocentric_state_uncached(double jd_et, int body, int engine_policy, double *state, char *error);
+
+static int analytic_heliocentric_state(double jd_et, int body, int engine_policy, double *state, char *error)
+{
+    if (analytic_cache_get(jd_et, body, engine_policy, state)) return JME_OK;
+    if (analytic_heliocentric_state_uncached(jd_et, body, engine_policy, state, error) != JME_OK) return JME_ERR;
+    analytic_cache_put(jd_et, body, engine_policy, state);
+    return JME_OK;
+}
+
+static int analytic_heliocentric_state_uncached(double jd_et, int body, int engine_policy, double *state, char *error)
+{
+    int i;
+
+    if (body == JME_BODY_SUN) {
+        for (i = 0; i < 6; i++) state[i] = 0.0;
+        return JME_OK;
+    }
+    if (body == JME_BODY_MOON) {
+        double earth[6], moon[6];
+        if (analytic_heliocentric_state(jd_et, JME_BODY_EARTH, engine_policy, earth, error) != JME_OK
+            || analytic_moon_geocentric_j2000(jd_et, engine_policy, moon, error) != JME_OK) {
             return JME_ERR;
         }
-        return state_is_finite(results, 6) ? JME_OK : JME_ERR;
+        for (i = 0; i < 6; i++) state[i] = earth[i] + moon[i];
+        return JME_OK;
     }
-
-    if (flags & JME_CALC_BARYCENTRIC) {
-        center = JME_BODY_SOLAR_SYSTEM_BARYCENTER;
-    } else if (flags & JME_CALC_HELIOCENTRIC) {
-        center = JME_BODY_SUN;
-    } else if ((flags & JME_CALC_TOPOCENTRIC)
-        && !(flags & JME_CALC_TRUE_POSITION)
-        && !(flags & JME_CALC_J2000)) {
-        if (jme_get_topo_pos(jd_et, observer_pos_au, error) != JME_OK) {
-            return JME_ERR;
-        }
-        observer_pos_ready = 1;
-    }
-
-    /* 1. Geometric position (Target - Center) at t */
-    if (selected_body_state(jd_et, body, center, engine_policy, (flags & JME_CALC_SPEED) != 0, target_pos, error, &target_is_ecliptic) != JME_OK) {
+    if (body < JME_BODY_MERCURY || body > JME_BODY_EARTH) {
+        jme_set_error(error, "Selected analytical engine cannot compute requested body");
         return JME_ERR;
     }
-
-    /* Apply topocentric correction to geometric position if needed */
-    if ((flags & JME_CALC_TOPOCENTRIC) && observer_pos_ready) {
-        for (i = 0; i < 3; i++) { target_pos[i] -= observer_pos_au[i]; }
+    if (analytic_body_state(jd_et, body, state, engine_policy) != JME_OK) {
+        jme_set_error(error, "Selected analytical engine cannot compute requested body");
+        return JME_ERR;
     }
+    return ecliptic_j2000_to_equatorial_j2000(state, error);
+}
 
-    /* 2. Light-time correction */
-    if (!(flags & JME_CALC_TRUE_POSITION)) {
-        if (state_distance_is_usable(target_pos, &dist, error) != JME_OK) {
-            return JME_ERR;
-        }
-        light_time = dist / JME_C_AU_PER_DAY;
+/* Barycentric (JPL) or heliocentric (analytical) state of body. */
+static int backend_state(int backend, double jd_et, int body, int engine_policy, double *state, char *error)
+{
+    if (backend == JME_BACKEND_JPL) {
+        return internal_jpl_body_state_tt(jd_et, body, JME_BODY_SOLAR_SYSTEM_BARYCENTER,
+            JME_VECTOR_AU_PER_DAY, state, error);
+    }
+    if (body == JME_BODY_SOLAR_SYSTEM_BARYCENTER) {
+        jme_set_error(error, "Analytical engines do not provide the solar-system barycentre");
+        return JME_ERR;
+    }
+    if (body > JME_BODY_EARTH && body != JME_BODY_SOLAR_SYSTEM_BARYCENTER) {
+        jme_set_error(error, "Selected analytical engine does not support requested body or centre");
+        return JME_ERR;
+    }
+    {
+        /* The analytical theories (VSOP87, Moshier/DE404 fits, ELP 2000-82B) use TDB. */
+        double jd_tdb;
+        if (internal_tt_to_tdb_jd(jd_et, &jd_tdb, error) != JME_OK) return JME_ERR;
+        return analytic_heliocentric_state(jd_tdb, body, engine_policy, state, error);
+    }
+}
 
-        if (selected_body_state(jd_et - light_time, body, center, engine_policy, (flags & JME_CALC_SPEED) != 0, target_pos, error, &target_is_ecliptic) != JME_OK) {
-            return JME_ERR;
-        }
-
-        /* Second iteration */
-        if (state_distance_is_usable(target_pos, &dist, error) != JME_OK) {
-            return JME_ERR;
-        }
-        light_time = dist / JME_C_AU_PER_DAY;
-        if (selected_body_state(jd_et - light_time, body, center, engine_policy, (flags & JME_CALC_SPEED) != 0, target_pos, error, &target_is_ecliptic) != JME_OK) {
-            return JME_ERR;
-        }
-
-        /* 2.1 Aberration */
-        if (!(flags & JME_CALC_NO_ABERRATION)) {
-            double earth_state[6];
-            double v_obs[3];
-            double u[3], u_prime[3];
-            double v_dot_u, beta;
-            double v2 = 0.0;
-
-            /*
-             * Use the same observer-state helper as fixed-star calculations.
-             * Its analytical fallback converts the velocity to J2000
-             * equatorial coordinates before it is combined with target_pos.
-             */
-            if (internal_earth_aberration_state(jd_et, earth_state, error) != JME_OK) {
-                return JME_ERR;
-            }
-            if (target_is_ecliptic
-                && transform_j2000_equatorial_state_to_ecliptic_date(jd_et, earth_state, error) != JME_OK) {
-                return JME_ERR;
-            }
-
-            for (i = 0; i < 3; i++) {
-                v_obs[i] = earth_state[i + 3] / JME_C_AU_PER_DAY;
-                v2 += v_obs[i] * v_obs[i];
-            }
-
-            if (state_distance_is_usable(target_pos, &dist, error) != JME_OK) {
-                return JME_ERR;
-            }
-            for (i = 0; i < 3; i++) { u[i] = target_pos[i] / dist; }
-
-            v_dot_u = 0.0;
-            for (i = 0; i < 3; i++) { v_dot_u += v_obs[i] * u[i]; }
-
-            beta = sqrt(1.0 - v2);
-
-            for (i = 0; i < 3; i++) {
-                u_prime[i] = (u[i] + v_obs[i] + (v_dot_u * v_obs[i] / (1.0 + beta))) / (1.0 + v_dot_u);
-            }
-
-            /* Update target_pos with aberrated position (maintain same distance for simplicity of angular result) */
-            for (i = 0; i < 3; i++) { target_pos[i] = u_prime[i] * dist; }
-        }
-
-        /* 2.2 Gravitational Deflection (mostly Sun) */
-        if (!(flags & JME_CALC_NO_LIGHT_DEFLECTION) && (body != JME_BODY_SUN)) {
-            double sun_state[6];
-            double e[3], p[3], u[3], u_prime[3];
-            double sun_dist, e_dot_u, factor;
-            /* Using Schwarzschild radius 2GM/c^2 in AU */
-            const double r_s_sun = 2.0 * 1.32712440041e20 / (JME_SPEED_OF_LIGHT_KM_PER_SEC * 1000.0 * JME_SPEED_OF_LIGHT_KM_PER_SEC * 1000.0) / (JME_AU_KM * 1000.0);
-
-            int sun_state_ok = JME_ERR;
-            int sun_is_ecliptic = 0;
-
-            if (center != JME_BODY_SUN) {
-                sun_state_ok = selected_body_state(jd_et, JME_BODY_SUN, center, engine_policy, 0, sun_state, error, &sun_is_ecliptic);
-            }
-
-            if (sun_state_ok == JME_OK) {
-                if (target_is_ecliptic && !sun_is_ecliptic
-                    && transform_j2000_equatorial_state_to_ecliptic_date(jd_et, sun_state, error) != JME_OK) {
-                    return JME_ERR;
-                }
-                if (state_distance_is_usable(sun_state, &sun_dist, error) != JME_OK) {
-                    return JME_ERR;
-                }
-                for (i = 0; i < 3; i++) { e[i] = sun_state[i] / sun_dist; }
-
-                if (state_distance_is_usable(target_pos, &dist, error) != JME_OK) {
-                    return JME_ERR;
-                }
-                for (i = 0; i < 3; i++) { u[i] = target_pos[i] / dist; }
-
-                e_dot_u = 0.0;
-                for (i = 0; i < 3; i++) { e_dot_u += e[i] * u[i]; }
-
-                factor = 2.0 * r_s_sun / (sun_dist * (1.0 + e_dot_u));
-
-                for (i = 0; i < 3; i++) {
-                    p[i] = e[i] - e_dot_u * u[i];
-                    u_prime[i] = u[i] + factor * p[i];
-                }
-
-                /* Normalize u_prime */
-                dist = sqrt(u_prime[0] * u_prime[0] + u_prime[1] * u_prime[1] + u_prime[2] * u_prime[2]);
-                if (!isfinite(dist) || dist <= 0.0) {
-                    jme_set_error(error, "Calculation produced invalid light-deflection vector");
-                    return JME_ERR;
-                }
-                dist = jme_state_distance(target_pos) / dist;
-                for (i = 0; i < 3; i++) { target_pos[i] = u_prime[i] * dist; }
-            }
+/* Choose the backend for one calculation; AUTO uses JPL only if it can serve the target. */
+static int choose_backend(double jd_et, int body, int engine_policy, int *backend, char *error)
+{
+    if (engine_policy == JME_ENGINE_JPL) {
+        *backend = JME_BACKEND_JPL;
+        return JME_OK;
+    }
+    if (engine_policy == JME_ENGINE_AUTO) {
+        double probe[6];
+        char ignored[256];
+        if (internal_jpl_body_state_tt(jd_et, body, JME_BODY_SOLAR_SYSTEM_BARYCENTER,
+                JME_VECTOR_AU_PER_DAY, probe, ignored) == JME_OK
+            && internal_jpl_body_state_tt(jd_et, JME_BODY_EARTH, JME_BODY_SOLAR_SYSTEM_BARYCENTER,
+                JME_VECTOR_AU_PER_DAY, probe, ignored) == JME_OK) {
+            *backend = JME_BACKEND_JPL;
+            return JME_OK;
         }
     }
+    (void)error;
+    *backend = JME_BACKEND_ANALYTIC;
+    return JME_OK;
+}
 
-    if ((flags & JME_CALC_TOPOCENTRIC)
-        && (flags & JME_CALC_TRUE_POSITION)
-        && !(flags & JME_CALC_J2000)) {
-        if (target_is_ecliptic) {
-            double equatorial_rect[6];
-            double eps;
-            if (jme_get_obliquity(jd_et, jme_context_obliquity_model(), &eps, error) != JME_OK) {
-                return JME_ERR;
+/*
+ * Barycentric state of the Sun for the analytical engines, from the
+ * heliocentric states of the planets of the same engine:
+ *   r_sun,bary = -sum(mu_i r_i) / (1 + sum(mu_i)),  mu_i = m_i / M_sun
+ * Mass ratios: IAU 2009 System of Astronomical Constants (Luzum et al. 2011,
+ * Celest. Mech. Dyn. Astr. 110, 293), Table 1 (Sun/planet-system mass ratios;
+ * Moon/Earth 0.0123000371 for the Earth-Moon barycentre). Pluto is included
+ * whenever the selected engine provides it at that date (its contribution to
+ * the observer velocity is < 1 microarcsecond of aberration).
+ * jd_tdb is TDB. Output: AU, AU/day, analytical J2000 equatorial axes.
+ */
+static int analytic_sun_barycentric(double jd_tdb, int engine_policy, double *sun, char *error)
+{
+    static const int bodies[9] = {
+        JME_BODY_MERCURY, JME_BODY_VENUS, JME_BODY_EARTH, JME_BODY_MARS, JME_BODY_JUPITER,
+        JME_BODY_SATURN, JME_BODY_URANUS, JME_BODY_NEPTUNE, JME_BODY_PLUTO
+    };
+    static const double inv_mass[9] = {
+        6023597.400017, 408523.718655, 328900.559708, 3098703.590267, 1047.348644,
+        3497.901768, 22902.981613, 19412.237346, 135836683.767599
+    };
+    const double moon_earth = 0.0123000371;
+    double acc[6] = {0, 0, 0, 0, 0, 0};
+    double musum = 0.0;
+    int b, i;
+
+    for (b = 0; b < 9; b++) {
+        double st[6];
+        double mu = 1.0 / inv_mass[b];
+        if (analytic_heliocentric_state(jd_tdb, bodies[b], engine_policy, st, error) != JME_OK) {
+            if (bodies[b] == JME_BODY_PLUTO) {
+                if (error != 0) error[0] = '\0';
+                continue;
             }
-            if (!(flags & JME_CALC_NO_NUTATION)) {
-                double dpsi, deps;
-                if (jme_get_nutation(jd_et, jme_context_nutation_model(), &dpsi, &deps, error) != JME_OK) {
-                    return JME_ERR;
-                }
-                (void)dpsi;
-                eps += deps;
-            }
-            if (jme_ecliptic_to_equatorial_rectangular_state(target_pos, eps, equatorial_rect) != JME_OK) {
-                jme_set_error(error, "Topocentric ecliptic-to-equatorial conversion failed");
-                return JME_ERR;
-            }
-            for (i = 0; i < 6; i++) {
-                target_pos[i] = equatorial_rect[i];
-            }
-            target_is_ecliptic = 0;
-        } else {
-            if (apply_reference_frame_transform(jd_et, flags, target_is_ecliptic, target_pos, error) != JME_OK) {
-                return JME_ERR;
-            }
+            return JME_ERR;
         }
-        if (jme_get_topo_pos_true_equator(jd_et, observer_pos_au, error) != JME_OK) {
+        if (bodies[b] == JME_BODY_EARTH) {
+            double moon[6];
+            if (analytic_moon_geocentric_j2000(jd_tdb, engine_policy, moon, error) != JME_OK) return JME_ERR;
+            for (i = 0; i < 6; i++) st[i] += moon[i] * moon_earth / (1.0 + moon_earth);
+        }
+        for (i = 0; i < 6; i++) acc[i] += mu * st[i];
+        musum += mu;
+    }
+    for (i = 0; i < 6; i++) sun[i] = -acc[i] / (1.0 + musum);
+    return JME_OK;
+}
+
+/*
+ * Observer (Earth centre + optional topocentric offset) state for aberration,
+ * in the backend frame. vel_bary receives the observer velocity used for
+ * aberration (AU/day).
+ */
+static int observer_state(int backend, double jd_et, int topocentric, int engine_policy,
+    double *obs, double *vel_bary, char *error)
+{
+    int i;
+
+    if (backend_state(backend, jd_et, JME_BODY_EARTH, engine_policy, obs, error) != JME_OK) {
+        return JME_ERR;
+    }
+    if (vel_bary != 0) {
+        /*
+         * JPL: barycentric velocity directly. Analytical engines: heliocentric
+         * Earth velocity plus the Sun's barycentric velocity from the same
+         * engine's planets (analytic_sun_barycentric).
+         */
+        for (i = 0; i < 3; i++) vel_bary[i] = obs[i + 3];
+        if (backend == JME_BACKEND_ANALYTIC) {
+            double sun[6], jd_tdb;
+            if (internal_tt_to_tdb_jd(jd_et, &jd_tdb, error) != JME_OK
+                || analytic_sun_barycentric(jd_tdb, engine_policy, sun, error) != JME_OK) {
+                return JME_ERR;
+            }
+            for (i = 0; i < 3; i++) vel_bary[i] += sun[i + 3];
+        }
+    }
+    if (topocentric) {
+        double topo[6];
+        if (internal_topo_state_j2000(jd_et, topo, error) != JME_OK) {
             return JME_ERR;
         }
         for (i = 0; i < 3; i++) {
-            target_pos[i] -= observer_pos_au[i];
+            obs[i] += topo[i];
+            obs[i + 3] += topo[i + 3];
+            if (vel_bary != 0) vel_bary[i] += topo[i + 3];
         }
-        frame_already_applied = 1;
-        observer_pos_ready = 1;
+    }
+    return JME_OK;
+}
+
+int internal_earth_aberration_state(double jd_et, double *state, char *error)
+{
+    int engine_policy = jme_context_engine_policy();
+    int backend;
+    double vel[3];
+    int i;
+
+    if (state == 0) {
+        jme_set_error(error, "Earth observer state output is required");
+        return JME_ERR;
+    }
+    if (error != 0) error[0] = '\0';
+    if (choose_backend(jd_et, JME_BODY_EARTH, engine_policy, &backend, error) != JME_OK
+        || observer_state(backend, jd_et, 0, engine_policy, state, vel, error) != JME_OK) {
+        if (error != 0 && error[0] == '\0') {
+            jme_set_error(error, "Selected engine cannot compute Earth observer velocity for aberration");
+        }
+        return JME_ERR;
+    }
+    for (i = 0; i < 3; i++) state[i + 3] = vel[i];
+    return JME_OK;
+}
+
+/*
+ * Relativistic stellar aberration (ERFA eraAb, Klioner 2003 / Explanatory
+ * Supplement 3rd ed. eq. 7.40). p: unit direction (in/out), v: observer
+ * barycentric velocity in AU/day, sun_dist: observer-Sun distance in AU.
+ */
+static int apply_aberration(double *p, const double *v_au_per_day, double sun_dist, char *error)
+{
+    double v[3], pnat[3], ppr[3];
+    double v2 = 0.0, bm1;
+    int i;
+
+    for (i = 0; i < 3; i++) {
+        v[i] = v_au_per_day[i] / JME_C_AU_PER_DAY;
+        v2 += v[i] * v[i];
+        pnat[i] = p[i];
+    }
+    if (!(v2 < 1.0) || !isfinite(sun_dist) || sun_dist <= 0.0) {
+        jme_set_error(error, "Observer velocity or Sun distance is invalid for aberration");
+        return JME_ERR;
+    }
+    bm1 = sqrt(1.0 - v2);
+    jme_eraAb(pnat, v, sun_dist, bm1, ppr);
+    for (i = 0; i < 3; i++) p[i] = ppr[i];
+    return JME_OK;
+}
+
+/*
+ * Gravitational light deflection by the Sun (ERFA eraLd, Klioner 2003).
+ * p: unit observer->body direction (in/out); q: unit Sun->body direction;
+ * e: unit Sun->observer direction; em: Sun-observer distance (AU).
+ */
+static void apply_solar_deflection(double *p, const double *q, const double *e, double em)
+{
+    double p1[3];
+    double pp[3], qq[3], ee[3];
+    int i;
+    for (i = 0; i < 3; i++) { pp[i] = p[i]; qq[i] = q[i]; ee[i] = e[i]; }
+    /* dlim 1e-6 follows ERFA eraLdsun-style limiting for grazing geometry. */
+    jme_eraLd(1.0, pp, qq, ee, em, 1.0e-6, p1);
+    for (i = 0; i < 3; i++) p[i] = p1[i];
+}
+
+static double vec_norm3(const double *a)
+{
+    return sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
+}
+
+/*
+ * Compute the observer-relative state of body at jd_et in J2000-mean axes.
+ *   apparent = 0: geometric, both at jd_et.
+ *   apparent = 1: light-time iterated (target at t - tau, observer at t);
+ *                 optional solar deflection and aberration (geocentric /
+ *                 topocentric observers only).
+ * On return *frame_bias_applicable tells whether the vector is in ICRF axes
+ * (JPL) so that frame bias applies when transforming to mean-of-date.
+ */
+static int observer_relative_state(
+    double jd_et, int body, int center, int flags, int engine_policy,
+    double *out, int *backend_out, char *error)
+{
+    int backend;
+    int geocentric = (center == JME_BODY_EARTH);
+    int topocentric = geocentric && (flags & JME_CALC_TOPOCENTRIC);
+    int apparent = !(flags & JME_CALC_TRUE_POSITION);
+    double obs[6], vobs[3], tgt[6], rel[6];
+    double tau = 0.0, dist;
+    int i, iter;
+
+    if (choose_backend(jd_et, body, engine_policy, &backend, error) != JME_OK) {
+        return JME_ERR;
+    }
+    if (error != 0) error[0] = '\0';
+    if (backend_out != 0) *backend_out = backend;
+
+    if (geocentric) {
+        int need_velocity = apparent && !(flags & JME_CALC_NO_ABERRATION);
+        if (observer_state(backend, jd_et, topocentric, engine_policy, obs, need_velocity ? vobs : 0, error) != JME_OK) {
+            return JME_ERR;
+        }
+    } else if (center == JME_BODY_SUN) {
+        if (backend_state(backend, jd_et, JME_BODY_SUN, engine_policy, obs, error) != JME_OK) {
+            return JME_ERR;
+        }
+    } else if (center == JME_BODY_SOLAR_SYSTEM_BARYCENTER) {
+        if (backend != JME_BACKEND_JPL) {
+            jme_set_error(error, "Barycentric positions require the JPL engine");
+            return JME_ERR;
+        }
+        for (i = 0; i < 6; i++) obs[i] = 0.0;
+    } else {
+        jme_set_error(error, "Unsupported centre");
+        return JME_ERR;
     }
 
-    /* 3. Reference Frame / Transformation */
-    if (!frame_already_applied) {
-        if (apply_reference_frame_transform(jd_et, flags, target_is_ecliptic, target_pos, error) != JME_OK) {
+    if (body == center && !topocentric) {
+        /* A body relative to itself is the zero vector (e.g. heliocentric Sun). */
+        for (i = 0; i < 6; i++) out[i] = 0.0;
+        return JME_OK;
+    }
+
+    if (backend_state(backend, jd_et, body, engine_policy, tgt, error) != JME_OK) {
+        return JME_ERR;
+    }
+    for (i = 0; i < 6; i++) rel[i] = tgt[i] - obs[i];
+
+    if (apparent) {
+        /* Light-time iteration; converges to < 1e-12 day (< 0.1 microsecond) quickly. */
+        for (iter = 0; iter < 20; iter++) {
+            double new_tau;
+            dist = vec_norm3(rel);
+            if (!isfinite(dist) || dist <= 0.0) {
+                jme_set_error(error, "Calculation produced invalid distance");
+                return JME_ERR;
+            }
+            new_tau = dist / JME_C_AU_PER_DAY;
+            if (iter > 0 && fabs(new_tau - tau) < 1.0e-12) {
+                tau = new_tau;
+                break;
+            }
+            tau = new_tau;
+            if (backend_state(backend, jd_et - tau, body, engine_policy, tgt, error) != JME_OK) {
+                return JME_ERR;
+            }
+            for (i = 0; i < 6; i++) rel[i] = tgt[i] - obs[i];
+        }
+        if (iter >= 20) {
+            jme_set_error(error, "Light-time iteration did not converge");
+            return JME_ERR;
+        }
+
+        if (geocentric && body != JME_BODY_SUN
+            && (!(flags & JME_CALC_NO_LIGHT_DEFLECTION) || !(flags & JME_CALC_NO_ABERRATION))) {
+            double sun_t[6], sun_ret[6];
+            double p[3], q[3], e[3], em, qn;
+
+            if (backend_state(backend, jd_et, JME_BODY_SUN, engine_policy, sun_t, error) != JME_OK
+                || backend_state(backend, jd_et - tau, JME_BODY_SUN, engine_policy, sun_ret, error) != JME_OK) {
+                return JME_ERR;
+            }
+            dist = vec_norm3(rel);
+            for (i = 0; i < 3; i++) {
+                p[i] = rel[i] / dist;
+                e[i] = obs[i] - sun_t[i];
+                q[i] = tgt[i] - sun_ret[i];
+            }
+            em = vec_norm3(e);
+            qn = vec_norm3(q);
+            if (!(em > 0.0) || !(qn > 0.0)) {
+                jme_set_error(error, "Degenerate Sun-observer-target geometry");
+                return JME_ERR;
+            }
+            for (i = 0; i < 3; i++) { e[i] /= em; q[i] /= qn; }
+
+            if (!(flags & JME_CALC_NO_LIGHT_DEFLECTION)) {
+                apply_solar_deflection(p, q, e, em);
+            }
+            if (!(flags & JME_CALC_NO_ABERRATION)) {
+                if (apply_aberration(p, vobs, em, error) != JME_OK) return JME_ERR;
+            }
+            for (i = 0; i < 3; i++) rel[i] = p[i] * dist;
+        } else if (geocentric && body == JME_BODY_SUN && !(flags & JME_CALC_NO_ABERRATION)) {
+            double p[3];
+            dist = vec_norm3(rel);
+            for (i = 0; i < 3; i++) p[i] = rel[i] / dist;
+            if (apply_aberration(p, vobs, dist, error) != JME_OK) return JME_ERR;
+            for (i = 0; i < 3; i++) rel[i] = p[i] * dist;
+        }
+    }
+
+    for (i = 0; i < 6; i++) out[i] = rel[i];
+    if (!state_is_finite(out, 6)) {
+        jme_set_error(error, "Calculation produced non-finite state");
+        return JME_ERR;
+    }
+    return JME_OK;
+}
+
+/*
+ * Rotate a position vector from backend axes to the requested output frame
+ * and coordinate system.
+ *   icrs_axes: 1 when the input vector is in ICRS/ICRF axes (JPL, star
+ *              catalogue), 0 for the analytical engines' mean J2000 axes.
+ *   JME_CALC_ICRS : input axes unchanged (equatorial), ecliptic via J2000 obliquity.
+ *   JME_CALC_J2000: mean equator & equinox of J2000 (frame bias applied to ICRS vectors).
+ *   default       : true equator & equinox of date (mean of date with
+ *                   JME_CALC_NO_NUTATION), context bias/precession/nutation.
+ *   Ecliptic output uses the obliquity matching the frame (true obliquity
+ *   when nutation is applied). JME_CALC_SIDEREAL rotates the ecliptic of date
+ *   by the true ayanamsa (mean ayanamsa without nutation).
+ */
+int internal_rotate_to_output(double jd_et, int flags, int icrs_axes, const double *in, double *out, char *error)
+{
+    double m[9], v[6], tmp[6];
+    double eps = 0.0;
+    double dpsi_applied = 0.0;
+    int i;
+
+    for (i = 0; i < 3; i++) { v[i] = in[i]; v[i + 3] = 0.0; }
+
+    if ((flags & JME_CALC_SIDEREAL)
+        && ((flags & JME_CALC_EQUATORIAL) || (flags & JME_CALC_J2000) || (flags & JME_CALC_ICRS))) {
+        jme_set_error(error, "JME_CALC_SIDEREAL is defined only for ecliptic-of-date output");
+        return JME_ERR;
+    }
+
+    if (flags & JME_CALC_ICRS) {
+        if (jme_get_obliquity(2451545.0, jme_context_obliquity_model(), &eps, error) != JME_OK) return JME_ERR;
+    } else if (flags & JME_CALC_J2000) {
+        if (icrs_axes) {
+            if (jme_get_frame_bias_matrix(jme_context_bias_model(), m) != JME_OK) {
+                jme_set_error(error, "Unsupported frame-bias model");
+                return JME_ERR;
+            }
+            jme_matrix_transform_state(m, v, v);
+        }
+        if (jme_get_obliquity(2451545.0, jme_context_obliquity_model(), &eps, error) != JME_OK) return JME_ERR;
+    } else {
+        if (icrs_axes) {
+            if (internal_bias_precession_matrix(jd_et, m, error) != JME_OK) return JME_ERR;
+        } else if (jme_get_precession_matrix(2451545.0, jd_et, jme_context_precession_model(), m) != JME_OK) {
+            jme_set_error(error, "Unsupported precession model (Laskar 1986 precession is not implemented)");
+            return JME_ERR;
+        }
+        jme_matrix_transform_state(m, v, v);
+        if (flags & JME_CALC_NO_NUTATION) {
+            if (jme_get_obliquity(jd_et, jme_context_obliquity_model(), &eps, error) != JME_OK) return JME_ERR;
+        } else {
+            double epsm, deps;
+            if (internal_nutation_matrix(jd_et, m, &dpsi_applied, &epsm, &deps, error) != JME_OK) return JME_ERR;
+            jme_matrix_transform_state(m, v, v);
+            eps = epsm + deps;
+        }
+    }
+
+    if (!(flags & JME_CALC_EQUATORIAL)) {
+        if (jme_equatorial_to_ecliptic_rectangular_state(v, eps, tmp) != JME_OK) {
+            jme_set_error(error, "Equatorial-to-ecliptic conversion failed");
+            return JME_ERR;
+        }
+        for (i = 0; i < 6; i++) v[i] = tmp[i];
+    }
+
+    if (flags & JME_CALC_SIDEREAL) {
+        double ayan_mean, rot, c, sn, x, y;
+        if (internal_context_ayanamsa(jd_et, &ayan_mean, 0, error) != JME_OK) return JME_ERR;
+        /* lambda_sid = lambda_true - (mean ayanamsa + dpsi) = lambda_mean - mean ayanamsa. */
+        rot = (ayan_mean + dpsi_applied) * JME_DEG_TO_RAD;
+        c = cos(rot); sn = sin(rot);
+        x = v[0]; y = v[1];
+        v[0] = c * x + sn * y;
+        v[1] = -sn * x + c * y;
+    }
+
+    for (i = 0; i < 3; i++) {
+        out[i] = v[i];
+        if (!isfinite(out[i])) {
+            jme_set_error(error, "Frame transformation produced non-finite values");
             return JME_ERR;
         }
     }
+    return JME_OK;
+}
+
+/*
+ * Observer-relative position in the requested output frame (no velocity).
+ */
+static int calc_output_position(double jd_et, int body, int center, int flags, int engine_policy,
+    double *pos, char *error)
+{
+    double state[6];
+    int backend = 0;
+    if (observer_relative_state(jd_et, body, center, flags, engine_policy, state, &backend, error) != JME_OK) {
+        return JME_ERR;
+    }
+    return internal_rotate_to_output(jd_et, flags, backend == JME_BACKEND_JPL, state, pos, error);
+}
+
+/*
+ * Rates are obtained by differentiating the complete reduction (light time,
+ * deflection, aberration, precession, nutation, sidereal rotation), so
+ * speeds are consistent with the reported positions in the rotating frame of
+ * date. Five-point central stencil, step 0.01 day: truncation error ~1e-11
+ * relative for the Moon, below the ~1e-8 relative floor set by binary64
+ * evaluation noise of the series (see docs/ACCURACY.md).
+ */
+#define JME_CALC_RATE_STEP_DAYS 1.0e-2
+
+int internal_finish_output(const double *p0, const double *const *stencil, double h, int flags,
+    double *results, char *error)
+{
+    double state[6], spherical[6];
+    int i;
+
+    /* stencil = {p(t-2h), p(t-h), p(t+h), p(t+2h)} */
+    for (i = 0; i < 3; i++) {
+        state[i] = p0[i];
+        state[i + 3] = (stencil[0][i] - 8.0 * stencil[1][i] + 8.0 * stencil[2][i] - stencil[3][i]) / (12.0 * h);
+    }
 
     if (flags & JME_CALC_XYZ) {
-        /* Return rectangular */
-        for (i = 0; i < 6; i++) { results[i] = target_pos[i]; }
+        for (i = 0; i < 6; i++) results[i] = state[i];
     } else {
-        /* Convert to spherical (default is Ecliptic if not JME_CALC_EQUATORIAL) */
-        if (flags & JME_CALC_EQUATORIAL) {
-            if (target_is_ecliptic) {
-                double equatorial_rect[6];
-                double eps;
-                double jd_for_obl = (flags & JME_CALC_J2000) ? 2451545.0 : jd_et;
-                jme_get_obliquity(jd_for_obl, jme_context_obliquity_model(), &eps, error);
-                jme_ecliptic_to_equatorial_rectangular_state(target_pos, eps, equatorial_rect);
-                jme_rectangular_to_spherical_state(equatorial_rect, state);
-            } else {
-                jme_rectangular_to_spherical_state(target_pos, state);
-            }
-        } else {
-            if (target_is_ecliptic) {
-                jme_rectangular_to_spherical_state(target_pos, state);
-            } else {
-                /* Convert to ecliptic then spherical */
-                double ecliptic_rect[6];
-                double eps;
-                double jd_for_obl = (flags & JME_CALC_J2000) ? 2451545.0 : jd_et;
-                jme_get_obliquity(jd_for_obl, jme_context_obliquity_model(), &eps, error);
-                
-                /* If not J2000, we need the True Obliquity for True Ecliptic */
-                if (!(flags & JME_CALC_J2000) && !(flags & JME_CALC_NO_NUTATION)) {
-                    double dpsi, deps;
-                    jme_get_nutation(jd_et, jme_context_nutation_model(), &dpsi, &deps, error);
-                    eps += deps;
-                }
-
-                jme_equatorial_to_ecliptic_rectangular_state(target_pos, eps, ecliptic_rect);
-                jme_rectangular_to_spherical_state(ecliptic_rect, state);
-            }
+        if (jme_rectangular_to_spherical_state(state, spherical) != JME_OK) {
+            jme_set_error(error, "Rectangular-to-spherical conversion failed");
+            return JME_ERR;
         }
-
-        for (i = 0; i < 6; i++) { results[i] = state[i]; }
-
-        if (flags & JME_CALC_SIDEREAL) {
-            results[0] = jme_degree_normalize(results[0] - jme_get_ayanamsa(jd_et));
-        }
-
+        for (i = 0; i < 6; i++) results[i] = spherical[i];
         results[0] = angle_to_output_unit(results[0], flags);
         results[1] = angle_to_output_unit(results[1], flags);
         results[3] = angle_to_output_unit(results[3], flags);
@@ -1038,22 +1212,149 @@ int jme_calc(double jd_et, int body, int flags, double *results, char *error)
             results[5] *= JME_AU_KM;
         }
     }
-
     if (flags & JME_CALC_VELOCITY_PER_SECOND) {
-        if (flags & JME_CALC_XYZ) {
-            for (i = 3; i < 6; i++) { results[i] /= JME_SECONDS_PER_DAY; }
-        } else {
-            results[3] /= JME_SECONDS_PER_DAY;
-            results[4] /= JME_SECONDS_PER_DAY;
-            results[5] /= JME_SECONDS_PER_DAY;
-        }
+        for (i = 3; i < 6; i++) results[i] /= JME_SECONDS_PER_DAY;
     }
-
     if (!state_is_finite(results, 6)) {
         for (i = 0; i < 6; i++) { results[i] = 0.0; }
         jme_set_error(error, "Calculation produced non-finite output");
         return JME_ERR;
     }
+    return JME_OK;
+}
 
+int jme_calc(double jd_et, int body, int flags, double *results, char *error)
+{
+    double p0[3], q[4][3];
+    const double *stencil[4];
+    const double h = JME_CALC_RATE_STEP_DAYS;
+    static const double offs[4] = {-2.0, -1.0, 1.0, 2.0};
+    int center = JME_BODY_EARTH;
+    int engine_policy = jme_context_engine_policy();
+    int i;
+
+    if (results == 0) {
+        jme_set_error(error, "Output buffer is required");
+        return JME_ERR;
+    }
+    for (i = 0; i < 6; i++) { results[i] = 0.0; }
+    if (error != 0) error[0] = '\0';
+    if (!isfinite(jd_et)) {
+        jme_set_error(error, "Terrestrial-time Julian date must be finite");
+        return JME_ERR;
+    }
+
+    if (body == JME_BODY_MEAN_NODE || body == JME_BODY_TRUE_NODE) {
+        if (calc_lunar_node(jd_et, body, flags, results, error) != JME_OK
+            || !state_is_finite(results, 6)) {
+            for (i = 0; i < 6; i++) results[i] = 0.0;
+            if (error != 0 && error[0] == '\0') jme_set_error(error, "Calculation produced non-finite output");
+            return JME_ERR;
+        }
+        if (error != 0) error[0] = '\0';
+        return JME_OK;
+    }
+
+    if (flags & JME_CALC_BARYCENTRIC) {
+        center = JME_BODY_SOLAR_SYSTEM_BARYCENTER;
+    } else if (flags & JME_CALC_HELIOCENTRIC) {
+        center = JME_BODY_SUN;
+    }
+
+    if (calc_output_position(jd_et, body, center, flags, engine_policy, p0, error) != JME_OK) {
+        return JME_ERR;
+    }
+    for (i = 0; i < 4; i++) {
+        if (calc_output_position(jd_et + offs[i] * h, body, center, flags, engine_policy, q[i], error) != JME_OK) {
+            return JME_ERR;
+        }
+        stencil[i] = q[i];
+    }
+    if (internal_finish_output(p0, stencil, h, flags, results, error) != JME_OK) {
+        return JME_ERR;
+    }
+    if (error != 0) error[0] = '\0';
+    return JME_OK;
+}
+
+/*
+ * Observer-relative vector of a star whose barycentric direction is u
+ * (ICRS unit vector) at distance dist_au (0 = unknown, star at infinity).
+ * Applies annual (and diurnal, topocentric) parallax when the distance is
+ * known, then gravitational deflection by the Sun and aberration unless
+ * disabled or JME_CALC_TRUE_POSITION. Output in ICRS axes; *icrs_axes
+ * reports whether observer vectors were in ICRS axes (JPL) or analytical
+ * J2000 axes (the 23 mas frame bias is negligible for the observer offset).
+ */
+int internal_star_observer_vector(double jd_et, int flags, const double *u, double dist_au, double *out, char *error)
+{
+    int engine_policy = jme_context_engine_policy();
+    int backend;
+    int geocentric = !(flags & (JME_CALC_HELIOCENTRIC | JME_CALC_BARYCENTRIC));
+    int topocentric = geocentric && (flags & JME_CALC_TOPOCENTRIC);
+    double obs[6] = {0, 0, 0, 0, 0, 0}, vobs[3] = {0, 0, 0};
+    double v[3], dist;
+    double sunoff[3] = {0.0, 0.0, 0.0};
+    int i;
+
+    if (flags & JME_CALC_BARYCENTRIC) {
+        for (i = 0; i < 3; i++) out[i] = (dist_au > 0.0) ? u[i] * dist_au : u[i];
+        return JME_OK;
+    }
+    if (choose_backend(jd_et, JME_BODY_EARTH, engine_policy, &backend, error) != JME_OK) return JME_ERR;
+    if (flags & JME_CALC_HELIOCENTRIC) {
+        if (backend != JME_BACKEND_JPL) {
+            jme_set_error(error, "Heliocentric star positions require the JPL engine (analytical engines have no barycentre)");
+            return JME_ERR;
+        }
+        if (backend_state(backend, jd_et, JME_BODY_SUN, engine_policy, obs, error) != JME_OK) return JME_ERR;
+    } else if (observer_state(backend, jd_et, topocentric, engine_policy, obs,
+                   (!(flags & JME_CALC_TRUE_POSITION) && !(flags & JME_CALC_NO_ABERRATION)) ? vobs : 0, error) != JME_OK) {
+        return JME_ERR;
+    }
+
+    if (backend == JME_BACKEND_ANALYTIC && dist_au > 0.0) {
+        /* Parallax needs the barycentric observer position. */
+        double sun[6], jd_tdb;
+        if (internal_tt_to_tdb_jd(jd_et, &jd_tdb, error) != JME_OK
+            || analytic_sun_barycentric(jd_tdb, engine_policy, sun, error) != JME_OK) {
+            return JME_ERR;
+        }
+        for (i = 0; i < 3; i++) { obs[i] += sun[i]; sunoff[i] = sun[i]; }
+    }
+
+    if (dist_au > 0.0) {
+        for (i = 0; i < 3; i++) v[i] = u[i] * dist_au - obs[i];
+    } else {
+        for (i = 0; i < 3; i++) v[i] = u[i];
+    }
+    dist = vec_norm3(v);
+    if (!(dist > 0.0) || !isfinite(dist)) {
+        jme_set_error(error, "Invalid star vector");
+        return JME_ERR;
+    }
+
+    if (geocentric && !(flags & JME_CALC_TRUE_POSITION)) {
+        double p[3], e[3], em, sun[6];
+        for (i = 0; i < 3; i++) p[i] = v[i] / dist;
+        if (backend_state(backend, jd_et, JME_BODY_SUN, engine_policy, sun, error) != JME_OK) return JME_ERR;
+        for (i = 0; i < 3; i++) e[i] = obs[i] - (sun[i] + sunoff[i]);
+        em = vec_norm3(e);
+        if (!(em > 0.0)) {
+            jme_set_error(error, "Degenerate Sun-observer geometry");
+            return JME_ERR;
+        }
+        for (i = 0; i < 3; i++) e[i] /= em;
+        if (!(flags & JME_CALC_NO_LIGHT_DEFLECTION)) {
+            double p1[3];
+            jme_eraLdsun(p, e, em, p1);
+            for (i = 0; i < 3; i++) p[i] = p1[i];
+        }
+        if (!(flags & JME_CALC_NO_ABERRATION)) {
+            if (apply_aberration(p, vobs, em, error) != JME_OK) return JME_ERR;
+        }
+        for (i = 0; i < 3; i++) v[i] = p[i] * dist;
+    }
+    for (i = 0; i < 3; i++) out[i] = (dist_au > 0.0) ? v[i] : v[i] / dist;
     return JME_OK;
 }

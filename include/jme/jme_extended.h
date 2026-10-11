@@ -411,8 +411,47 @@ typedef enum jme_extended_constant {
     JME_MODEL_REVISED_IAU_2006 = 402,
     JME_MODEL_REVISED_PREC_LASKAR = 403,
     JME_MODEL_REVISED_PREC_VONDRAK = 404,
-    JME_MODEL_REVISED_PREC_LIESKE = 405
+    JME_MODEL_REVISED_PREC_LIESKE = 405,
+    JME_SIDEREAL_LAHIRI_ICRC = 406
 } jme_extended_constant;
+
+/*
+ * Time scales for jme_time_scale_convert(). Values are part of the ABI.
+ * UT1 is realised with the context Delta-T model (no IERS EOP data).
+ */
+typedef enum jme_time_scale {
+    JME_TIME_SCALE_UTC = 0,
+    JME_TIME_SCALE_UT1 = 1,
+    JME_TIME_SCALE_TAI = 2,
+    JME_TIME_SCALE_TT = 3,
+    JME_TIME_SCALE_TDB = 4,
+    JME_TIME_SCALE_TCG = 5,
+    JME_TIME_SCALE_TCB = 6
+} jme_time_scale;
+
+/*
+ * Convert a two-part Julian date (jd1 + jd2, split preserved where possible)
+ * between time scales. UTC uses the ERFA/SOFA quasi-JD convention for
+ * leap-second days and is defined from 1960-01-01 until the leap-second table
+ * expiry (see jme_leap_second_table_info). Returns JME_OK or JME_ERR.
+ */
+int jme_time_scale_convert(double jd1, double jd2, int from_scale, int to_scale,
+    double *out1, double *out2, char *error);
+const char *jme_time_scale_name(int scale);
+
+/*
+ * Embedded leap-second (TAI-UTC) table information. jd_utc_valid_until is the
+ * first UTC Julian date NOT covered by the table (currently 2027-07-01 0h UTC,
+ * from IERS Bulletin C 72); last_tai_minus_utc is the latest TAI-UTC (s).
+ * Either pointer may be NULL (not both).
+ */
+int jme_leap_second_table_info(double *jd_utc_valid_until, double *last_tai_minus_utc, char *error);
+
+/* Flags for jme_get_ayanamsa_ex2(). */
+typedef enum jme_ayanamsa_flags {
+    JME_AYANAMSA_MEAN = 0,
+    JME_AYANAMSA_TRUE = 1
+} jme_ayanamsa_flags;
 
 double jme_delta_t(double jd_ut);
 
@@ -434,6 +473,15 @@ double jme_get_ayanamsa(double jd_et);
 double jme_get_ayanamsa_ut(double jd_ut);
 int jme_get_ayanamsa_ex(double jd_et, int model, double *ayan, char *error);
 int jme_get_ayanamsa_ex_ut(double jd_ut, int model, double *ayan, char *error);
+/*
+ * Ayanamsa with explicit mean/true selection. flags: JME_AYANAMSA_MEAN (mean
+ * equinox of date) or JME_AYANAMSA_TRUE (true equinox of date: mean + nutation
+ * in longitude of the context nutation model). rate (optional, may be NULL)
+ * receives the rate of the MEAN ayanamsa in degrees/day. jme_get_ayanamsa_ex()
+ * returns the mean ayanamsa. See docs/AYANAMSA_MODELS.md.
+ */
+int jme_get_ayanamsa_ex2(double jd_et, int model, int flags, double *ayan, double *rate, char *error);
+int jme_get_ayanamsa_ex2_ut(double jd_ut, int model, int flags, double *ayan, double *rate, char *error);
 
 int jme_time_equ(double jd_ut, double *e, char *error);
 
@@ -948,6 +996,11 @@ double jme_refract_extended(
 double jme_sidereal_time(double jd_ut);
 
 double jme_sidereal_time0(double jd_ut, double eps, double nut);
+
+/* Greenwich sidereal time in hours for UT1 jd_ut (Delta-T model gives TT).
+ * apparent = 0: mean sidereal time; apparent != 0: apparent sidereal time
+ * (adds the equation of the equinoxes for the context nutation model). */
+int jme_sidereal_time_ex(double jd_ut, int apparent, double *hours, char *error);
 
 void jme_split_degree(
     double ddeg,

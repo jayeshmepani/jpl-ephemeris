@@ -16,7 +16,10 @@ set(CMAKE_C_EXTENSIONS OFF)
 find_package(calceph CONFIG QUIET)
 find_package(Threads QUIET)
 
+file(GLOB JME_ERFA_VENDOR_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/erfa/vendor/*.c)
+
 add_library(jme SHARED
+    ${JME_ERFA_VENDOR_SOURCES}
     src/api.c
     src/angle.c
     src/astrometry.c
@@ -24,9 +27,7 @@ add_library(jme SHARED
     src/context.c
     src/coordinates.c
     src/elp2000.c
-    src/elp2000/arguments.c
-    src/elp2000/elp2000-82b.c
-    src/elp2000/series.c
+    src/elp82b.c
     src/events.c
     src/erfa/dtdb.c
     src/erfa/tdbtcb.c
@@ -43,6 +44,7 @@ add_library(jme SHARED
     src/moshier/moonlr404.c
     src/sidereal.c
     src/time.c
+    src/timescale.c
     src/vsop87.c
     src/vsop87a_full.c
     src/vsop87d_full.c
@@ -58,9 +60,9 @@ target_include_directories(jme
         $<INSTALL_INTERFACE:include>
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/elp2000
         ${CMAKE_CURRENT_SOURCE_DIR}/src/moshier
         ${CMAKE_CURRENT_SOURCE_DIR}/src/erfa
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/erfa/vendor
 )
 
 if (calceph_FOUND)
@@ -77,7 +79,7 @@ endif()
 if (MSVC)
     target_compile_options(jme PRIVATE /W4)
     set_source_files_properties(
-        src/elp2000/elp2000-82b.c
+        src/elp82b.c
         src/moshier_full.c
         src/moshier/moonlat404.c
         src/moshier/moonlr404.c
@@ -109,6 +111,7 @@ if (JME_BUILD_TESTS)
     target_include_directories(test_time_scale_contract PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${CMAKE_CURRENT_SOURCE_DIR}/src/erfa
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests
     )
     target_link_libraries(test_time_scale_contract PRIVATE jme)
     add_test(NAME time_scale_contract COMMAND test_time_scale_contract)
