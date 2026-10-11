@@ -319,7 +319,7 @@ static int selected_body_state(
     int i;
 
     if (engine_policy == JME_ENGINE_AUTO || engine_policy == JME_ENGINE_JPL) {
-        if (jme_jpl_body_state(jd_et, body, center, JME_VECTOR_AU_PER_DAY, state, error) == JME_OK) {
+        if (internal_jpl_body_state_tt(jd_et, body, center, JME_VECTOR_AU_PER_DAY, state, error) == JME_OK) {
             if (is_ecliptic != 0) { *is_ecliptic = 0; }
             return JME_OK;
         }
@@ -460,7 +460,7 @@ int internal_earth_aberration_state(double jd_et, double *state, char *error)
      * Explicit JPL mode must not silently downgrade to an analytical backend.
      */
     if (engine_policy == JME_ENGINE_AUTO || engine_policy == JME_ENGINE_JPL) {
-        if (jme_jpl_body_state(
+        if (internal_jpl_body_state_tt(
                 jd_et,
                 JME_BODY_EARTH,
                 JME_BODY_SOLAR_SYSTEM_BARYCENTER,
