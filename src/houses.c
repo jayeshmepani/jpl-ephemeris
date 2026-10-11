@@ -123,39 +123,48 @@ static double right_ascension_from_ecliptic_longitude(double lon, double eps)
     return jme_degree_normalize(atan2d(sin(l) * cos(e), cos(l)));
 }
 
+/*
+ * Placidus cusp: the ecliptic point whose meridian distance (in RA) is the
+ * given fraction of its diurnal semi-arc, RA = RAMC + fraction * DSA(RA),
+ * with tan(dec) = tan(eps) sin(RA) for ecliptic points. g(x) = x - RAMC -
+ * fraction * DSA(x) changes sign between x = RAMC and x = RAMC + 180 fraction
+ * (either sign of fraction), so the root is always bracketed; bisection to
+ * the binary64 limit. Negative fractions give western points: cusp 8 has
+ * hour angle +2/3 of its own semi-arc and cusp 9 +1/3, so cusps 2 and 3 are
+ * the antipodes of the fraction -2/3 and -1/3 solutions.
+ * Errors where the semi-arc is undefined (circumpolar ecliptic points).
+ */
+static int placidus_dsa(double ra, double tan_lat, double tan_eps, double *dsa)
+{
+    double arg = -sin(ra * JME_DEG_TO_RAD) * tan_lat * tan_eps;
+    if (!(arg >= -1.0 && arg <= 1.0)) return JME_ERR;
+    *dsa = acos(arg) * JME_RAD_TO_DEG;
+    return JME_OK;
+}
+
 static int placidus_cusp(double ramc, double lat, double eps, double fraction, double *longitude)
 {
-    double ra = jme_degree_normalize(ramc + 90.0 * fraction);
     double tan_lat = tan(lat * JME_DEG_TO_RAD);
     double tan_eps = tan(eps * JME_DEG_TO_RAD);
+    double lo = fraction < 0.0 ? 180.0 * fraction : 0.0;
+    double hi = fraction < 0.0 ? 0.0 : 180.0 * fraction;
+    double dsa;
     int i;
 
-    if (longitude == 0 || fraction <= 0.0 || fraction >= 1.0) {
+    if (longitude == 0 || fraction == 0.0 || !(fraction > -1.0 && fraction < 1.0)) {
         return JME_ERR;
     }
-
-    for (i = 0; i < 40; i++) {
-        double arg = -sin(ra * JME_DEG_TO_RAD) * tan_lat * tan_eps;
-        double dsa;
-        double next_ra;
-        double delta;
-
-        if (arg < -1.0 || arg > 1.0) {
-            return JME_ERR;
-        }
-
-        dsa = acos(arg) * JME_RAD_TO_DEG;
-        next_ra = jme_degree_normalize(ramc + dsa * fraction);
-        delta = fabs(jme_degrees_difference_signed(next_ra, ra));
-        ra = next_ra;
-
-        if (delta < 1e-12) {
-            *longitude = ecliptic_longitude_from_ra(ra, eps);
-            return JME_OK;
-        }
+    for (i = 0; i < 200 && hi - lo > 0.0; i++) {
+        double mid = 0.5 * (lo + hi);
+        if (mid == lo || mid == hi) break;
+        if (placidus_dsa(ramc + mid, tan_lat, tan_eps, &dsa) != JME_OK) return JME_ERR;
+        if (mid - fraction * dsa < 0.0) lo = mid; else hi = mid;
     }
-
-    *longitude = ecliptic_longitude_from_ra(ra, eps);
+    if (placidus_dsa(ramc + lo, tan_lat, tan_eps, &dsa) != JME_OK
+        || placidus_dsa(ramc + hi, tan_lat, tan_eps, &dsa) != JME_OK) {
+        return JME_ERR;
+    }
+    *longitude = ecliptic_longitude_from_ra(jme_degree_normalize(ramc + 0.5 * (lo + hi)), eps);
     return JME_OK;
 }
 
@@ -171,10 +180,20 @@ static double regiomontanus_cusp(double ramc, double lat, double eps, double hou
     return jme_degree_normalize(atan2d(numerator, denominator));
 }
 
+/*
+ * Polich-Page (topocentric) cusp: Polich & Page (1964) define the cusp as the
+ * ascendant of the house circle whose oblique ascension is RAMC + offset,
+ * taken at the pole height atan(fraction * tan(lat)). This is the ascendant
+ * formula evaluated for RAMC' = RAMC + offset - 90 at that pole. (The
+ * Regiomontanus formula must not be reused here: it applies its own
+ * sin(offset) pole reduction on top of the Polich-Page pole.)
+ */
+static double ascendant_from_ramc(double ramc, double lat, double eps);
+
 static double topocentric_cusp(double ramc, double lat, double eps, double house_offset, double pole_fraction)
 {
     double pole = atan(tan(lat * JME_DEG_TO_RAD) * pole_fraction) * JME_RAD_TO_DEG;
-    return regiomontanus_cusp(ramc, pole, eps, house_offset);
+    return ascendant_from_ramc(jme_degree_normalize(ramc + house_offset - 90.0), pole, eps);
 }
 
 static double longitude_from_equatorial_vector(const double *v, double eps)
@@ -270,11 +289,19 @@ static int select_cusp_intersection(const double *v, double expected, double eps
     return JME_OK;
 }
 
+/*
+ * Campanus cusp: intersection of the ecliptic with the great circle through
+ * the north and south points of the horizon and the point of the prime
+ * vertical at elevation 90 - house_offset (house_offset 30 = cusp 11, 60 =
+ * cusp 12, 120 = cusp 2, 150 = cusp 3). Of the two intersections the one on
+ * the side of that prime-vertical point is the cusp.
+ */
 static int campanus_cusp(double ramc, double lat, double eps, double house_offset, double expected, double *longitude)
 {
-    double theta = (house_offset - 90.0) * JME_DEG_TO_RAD;
+    double elev = (90.0 - house_offset) * JME_DEG_TO_RAD;
     double r = ramc * JME_DEG_TO_RAD;
     double p = lat * JME_DEG_TO_RAD;
+    double e = eps * JME_DEG_TO_RAD;
     double east[3] = {-sin(r), cos(r), 0.0};
     double zenith[3] = {cos(p) * cos(r), cos(p) * sin(r), sin(p)};
     double north[3] = {
@@ -282,35 +309,24 @@ static int campanus_cusp(double ramc, double lat, double eps, double house_offse
         zenith[2] * east[0] - zenith[0] * east[2],
         zenith[0] * east[1] - zenith[1] * east[0]
     };
-    double pv[3];
-    double house_normal[3];
-    double ecl_normal[3] = {0.0, -sin(eps * JME_DEG_TO_RAD), cos(eps * JME_DEG_TO_RAD)};
-    double inter[3];
-    double norm;
+    double pv[3], n[3], a, b, l, v[3];
     int i;
 
-    for (i = 0; i < 3; i++) {
-        pv[i] = east[i] * cos(theta) + zenith[i] * sin(theta);
-    }
-
-    house_normal[0] = north[1] * pv[2] - north[2] * pv[1];
-    house_normal[1] = north[2] * pv[0] - north[0] * pv[2];
-    house_normal[2] = north[0] * pv[1] - north[1] * pv[0];
-
-    inter[0] = house_normal[1] * ecl_normal[2] - house_normal[2] * ecl_normal[1];
-    inter[1] = house_normal[2] * ecl_normal[0] - house_normal[0] * ecl_normal[2];
-    inter[2] = house_normal[0] * ecl_normal[1] - house_normal[1] * ecl_normal[0];
-    norm = sqrt(inter[0] * inter[0] + inter[1] * inter[1] + inter[2] * inter[2]);
-
-    if (!isfinite(norm) || norm <= 0.0) {
-        return JME_ERR;
-    }
-
-    for (i = 0; i < 3; i++) {
-        inter[i] /= norm;
-    }
-
-    return select_cusp_intersection(inter, expected, eps, longitude);
+    (void)expected;
+    if (longitude == 0) return JME_ERR;
+    for (i = 0; i < 3; i++) pv[i] = east[i] * cos(elev) + zenith[i] * sin(elev);
+    n[0] = north[1] * pv[2] - north[2] * pv[1];
+    n[1] = north[2] * pv[0] - north[0] * pv[2];
+    n[2] = north[0] * pv[1] - north[1] * pv[0];
+    /* ecliptic point (cos l, sin l cos e, sin l sin e) . n = 0 */
+    a = n[0];
+    b = n[1] * cos(e) + n[2] * sin(e);
+    if (!(fabs(a) + fabs(b) > 0.0)) return JME_ERR;
+    l = atan2(-a, b);
+    v[0] = cos(l); v[1] = sin(l) * cos(e); v[2] = sin(l) * sin(e);
+    if (v[0] * pv[0] + v[1] * pv[1] + v[2] * pv[2] < 0.0) l += 3.14159265358979323846264338327950288;
+    *longitude = jme_degree_normalize(l * JME_RAD_TO_DEG);
+    return JME_OK;
 }
 
 static int horizontal_cusp(double ramc, double lat, double eps, double house_offset, double expected, double *longitude)
@@ -805,11 +821,15 @@ static int fill_house_cusps_from_angles(double asc, double mc, double ramc, doub
 
             if (placidus_cusp(ramc, lat, eps, 1.0 / 3.0, &c11) != JME_OK
                 || placidus_cusp(ramc, lat, eps, 2.0 / 3.0, &c12) != JME_OK
-                || placidus_cusp(ramc + 180.0, -lat, eps, 2.0 / 3.0, &c2) != JME_OK
-                || placidus_cusp(ramc + 180.0, -lat, eps, 1.0 / 3.0, &c3) != JME_OK) {
+                || placidus_cusp(ramc, lat, eps, -2.0 / 3.0, &c2) != JME_OK
+                || placidus_cusp(ramc, lat, eps, -1.0 / 3.0, &c3) != JME_OK) {
                 return JME_ERR;
             }
 
+            /* The fraction -2/3 and -1/3 solutions are cusps 8 and 9;
+             * cusps 2 and 3 are their antipodes. */
+            c2 = jme_degree_normalize(c2 + 180.0);
+            c3 = jme_degree_normalize(c3 + 180.0);
             cusps[1] = asc;
             cusps[2] = c2;
             cusps[3] = c3;
