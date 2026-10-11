@@ -510,22 +510,33 @@ static int calc_lunar_node(double jd_et, int body, int flags, double *results, c
 
 int jme_pheno_ut(double jd_ut, int body, int flags, double *attr, char *error)
 {
-    double dt = jme_delta_t(jd_ut);
-    double jd_et = jd_ut + dt / 86400.0;
+    double jd_et;
+    int i;
+    if (attr == 0) {
+        jme_set_error(error, "Physical phenomena output is required");
+        return JME_ERR;
+    }
+    for (i=0;i<20;i++) attr[i]=0.0;
+    if (internal_ut_to_et(jd_ut, &jd_et, error) != JME_OK) return JME_ERR;
     return jme_pheno(jd_et, body, flags, attr, error);
 }
 
 int jme_calc_ut(double jd_ut, int body, int flags, double *results, char *error)
 {
-    double t0;
-    double dt = jme_delta_t(jd_ut);
-    double jd_et = jd_ut + dt / 86400.0;
+    double t0, jd_et;
+    int rc, i;
+    if (results == 0) {
+        jme_set_error(error, "Output buffer is required");
+        return JME_ERR;
+    }
+    for (i=0;i<6;i++) results[i]=0.0;
+    if (internal_ut_to_et(jd_ut, &jd_et, error) != JME_OK) return JME_ERR;
     jme_profile_calc_ut_maybe_init();
     t0 = g_profile_calc_ut_enabled ? jme_profile_now_seconds_local() : 0.0;
-    int rc = jme_calc(jd_et, body, flags, results, error);
+    rc = jme_calc(jd_et, body, flags, results, error);
     if (g_profile_calc_ut_enabled) {
         g_profile_calc_ut_calls += 1ULL;
-        g_profile_calc_ut_seconds += (jme_profile_now_seconds_local() - t0);
+        g_profile_calc_ut_seconds += jme_profile_now_seconds_local() - t0;
     }
     return rc;
 }
