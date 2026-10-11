@@ -1130,6 +1130,19 @@ static int do_probe(const char *function_name, const char *engine, const char *k
         end_record(out);
         return 0;
     }
+    if (strcmp(function_name, "jme_houses_gauquelin") == 0 || strcmp(function_name, "jme_houses_gauquelin_armc") == 0) {
+        double gq[37];
+        for (i = 0; i < 37; i++) gq[i] = NAN;
+        if (strcmp(function_name, "jme_houses_gauquelin") == 0) rc = jme_houses_gauquelin(jd, 0, fx->lat, fx->lon, gq, results2, errbuf);
+        else rc = jme_houses_gauquelin_armc(0.0, fx->lat, 23.4, gq, results2, errbuf);
+        begin_record(out, function_name, engine, fx->id, "engine_sensitive");
+        fprintf(out, "\"status\":\"%s\",", rc == JME_OK ? "OK" : "ERROR");
+        print_int_obj(out, "return_code", rc, 1);
+        print_string_bytes_obj(out, "error_buffer", errbuf, sizeof(errbuf), 1);
+        print_double_array_obj(out, "values", gq, 37, 0);
+        end_record(out);
+        return 0;
+    }
     if (strcmp(function_name, "jme_calc") == 0 || strcmp(function_name, "jme_calc_ut") == 0 || strcmp(function_name, "jme_calc_pctr") == 0
         || strcmp(function_name, "jme_pheno") == 0 || strcmp(function_name, "jme_pheno_ut") == 0
         || strcmp(function_name, "jme_fixstar") == 0 || strcmp(function_name, "jme_fixstar_ut") == 0 || strcmp(function_name, "jme_fixstar_mag") == 0

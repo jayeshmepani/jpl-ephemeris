@@ -37,8 +37,8 @@ engines = ["JPL", "MOSHIER", "VSOP_ELP_MEEUS"]
 text = (root / "include/jme/jme.h").read_text() + "\n" + (root / "include/jme/jme_extended.h").read_text()
 funcs = sorted(set(re.findall(r'(?m)^\s*(?:const\s+char\s*\*\s*|char\s*\*\s*|void\s+|double\s+|int\s+)(jme_[a-zA-Z0-9_]+)\s*\(', text)))
 constants = sorted(set(re.findall(r'\bJME_[A-Z0-9_]+\b', text)))
-if len(funcs) != 217:
-    raise SystemExit(f"expected 217 functions, discovered {len(funcs)}")
+if len(funcs) != 219:
+    raise SystemExit(f"expected 219 functions, discovered {len(funcs)}")
 if len(constants) != 478:
     raise SystemExit(f"expected 478 constants, discovered {len(constants)}")
 

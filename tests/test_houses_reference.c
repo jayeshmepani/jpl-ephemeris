@@ -18,6 +18,76 @@ static double adiff(double a, double b)
     return fabs(jme_degrees_difference_signed(a, b));
 }
 
+/*
+ * Gauquelin 36 sectors: every cusp k must lie exactly at the start of
+ * sector k, evaluated independently from the hour angle and the semi-arcs
+ * of the ecliptic point (the definition used by jme_gauquelin_sector), and
+ * the cusps at multiples of 1/3 quadrant must equal the Placidus cusps.
+ */
+static int check_gauquelin(double *worst_sector, int *count)
+{
+    static const int gq[8] = {4, 7, 13, 16, 22, 25, 31, 34};
+    static const int pl[8] = {12, 11, 9, 8, 6, 5, 3, 2};
+    const double d2r = 0.017453292519943295769;
+    char error[256] = "";
+    int failures = 0, a, b, k;
+    for (a = 0; a < 72; a++) {
+        for (b = 0; b < 13; b++) {
+            double armc = a * 5.0 + 0.37, lat = -60.0 + b * 10.0, eps = 23.4392911;
+            double g[37], p[13], ascmc[10];
+            if (jme_houses_gauquelin_armc(armc, lat, eps, g, ascmc, error) != JME_OK
+                || jme_houses_armc(armc, lat, eps, JME_HOUSE_PLACIDUS, p, 0) != JME_OK) {
+                fprintf(stderr, "gauquelin failed armc %.2f lat %.1f: %s\n", armc, lat, error);
+                failures++;
+                continue;
+            }
+            (*count)++;
+            for (k = 1; k <= 36; k++) {
+                double l = g[k] * d2r, e = eps * d2r;
+                double ra = atan2(sin(l) * cos(e), cos(l)) / d2r;
+                double dec = asin(sin(l) * sin(e));
+                double h = jme_degrees_difference_signed(armc, ra);
+                double h0 = acos(-tan(lat * d2r) * tan(dec)) / d2r;
+                double sector, err;
+                if (k <= 18) {
+                    sector = 10.0 + 9.0 * h / h0;
+                } else if (h >= 0.0) {
+                    sector = 19.0 + 9.0 * (h - h0) / (180.0 - h0);
+                } else {
+                    sector = 28.0 + 9.0 * (h + 180.0) / (180.0 - h0);
+                }
+                err = fabs(sector - k);
+                if (err > *worst_sector) *worst_sector = err;
+                if (err > 1e-9) {
+                    fprintf(stderr, "gauquelin armc %.2f lat %.1f cusp %d at sector %.12f\n", armc, lat, k, sector);
+                    failures++;
+                }
+            }
+            for (k = 0; k < 8; k++) {
+                if (adiff(g[gq[k]], p[pl[k]]) > 1e-11) {
+                    fprintf(stderr, "gauquelin cusp %d %.12f != placidus %d %.12f\n", gq[k], g[gq[k]], pl[k], p[pl[k]]);
+                    failures++;
+                }
+            }
+            if (adiff(g[1], ascmc[0]) > 0.0 || adiff(g[10], ascmc[1]) > 0.0) failures++;
+        }
+    }
+    {
+        double g[37];
+        if (jme_houses_gauquelin_armc(10.0, 80.0, 23.44, g, 0, error) == JME_OK) {
+            fprintf(stderr, "gauquelin at latitude 80 must fail (circumpolar ecliptic points)\n");
+            failures++;
+        }
+        if (jme_houses_gauquelin_armc(10.0, 40.0, 23.44, 0, 0, error) == JME_OK) failures++;
+        if (jme_houses(2460000.5, 40.0, 10.0, JME_HOUSE_PLACIDUS, g, 0) != JME_OK) failures++;
+        if (jme_houses_gauquelin(2460000.5, 0, 40.0, 10.0, g, 0, error) != JME_OK) {
+            fprintf(stderr, "gauquelin jd: %s\n", error);
+            failures++;
+        }
+    }
+    return failures;
+}
+
 int main(void)
 {
     char error[256] = "";
@@ -83,6 +153,12 @@ int main(void)
         }
     }
     jme_set_delta_t_userdef(NAN);
+    {
+        double worst_g = 0.0;
+        int count_g = 0;
+        failures += check_gauquelin(&worst_g, &count_g);
+        printf("gauquelin: %d sector sets, worst sector residual %.3g\n", count_g, worst_g);
+    }
     printf("houses_reference: %d cusp sets (worst %.3g deg), %d time-chain cases (worst %.3g deg)\n",
         N(house_fixtures), worst, N(house_time_fixtures), worst_t);
     return failures == 0 ? 0 : 1;

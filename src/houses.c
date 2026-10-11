@@ -967,19 +967,18 @@ int jme_houses(double jd_ut, double geo_lat, double geo_lon, int house_system, d
  * reduced by the context ayanamsa referred to the same equinox
  * (mean ayanamsa plus nutation in longitude unless NO_NUTATION).
  */
-static int houses_compute(double jd_ut, int flags, double geo_lat, double geo_lon, int house_system, double *cusps, double *ascmc, char *error)
+/*
+ * Local frame of a house computation at a UT instant: ARMC (deg), obliquity
+ * of date (true unless JME_CALC_NO_NUTATION) and, with JME_CALC_SIDEREAL,
+ * the ayanamsa referred to the same equinox (else 0).
+ */
+static int houses_frame(double jd_ut, int flags, double geo_lat, double geo_lon,
+    double *ramc, double *eps, double *aya, char *error)
 {
-    double jd_tt, gst, ramc, eps, eps_mean, dpsi, deps, aya = 0.0;
+    double jd_tt, gst, eps_mean, dpsi, deps;
     double nm[9];
-    double local_ascmc[10];
-    int system = normalize_house_system(house_system);
     int apparent = !(flags & JME_CALC_NO_NUTATION);
-    int i;
 
-    if (cusps == 0) {
-        jme_set_error(error, "House cusp output is required");
-        return JME_ERR;
-    }
     if (!isfinite(jd_ut) || !isfinite(geo_lat) || !isfinite(geo_lon)) {
         jme_set_error(error, "House inputs must be finite");
         return JME_ERR;
@@ -990,15 +989,33 @@ static int houses_compute(double jd_ut, int flags, double geo_lat, double geo_lo
     }
     if (internal_ut_to_et(jd_ut, &jd_tt, error) != JME_OK) return JME_ERR;
     if (internal_nutation_matrix(jd_tt, nm, &dpsi, &eps_mean, &deps, error) != JME_OK) return JME_ERR;
-    eps = apparent ? eps_mean + deps : eps_mean;
+    *eps = apparent ? eps_mean + deps : eps_mean;
     if (internal_sidereal_time_rad(jd_ut, jd_tt, apparent, &gst, error) != JME_OK) return JME_ERR;
-    ramc = jme_degree_normalize(gst / JME_DEG_TO_RAD + geo_lon);
+    *ramc = jme_degree_normalize(gst / JME_DEG_TO_RAD + geo_lon);
+    *aya = 0.0;
+    if (flags & JME_CALC_SIDEREAL) {
+        double rate;
+        if (internal_context_ayanamsa(jd_tt, aya, &rate, error) != JME_OK) return JME_ERR;
+        if (apparent) *aya += dpsi;
+    }
+    return JME_OK;
+}
+
+static int houses_compute(double jd_ut, int flags, double geo_lat, double geo_lon, int house_system, double *cusps, double *ascmc, char *error)
+{
+    double ramc, eps, aya = 0.0;
+    double local_ascmc[10];
+    int system = normalize_house_system(house_system);
+    int i;
+
+    if (cusps == 0) {
+        jme_set_error(error, "House cusp output is required");
+        return JME_ERR;
+    }
+    if (houses_frame(jd_ut, flags, geo_lat, geo_lon, &ramc, &eps, &aya, error) != JME_OK) return JME_ERR;
 
     calc_ascmc(ramc, geo_lat, eps, local_ascmc);
     if (flags & JME_CALC_SIDEREAL) {
-        double rate;
-        if (internal_context_ayanamsa(jd_tt, &aya, &rate, error) != JME_OK) return JME_ERR;
-        if (apparent) aya += dpsi;
         /* ascmc[0..5] are ecliptic longitudes; [6] ARMC and [7] obliquity are not. */
         for (i = 0; i <= 5; i++) {
             if (isfinite(local_ascmc[i])) local_ascmc[i] = jme_degree_normalize(local_ascmc[i] - aya);
@@ -1349,5 +1366,92 @@ int jme_gauquelin_sector(double jd_ut, int body, const char *starname, int flags
 
     *dgsect = clamp_sector(1.0 + sector_offset + fraction * 9.0);
 
+    return JME_OK;
+}
+
+/*
+ * GAUQUELIN 36 SECTORS
+ * ====================
+ * M. Gauquelin's sectors divide the diurnal and the nocturnal semi-arc of
+ * every point into 18 equal parts of time each (a Placidus-type division,
+ * nine sectors per quadrant), numbered in the direction of the diurnal
+ * motion: sector 1 begins at the rising point (Ascendant), sector 10 at the
+ * upper culmination (MC), 19 at setting (Descendant), 28 at the lower
+ * culmination (IC). This is the numbering of jme_gauquelin_sector().
+ *
+ * Cusp k (1..36) is the ecliptic point at the start of sector k. For the
+ * diurnal cusps 2..18 the hour angle H of the point is H = ((k - 10)/9) DSA,
+ * i.e. its meridian distance in right ascension is the Placidus fraction
+ * (10 - k)/9 of its own diurnal semi-arc; it is solved with the same
+ * bracketed Placidus solver as the 12-house system (binary64 limit).
+ * Nocturnal cusps are the antipodes: cusp k + 18 = cusp k + 180 deg (an
+ * ecliptic point and its antipode have complementary semi-arcs).
+ * cusps[0] is set to 0; cusps[1] = Ascendant, cusps[10] = MC.
+ * Errors where a semi-arc is undefined (circumpolar ecliptic points).
+ * Source of the sector definition: M. Gauquelin, L'influence des astres
+ * (1955); identical to the sector numbering of jme_gauquelin_sector().
+ */
+static int gauquelin_cusps(double ramc, double lat, double eps, double *cusps)
+{
+    double angles[10];
+    int k;
+
+    calc_ascmc(ramc, lat, eps, angles);
+    if (!isfinite(angles[0]) || !isfinite(angles[1])) return JME_ERR;
+    cusps[0] = 0.0;
+    cusps[1] = angles[0];
+    cusps[10] = angles[1];
+    for (k = 2; k <= 18; k++) {
+        if (k == 10) continue;
+        if (placidus_cusp(ramc, lat, eps, (double)(10 - k) / 9.0, &cusps[k]) != JME_OK) return JME_ERR;
+    }
+    for (k = 1; k <= 18; k++) cusps[k + 18] = jme_degree_normalize(cusps[k] + 180.0);
+    return JME_OK;
+}
+
+int jme_houses_gauquelin_armc(double armc, double geo_lat, double eps, double *cusps, double *ascmc, char *error)
+{
+    double local_ascmc[10];
+    int i;
+
+    if (cusps == 0) {
+        jme_set_error(error, "Gauquelin cusp output (37 doubles) is required");
+        return JME_ERR;
+    }
+    if (!isfinite(armc) || !isfinite(geo_lat) || !isfinite(eps) || geo_lat < -90.0 || geo_lat > 90.0) {
+        jme_set_error(error, "Gauquelin sector inputs are invalid");
+        return JME_ERR;
+    }
+    armc = jme_degree_normalize(armc);
+    if (gauquelin_cusps(armc, geo_lat, eps, cusps) != JME_OK) {
+        jme_set_error(error, "Gauquelin sectors undefined at this latitude (circumpolar ecliptic points)");
+        return JME_ERR;
+    }
+    if (ascmc != 0) {
+        calc_ascmc(armc, geo_lat, eps, local_ascmc);
+        for (i = 0; i < 10; i++) ascmc[i] = local_ascmc[i];
+    }
+    return JME_OK;
+}
+
+int jme_houses_gauquelin(double jd_ut, int flags, double geo_lat, double geo_lon, double *cusps, double *ascmc, char *error)
+{
+    double ramc, eps, aya;
+    int i;
+
+    if (cusps == 0) {
+        jme_set_error(error, "Gauquelin cusp output (37 doubles) is required");
+        return JME_ERR;
+    }
+    if (houses_frame(jd_ut, flags, geo_lat, geo_lon, &ramc, &eps, &aya, error) != JME_OK) return JME_ERR;
+    if (jme_houses_gauquelin_armc(ramc, geo_lat, eps, cusps, ascmc, error) != JME_OK) return JME_ERR;
+    if (flags & JME_CALC_SIDEREAL) {
+        for (i = 1; i <= 36; i++) cusps[i] = jme_degree_normalize(cusps[i] - aya);
+        if (ascmc != 0) {
+            for (i = 0; i <= 5; i++) {
+                if (isfinite(ascmc[i])) ascmc[i] = jme_degree_normalize(ascmc[i] - aya);
+            }
+        }
+    }
     return JME_OK;
 }
