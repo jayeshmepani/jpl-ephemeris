@@ -75,9 +75,76 @@ static double normalize_radians(double angle)
  */
 static double ayanamsa_precession_degrees(double jd_et, double t0)
 {
-    double t = (jd_et - t0) / 36525.0;
+    /* IAU 1976 general precession in longitude, arcseconds, T centuries
+     * from J2000. A reference-epoch model requires P(T) - P(T0). */
+    double t = (jd_et - 2451545.0) / 36525.0;
+    double t0_centuries = (t0 - 2451545.0) / 36525.0;
+    double p = 5029.0966 * t
+        + 1.11113 * t * t
+        - 0.000006 * t * t * t;
+    double p0 = 5029.0966 * t0_centuries
+        + 1.11113 * t0_centuries * t0_centuries
+        - 0.000006 * t0_centuries * t0_centuries * t0_centuries;
 
-    return (5029.0966 * t + 1.11113 * t * t) / 3600.0;
+    return (p - p0) / 3600.0;
+}
+
+
+/*
+ * Evaluate a historical ayanamsha defined by a reference value at a stated
+ * UT epoch. Convert that epoch with the selected Delta-T model and propagate
+ * using the generic reference-epoch precession function above.
+ */
+static int ayanamsa_epoch_from_ut(
+    double jd_et,
+    int year,
+    int month,
+    int day,
+    double hour_ut,
+    double ayanamsa_at_epoch,
+    double *ayan,
+    char *error
+)
+{
+    double jd_epoch_ut;
+    double delta_t;
+    double jd_epoch_tt;
+
+    if (ayan == 0) {
+        jme_set_error(error, "Ayanamsa output is required");
+        return JME_ERR;
+    }
+    *ayan = NAN;
+    if (!isfinite(jd_et)) {
+        jme_set_error(error, "Ayanamsa Julian date must be finite");
+        return JME_ERR;
+    }
+
+    jd_epoch_ut = jme_julian_day(
+        year, month, day, hour_ut, JME_CALENDAR_GREGORIAN
+    );
+    if (!isfinite(jd_epoch_ut)) {
+        jme_set_error(error, "Sidereal reference epoch could not be converted to Julian date");
+        return JME_ERR;
+    }
+
+    delta_t = jme_delta_t_ex(jd_epoch_ut, jme_context_deltat_model(), error);
+    if (!isfinite(delta_t)) {
+        if (error == 0 || error[0] == '\0') {
+            jme_set_error(error, "Delta-T is required to convert the historical sidereal epoch to TT");
+        }
+        return JME_ERR;
+    }
+    jd_epoch_tt = jd_epoch_ut + delta_t / JME_SECONDS_PER_DAY;
+    if (!isfinite(jd_epoch_tt)) {
+        jme_set_error(error, "Historical sidereal epoch conversion produced a non-finite TT date");
+        return JME_ERR;
+    }
+
+    *ayan = jme_degree_normalize(
+        ayanamsa_at_epoch + ayanamsa_precession_degrees(jd_et, jd_epoch_tt)
+    );
+    return JME_OK;
 }
 
 /*
@@ -380,17 +447,57 @@ int jme_get_ayanamsa_ex(double jd_et, int model, double *ayan, char *error)
          * defined each individual anchor: source to be verified. */
         return ayanamsa_from_fixed_star(jd_et, "Aldebaran", 45.0, ayan, error);
     case JME_SIDEREAL_TRUE_CITRA:
-    case JME_SIDEREAL_SS_CITRA:
         return ayanamsa_from_fixed_star(jd_et, "Spica", 180.0, ayan, error);
+    case JME_SIDEREAL_SS_CITRA:
+        /*
+         * Historical polar-ecliptic-longitude convention: Spica was assigned
+         * 180 degrees at 21 March 499 CE, 07:30:31.57 UT. It is distinct from
+         * keeping modern true ecliptic longitude at 180 degrees.
+         * Reference: Swiss Ephemeris General Documentation, section 2.8.5, mode 26.
+         */
+        return ayanamsa_epoch_from_ut(
+            jd_et, 499, 3, 21,
+            7.0 + 30.0 / 60.0 + 31.57 / 3600.0,
+            2.11070444, ayan, error
+        );
     case JME_SIDEREAL_TRUE_REVATI:
+        /* True Revati places zeta Piscium at 359°50′, not 0°. */
+        return ayanamsa_from_fixed_star(
+            jd_et, "Revati", 359.0 + 50.0 / 60.0, ayan, error
+        );
     case JME_SIDEREAL_SS_REVATI:
-        return ayanamsa_from_fixed_star(jd_et, "Revati", 0.0, ayan, error);
+        /*
+         * Historical polar-longitude Revati convention: 359°50′ at
+         * 21 March 499 CE, 07:30:31.57 UT.
+         * Reference: Swiss Ephemeris General Documentation, section 2.8.4, mode 25.
+         */
+        return ayanamsa_epoch_from_ut(
+            jd_et, 499, 3, 21,
+            7.0 + 30.0 / 60.0 + 31.57 / 3600.0,
+            -0.79167046, ayan, error
+        );
     case JME_SIDEREAL_SURYASIDDHANTA:
-        /* Surya Siddhanta and Ushashashi variants: Revati star at 359 deg 50'
-         * (10' before the initial point); anchor convention: source to be verified. */
-        return ayanamsa_from_fixed_star(jd_et, "Revati", 359.8333333333333, ayan, error);
+        /*
+         * Equinox-based Suryasiddhanta zero epoch: 21 March 499 CE,
+         * 07:30:31.57 UT (Kali year 3600).
+         * Reference: Swiss Ephemeris General Documentation, section 2.8.4, mode 21.
+         */
+        return ayanamsa_epoch_from_ut(
+            jd_et, 499, 3, 21,
+            7.0 + 30.0 / 60.0 + 31.57 / 3600.0,
+            0.0, ayan, error
+        );
     case JME_SIDEREAL_USHASHASHI:
-        return ayanamsa_from_fixed_star(jd_et, "Revati", 359.8333333333333, ayan, error);
+        /*
+         * Ushashashi is a historical Greek-Arabic-Hindu zodiac definition,
+         * not a modern true-star anchor. Published reference value:
+         * 18°39′39.46″ on 1 January 1900.
+         * Reference: Swiss Ephemeris General Documentation, section 2.8.3.
+         */
+        return ayanamsa_epoch_from_ut(
+            jd_et, 1900, 1, 1, 0.0,
+            18.0 + 39.0 / 60.0 + 39.46 / 3600.0, ayan, error
+        );
     case JME_SIDEREAL_GALCENT_0SAG:
         /* Galactic Center at 0 Sagittarius (240 deg). J2000 position
          * RA 266.4168085 deg, Dec -29.0078378 deg corresponds to Sgr A*
