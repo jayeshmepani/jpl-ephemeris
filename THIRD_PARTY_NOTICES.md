@@ -181,6 +181,6 @@ Only the numbers they produce are committed, as `tests/fixtures/*.h`, together w
 
 The following publications were consulted for definitions and are cited in the documentation:
 
-* J. Laskar, "Secular terms of classical planetary theories using the results of general theory", *A&A* 157, 59 (1986), Table 8 (see `CENGINE_COMPLETION_REPORT.md`; not implemented);
-* L. V. Morrison and F. R. Stephenson, *JHA* 35, 327 (2004) (ΔT; not implemented);
+* J. Laskar, "Secular terms of classical planetary theories using the results of general theory", *A&A* 157, 59 (1986), Table 8 (see `CENGINE_COMPLETION_REPORT.md`; the model is refused with an explicit error);
+* L. V. Morrison and F. R. Stephenson, *JHA* 35, 327 (2004) (ΔT; the model is refused with an explicit error);
 * the Swiss Ephemeris General Documentation, §2.8, for the definitions of ayanamsa conventions only.
