@@ -1027,7 +1027,7 @@ int main(void)
             JME_TIME_DELTAT_AUTOMATIC,
             JME_MODEL_DELTAT_ESPENAK_MEEUS_2006
         };
-        int unimplemented_models[] = {
+        int unsupported_models[] = {
             JME_MODEL_DELTAT_STEPHENSON_MORRISON_1984,
             JME_MODEL_DELTAT_STEPHENSON_1997,
             JME_MODEL_DELTAT_STEPHENSON_MORRISON_2004,
@@ -1041,11 +1041,11 @@ int main(void)
                 return 1;
             }
         }
-        for (i = 0; i < (int)(sizeof(unimplemented_models)/sizeof(unimplemented_models[0])); i++) {
-            double dt = jme_delta_t_ex(2451545.0, unimplemented_models[i], error);
-            if (isfinite(dt) || strstr(error,"not implemented")==0) {
-                fprintf(stderr,"unimplemented Delta-T model did not fail closed for %d: %s %.17g\n",
-                    unimplemented_models[i],error,dt);
+        for (i = 0; i < (int)(sizeof(unsupported_models)/sizeof(unsupported_models[0])); i++) {
+            double dt = jme_delta_t_ex(2451545.0, unsupported_models[i], error);
+            if (isfinite(dt) || strstr(error,"no validated implementation")==0) {
+                fprintf(stderr,"unsupported Delta-T model did not fail closed for %d: %s %.17g\n",
+                    unsupported_models[i],error,dt);
                 return 1;
             }
         }
