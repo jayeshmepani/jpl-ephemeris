@@ -371,7 +371,7 @@ int main(void)
             || fabs(jme_degrees_difference(star_ecl[0] - ayan_anchor, 180.0)) > 1.0e-9
             || jme_fixstar("Revati", 2451545.0, JME_CALC_TRUE_POSITION, star_ecl, error) != JME_OK
             || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_TRUE_REVATI, &ayan_anchor, error) != JME_OK
-            || fabs(jme_degrees_difference(star_ecl[0] - ayan_anchor, 0.0)) > 1.0e-9) {
+            || fabs(jme_degrees_difference(star_ecl[0] - ayan_anchor, 359.8333333333333)) > 1.0e-9) {
             fprintf(stderr, "fixed-star anchored ayanamsa contract mismatch: %s %.17g %.17g\n", error, star_ecl[0], ayan_anchor);
             return 1;
         }
@@ -388,11 +388,45 @@ int main(void)
             fprintf(stderr, "new fixed-anchor ayanamsa contract mismatch: %s %.17g %.17g\n", error, star_ecl[0], ayan_anchor);
             return 1;
         }
-        if (jme_fixstar("Revati", 2451545.0, JME_CALC_TRUE_POSITION, star_ecl, error) != JME_OK
-            || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_SURYASIDDHANTA, &ayan_anchor, error) != JME_OK
-            || fabs(jme_degrees_difference_signed(star_ecl[0] - ayan_anchor, 359.8333333333333)) > 1.0e-9) {
-            fprintf(stderr, "Surya Siddhanta Revati ayanamsa contract mismatch: %s %.17g %.17g\n", error, star_ecl[0], ayan_anchor);
-            return 1;
+        {
+            const double epoch_hour = 7.0 + 30.0 / 60.0 + 31.57 / 3600.0;
+            double jd_ss_ut = jme_julian_day(499, 3, 21, epoch_hour, JME_CALENDAR_GREGORIAN);
+            double jd_ss_tt;
+            double jd_ushashashi_ut = jme_julian_day(1900, 1, 1, 0.0, JME_CALENDAR_GREGORIAN);
+            double jd_ushashashi_tt;
+
+            jme_set_astro_models("DELTAT2006", 0);
+            jd_ss_tt = jd_ss_ut + jme_delta_t_ex(jd_ss_ut, JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, error) / JME_SECONDS_PER_DAY;
+            jd_ushashashi_tt = jd_ushashashi_ut + jme_delta_t_ex(jd_ushashashi_ut, JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, error) / JME_SECONDS_PER_DAY;
+
+            if (!isfinite(jd_ss_tt) || !isfinite(jd_ushashashi_tt)
+                || jme_get_ayanamsa_ex(jd_ss_tt, JME_SIDEREAL_SS_CITRA, &ayan_anchor, error) != JME_OK
+                || fabs(jme_degrees_difference_signed(ayan_anchor, 2.11070444)) > 1.0e-9
+                || jme_get_ayanamsa_ex(jd_ss_tt, JME_SIDEREAL_SS_REVATI, &ayan_anchor, error) != JME_OK
+                || fabs(jme_degrees_difference_signed(ayan_anchor, -0.79167046)) > 1.0e-9
+                || jme_get_ayanamsa_ex(jd_ss_tt, JME_SIDEREAL_SURYASIDDHANTA, &ayan_anchor, error) != JME_OK
+                || fabs(jme_degrees_difference_signed(ayan_anchor, 0.0)) > 1.0e-9
+                || jme_get_ayanamsa_ex(jd_ushashashi_tt, JME_SIDEREAL_USHASHASHI, &ayan_anchor, error) != JME_OK
+                || fabs(jme_degrees_difference_signed(ayan_anchor,
+                    18.0 + 39.0 / 60.0 + 39.46 / 3600.0)) > 1.0e-9) {
+                fprintf(stderr, "historical sidereal epoch reference mismatch: %s %.17g\n", error, ayan_anchor);
+                return 1;
+            }
+
+            /* At J2000, the reference-epoch polynomial must be P(T)-P(T0). */
+            {
+                double t = 0.0;
+                double t0 = (2415020.0 - 2451545.0) / 36525.0;
+                double p = 5029.0966 * t + 1.11113 * t * t - 0.000006 * t * t * t;
+                double p0 = 5029.0966 * t0 + 1.11113 * t0 * t0 - 0.000006 * t0 * t0 * t0;
+                double expected = jme_degree_normalize((p - p0) / 3600.0);
+                if (jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_J1900, &ayan_anchor, error) != JME_OK
+                    || fabs(jme_degrees_difference_signed(ayan_anchor, expected)) > 1.0e-10) {
+                    fprintf(stderr, "reference-epoch precession polynomial mismatch: %s %.17g %.17g\n",
+                        error, ayan_anchor, expected);
+                    return 1;
+                }
+            }
         }
 
         jme_set_sidereal_mode(JME_SIDEREAL_USER, 2451545.0, 12.5);
@@ -455,11 +489,20 @@ int main(void)
             fprintf(stderr, "source-contract ayanamsa known-value mismatch: %s %.17g\n", error, ayan_source);
             return 1;
         }
-        if (jme_fixstar("Revati", 2451545.0, JME_CALC_TRUE_POSITION, star_ecl, error) != JME_OK
-            || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_USHASHASHI, &ayan_source, error) != JME_OK
-            || fabs(jme_degrees_difference_signed(star_ecl[0] - ayan_source, 359.8333333333333)) > 1.0e-9) {
-            fprintf(stderr, "Ushashashi Revati ayanamsa contract mismatch: %s %.17g %.17g\n", error, star_ecl[0], ayan_source);
-            return 1;
+        {
+            double jd_ushashashi_ut = jme_julian_day(1900, 1, 1, 0.0, JME_CALENDAR_GREGORIAN);
+            double jd_ushashashi_tt;
+            jme_set_astro_models("DELTAT2006", 0);
+            jd_ushashashi_tt = jd_ushashashi_ut
+                + jme_delta_t_ex(jd_ushashashi_ut, JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, error)
+                    / JME_SECONDS_PER_DAY;
+            if (!isfinite(jd_ushashashi_tt)
+                || jme_get_ayanamsa_ex(jd_ushashashi_tt, JME_SIDEREAL_USHASHASHI, &ayan_source, error) != JME_OK
+                || fabs(jme_degrees_difference_signed(ayan_source,
+                    18.0 + 39.0 / 60.0 + 39.46 / 3600.0)) > 1.0e-9) {
+                fprintf(stderr, "Ushashashi historical reference-value mismatch: %s %.17g\n", error, ayan_source);
+                return 1;
+            }
         }
         {
             const int historical_modes[] = {
