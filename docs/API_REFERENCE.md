@@ -20,6 +20,14 @@
 | Astrometry, coordinates, sidereal/time, houses, fixed stars, metadata | `src/astrometry.c`, `src/coordinates.c`, `src/sidereal.c`, `src/time.c`, `src/houses.c`, `src/fixstar.c`, `src/metadata.c` |
 | Calendar and angular utility functions | `src/julian.c`, `src/angle.c` |
 
+## Numeric Precision and Time-Model Contract
+
+Numeric calculation APIs return their computed binary64 values; they do not apply display rounding. Functions whose names explicitly request a rounded or formatted representation are presentation helpers and are separate from the underlying numeric calculations. The speed-of-light conversion to AU/day is derived from the defined SI speed-of-light, day-length, and astronomical-unit constants instead of a shorter decimal literal.
+
+`jme_delta_t_ex` currently implements the Espenak–Meeus 2006 polynomial and the `JME_TIME_DELTAT_AUTOMATIC` selection. The public identifiers for Stephenson–Morrison 1984, Stephenson 1997, Stephenson–Morrison 2004, and Stephenson et al. 2016 are not yet backed by independent, validated implementations. Requests for those identifiers therefore return `NAN` and an explicit error instead of silently calculating the Espenak–Meeus model under the wrong name. A non-finite Julian date is likewise rejected before calendar conversion.
+
+Apparent fixed-star calculations apply aberration using the observer state selected by the engine policy. Automatic mode may use the analytical backend when a usable JPL barycentric state is unavailable; explicit JPL mode returns an error rather than silently omitting aberration. The analytical observer velocity is transformed into the same J2000 equatorial frame as the stellar direction before applying the correction.
+
 ## Current Public Functions
 
 | # | Function | Status |
