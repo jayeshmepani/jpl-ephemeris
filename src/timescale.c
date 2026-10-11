@@ -14,7 +14,8 @@
  *   TDB <-> TCB : IAU 2006 Resolution B3 (ERFA eraTdbtcb/eraTcbtdb).
  *   TT  <-> TCG : IAU 2000 Resolution B1.9 (ERFA eraTttcg/eraTcgtt).
  *   TT  <-> UT1 : Delta-T of the context model (jme_set_delta_t_model /
- *                 jme_set_delta_t_userdef); no IERS EOP data is used.
+ *                 jme_set_delta_t_userdef); AUTOMATIC uses the embedded
+ *                 IERS finals2000A UT1 table where it covers the date.
  * Every failure (date outside a model or table, non-finite input) returns
  * JME_ERR with a message; nothing is clamped or extrapolated silently.
  */
