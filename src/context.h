@@ -51,4 +51,7 @@ int jme_context_interpolate_nut(void);
 int jme_get_frame_bias_matrix(int model, double *m);
 int jme_get_topo_pos_true_equator(double jd_et, double *pos_au, char *error);
 
+/* Internal helper shared by the main and fixed-star apparent-position paths. */
+int internal_earth_aberration_state(double jd_et, double *state, char *error);
+
 #endif
