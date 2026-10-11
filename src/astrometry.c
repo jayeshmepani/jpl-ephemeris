@@ -271,7 +271,7 @@ int internal_bias_precession_matrix(double jd_et, double *bp, char *error)
         return JME_ERR;
     }
     if (jme_get_precession_matrix(2451545.0, jd_et, jme_context_precession_model(), prec) != JME_OK) {
-        jme_set_error(error, "Unsupported precession model (Laskar 1986 precession is not implemented)");
+        jme_set_error(error, "Laskar 1986 precession is unavailable (its Table 8 polynomials are not yet transcribed and verified); select IAU1976, IAU2000, IAU2006 or VONDRAK2011");
         return JME_ERR;
     }
     jme_matrix_multiply(prec, bias, bp);
