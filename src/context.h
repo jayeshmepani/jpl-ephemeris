@@ -61,6 +61,7 @@ int internal_earth_aberration_state(double jd_et, double *state, char *error);
 int internal_ut_to_et(double jd_ut, double *jd_et, char *error);
 int internal_calc_position_ut(double jd_ut, int body, int flags, double *pos, char *error);
 int internal_calc_ut_positions(double jd_ut, int body, int flags, double *results, char *error);
+int internal_fixstar_position_ut(const char *star, double jd_ut, int flags, double *pos, double *dist_au, char *error);
 int internal_tt_to_ut(double jd_tt, double *jd_ut, char *error);
 int internal_get_nutation_rad(double jd_et, int model, int interpolate, double *dpsi, double *deps, char *error);
 int internal_bias_precession_matrix(double jd_et, double *bp, char *error);
@@ -72,6 +73,7 @@ int internal_rotate_to_output(double jd_et, int flags, int icrs_axes, const doub
 int internal_finish_output(const double *p0, const double *const *stencil, double h, int flags, double *results, char *error);
 int internal_star_observer_vector(double jd_et, int flags, const double *u, double dist_au, double *out, char *error);
 int internal_tt_to_tdb_jd(double jd_tt, double *jd_tdb, char *error);
+double internal_dtdb(double jd0_tt, double fraction_tt);
 int internal_tai_minus_utc(int gregorian_year, int gregorian_month, int gregorian_day, double fraction_of_utc_day, double *tai_minus_utc, char *error);
 int internal_sidereal_time_rad(double jd_ut, double jd_tt, int apparent, double *gst, char *error);
 int internal_topo_state_true_equator(double jd_et, double *pos_au, double *vel_au_per_day, char *error);

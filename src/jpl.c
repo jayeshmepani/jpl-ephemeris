@@ -927,7 +927,7 @@ int internal_tt_to_tdb_split(
         return JME_ERR;
     }
 
-    dtr = jme_erfa_dtdb(jd0_tt, fraction_tt, 0.0, 0.0, 0.0, 0.0);
+    dtr = internal_dtdb(jd0_tt, fraction_tt);
     if (!isfinite(dtr)) {
         jme_set_error(error, "ERFA TDB-TT conversion returned a non-finite offset");
         return JME_ERR;
@@ -939,7 +939,7 @@ int internal_tt_to_tdb_split(
         trial_day = jd0_tt + carry;
         trial_fraction -= carry;
 
-        dtr_next = jme_erfa_dtdb(trial_day, trial_fraction, 0.0, 0.0, 0.0, 0.0);
+        dtr_next = internal_dtdb(trial_day, trial_fraction);
         if (!isfinite(dtr_next)) {
             jme_set_error(error, "ERFA TDB-TT iteration returned a non-finite offset");
             return JME_ERR;

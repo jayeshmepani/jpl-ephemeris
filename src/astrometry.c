@@ -39,7 +39,7 @@ static void matrix_transpose(const double *a, double *out)
     memcpy(out, t, sizeof(t));
 }
 
-static int nutation_raw(double jd_et, int model, double *dpsi_rad, double *deps_rad, char *error)
+static int nutation_series(double jd_et, int model, double *dpsi_rad, double *deps_rad, char *error)
 {
     double d1 = floor(jd_et);
     double d2 = jd_et - d1;
@@ -63,6 +63,37 @@ static int nutation_raw(double jd_et, int model, double *dpsi_rad, double *deps_
         jme_set_error(error, "Unsupported nutation model");
         return JME_ERR;
     }
+}
+
+/*
+ * Per-thread memo keyed on the exact (jd_et, model): a hit returns the
+ * bit-identical series value for the same arguments (no interpolation, no
+ * change of results); repeated epochs are common in light-time iterations
+ * and event searches.
+ */
+#define JME_NUT_MEMO 8
+typedef struct { double jd; int model; int used; double dpsi, deps; } jme_nut_memo_entry;
+static JME_THREAD_LOCAL jme_nut_memo_entry g_nut_memo[JME_NUT_MEMO];
+static JME_THREAD_LOCAL int g_nut_memo_next;
+
+static int nutation_raw(double jd_et, int model, double *dpsi_rad, double *deps_rad, char *error)
+{
+    int i;
+    for (i = 0; i < JME_NUT_MEMO; i++) {
+        if (g_nut_memo[i].used && g_nut_memo[i].jd == jd_et && g_nut_memo[i].model == model) {
+            *dpsi_rad = g_nut_memo[i].dpsi;
+            *deps_rad = g_nut_memo[i].deps;
+            return JME_OK;
+        }
+    }
+    if (nutation_series(jd_et, model, dpsi_rad, deps_rad, error) != JME_OK) return JME_ERR;
+    g_nut_memo[g_nut_memo_next].jd = jd_et;
+    g_nut_memo[g_nut_memo_next].model = model;
+    g_nut_memo[g_nut_memo_next].dpsi = *dpsi_rad;
+    g_nut_memo[g_nut_memo_next].deps = *deps_rad;
+    g_nut_memo[g_nut_memo_next].used = 1;
+    g_nut_memo_next = (g_nut_memo_next + 1) % JME_NUT_MEMO;
+    return JME_OK;
 }
 
 int internal_get_nutation_rad(double jd_et, int model, int interpolate, double *dpsi, double *deps, char *error)

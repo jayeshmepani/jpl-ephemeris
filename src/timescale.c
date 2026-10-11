@@ -24,6 +24,35 @@
 #include "jme_erfa.h"
 #include "jme_erfa_vendor.h"
 #include <math.h>
+#include "jme_tls.h"
+
+/*
+ * TDB-TT (ERFA eraDtdb, Fairhead & Bretagnon 1990, ~800 terms) with a small
+ * per-thread memo keyed on the exact two-part TT date: a hit returns the
+ * bit-identical value of the series for the same arguments, so results are
+ * unchanged; event searches evaluate the same epochs many times (light-time
+ * iterations, deflector states, rate stencils).
+ */
+#define JME_DTDB_MEMO 16
+typedef struct { double d1, d2, v; int used; } jme_dtdb_memo_entry;
+static JME_THREAD_LOCAL jme_dtdb_memo_entry g_dtdb_memo[JME_DTDB_MEMO];
+static JME_THREAD_LOCAL int g_dtdb_memo_next;
+
+double internal_dtdb(double d1, double d2)
+{
+    int i;
+    double v;
+    for (i = 0; i < JME_DTDB_MEMO; i++) {
+        if (g_dtdb_memo[i].used && g_dtdb_memo[i].d1 == d1 && g_dtdb_memo[i].d2 == d2) return g_dtdb_memo[i].v;
+    }
+    v = jme_erfa_dtdb(d1, d2, 0.0, 0.0, 0.0, 0.0);
+    g_dtdb_memo[g_dtdb_memo_next].d1 = d1;
+    g_dtdb_memo[g_dtdb_memo_next].d2 = d2;
+    g_dtdb_memo[g_dtdb_memo_next].v = v;
+    g_dtdb_memo[g_dtdb_memo_next].used = 1;
+    g_dtdb_memo_next = (g_dtdb_memo_next + 1) % JME_DTDB_MEMO;
+    return v;
+}
 
 #define TS_DAYSEC 86400.0
 
@@ -103,7 +132,7 @@ static int ts_tdb_to_tt(double b1, double b2, double *o1, double *o2, char *erro
     double tt1 = b1, tt2 = b2, dtr = 0.0, prev = NAN;
     int i;
     for (i = 0; i < 16; i++) {
-        dtr = jme_erfa_dtdb(tt1, tt2, 0.0, 0.0, 0.0, 0.0);
+        dtr = internal_dtdb(tt1, tt2);
         if (!isfinite(dtr)) {
             jme_set_error(error, "ERFA TDB-TT offset is not finite");
             return JME_ERR;
