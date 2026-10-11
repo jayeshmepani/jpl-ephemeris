@@ -46,8 +46,6 @@ add_library(jme SHARED
     src/time.c
     src/timescale.c
     src/vsop87.c
-    src/vsop87a_full.c
-    src/vsop87d_full.c
 )
 
 set_target_properties(jme PROPERTIES
@@ -83,8 +81,6 @@ if (MSVC)
         src/moshier_full.c
         src/moshier/moonlat404.c
         src/moshier/moonlr404.c
-        src/vsop87a_full.c
-        src/vsop87d_full.c
         PROPERTIES COMPILE_FLAGS "/Od"
     )
 else()
@@ -120,6 +116,11 @@ if (JME_BUILD_TESTS)
     target_include_directories(test_delta_t_reference PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
     target_link_libraries(test_delta_t_reference PRIVATE jme)
     add_test(NAME delta_t_reference COMMAND test_delta_t_reference)
+
+    add_executable(test_vsop87_reference tests/test_vsop87_reference.c)
+    target_include_directories(test_vsop87_reference PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    target_link_libraries(test_vsop87_reference PRIVATE jme)
+    add_test(NAME vsop87_reference COMMAND test_vsop87_reference)
 
     add_executable(test_jpl_runtime tests/test_jpl_runtime.c)
     target_link_libraries(test_jpl_runtime PRIVATE jme)

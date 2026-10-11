@@ -31,6 +31,153 @@ static double events_gst_hours(double jd_ut, int flags)
     return hours;
 }
 
+
+/*
+ * Bracketed root refinement (Illinois variant of regula falsi) for event
+ * searches. Invariant: f(lo) < 0 <= f(hi) (lo/hi may be in either time
+ * order). Terminates with a bracket no wider than 1e-10 day (8.6 us); the
+ * returned instant is the bracket midpoint. Superlinear convergence; each
+ * step keeps a valid bracket, so the result is as reliable as bisection.
+ */
+typedef double (*events_root_fn)(double t, const void *ctx, char *error);
+
+static int events_refine_root(events_root_fn f, const void *ctx, double lo, double flo, double hi, double fhi, double *root, char *error)
+{
+    const double tol = 1e-10;
+    double m_prev = NAN;
+    int side = 0, it;
+
+    for (it = 0; it < 300 && fabs(hi - lo) > tol; it++) {
+        double m = (lo * fhi - hi * flo) / (fhi - flo);
+        double fm;
+        if (!(isfinite(m)) || !((m > lo && m < hi) || (m < lo && m > hi))) m = 0.5 * (lo + hi);
+        if (isfinite(m_prev) && fabs(m - m_prev) < 0.25 * tol) {
+            /* interpolation has converged: close the bracket around m */
+            double a = m - 0.5 * tol * (hi > lo ? 1.0 : -1.0);
+            double b = m + 0.5 * tol * (hi > lo ? 1.0 : -1.0);
+            double fa = f(a, ctx, error), fb = f(b, ctx, error);
+            if (!isfinite(fa) || !isfinite(fb)) return JME_ERR;
+            if (fa < 0.0 && fb >= 0.0) { lo = a; hi = b; break; }
+            m = 0.5 * (lo + hi); /* fall back to a bisection step */
+        }
+        m_prev = m;
+        fm = f(m, ctx, error);
+        if (!isfinite(fm)) return JME_ERR;
+        if (fm >= 0.0) {
+            hi = m; fhi = fm;
+            if (side == 1) flo *= 0.5;
+            side = 1;
+        } else {
+            lo = m; flo = fm;
+            if (side == -1) fhi *= 0.5;
+            side = -1;
+        }
+    }
+    *root = 0.5 * (lo + hi);
+    return JME_OK;
+}
+
+
+/*
+ * One-dimensional minimisation on [a, b]: Brent's method (Brent 1973,
+ * "Algorithms for Minimization without Derivatives", ch. 5, procedure
+ * localmin) - parabolic interpolation safeguarded by golden-section steps.
+ * Absolute tolerance tol in days.
+ */
+static int events_minimize(events_root_fn f, const void *ctx, double a, double b, double tol, double *xmin, char *error)
+{
+    const double cg = 0.38196601125010515180; /* (3 - sqrt 5) / 2 */
+    double x, w, v, fx, fw, fv, d = 0.0, e = 0.0, u, fu;
+    int it;
+
+    if (a > b) { double t = a; a = b; b = t; }
+    x = w = v = a + cg * (b - a);
+    fx = fw = fv = f(x, ctx, error);
+    if (!isfinite(fx)) return JME_ERR;
+    for (it = 0; it < 300; it++) {
+        double m = 0.5 * (a + b);
+        double tol1 = tol, tol2 = 2.0 * tol;
+        int golden = 1;
+        if (fabs(x - m) <= tol2 - 0.5 * (b - a)) break;
+        if (fabs(e) > tol1) {
+            double r = (x - w) * (fx - fv);
+            double q = (x - v) * (fx - fw);
+            double p = (x - v) * q - (x - w) * r;
+            double etemp;
+            q = 2.0 * (q - r);
+            if (q > 0.0) p = -p; else q = -q;
+            etemp = e;
+            e = d;
+            if (fabs(p) < fabs(0.5 * q * etemp) && p > q * (a - x) && p < q * (b - x)) {
+                d = p / q;
+                u = x + d;
+                if (u - a < tol2 || b - u < tol2) d = (x < m) ? tol1 : -tol1;
+                golden = 0;
+            }
+        }
+        if (golden) {
+            e = (x < m) ? b - x : a - x;
+            d = cg * e;
+        }
+        u = (fabs(d) >= tol1) ? x + d : x + (d > 0.0 ? tol1 : -tol1);
+        fu = f(u, ctx, error);
+        if (!isfinite(fu)) return JME_ERR;
+        if (fu <= fx) {
+            if (u < x) b = x; else a = x;
+            v = w; fv = fw; w = x; fw = fx; x = u; fx = fu;
+        } else {
+            if (u < x) a = u; else b = u;
+            if (fu <= fw || w == x) {
+                v = w; fv = fw; w = u; fw = fu;
+            } else if (fu <= fv || v == x || v == w) {
+                v = u; fv = fu;
+            }
+        }
+    }
+    *xmin = x;
+    return JME_OK;
+}
+
+/*
+ * Precise location of a smooth minimum found by events_minimize: the
+ * minimum is flat (f - f_min ~ (t - t0)^2), so comparing values resolves its
+ * abscissa only to ~sqrt(machine epsilon). It is refined as the root of the
+ * symmetric difference g(t) = f(t + h) - f(t - h), h = 1e-5 day, whose zero
+ * differs from that of the derivative by O(h^2 f3/f2) (about 1e-11 day).
+ */
+typedef struct events_stationary_ctx { events_root_fn f; const void *ctx; double h; } events_stationary_ctx;
+
+static double events_stationary_fn(double t, const void *c, char *error)
+{
+    const events_stationary_ctx *s = (const events_stationary_ctx *)c;
+    double fp = s->f(t + s->h, s->ctx, error);
+    double fm = s->f(t - s->h, s->ctx, error);
+    return fp - fm;
+}
+
+static int events_minimize_precise(events_root_fn f, const void *ctx, double a, double b, double *xmin, char *error)
+{
+    events_stationary_ctx sc;
+    double x, delta, glo, ghi;
+    int k;
+
+    if (events_minimize(f, ctx, a, b, 1e-7, &x, error) != JME_OK) return JME_ERR;
+    sc.f = f;
+    sc.ctx = ctx;
+    sc.h = 1e-5;
+    for (k = 0, delta = 2e-6; k < 12; k++, delta *= 2.0) {
+        glo = events_stationary_fn(x - delta, &sc, error);
+        ghi = events_stationary_fn(x + delta, &sc, error);
+        if (!isfinite(glo) || !isfinite(ghi)) return JME_ERR;
+        if (glo < 0.0 && ghi >= 0.0) {
+            return events_refine_root(events_stationary_fn, &sc, x - delta, glo, x + delta, ghi, xmin, error);
+        }
+    }
+    /* no bracket (minimum at an interval end): keep the Brent result */
+    *xmin = x;
+    return JME_OK;
+}
+
 static unsigned long long g_profile_rise_trans_calls = 0ULL;
 static double g_profile_rise_trans_seconds = 0.0;
 static unsigned long long g_profile_altitude_calls = 0ULL;
@@ -193,8 +340,8 @@ static int lunar_shadow_at(double jd_ut, lunar_shadow *ls, char *error)
     double pi1, s_sun, pi_sun;
     int i;
 
-    if (jme_calc_ut(jd_ut, JME_BODY_SUN, JME_CALC_XYZ, sun, error) != JME_OK
-        || jme_calc_ut(jd_ut, JME_BODY_MOON, JME_CALC_XYZ, moon, error) != JME_OK) {
+    if (internal_calc_position_ut(jd_ut, JME_BODY_SUN, 0, sun, error) != JME_OK
+        || internal_calc_position_ut(jd_ut, JME_BODY_MOON, 0, moon, error) != JME_OK) {
         return JME_ERR;
     }
     for (i = 0; i < 3; i++) { sun[i] *= JME_AU_KM; moon[i] *= JME_AU_KM; }
@@ -249,120 +396,86 @@ static double lunar_eclipse_offset_metric(double jd_ut, char *error)
     return ls.theta;
 }
 
-static int find_full_moon_opposition(double jd_start, int backward, double *tret, char *error)
+/*
+ * Syzygy search: instant at which the apparent geocentric ecliptic
+ * longitude of the Moon minus that of the Sun equals target (0 = new moon,
+ * 180 = full moon). Only genuine crossings are accepted (both bracket ends
+ * within 90 deg of the target), so the +-180 deg wrap of the difference is
+ * never mistaken for a root. Refined to 1e-10 day.
+ */
+typedef struct syzygy_ctx { double target; } syzygy_ctx;
+
+static double syzygy_function(double t, const void *ctx, char *error)
+{
+    double sun[3], moon[3], d;
+    if (internal_calc_position_ut(t, JME_BODY_SUN, 0, sun, error) != JME_OK
+        || internal_calc_position_ut(t, JME_BODY_MOON, 0, moon, error) != JME_OK) {
+        return NAN;
+    }
+    d = (atan2(moon[1], moon[0]) - atan2(sun[1], sun[0])) * JME_EVENTS_RAD_TO_DEG - ((const syzygy_ctx *)ctx)->target;
+    return jme_degrees_difference_signed(jme_degree_normalize(d), 0.0);
+}
+
+static double syzygy_function_neg(double t, const void *ctx, char *error)
+{
+    return -syzygy_function(t, ctx, error);
+}
+
+static int find_syzygy(double jd_start, int backward, double target, double *tret, char *error)
 {
     double direction = backward ? -1.0 : 1.0;
-    double t0 = jd_start;
-    double prev_diff;
+    double t0 = jd_start, f0, t1, f1;
+    syzygy_ctx c;
     int i;
 
-    {
-        double sun_state[6];
-        double moon_state[6];
-
-        if (jme_calc_ut(t0, JME_BODY_SUN, 0, sun_state, error) != JME_OK
-            || jme_calc_ut(t0, JME_BODY_MOON, 0, moon_state, error) != JME_OK) {
-            return JME_ERR;
-        }
-        prev_diff = jme_degrees_difference_signed(moon_state[0], sun_state[0] + 180.0);
+    if (!isfinite(jd_start)) {
+        jme_set_error(error, "Julian date must be finite");
+        return JME_ERR;
     }
-
+    c.target = target;
+    f0 = syzygy_function(t0, &c, error);
+    if (!isfinite(f0)) return JME_ERR;
     for (i = 1; i <= 120; i++) {
-        double t1 = jd_start + direction * (0.5 * i);
-        double sun_state[6];
-        double moon_state[6];
-        double diff;
-        int j;
-
-        if (jme_calc_ut(t1, JME_BODY_SUN, 0, sun_state, error) != JME_OK
-            || jme_calc_ut(t1, JME_BODY_MOON, 0, moon_state, error) != JME_OK) {
-            return JME_ERR;
-        }
-        diff = jme_degrees_difference_signed(moon_state[0], sun_state[0] + 180.0);
-
-        if ((prev_diff <= 0.0 && diff >= 0.0) || (prev_diff >= 0.0 && diff <= 0.0)) {
-            double a = t0;
-            double b = t1;
-            double fa = prev_diff;
-
-            for (j = 0; j < 48; j++) {
-                double m = 0.5 * (a + b);
-                double sun_mid[6];
-                double moon_mid[6];
-                double fm;
-
-                if (jme_calc_ut(m, JME_BODY_SUN, 0, sun_mid, error) != JME_OK
-                    || jme_calc_ut(m, JME_BODY_MOON, 0, moon_mid, error) != JME_OK) {
-                    return JME_ERR;
-                }
-                fm = jme_degrees_difference_signed(moon_mid[0], sun_mid[0] + 180.0);
-
-                if (fabs(fm) < 1e-8 || fabs(b - a) < 1e-8) {
-                    *tret = m;
-                    return JME_OK;
-                }
-
-                if ((fa <= 0.0 && fm >= 0.0) || (fa >= 0.0 && fm <= 0.0)) {
-                    b = m;
-                } else {
-                    a = m;
-                    fa = fm;
-                }
+        t1 = jd_start + direction * (0.5 * i);
+        f1 = syzygy_function(t1, &c, error);
+        if (!isfinite(f1)) return JME_ERR;
+        if (fabs(f0) < 90.0 && fabs(f1) < 90.0 && ((f0 < 0.0) != (f1 < 0.0) || f1 == 0.0)) {
+            if (f1 == 0.0) { *tret = t1; return JME_OK; }
+            if (f0 < 0.0) return events_refine_root(syzygy_function, &c, t0, f0, t1, f1, tret, error);
+            {
+                syzygy_ctx n;
+                n.target = target;
+                /* make the lower end negative by evaluating -f */
+                return events_refine_root(syzygy_function_neg, &n, t1, -f1, t0, -f0, tret, error);
             }
-
-            *tret = 0.5 * (a + b);
-            return JME_OK;
         }
-
         t0 = t1;
-        prev_diff = diff;
+        f0 = f1;
     }
-
-    jme_set_error(error, "Full-moon opposition not found in search window");
+    jme_set_error(error, "Syzygy not found in search window");
     return JME_ERR;
+}
+
+static int find_full_moon_opposition(double jd_start, int backward, double *tret, char *error)
+{
+    return find_syzygy(jd_start, backward, 180.0, tret, error);
+}
+
+static int find_new_moon_conjunction(double jd_start, int backward, double *tret, char *error)
+{
+    return find_syzygy(jd_start, backward, 0.0, tret, error);
+}
+
+
+static double lunar_offset_min_fn(double t, const void *ctx, char *error)
+{
+    (void)ctx;
+    return lunar_eclipse_offset_metric(t, error);
 }
 
 static int refine_lunar_eclipse_maximum(double guess, double *tmax, char *error)
 {
-    double a = guess - 0.75;
-    double b = guess + 0.75;
-    double gr = 0.6180339887498948482;
-    double x1 = b - gr * (b - a);
-    double x2 = a + gr * (b - a);
-    double f1 = lunar_eclipse_offset_metric(x1, error);
-    double f2 = lunar_eclipse_offset_metric(x2, error);
-    int i;
-
-    if (!isfinite(f1) || !isfinite(f2)) {
-        return JME_ERR;
-    }
-
-    for (i = 0; i < 64; i++) {
-        if (f1 > f2) {
-            a = x1;
-            x1 = x2;
-            f1 = f2;
-            x2 = a + gr * (b - a);
-            f2 = lunar_eclipse_offset_metric(x2, error);
-        } else {
-            b = x2;
-            x2 = x1;
-            f2 = f1;
-            x1 = b - gr * (b - a);
-            f1 = lunar_eclipse_offset_metric(x1, error);
-        }
-
-        if (!isfinite(f1) || !isfinite(f2)) {
-            return JME_ERR;
-        }
-
-        if (fabs(b - a) < 1e-9) {
-            break;
-        }
-    }
-
-    *tmax = 0.5 * (a + b);
-    return JME_OK;
+    return events_minimize_precise(lunar_offset_min_fn, 0, guess - 0.75, guess + 0.75, tmax, error);
 }
 
 /* kind 0: penumbral outer contact (P1/P4), 1: umbral outer (U1/U4),
@@ -377,27 +490,28 @@ static double lunar_contact_function(double t, int kind, char *error)
     return ls.theta - (ls.rho_u - ls.s_m);
 }
 
+typedef struct lunar_contact_ctx { int kind; } lunar_contact_ctx;
+static double lunar_contact_root_fn(double t, const void *ctx, char *error)
+{
+    return lunar_contact_function(t, ((const lunar_contact_ctx *)ctx)->kind, error);
+}
+
 static int find_contact_time(double tmid, int kind, int left_side, double *tret, char *error)
 {
     double step = 0.01, prev = tmid, f;
-    int i, j;
+    int i;
 
     f = lunar_contact_function(tmid, kind, error);
     if (!isfinite(f) || f >= 0.0) return JME_ERR;
     for (i = 1; i <= 40; i++) {
         double t = tmid + (left_side ? -1.0 : 1.0) * step * i;
+        double fprev = f;
         f = lunar_contact_function(t, kind, error);
         if (!isfinite(f)) return JME_ERR;
         if (f >= 0.0) {
-            double lo = prev, hi = t;
-            for (j = 0; j < 200 && fabs(hi - lo) > 1e-10; j++) {
-                double m = 0.5 * (lo + hi);
-                double fm = lunar_contact_function(m, kind, error);
-                if (!isfinite(fm)) return JME_ERR;
-                if (fm >= 0.0) hi = m; else lo = m;
-            }
-            *tret = 0.5 * (lo + hi);
-            return JME_OK;
+            lunar_contact_ctx c;
+            c.kind = kind;
+            return events_refine_root(lunar_contact_root_fn, &c, prev, fprev, t, f, tret, error);
         }
         prev = t;
     }
@@ -552,78 +666,6 @@ static int find_visible_moon_interval(double start, double end, double *geopos, 
     return JME_ERR;
 }
 
-static int find_new_moon_conjunction(double jd_start, int backward, double *tret, char *error)
-{
-    double direction = backward ? -1.0 : 1.0;
-    double t0 = jd_start;
-    double prev_diff;
-    int i;
-
-    {
-        double sun_state[6];
-        double moon_state[6];
-
-        if (jme_calc_ut(t0, JME_BODY_SUN, 0, sun_state, error) != JME_OK
-            || jme_calc_ut(t0, JME_BODY_MOON, 0, moon_state, error) != JME_OK) {
-            return JME_ERR;
-        }
-        prev_diff = jme_degrees_difference_signed(moon_state[0], sun_state[0]);
-    }
-
-    for (i = 1; i <= 120; i++) {
-        double t1 = jd_start + direction * (0.5 * i);
-        double sun_state[6];
-        double moon_state[6];
-        double diff;
-        int j;
-
-        if (jme_calc_ut(t1, JME_BODY_SUN, 0, sun_state, error) != JME_OK
-            || jme_calc_ut(t1, JME_BODY_MOON, 0, moon_state, error) != JME_OK) {
-            return JME_ERR;
-        }
-        diff = jme_degrees_difference_signed(moon_state[0], sun_state[0]);
-
-        if ((prev_diff <= 0.0 && diff >= 0.0) || (prev_diff >= 0.0 && diff <= 0.0)) {
-            double a = t0;
-            double b = t1;
-            double fa = prev_diff;
-
-            for (j = 0; j < 48; j++) {
-                double m = 0.5 * (a + b);
-                double sun_mid[6];
-                double moon_mid[6];
-                double fm;
-
-                if (jme_calc_ut(m, JME_BODY_SUN, 0, sun_mid, error) != JME_OK
-                    || jme_calc_ut(m, JME_BODY_MOON, 0, moon_mid, error) != JME_OK) {
-                    return JME_ERR;
-                }
-                fm = jme_degrees_difference_signed(moon_mid[0], sun_mid[0]);
-
-                if (fabs(fm) < 1e-8 || fabs(b - a) < 1e-8) {
-                    *tret = m;
-                    return JME_OK;
-                }
-
-                if ((fa <= 0.0 && fm >= 0.0) || (fa >= 0.0 && fm <= 0.0)) {
-                    b = m;
-                } else {
-                    a = m;
-                    fa = fm;
-                }
-            }
-
-            *tret = 0.5 * (a + b);
-            return JME_OK;
-        }
-
-        t0 = t1;
-        prev_diff = diff;
-    }
-
-    jme_set_error(error, "New-moon conjunction not found in search window");
-    return JME_ERR;
-}
 
 static double angular_radius_deg(double radius_km, double distance_km)
 {
@@ -658,16 +700,20 @@ static int solar_eclipse_local_geometry(double jd_ut, double *geopos, double *se
 
     internal_topo_override_set(geopos[0], geopos[1], geopos[2]);
 
-    if (jme_calc_ut(jd_ut, JME_BODY_SUN, JME_CALC_EQUATORIAL | JME_CALC_TOPOCENTRIC, sun_eq, error) != JME_OK
-        || jme_calc_ut(jd_ut, JME_BODY_MOON, JME_CALC_EQUATORIAL | JME_CALC_TOPOCENTRIC, moon_eq, error) != JME_OK) {
+    if (internal_calc_position_ut(jd_ut, JME_BODY_SUN, JME_CALC_EQUATORIAL | JME_CALC_TOPOCENTRIC, sun_eq, error) != JME_OK
+        || internal_calc_position_ut(jd_ut, JME_BODY_MOON, JME_CALC_EQUATORIAL | JME_CALC_TOPOCENTRIC, moon_eq, error) != JME_OK) {
         return JME_ERR;
     }
 
-    sun_dist_km = sun_eq[2] * JME_AU_KM;
-    moon_dist_km = moon_eq[2] * JME_AU_KM;
+    sun_dist_km = vec_norm(sun_eq) * JME_AU_KM;
+    moon_dist_km = vec_norm(moon_eq) * JME_AU_KM;
 
     if (separation_deg != 0) {
-        *separation_deg = jme_spherical_angular_separation(sun_eq[0], sun_eq[1], moon_eq[0], moon_eq[1]);
+        double cr[3];
+        cr[0] = sun_eq[1] * moon_eq[2] - sun_eq[2] * moon_eq[1];
+        cr[1] = sun_eq[2] * moon_eq[0] - sun_eq[0] * moon_eq[2];
+        cr[2] = sun_eq[0] * moon_eq[1] - sun_eq[1] * moon_eq[0];
+        *separation_deg = atan2(vec_norm(cr), vec_dot(sun_eq, moon_eq)) * JME_EVENTS_RAD_TO_DEG;
     }
     if (sun_radius_deg != 0) {
         *sun_radius_deg = angular_radius_deg(JME_EVENTS_SUN_RADIUS_KM, sun_dist_km);
@@ -718,8 +764,8 @@ static double solar_eclipse_global_metric(double jd_ut, char *error)
     double sun[6], moon[6], axis[3], closest[3], d, s;
     int i;
 
-    if (jme_calc_ut(jd_ut, JME_BODY_SUN, JME_CALC_XYZ, sun, error) != JME_OK
-        || jme_calc_ut(jd_ut, JME_BODY_MOON, JME_CALC_XYZ, moon, error) != JME_OK) {
+    if (internal_calc_position_ut(jd_ut, JME_BODY_SUN, 0, sun, error) != JME_OK
+        || internal_calc_position_ut(jd_ut, JME_BODY_MOON, 0, moon, error) != JME_OK) {
         return NAN;
     }
     for (i = 0; i < 3; i++) axis[i] = moon[i] - sun[i];
@@ -743,47 +789,19 @@ static double solar_eclipse_local_metric(double jd_ut, double *geopos, char *err
     return sep;
 }
 
+typedef struct solar_max_ctx { double *geopos; int local_mode; } solar_max_ctx;
+static double solar_max_fn(double t, const void *ctx, char *error)
+{
+    const solar_max_ctx *c = (const solar_max_ctx *)ctx;
+    return c->local_mode ? solar_eclipse_local_metric(t, c->geopos, error) : solar_eclipse_global_metric(t, error);
+}
+
 static int refine_solar_maximum(double guess, double *geopos, int local_mode, double *tmax, char *error)
 {
-    double a = guess - 0.75;
-    double b = guess + 0.75;
-    double gr = 0.6180339887498948482;
-    double x1 = b - gr * (b - a);
-    double x2 = a + gr * (b - a);
-    double f1 = local_mode ? solar_eclipse_local_metric(x1, geopos, error) : solar_eclipse_global_metric(x1, error);
-    double f2 = local_mode ? solar_eclipse_local_metric(x2, geopos, error) : solar_eclipse_global_metric(x2, error);
-    int i;
-
-    if (!isfinite(f1) || !isfinite(f2)) {
-        return JME_ERR;
-    }
-
-    for (i = 0; i < 64; i++) {
-        if (f1 > f2) {
-            a = x1;
-            x1 = x2;
-            f1 = f2;
-            x2 = a + gr * (b - a);
-            f2 = local_mode ? solar_eclipse_local_metric(x2, geopos, error) : solar_eclipse_global_metric(x2, error);
-        } else {
-            b = x2;
-            x2 = x1;
-            f2 = f1;
-            x1 = b - gr * (b - a);
-            f1 = local_mode ? solar_eclipse_local_metric(x1, geopos, error) : solar_eclipse_global_metric(x1, error);
-        }
-
-        if (!isfinite(f1) || !isfinite(f2)) {
-            return JME_ERR;
-        }
-
-        if (fabs(b - a) < 1e-9) {
-            break;
-        }
-    }
-
-    *tmax = 0.5 * (a + b);
-    return JME_OK;
+    solar_max_ctx c;
+    c.geopos = geopos;
+    c.local_mode = local_mode;
+    return events_minimize_precise(solar_max_fn, &c, guess - 0.75, guess + 0.75, tmax, error);
 }
 
 static double event_body_radius_km(int body)
@@ -1129,12 +1147,19 @@ static double solar_local_contact_function(double t, double *geopos, int inner, 
     return inner ? sep - fabs(sr - mr) : sep - (sr + mr);
 }
 
+typedef struct solar_local_ctx { double *geopos; int inner; } solar_local_ctx;
+static double solar_local_root_fn(double t, const void *ctx, char *error)
+{
+    const solar_local_ctx *c = (const solar_local_ctx *)ctx;
+    return solar_local_contact_function(t, c->geopos, c->inner, error);
+}
+
 static int find_solar_contact_time(double tmid, double *geopos, int inner, int left_side, double *tret, char *error)
 {
     double step = 0.01;
     double t_prev = tmid;
     double f_prev = solar_local_contact_function(t_prev, geopos, inner, error);
-    int i, j;
+    int i;
 
     if (!isfinite(f_prev)) return JME_ERR;
     if (f_prev > 0.0) return JME_ERR; /* no overlap of this kind at tmid */
@@ -1142,18 +1167,14 @@ static int find_solar_contact_time(double tmid, double *geopos, int inner, int l
         double t = tmid + (left_side ? -1.0 : 1.0) * step * i;
         double f = solar_local_contact_function(t, geopos, inner, error);
         if (!isfinite(f)) return JME_ERR;
-        if (f > 0.0) {
-            double lo = t_prev, hi = t; /* f(lo) <= 0 < f(hi) */
-            for (j = 0; j < 200 && fabs(hi - lo) > 1e-10; j++) {
-                double m = 0.5 * (lo + hi);
-                double fm = solar_local_contact_function(m, geopos, inner, error);
-                if (!isfinite(fm)) return JME_ERR;
-                if (fm > 0.0) hi = m; else lo = m;
-            }
-            *tret = 0.5 * (lo + hi);
-            return JME_OK;
+        if (f >= 0.0) {
+            solar_local_ctx c;
+            c.geopos = geopos;
+            c.inner = inner;
+            return events_refine_root(solar_local_root_fn, &c, t_prev, f_prev, t, f, tret, error);
         }
         t_prev = t;
+        f_prev = f;
     }
     return JME_ERR;
 }
@@ -1775,8 +1796,8 @@ static int solar_bessel_at(double jd_ut, solar_bessel *b, char *error)
     double sun[6], moon[6], g[3], gn, sinf1, sinf2, kk, d, a;
     int i;
 
-    if (jme_calc_ut(jd_ut, JME_BODY_SUN, JME_CALC_EQUATORIAL | JME_CALC_XYZ, sun, error) != JME_OK
-        || jme_calc_ut(jd_ut, JME_BODY_MOON, JME_CALC_EQUATORIAL | JME_CALC_XYZ, moon, error) != JME_OK) {
+    if (internal_calc_position_ut(jd_ut, JME_BODY_SUN, JME_CALC_EQUATORIAL, sun, error) != JME_OK
+        || internal_calc_position_ut(jd_ut, JME_BODY_MOON, JME_CALC_EQUATORIAL, moon, error) != JME_OK) {
         return JME_ERR;
     }
     for (i = 0; i < 3; i++) {
@@ -1942,27 +1963,28 @@ static double solar_bessel_condition(double jd_ut, int kind, char *error)
 
 /* Find the instant, on one side of t0 (where condition(t0) < 0), at which
  * the condition becomes >= 0. Bisection to 1e-10 d (8.6 microseconds). */
+typedef struct solar_bessel_ctx { int kind; } solar_bessel_ctx;
+static double solar_bessel_root_fn(double t, const void *ctx, char *error)
+{
+    return solar_bessel_condition(t, ((const solar_bessel_ctx *)ctx)->kind, error);
+}
+
 static int solar_bessel_contact(double t0, int kind, int left_side, double max_span, double *tret, char *error)
 {
     double step = 0.005, prev = t0, f;
-    int i, j;
+    int i;
 
     f = solar_bessel_condition(t0, kind, error);
     if (!isfinite(f) || f >= 0.0) return JME_ERR;
     for (i = 1; i * step <= max_span; i++) {
         double t = t0 + (left_side ? -1.0 : 1.0) * step * i;
+        double fprev = f;
         f = solar_bessel_condition(t, kind, error);
         if (!isfinite(f)) return JME_ERR;
         if (f >= 0.0) {
-            double lo = prev, hi = t;
-            for (j = 0; j < 200 && fabs(hi - lo) > 1e-10; j++) {
-                double m = 0.5 * (lo + hi);
-                double fm = solar_bessel_condition(m, kind, error);
-                if (!isfinite(fm)) return JME_ERR;
-                if (fm >= 0.0) hi = m; else lo = m;
-            }
-            *tret = 0.5 * (lo + hi);
-            return JME_OK;
+            solar_bessel_ctx c;
+            c.kind = kind;
+            return events_refine_root(solar_bessel_root_fn, &c, prev, fprev, t, f, tret, error);
         }
         prev = t;
     }
@@ -1970,19 +1992,20 @@ static int solar_bessel_contact(double t0, int kind, int left_side, double max_s
 }
 
 /* Root of L2'(central point) between a and b (sign change assumed). */
+typedef struct solar_hybrid_ctx { double sign; } solar_hybrid_ctx;
+static double solar_hybrid_root_fn(double t, const void *ctx, char *error)
+{
+    return ((const solar_hybrid_ctx *)ctx)->sign * solar_bessel_condition(t, 3, error);
+}
+
 static int solar_bessel_hybrid_transition(double a, double b, double *tret, char *error)
 {
     double fa = solar_bessel_condition(a, 3, error);
-    int j;
-    if (!isfinite(fa)) return JME_ERR;
-    for (j = 0; j < 200 && fabs(b - a) > 1e-10; j++) {
-        double m = 0.5 * (a + b);
-        double fm = solar_bessel_condition(m, 3, error);
-        if (!isfinite(fm)) return JME_ERR;
-        if ((fm < 0.0) == (fa < 0.0)) { a = m; fa = fm; } else { b = m; }
-    }
-    *tret = 0.5 * (a + b);
-    return JME_OK;
+    double fb = solar_bessel_condition(b, 3, error);
+    solar_hybrid_ctx c;
+    if (!isfinite(fa) || !isfinite(fb) || (fa < 0.0) == (fb < 0.0)) return JME_ERR;
+    c.sign = fa < 0.0 ? 1.0 : -1.0; /* make f(a) negative */
+    return events_refine_root(solar_hybrid_root_fn, &c, a, c.sign * fa, b, c.sign * fb, tret, error);
 }
 
 /* Instantaneous global classification and representative surface point.

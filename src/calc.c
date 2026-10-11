@@ -1231,6 +1231,46 @@ int internal_finish_output(const double *p0, const double *const *stencil, doubl
     return JME_OK;
 }
 
+/*
+ * Position-only evaluation for internal event searches: the same complete
+ * reduction as jme_calc (identical position bits), rectangular, au, in the
+ * frame selected by flags, without the rate stencil (positions only are
+ * needed by root finders; this is not an approximation of jme_calc).
+ */
+int internal_calc_position_ut(double jd_ut, int body, int flags, double *pos, char *error)
+{
+    double jd_et;
+    int center = JME_BODY_EARTH;
+    int i;
+
+    if (pos == 0) {
+        jme_set_error(error, "Output buffer is required");
+        return JME_ERR;
+    }
+    for (i = 0; i < 3; i++) pos[i] = 0.0;
+    if (error != 0) error[0] = '\0';
+    if (internal_ut_to_et(jd_ut, &jd_et, error) != JME_OK) return JME_ERR;
+    if (body == JME_BODY_MEAN_NODE || body == JME_BODY_TRUE_NODE) {
+        double r[6];
+        if (jme_calc(jd_et, body, (flags | JME_CALC_XYZ) & ~(JME_CALC_DISTANCE_KM | JME_CALC_VELOCITY_PER_SECOND), r, error) != JME_OK) return JME_ERR;
+        for (i = 0; i < 3; i++) pos[i] = r[i];
+        return JME_OK;
+    }
+    if (flags & JME_CALC_BARYCENTRIC) {
+        center = JME_BODY_SOLAR_SYSTEM_BARYCENTER;
+    } else if (flags & JME_CALC_HELIOCENTRIC) {
+        center = JME_BODY_SUN;
+    }
+    if (calc_output_position(jd_et, body, center, flags, jme_context_engine_policy(), pos, error) != JME_OK) {
+        return JME_ERR;
+    }
+    if (!state_is_finite(pos, 3)) {
+        jme_set_error(error, "Calculation produced non-finite output");
+        return JME_ERR;
+    }
+    return JME_OK;
+}
+
 int jme_calc(double jd_et, int body, int flags, double *results, char *error)
 {
     double p0[3], q[4][3];
