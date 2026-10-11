@@ -55,6 +55,9 @@ This file is updated after each milestone. Status keys: FIXED / PARTIAL / OPEN.
 | Tidal acceleration (jme_set_tid_acc) | OPEN | stored but not applied to Delta-T (documented in TIME_SCALES.md) |
 
 ## Commits (this session, newest first)
+- 3919eba / c281a76 Notices: test-generator dependencies, publications consulted
+- b48050d Docs: VALIDATION certification table, STATUS superseded notice
+- 3cf657e Report milestone
 - 6046e6b Occultations: generalised Besselian construction (planets, stars); astrometric contact geometry; occult_reference CTest; ACCURACY.md
 - 5244784 Houses: Gauquelin 36-sector cusps API; API_REFERENCE regenerated
 - e32fd0a Docs: AYANAMSA_MODELS, TIME_SCALES
@@ -97,6 +100,9 @@ This file is updated after each milestone. Status keys: FIXED / PARTIAL / OPEN.
 - Delta-T steps: 0.22 s at the 1973 IERS switch; 358 s at -720 (parabola/spline).
 - Polar motion not applied to topocentric positions (< 15 m).
 - Eclipse contact tangency evaluated on the axis silhouette (generator tilt 0.27 deg; < 0.2 s).
+
+## CI
+Green on 3919eba (6 jobs: GCC, Clang, GCC/Clang + CALCEPH + DE440s, AppleClang macOS + CALCEPH, MSVC): https://github.com/jayeshmepani/jpl-ephemeris/actions/runs/38185420674
 
 ## Test count
 21 CTest tests (19 in builds without PowerShell): all pass in GCC+CALCEPH, Clang+CALCEPH and GCC without CALCEPH (reference tests skip there).
