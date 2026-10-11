@@ -169,100 +169,84 @@ static int heliacal_visibility_flag(double body_alt, double sun_alt, double arcu
 
 #define JME_SOLAR_VISIBLE_UPPER_LIMB_ALTITUDE_DEG (-0.8333)
 
-static int lunar_eclipse_geometry(double jd_ut, double *umbral_mag, double *penumbral_mag, double *umbral_radius_km, double *penumbral_radius_km, double *offset_km, double *axis_distance_km, char *error)
+/*
+ * Lunar-eclipse shadow geometry, geocentric and angular (Danjon's
+ * convention as used by the NASA lunar eclipse canon, Espenak & Meeus 2009,
+ * and the Explanatory Supplement 1992 sect. 8.4):
+ *   pi1   = asin(0.998340 a / D_moon)   (Earth radius at latitude 45 deg)
+ *   s     = asin(R_sun / D_sun),  pi_s = asin(a / D_sun)
+ *   umbra     rho_u = (1 + 1/85) pi1 - s + pi_s
+ *   penumbra  rho_p = (1 + 1/85) pi1 + s + pi_s
+ *   theta = angle between the Moon and the anti-Sun, s_m = asin(R_moon/D_moon)
+ *   umbral magnitude    (rho_u + s_m - theta) / (2 s_m), penumbral likewise.
+ * Apparent geocentric places. Lengths returned in km are the angles times
+ * the Moon's distance (consistent units for the callers).
+ */
+typedef struct lunar_shadow {
+    double theta, rho_u, rho_p, s_m, d_moon_km, along_km;
+} lunar_shadow;
+
+static int lunar_shadow_at(double jd_ut, lunar_shadow *ls, char *error)
 {
-    double sun_state[6];
-    double moon_state[6];
-    double sun_vec[3];
-    double moon_vec[3];
-    double axis[3];
-    double along;
-    double offset_vec[3];
-    double sun_distance_km;
-    double earth_radius_km;
-    double moon_distance_km;
-    double umbra_km;
-    double penumbra_km;
-    double offset;
+    double sun[6], moon[6], ds, dm, c;
+    const double a = JME_EVENTS_EARTH_RADIUS_KM;
+    double pi1, s_sun, pi_sun;
     int i;
 
-    if (jme_calc_ut(jd_ut, JME_BODY_SUN, 0, sun_state, error) != JME_OK
-        || jme_calc_ut(jd_ut, JME_BODY_MOON, 0, moon_state, error) != JME_OK
-        || jme_spherical_to_rectangular_state(sun_state, sun_state) != JME_OK
-        || jme_spherical_to_rectangular_state(moon_state, moon_state) != JME_OK) {
+    if (jme_calc_ut(jd_ut, JME_BODY_SUN, JME_CALC_XYZ, sun, error) != JME_OK
+        || jme_calc_ut(jd_ut, JME_BODY_MOON, JME_CALC_XYZ, moon, error) != JME_OK) {
         return JME_ERR;
     }
-
-    for (i = 0; i < 3; i++) {
-        sun_vec[i] = sun_state[i] * JME_AU_KM;
-        moon_vec[i] = moon_state[i] * JME_AU_KM;
-    }
-
-    sun_distance_km = vec_norm(sun_vec);
-    if (!isfinite(sun_distance_km) || sun_distance_km <= 0.0) {
-        jme_set_error(error, "Lunar eclipse geometry requires a valid Sun-Earth distance");
+    for (i = 0; i < 3; i++) { sun[i] *= JME_AU_KM; moon[i] *= JME_AU_KM; }
+    ds = vec_norm(sun);
+    dm = vec_norm(moon);
+    if (!isfinite(ds) || !isfinite(dm) || ds <= 0.0 || dm <= 0.0) {
+        jme_set_error(error, "Lunar eclipse geometry requires valid Sun and Moon distances");
         return JME_ERR;
     }
-
-    for (i = 0; i < 3; i++) {
-        axis[i] = -sun_vec[i] / sun_distance_km;
+    /* angle between Moon and anti-Sun, robust form atan2(|u x v|, u.v) */
+    {
+        double cr[3], anti[3] = {-sun[0], -sun[1], -sun[2]};
+        cr[0] = moon[1] * anti[2] - moon[2] * anti[1];
+        cr[1] = moon[2] * anti[0] - moon[0] * anti[2];
+        cr[2] = moon[0] * anti[1] - moon[1] * anti[0];
+        c = vec_dot(moon, anti);
+        ls->theta = atan2(vec_norm(cr), c);
+        ls->along_km = c / ds;
     }
-
-    along = vec_dot(moon_vec, axis);
-    for (i = 0; i < 3; i++) {
-        offset_vec[i] = moon_vec[i] - along * axis[i];
-    }
-
-    offset = vec_norm(offset_vec);
-    earth_radius_km = JME_EVENTS_EARTH_RADIUS_KM * (1.0 + 1.0 / 85.0);
-    moon_distance_km = vec_norm(moon_vec);
-
-    umbra_km = earth_radius_km - along * (JME_EVENTS_SUN_RADIUS_KM - earth_radius_km) / sun_distance_km;
-    penumbra_km = earth_radius_km + along * (JME_EVENTS_SUN_RADIUS_KM + earth_radius_km) / sun_distance_km;
-
-    if (!isfinite(along) || !isfinite(offset) || !isfinite(moon_distance_km)
-        || !isfinite(umbra_km) || !isfinite(penumbra_km)
-        || moon_distance_km <= 0.0 || penumbra_km <= 0.0) {
-        jme_set_error(error, "Lunar eclipse geometry produced non-finite shadow values");
-        return JME_ERR;
-    }
-
-    if (umbral_mag != 0) {
-        *umbral_mag = (umbra_km + JME_EVENTS_MOON_RADIUS_KM - offset) / (2.0 * JME_EVENTS_MOON_RADIUS_KM);
-    }
-    if (penumbral_mag != 0) {
-        *penumbral_mag = (penumbra_km + JME_EVENTS_MOON_RADIUS_KM - offset) / (2.0 * JME_EVENTS_MOON_RADIUS_KM);
-    }
-    if (umbral_radius_km != 0) {
-        *umbral_radius_km = umbra_km;
-    }
-    if (penumbral_radius_km != 0) {
-        *penumbral_radius_km = penumbra_km;
-    }
-    if (offset_km != 0) {
-        *offset_km = offset;
-    }
-    if (axis_distance_km != 0) {
-        *axis_distance_km = along;
-    }
-
+    pi1 = asin(0.998340 * a / dm);
+    s_sun = asin(JME_EVENTS_SUN_RADIUS_KM / ds);
+    pi_sun = asin(a / ds);
+    ls->rho_u = (1.0 + 1.0 / 85.0) * pi1 - s_sun + pi_sun;
+    ls->rho_p = (1.0 + 1.0 / 85.0) * pi1 + s_sun + pi_sun;
+    ls->s_m = asin(JME_EVENTS_MOON_RADIUS_KM / dm);
+    ls->d_moon_km = dm;
     return JME_OK;
 }
 
+static int lunar_eclipse_geometry(double jd_ut, double *umbral_mag, double *penumbral_mag, double *umbral_radius_km, double *penumbral_radius_km, double *offset_km, double *axis_distance_km, char *error)
+{
+    lunar_shadow ls;
+
+    if (lunar_shadow_at(jd_ut, &ls, error) != JME_OK) return JME_ERR;
+    if (umbral_mag != 0) *umbral_mag = (ls.rho_u + ls.s_m - ls.theta) / (2.0 * ls.s_m);
+    if (penumbral_mag != 0) *penumbral_mag = (ls.rho_p + ls.s_m - ls.theta) / (2.0 * ls.s_m);
+    if (umbral_radius_km != 0) *umbral_radius_km = ls.rho_u * ls.d_moon_km;
+    if (penumbral_radius_km != 0) *penumbral_radius_km = ls.rho_p * ls.d_moon_km;
+    if (offset_km != 0) *offset_km = ls.theta * ls.d_moon_km;
+    if (axis_distance_km != 0) *axis_distance_km = ls.along_km;
+    return JME_OK;
+}
+
+/* Greatest lunar eclipse: minimum angular distance of the Moon's centre
+ * from the shadow axis (NASA canon definition). */
 static double lunar_eclipse_offset_metric(double jd_ut, char *error)
 {
-    double offset = 0.0;
-    double axis_distance = 0.0;
+    lunar_shadow ls;
 
-    if (lunar_eclipse_geometry(jd_ut, 0, 0, 0, 0, &offset, &axis_distance, error) != JME_OK) {
-        return NAN;
-    }
-
-    if (axis_distance <= 0.0) {
-        return fabs(axis_distance) + 1.0e12;
-    }
-
-    return offset;
+    if (lunar_shadow_at(jd_ut, &ls, error) != JME_OK) return NAN;
+    if (ls.along_km <= 0.0) return JME_EVENTS_PI + ls.theta;
+    return ls.theta;
 }
 
 static int find_full_moon_opposition(double jd_start, int backward, double *tret, char *error)
@@ -381,61 +365,42 @@ static int refine_lunar_eclipse_maximum(double guess, double *tmax, char *error)
     return JME_OK;
 }
 
-static int find_contact_time(double tmid, double threshold_km, int left_side, double *tret, char *error)
+/* kind 0: penumbral outer contact (P1/P4), 1: umbral outer (U1/U4),
+ * 2: umbral inner (U2/U3). Negative while the Moon is inside the limit;
+ * shadow radii re-evaluated at each instant. */
+static double lunar_contact_function(double t, int kind, char *error)
 {
-    double step = 0.02;
-    double t_prev = tmid;
-    double f_prev;
-    int i;
+    lunar_shadow ls;
+    if (lunar_shadow_at(t, &ls, error) != JME_OK) return NAN;
+    if (kind == 0) return ls.theta - (ls.rho_p + ls.s_m);
+    if (kind == 1) return ls.theta - (ls.rho_u + ls.s_m);
+    return ls.theta - (ls.rho_u - ls.s_m);
+}
 
-    f_prev = lunar_eclipse_offset_metric(t_prev, error) - threshold_km;
-    if (!isfinite(f_prev)) {
-        return JME_ERR;
-    }
+static int find_contact_time(double tmid, int kind, int left_side, double *tret, char *error)
+{
+    double step = 0.01, prev = tmid, f;
+    int i, j;
 
-    for (i = 1; i <= 100; i++) {
+    f = lunar_contact_function(tmid, kind, error);
+    if (!isfinite(f) || f >= 0.0) return JME_ERR;
+    for (i = 1; i <= 40; i++) {
         double t = tmid + (left_side ? -1.0 : 1.0) * step * i;
-        double f = lunar_eclipse_offset_metric(t, error) - threshold_km;
-        int j;
-
-        if (!isfinite(f)) {
-            return JME_ERR;
-        }
-
-        if ((f_prev <= 0.0 && f >= 0.0) || (f_prev >= 0.0 && f <= 0.0)) {
-            double a = left_side ? t : t_prev;
-            double b = left_side ? t_prev : t;
-            double fa = left_side ? f : f_prev;
-
-            for (j = 0; j < 48; j++) {
-                double m = 0.5 * (a + b);
-                double fm = lunar_eclipse_offset_metric(m, error) - threshold_km;
-
-                if (!isfinite(fm)) {
-                    return JME_ERR;
-                }
-
-                if (fabs(fm) < 1e-6 || fabs(b - a) < 1e-8) {
-                    *tret = m;
-                    return JME_OK;
-                }
-
-                if ((fa <= 0.0 && fm >= 0.0) || (fa >= 0.0 && fm <= 0.0)) {
-                    b = m;
-                } else {
-                    a = m;
-                    fa = fm;
-                }
+        f = lunar_contact_function(t, kind, error);
+        if (!isfinite(f)) return JME_ERR;
+        if (f >= 0.0) {
+            double lo = prev, hi = t;
+            for (j = 0; j < 200 && fabs(hi - lo) > 1e-10; j++) {
+                double m = 0.5 * (lo + hi);
+                double fm = lunar_contact_function(m, kind, error);
+                if (!isfinite(fm)) return JME_ERR;
+                if (fm >= 0.0) hi = m; else lo = m;
             }
-
-            *tret = 0.5 * (a + b);
+            *tret = 0.5 * (lo + hi);
             return JME_OK;
         }
-
-        t_prev = t;
-        f_prev = f;
+        prev = t;
     }
-
     return JME_ERR;
 }
 
@@ -2254,14 +2219,24 @@ static int jme_lun_eclipse_when_impl(double jd_start, int flags, int iflag, doub
     int eclipse_type;
     int attempt;
     (void)flags;
-    (void)iflag;
 
     if (tret == 0) {
         jme_set_error(error, "Lunar eclipse time output is required");
         return JME_ERR;
     }
+    if (!isfinite(jd_start)) {
+        jme_set_error(error, "Julian date must be finite");
+        return JME_ERR;
+    }
+    /* iflag: eclipse-type filter, 0 = any, or JME_ECLIPSE_LUNAR_TOTAL /
+     * _PARTIAL / _PENUMBRAL; other values are errors. */
+    if (iflag != 0 && iflag != JME_ECLIPSE_LUNAR_TOTAL && iflag != JME_ECLIPSE_LUNAR_PARTIAL
+        && iflag != JME_ECLIPSE_LUNAR_PENUMBRAL) {
+        jme_set_error(error, "Unknown lunar eclipse type filter");
+        return JME_ERR;
+    }
 
-    for (attempt = 0; attempt < 30; attempt++) {
+    for (attempt = 0; attempt < 2000; attempt++) {
         if (find_full_moon_opposition(search_jd, backward, &guess, error) != JME_OK) {
             return JME_ERR;
         }
@@ -2273,24 +2248,25 @@ static int jme_lun_eclipse_when_impl(double jd_start, int flags, int iflag, doub
         }
 
         eclipse_type = classify_lunar_eclipse(umbral_mag, penumbral_mag);
-        if (eclipse_type != 0 && axis_km > 0.0) {
+        if (eclipse_type != 0 && axis_km > 0.0 && (iflag == 0 || iflag == eclipse_type)) {
             memset(tret, 0, sizeof(double) * 10);
             tret[0] = tmax;
             tret[1] = tmax;
 
             if (penumbral_mag > 0.0) {
-                find_contact_time(tmax, penumbra_km + JME_EVENTS_MOON_RADIUS_KM, 1, &tret[2], error);
-                find_contact_time(tmax, penumbra_km + JME_EVENTS_MOON_RADIUS_KM, 0, &tret[3], error);
+                find_contact_time(tmax, 0, 1, &tret[2], error);
+                find_contact_time(tmax, 0, 0, &tret[3], error);
             }
             if (umbral_mag > 0.0) {
-                find_contact_time(tmax, umbra_km + JME_EVENTS_MOON_RADIUS_KM, 1, &tret[4], error);
-                find_contact_time(tmax, umbra_km + JME_EVENTS_MOON_RADIUS_KM, 0, &tret[5], error);
+                find_contact_time(tmax, 1, 1, &tret[4], error);
+                find_contact_time(tmax, 1, 0, &tret[5], error);
             }
             if (umbral_mag >= 1.0) {
-                find_contact_time(tmax, umbra_km - JME_EVENTS_MOON_RADIUS_KM, 1, &tret[6], error);
-                find_contact_time(tmax, umbra_km - JME_EVENTS_MOON_RADIUS_KM, 0, &tret[7], error);
+                find_contact_time(tmax, 2, 1, &tret[6], error);
+                find_contact_time(tmax, 2, 0, &tret[7], error);
             }
 
+            if (error != 0) error[0] = '\0';
             return eclipse_type;
         }
 

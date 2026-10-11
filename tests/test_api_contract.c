@@ -1900,11 +1900,12 @@ int main(void)
         double hybrid_start = jme_julian_day(2023, 4, 20, 0.0, JME_CALENDAR_GREGORIAN);
         double hybrid_global_max = jme_julian_day(2023, 4, 20, 4.0 + 17.0 / 60.0 + 56.0 / 3600.0, JME_CALENDAR_GREGORIAN);
         double lunar_total_start = jme_julian_day(2022, 5, 15, 0.0, JME_CALENDAR_GREGORIAN);
-        double lunar_total_max = jme_julian_day(2022, 5, 16, 4.0 + 11.0 / 60.0 + 28.0 / 3600.0, JME_CALENDAR_GREGORIAN);
+        /* NASA lunar eclipse canon, greatest eclipse in TD (1 s) */
+        double lunar_total_max = jme_julian_day(2022, 5, 16, 4.0 + 12.0 / 60.0 + 42.0 / 3600.0, JME_CALENDAR_GREGORIAN);
         double lunar_penumbral_start = jme_julian_day(2024, 3, 25, 0.0, JME_CALENDAR_GREGORIAN);
-        double lunar_penumbral_max = jme_julian_day(2024, 3, 25, 7.0 + 12.0 / 60.0 + 49.0 / 3600.0, JME_CALENDAR_GREGORIAN);
+        double lunar_penumbral_max = jme_julian_day(2024, 3, 25, 7.0 + 13.0 / 60.0 + 59.0 / 3600.0, JME_CALENDAR_GREGORIAN);
         double lunar_partial_start = jme_julian_day(2023, 10, 28, 0.0, JME_CALENDAR_GREGORIAN);
-        double lunar_partial_max = jme_julian_day(2023, 10, 28, 20.0 + 14.0 / 60.0 + 3.9 / 3600.0, JME_CALENDAR_GREGORIAN);
+        double lunar_partial_max = jme_julian_day(2023, 10, 28, 20.0 + 15.0 / 60.0 + 18.0 / 3600.0, JME_CALENDAR_GREGORIAN);
         double mars_occult_start = jme_julian_day(2022, 12, 8, 0.0, JME_CALENDAR_GREGORIAN);
         double los_angeles_geopos[3] = {-118.2437, 34.0522, 0.0};
         int solar_rc = 0;
@@ -2044,19 +2045,20 @@ int main(void)
         }
 
         if ((jme_lun_eclipse_when(lunar_total_start, JME_CALC_TRUE_POSITION, 0, tret, 0, error) & JME_ECLIPSE_LUNAR_TOTAL) == 0
-            || fabs(tret[0] - lunar_total_max) > (20.0 / 1440.0)) {
+            || fabs(tret[0] + jme_delta_t(tret[0]) / 86400.0 - lunar_total_max) > (2.0 / 86400.0)) {
             fprintf(stderr, "lunar total eclipse search mismatch: %s %.17g\n", error, tret[0]);
             return 1;
         }
 
         if ((jme_lun_eclipse_when(lunar_total_start + 5.0, JME_CALC_TRUE_POSITION, 0, tret, 1, error) & JME_ECLIPSE_LUNAR_TOTAL) == 0
-            || fabs(tret[0] - lunar_total_max) > (20.0 / 1440.0)) {
+            || fabs(tret[0] + jme_delta_t(tret[0]) / 86400.0 - lunar_total_max) > (2.0 / 86400.0)) {
             fprintf(stderr, "lunar total eclipse backward search mismatch: %s %.17g\n", error, tret[0]);
             return 1;
         }
 
+        /* NASA canon magnitudes (Danjon shadow): umbral 1.4137, penumbral 2.3726 */
         if ((jme_lun_eclipse_how(tret[0], JME_CALC_TRUE_POSITION, geopos, attr, error) & JME_ECLIPSE_LUNAR_TOTAL) == 0
-            || attr[0] < 1.0
+            || fabs(attr[0] - 1.4137) > 0.002 || fabs(attr[1] - 2.3726) > 0.002
             || attr[1] <= 0.0) {
             fprintf(stderr, "lunar total eclipse circumstance mismatch: %s\n", error);
             return 1;
@@ -2068,7 +2070,7 @@ int main(void)
         }
 
         if (jme_lun_eclipse_when(lunar_partial_start, JME_CALC_TRUE_POSITION, 0, tret, 0, error) != JME_ECLIPSE_LUNAR_PARTIAL
-            || fabs(tret[0] - lunar_partial_max) > (20.0 / 1440.0)) {
+            || fabs(tret[0] + jme_delta_t(tret[0]) / 86400.0 - lunar_partial_max) > (2.0 / 86400.0)) {
             fprintf(stderr, "lunar partial eclipse search mismatch: %s %.17g\n", error, tret[0]);
             return 1;
         }
@@ -2081,7 +2083,7 @@ int main(void)
         }
 
         if ((jme_lun_eclipse_when(lunar_penumbral_start, JME_CALC_TRUE_POSITION, 0, tret, 0, error) & JME_ECLIPSE_LUNAR_PENUMBRAL) == 0
-            || fabs(tret[0] - lunar_penumbral_max) > (30.0 / 1440.0)) {
+            || fabs(tret[0] + jme_delta_t(tret[0]) / 86400.0 - lunar_penumbral_max) > (2.0 / 86400.0)) {
             fprintf(stderr, "lunar penumbral eclipse search mismatch: %s %.17g\n", error, tret[0]);
             return 1;
         }
