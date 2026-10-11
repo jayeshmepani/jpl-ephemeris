@@ -185,6 +185,224 @@ double jme_delta_t_ex(double jd_ut, int model, char *error)
     }
 }
 
+/*
+ * UTC -> TAI data and drift expressions follow the published ERFA/SOFA
+ * eraDat model, adapted to JME's status/error contract. ERFA is BSD-3-Clause;
+ * see THIRD_PARTY_NOTICES.md. The embedded offset table is confirmed through
+ * 2026-12-31 and must be updated after any new IERS announcement.
+ */
+typedef struct jme_utc_offset_entry {
+    int year;
+    int month;
+    double tai_minus_utc_at_effective_month;
+} jme_utc_offset_entry;
+
+static const jme_utc_offset_entry jme_utc_offsets[] = {
+    {1960, 1, 1.4178180}, {1961, 1, 1.4228180}, {1961, 8, 1.3728180},
+    {1962, 1, 1.8458580}, {1963,11, 1.9458580}, {1964, 1, 3.2401300},
+    {1964, 4, 3.3401300}, {1964, 9, 3.4401300}, {1965, 1, 3.5401300},
+    {1965, 3, 3.6401300}, {1965, 7, 3.7401300}, {1965, 9, 3.8401300},
+    {1966, 1, 4.3131700}, {1968, 2, 4.2131700}, {1972, 1,10.0},
+    {1972, 7,11.0}, {1973, 1,12.0}, {1974, 1,13.0}, {1975, 1,14.0},
+    {1976, 1,15.0}, {1977, 1,16.0}, {1978, 1,17.0}, {1979, 1,18.0},
+    {1980, 1,19.0}, {1981, 7,20.0}, {1982, 7,21.0}, {1983, 7,22.0},
+    {1985, 7,23.0}, {1988, 1,24.0}, {1990, 1,25.0}, {1991, 1,26.0},
+    {1992, 7,27.0}, {1993, 7,28.0}, {1994, 7,29.0}, {1996, 1,30.0},
+    {1997, 7,31.0}, {1999, 1,32.0}, {2006, 1,33.0}, {2009, 1,34.0},
+    {2012, 7,35.0}, {2015, 7,36.0}, {2017, 1,37.0}
+};
+
+typedef struct jme_utc_drift_entry {
+    double reference_mjd;
+    double rate_seconds_per_day;
+} jme_utc_drift_entry;
+
+static const jme_utc_drift_entry jme_utc_drifts[] = {
+    {37300.0, 0.0012960}, {37300.0, 0.0012960}, {37300.0, 0.0012960},
+    {37665.0, 0.0011232}, {37665.0, 0.0011232},
+    {38761.0, 0.0012960}, {38761.0, 0.0012960}, {38761.0, 0.0012960},
+    {38761.0, 0.0012960}, {38761.0, 0.0012960}, {38761.0, 0.0012960},
+    {38761.0, 0.0012960}, {39126.0, 0.0025920}, {39126.0, 0.0025920}
+};
+
+#define JME_UTC_PRE_LEAP_DRIFT_COUNT (sizeof(jme_utc_drifts) / sizeof(jme_utc_drifts[0]))
+#define JME_UTC_LAST_CONFIRMED_YEAR 2026
+
+static int jme_utc_tai_minus_utc(
+    int gregorian_year,
+    int gregorian_month,
+    int gregorian_day,
+    double fraction_of_utc_day,
+    double *tai_minus_utc,
+    char *error
+)
+{
+    size_t index;
+    int month_key;
+    double mjd;
+
+    if (tai_minus_utc == 0) {
+        jme_set_error(error, "TAI-UTC output is required");
+        return JME_ERR;
+    }
+    *tai_minus_utc = NAN;
+
+    if (gregorian_year < 1960) {
+        jme_set_error(error, "UTC-to-TT conversion before 1960-01-01 is outside the realized UTC time scale");
+        return JME_ERR;
+    }
+    if (gregorian_year > JME_UTC_LAST_CONFIRMED_YEAR) {
+        jme_set_error(error, "UTC-to-TT conversion after 2026-12-31 is uncertain because future leap seconds are not predictable; use a TT/TDB API or update the IERS table");
+        return JME_ERR;
+    }
+    if (gregorian_month < 1 || gregorian_month > 12
+        || gregorian_day < 1
+        || gregorian_day > jme_days_in_month(gregorian_year, gregorian_month, JME_CALENDAR_GREGORIAN)
+        || !isfinite(fraction_of_utc_day)
+        || fraction_of_utc_day < 0.0 || fraction_of_utc_day > 1.0) {
+        jme_set_error(error, "UTC calendar date or day fraction is invalid");
+        return JME_ERR;
+    }
+
+    month_key = 12 * gregorian_year + gregorian_month;
+    index = sizeof(jme_utc_offsets) / sizeof(jme_utc_offsets[0]);
+    while (index > 0) {
+        const jme_utc_offset_entry *entry = &jme_utc_offsets[index - 1];
+        if (month_key >= 12 * entry->year + entry->month) break;
+        index--;
+    }
+    if (index == 0) {
+        jme_set_error(error, "No TAI-UTC definition is available for this UTC date");
+        return JME_ERR;
+    }
+    index--;
+
+    *tai_minus_utc = jme_utc_offsets[index].tai_minus_utc_at_effective_month;
+    if (index < JME_UTC_PRE_LEAP_DRIFT_COUNT) {
+        double jd_midnight = jme_julian_day(
+            gregorian_year, gregorian_month, gregorian_day, 0.0, JME_CALENDAR_GREGORIAN
+        );
+        mjd = jd_midnight - 2400000.5;
+        *tai_minus_utc +=
+            (mjd + fraction_of_utc_day - jme_utc_drifts[index].reference_mjd)
+            * jme_utc_drifts[index].rate_seconds_per_day;
+    }
+
+    return JME_OK;
+}
+
+static int jme_is_positive_leap_second_day(double jd_midnight)
+{
+    size_t i;
+    const size_t count = sizeof(jme_utc_offsets) / sizeof(jme_utc_offsets[0]);
+
+    /* 1972-01-01 redefined UTC; it was not an inserted leap second. */
+    for (i = JME_UTC_PRE_LEAP_DRIFT_COUNT + 1; i < count; i++) {
+        const jme_utc_offset_entry *prior = &jme_utc_offsets[i - 1];
+        const jme_utc_offset_entry *next = &jme_utc_offsets[i];
+        double effective_midnight;
+
+        if (fabs((next->tai_minus_utc_at_effective_month
+                  - prior->tai_minus_utc_at_effective_month) - 1.0) > 1.0e-12) {
+            continue;
+        }
+        effective_midnight = jme_julian_day(
+            next->year, next->month, 1, 0.0, JME_CALENDAR_GREGORIAN
+        );
+        if (jd_midnight + 1.0 == effective_midnight) return 1;
+    }
+    return 0;
+}
+
+int internal_utc_to_tt_split(
+    int year,
+    int month,
+    int day,
+    int hour,
+    int minute,
+    double second,
+    int calendar,
+    double *jd0_tt,
+    double *fraction_tt,
+    char *error
+)
+{
+    double jd_midnight;
+    double utc_seconds;
+    double fraction_for_offset;
+    double tai_minus_utc;
+    double jd0;
+    double fraction;
+    int gy, gm, gd;
+
+    if (error != 0) error[0] = '\0';
+    if (jd0_tt == 0 || fraction_tt == 0) {
+        jme_set_error(error, "TT two-part Julian date outputs are required");
+        return JME_ERR;
+    }
+    *jd0_tt = NAN;
+    *fraction_tt = NAN;
+
+    if (calendar != JME_CALENDAR_GREGORIAN && calendar != JME_CALENDAR_JULIAN) {
+        jme_set_error(error, "UTC calendar type is invalid");
+        return JME_ERR;
+    }
+    if (!jme_date_is_valid(year, month, day, calendar)
+        || hour < 0 || hour > 23 || minute < 0 || minute > 59
+        || !isfinite(second) || second < 0.0 || second >= 61.0) {
+        jme_set_error(error, "UTC calendar date or clock time is invalid");
+        return JME_ERR;
+    }
+
+    jd_midnight = jme_julian_day(year, month, day, 0.0, calendar);
+    if (!isfinite(jd_midnight)) {
+        jme_set_error(error, "UTC calendar conversion produced a non-finite Julian date");
+        return JME_ERR;
+    }
+
+    if (second >= 60.0) {
+        if (hour != 23 || minute != 59 || !jme_is_positive_leap_second_day(jd_midnight)) {
+            jme_set_error(error, "Second 60 is valid only at an announced positive UTC leap second");
+            return JME_ERR;
+        }
+        utc_seconds = 86400.0 + (second - 60.0);
+        fraction_for_offset = 1.0;
+    } else {
+        utc_seconds = (double)hour * 3600.0 + (double)minute * 60.0 + second;
+        fraction_for_offset = utc_seconds / JME_SECONDS_PER_DAY;
+    }
+
+    jme_reverse_julian_day(
+        jd_midnight, JME_CALENDAR_GREGORIAN, &gy, &gm, &gd, 0
+    );
+    if (jme_utc_tai_minus_utc(
+            gy, gm, gd, fraction_for_offset, &tai_minus_utc, error) != JME_OK) {
+        return JME_ERR;
+    }
+
+    /*
+     * UTC -> TAI adds Delta(AT); TAI -> TT adds exactly 32.184 seconds.
+     * Keep the date as a two-part value so small second offsets are not added
+     * directly to one large Julian-date double.
+     */
+    jd0 = floor(jd_midnight);
+    fraction = (jd_midnight - jd0)
+        + (utc_seconds + tai_minus_utc + 32.184) / JME_SECONDS_PER_DAY;
+    {
+        double carry = floor(fraction);
+        jd0 += carry;
+        fraction -= carry;
+    }
+
+    if (!isfinite(jd0) || !isfinite(fraction) || fraction < 0.0 || fraction >= 1.0) {
+        jme_set_error(error, "UTC-to-TT conversion failed to produce a normalized two-part date");
+        return JME_ERR;
+    }
+    *jd0_tt = jd0;
+    *fraction_tt = fraction;
+    return JME_OK;
+}
+
 int internal_ut_to_et(double jd_ut, double *jd_et, char *error)
 {
     double dt;
