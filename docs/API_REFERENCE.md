@@ -705,3 +705,8 @@ The internal UT-to-TT conversion routine is shared by status-returning UT wrappe
 | 460 | `JME_VECTOR_KM_PER_SECOND` | Public constant |
 | 461 | `JME_VERSION` | Public constant |
 | 462 | `JME_VERSION_ID` | Public constant |
+
+
+### Reference-epoch sidereal modes
+
+Reference-epoch precession is calculated as the difference between the IAU 1976 general-precession polynomial evaluated at the date and at its reference epoch, including the cubic term. True Revati anchors ζ Piscium at 359°50′. The historical Suryasiddhanta polar-longitude Revati and Citra modes are distinct from true-star anchors, and the equinox-based Suryasiddhanta and Ushashashi modes use their published historical epoch references rather than being aliases of the modern Revati star position. These remain model-defined astronomical conventions; their accuracy is limited by the selected precession and Delta-T models.
