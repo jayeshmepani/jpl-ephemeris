@@ -517,6 +517,13 @@ void jme_eraPxp(double a[3], double b[3], double axb[3]);
 void jme_eraS2xpv(double s1, double s2, double pv[2][3], double spv[2][3]);
 void jme_eraSxp(double s, double p[3], double sp[3]);
 void jme_eraSxpv(double s, double pv[2][3], double spv[2][3]);
+void jme_eraFk52h(double r5, double d5,
+              double dr5, double dd5, double px5, double rv5,
+              double *rh, double *dh,
+              double *drh, double *ddh, double *pxh, double *rvh);
+void jme_eraFk5hip(double r5h[3][3], double s5h[3]);
+void jme_eraRv2m(double w[3], double r[3][3]);
+void jme_eraRxp(double r[3][3], double p[3], double rp[3]);
 
 #ifdef __cplusplus
 }

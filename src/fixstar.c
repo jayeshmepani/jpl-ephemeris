@@ -225,10 +225,16 @@ int internal_fixstar_barycentric(const char *star, double jd_et, double *u, doub
         rv = hip->rv;
         ep1 = 2448349.0625; /* J1991.25 */
     } else {
-        ra1 = entry->ra * JME_FIXSTAR_DEG_TO_RAD;
-        dec1 = entry->dec * JME_FIXSTAR_DEG_TO_RAD;
-        pmr = entry->pm_ra / 3600.0 * JME_FIXSTAR_DEG_TO_RAD / cos(dec1);
-        pmd = entry->pm_dec / 3600.0 * JME_FIXSTAR_DEG_TO_RAD;
+        /* BSC5 J2000 positions and proper motions are on the FK5 system:
+         * transform to the Hipparcos (ICRS) frame with the FK5 orientation
+         * and spin of Mignard & Froeschle (2000) via eraFk52h. */
+        double r5 = entry->ra * JME_FIXSTAR_DEG_TO_RAD;
+        double d5 = entry->dec * JME_FIXSTAR_DEG_TO_RAD;
+        double dr5 = entry->pm_ra / 3600.0 * JME_FIXSTAR_DEG_TO_RAD / cos(d5);
+        double dd5 = entry->pm_dec / 3600.0 * JME_FIXSTAR_DEG_TO_RAD;
+        double pxh, rvh;
+        if (!isfinite(dr5)) dr5 = 0.0; /* exactly at a pole */
+        jme_eraFk52h(r5, d5, dr5, dd5, 0.0, 0.0, &ra1, &dec1, &pmr, &pmd, &pxh, &rvh);
         px = 0.0;
         rv = 0.0;
         ep1 = 2451545.0;
