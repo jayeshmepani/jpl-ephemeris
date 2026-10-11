@@ -165,11 +165,15 @@ if (JME_BUILD_TESTS)
     add_executable(jme_call_probe tests/jme_call_probe.c)
     target_link_libraries(jme_call_probe PRIVATE jme)
 
-    add_test(
-        NAME engine_matrix
-        COMMAND /bin/bash ${CMAKE_CURRENT_SOURCE_DIR}/tools/run_engine_matrix.sh
-                --build-dir ${CMAKE_CURRENT_BINARY_DIR}
-    )
+    find_program(JME_BASH_EXECUTABLE NAMES bash)
+    find_program(JME_PYTHON3_EXECUTABLE NAMES python3)
+    if (JME_BASH_EXECUTABLE AND JME_PYTHON3_EXECUTABLE AND NOT WIN32)
+        add_test(
+            NAME engine_matrix
+            COMMAND ${JME_BASH_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/run_engine_matrix.sh
+                    --build-dir ${CMAKE_CURRENT_BINARY_DIR}
+        )
+    endif()
 
     find_program(PWSH_EXECUTABLE NAMES pwsh powershell)
     if (PWSH_EXECUTABLE)

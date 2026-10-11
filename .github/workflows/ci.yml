@@ -10,19 +10,97 @@ on:
 permissions:
   contents: read
 
+env:
+  CALCEPH_VERSION: 4.0.5
+  CALCEPH_SHA256: 3460d8a3e10a86e7fe0228d5d9abcda589713b8ed3ee007ce061ae01f8c2e1ea
+  DE440S_SHA256: c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2
+
 jobs:
   build-and-test:
-    name: GCC / Ubuntu 24.04
-    runs-on: ubuntu-24.04
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: "GCC / Ubuntu 24.04", os: ubuntu-24.04, cc: gcc, calceph: false }
+          - { name: "Clang / Ubuntu 24.04", os: ubuntu-24.04, cc: clang, calceph: false }
+          - { name: "GCC + CALCEPH + DE440s / Ubuntu 24.04", os: ubuntu-24.04, cc: gcc, calceph: true }
+          - { name: "Clang + CALCEPH + DE440s / Ubuntu 24.04", os: ubuntu-24.04, cc: clang, calceph: true }
+          - { name: "AppleClang + CALCEPH + DE440s / macOS", os: macos-latest, cc: clang, calceph: true }
+          - { name: "MSVC / Windows", os: windows-latest, cc: cl, calceph: false }
+    env:
+      CC: ${{ matrix.cc }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Cache CALCEPH
+        if: matrix.calceph
+        id: cache-calceph
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/calceph-install
+          key: calceph-${{ env.CALCEPH_VERSION }}-${{ matrix.os }}-${{ matrix.cc }}-pic-nofortran-v1
+
+      - name: Build CALCEPH (PIC, static, Fortran off)
+        if: matrix.calceph && steps.cache-calceph.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          curl -fL --retry 5 --retry-delay 10 -o calceph.tar.gz \
+            "https://www.imcce.fr/content/medias/recherche/equipes/asd/calceph/calceph-${CALCEPH_VERSION}.tar.gz"
+          echo "${CALCEPH_SHA256}  calceph.tar.gz" | shasum -a 256 -c -
+          tar xzf calceph.tar.gz
+          cmake -S "calceph-${CALCEPH_VERSION}" -B calceph-build \
+            -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF \
+            -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DENABLE_FORTRAN=OFF \
+            -DENABLE_PYTHON=OFF -DENABLE_MEX_OCTAVE=OFF -DBUILD_TESTING=OFF \
+            -DCMAKE_INSTALL_PREFIX="$RUNNER_TEMP/calceph-install"
+          cmake --build calceph-build --parallel 3
+          cmake --install calceph-build
+
+      - name: Cache DE440s kernel
+        if: matrix.calceph
+        id: cache-kernel
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/kernels
+          key: de440s-${{ env.DE440S_SHA256 }}
+
+      - name: Download DE440s kernel
+        if: matrix.calceph && steps.cache-kernel.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/kernels"
+          curl -fL --retry 5 --retry-delay 10 -o "$RUNNER_TEMP/kernels/de440s.bsp" \
+            https://ssd.jpl.nasa.gov/ftp/eph/planets/bsp/de440s.bsp
+
+      - name: Verify DE440s kernel
+        if: matrix.calceph
+        shell: bash
+        run: echo "${DE440S_SHA256}  $RUNNER_TEMP/kernels/de440s.bsp" | shasum -a 256 -c -
+
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DJME_BUILD_TESTS=ON
+        shell: bash
+        run: |
+          set -euo pipefail
+          extra=()
+          if [ "${{ matrix.calceph }}" = "true" ]; then
+            extra+=(-DJME_REQUIRE_CALCEPH=ON "-DCMAKE_PREFIX_PATH=$RUNNER_TEMP/calceph-install")
+          fi
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DJME_BUILD_TESTS=ON "${extra[@]}"
 
       - name: Build
-        run: cmake --build build --parallel 2
+        run: cmake --build build --config Release --parallel 3
 
       - name: Test
-        run: ctest --test-dir build --output-on-failure
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ matrix.calceph }}" = "true" ]; then
+            export JME_TEST_JPL_KERNEL="$RUNNER_TEMP/kernels/de440s.bsp"
+          fi
+          ctest --test-dir build -C Release --output-on-failure
