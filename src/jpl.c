@@ -1,6 +1,7 @@
 #include "jme/jme.h"
 
 #include "context.h"
+#include "erfa/jme_erfa.h"
 
 #include <stddef.h>
 #include <string.h>
@@ -838,7 +839,149 @@ static int jme_order_is_valid(int order)
     return order >= 0 && order <= 3;
 }
 
-static int jme_utc_to_jpl_jd(
+/*
+ * Convert TT to the time scale required by the currently opened CALCEPH
+ * kernel. Time is carried as a two-part Julian date throughout this path.
+ */
+int internal_tt_split_to_jpl_time_split(
+    double jd0_tt,
+    double fraction_tt,
+    double *jd0_native,
+    double *fraction_native,
+    char *error
+)
+{
+    double fraction;
+    double carry;
+    double dtr;
+    double jd0_tdb;
+    double fraction_tdb;
+    int native_scale;
+
+    if (error != 0) error[0] = '\0';
+    if (jd0_native == 0 || fraction_native == 0) {
+        jme_set_error(error, "Native time-scale output pair is required");
+        return JME_ERR;
+    }
+    *jd0_native = NAN;
+    *fraction_native = NAN;
+
+    if (!isfinite(jd0_tt) || !isfinite(fraction_tt)
+        || floor(jd0_tt) != jd0_tt || fraction_tt < 0.0 || fraction_tt >= 1.0) {
+        jme_set_error(error, "TT input must be a normalized two-part Julian date");
+        return JME_ERR;
+    }
+
+    native_scale = jme_jpl_timescale();
+    if (native_scale != JME_JPL_TIMESCALE_TDB && native_scale != JME_JPL_TIMESCALE_TCB) {
+        jme_set_error(error, "A loaded JPL kernel with a known TDB or TCB time scale is required");
+        return JME_ERR;
+    }
+
+    /*
+     * ERFA's geocentric Fairhead-Bretagnon series computes TDB-TT in seconds.
+     * Its date argument is nominally TDB; evaluating the slowly varying model
+     * at TT is the standard iterative approximation and is vastly better than
+     * passing TT unchanged to a TDB kernel.
+     */
+    dtr = jme_erfa_dtdb(jd0_tt, fraction_tt, 0.0, 0.0, 0.0, 0.0);
+    if (!isfinite(dtr)) {
+        jme_set_error(error, "ERFA TDB-TT conversion returned a non-finite offset");
+        return JME_ERR;
+    }
+
+    fraction = fraction_tt + dtr / JME_SECONDS_PER_DAY;
+    carry = floor(fraction);
+    jd0_tdb = jd0_tt + carry;
+    fraction_tdb = fraction - carry;
+    if (!isfinite(jd0_tdb) || !isfinite(fraction_tdb)
+        || fraction_tdb < 0.0 || fraction_tdb >= 1.0) {
+        jme_set_error(error, "TT-to-TDB conversion failed to normalize its two-part Julian date");
+        return JME_ERR;
+    }
+
+    if (native_scale == JME_JPL_TIMESCALE_TDB) {
+        *jd0_native = jd0_tdb;
+        *fraction_native = fraction_tdb;
+        return JME_OK;
+    }
+
+    {
+        double jd0_tcb;
+        double fraction_tcb;
+        if (jme_erfa_tdbtcb(jd0_tdb, fraction_tdb, &jd0_tcb, &fraction_tcb) != 0
+            || !isfinite(jd0_tcb) || !isfinite(fraction_tcb)) {
+            jme_set_error(error, "ERFA TDB-to-TCB conversion failed");
+            return JME_ERR;
+        }
+
+        carry = floor(fraction_tcb);
+        jd0_tcb += carry;
+        fraction_tcb -= carry;
+        if (floor(jd0_tcb) != jd0_tcb || fraction_tcb < 0.0 || fraction_tcb >= 1.0) {
+            jme_set_error(error, "TDB-to-TCB conversion failed to normalize its two-part Julian date");
+            return JME_ERR;
+        }
+        *jd0_native = jd0_tcb;
+        *fraction_native = fraction_tcb;
+    }
+
+    return JME_OK;
+}
+
+int internal_tt_to_jpl_time_split(
+    double jd_tt,
+    double *jd0_native,
+    double *fraction_native,
+    char *error
+)
+{
+    double jd0_tt;
+    double fraction_tt;
+
+    if (!isfinite(jd_tt)) {
+        if (jd0_native != 0) *jd0_native = NAN;
+        if (fraction_native != 0) *fraction_native = NAN;
+        jme_set_error(error, "TT Julian date must be finite");
+        return JME_ERR;
+    }
+
+    jd0_tt = floor(jd_tt);
+    fraction_tt = jd_tt - jd0_tt;
+    return internal_tt_split_to_jpl_time_split(
+        jd0_tt, fraction_tt, jd0_native, fraction_native, error
+    );
+}
+
+int internal_jpl_body_state_tt(
+    double jd_tt,
+    int target_body,
+    int center_body,
+    int unit,
+    double *state,
+    char *error
+)
+{
+    double jd0_native;
+    double fraction_native;
+
+    if (state == 0) {
+        jme_set_error(error, "JPL body-state output is required");
+        return JME_ERR;
+    }
+    jme_zero_state(state);
+
+    if (internal_tt_to_jpl_time_split(
+            jd_tt, &jd0_native, &fraction_native, error) != JME_OK) {
+        return JME_ERR;
+    }
+
+    return jme_jpl_body_state_split(
+        jd0_native, fraction_native, target_body, center_body, unit, state, error
+    );
+}
+
+static int jme_utc_to_jpl_jd_split(
     int year,
     int month,
     int day,
@@ -846,21 +989,30 @@ static int jme_utc_to_jpl_jd(
     int minute,
     double second,
     int calendar,
-    double *jd_time
+    double *jd0_native,
+    double *fraction_native,
+    char *error
 )
 {
-    double jd_utc = 0.0;
+    double jd0_tt;
+    double fraction_tt;
 
-    if (jd_time == 0) {
+    if (jd0_native == 0 || fraction_native == 0) {
+        jme_set_error(error, "Native time-scale output pair is required");
+        return JME_ERR;
+    }
+    *jd0_native = NAN;
+    *fraction_native = NAN;
+
+    if (internal_utc_to_tt_split(
+            year, month, day, hour, minute, second, calendar,
+            &jd0_tt, &fraction_tt, error) != JME_OK) {
         return JME_ERR;
     }
 
-    if (jme_utc_to_jd(year, month, day, hour, minute, second, calendar, &jd_utc) != JME_OK) {
-        return JME_ERR;
-    }
-
-    *jd_time = jd_utc + jme_delta_t(jd_utc) / JME_SECONDS_PER_DAY;
-    return JME_OK;
+    return internal_tt_split_to_jpl_time_split(
+        jd0_tt, fraction_tt, jd0_native, fraction_native, error
+    );
 }
 
 static void jme_convert_order_state_from_km(double *state, int order, int output_unit)
@@ -1009,15 +1161,19 @@ int jme_jpl_orientation_state_utc_naif(
     char *error
 )
 {
-    double jd = 0.0;
+    double jd0_native = 0.0;
+    double fraction_native = 0.0;
 
-    if (jme_utc_to_jpl_jd(year, month, day, hour, minute, second, calendar, &jd) != JME_OK) {
+    if (jme_utc_to_jpl_jd_split(
+            year, month, day, hour, minute, second, calendar,
+            &jd0_native, &fraction_native, error) != JME_OK) {
         jme_zero_state(state);
-        jme_set_error(error, "UTC calendar date is invalid");
         return JME_ERR;
     }
 
-    return jme_jpl_orientation_state_naif(jd, target_naif, unit, state, error);
+    return jme_jpl_orientation_state_split_naif(
+        jd0_native, fraction_native, target_naif, unit, state, error
+    );
 }
 
 int jme_jpl_rotational_angular_momentum_state_naif(
@@ -1048,15 +1204,19 @@ int jme_jpl_rotational_angular_momentum_state_utc_naif(
     char *error
 )
 {
-    double jd = 0.0;
+    double jd0_native = 0.0;
+    double fraction_native = 0.0;
 
-    if (jme_utc_to_jpl_jd(year, month, day, hour, minute, second, calendar, &jd) != JME_OK) {
+    if (jme_utc_to_jpl_jd_split(
+            year, month, day, hour, minute, second, calendar,
+            &jd0_native, &fraction_native, error) != JME_OK) {
         jme_zero_state(state);
-        jme_set_error(error, "UTC calendar date is invalid");
         return JME_ERR;
     }
 
-    return jme_jpl_rotational_angular_momentum_state_naif(jd, target_naif, unit, state, error);
+    return jme_jpl_rotational_angular_momentum_state_split_naif(
+        jd0_native, fraction_native, target_naif, unit, state, error
+    );
 }
 
 int jme_jpl_rotational_angular_momentum_state_split_naif(
@@ -1414,15 +1574,19 @@ int jme_jpl_body_state_utc_naif(
     char *error
 )
 {
-    double jd = 0.0;
+    double jd0_native = 0.0;
+    double fraction_native = 0.0;
 
-    if (jme_utc_to_jpl_jd(year, month, day, hour, minute, second, calendar, &jd) != JME_OK) {
+    if (jme_utc_to_jpl_jd_split(
+            year, month, day, hour, minute, second, calendar,
+            &jd0_native, &fraction_native, error) != JME_OK) {
         jme_zero_state(state);
-        jme_set_error(error, "UTC calendar date is invalid");
         return JME_ERR;
     }
 
-    return jme_jpl_body_state_naif(jd, target_naif, center_naif, unit, state, error);
+    return jme_jpl_body_state_split_naif(
+        jd0_native, fraction_native, target_naif, center_naif, unit, state, error
+    );
 }
 
 int jme_jpl_body_state_utc(
@@ -1572,15 +1736,19 @@ int jme_jpl_ecliptic_state_utc_naif(
     char *error
 )
 {
-    double jd = 0.0;
+    double jd0_native = 0.0;
+    double fraction_native = 0.0;
 
-    if (jme_utc_to_jpl_jd(year, month, day, hour, minute, second, calendar, &jd) != JME_OK) {
+    if (jme_utc_to_jpl_jd_split(
+            year, month, day, hour, minute, second, calendar,
+            &jd0_native, &fraction_native, error) != JME_OK) {
         jme_zero_state(state);
-        jme_set_error(error, "UTC calendar date is invalid");
         return JME_ERR;
     }
 
-    return jme_jpl_ecliptic_state_naif(jd, target_naif, center_naif, unit, state, error);
+    return jme_jpl_ecliptic_state_split_naif(
+        jd0_native, fraction_native, target_naif, center_naif, unit, state, error
+    );
 }
 
 int jme_jpl_ecliptic_state_utc(
