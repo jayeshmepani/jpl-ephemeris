@@ -840,9 +840,128 @@ static int jme_order_is_valid(int order)
 }
 
 /*
- * Convert TT to the time scale required by the currently opened CALCEPH
- * kernel. Time is carried as a two-part Julian date throughout this path.
+ * Split-time TT -> TDB using the ERFA Fairhead-Bretagnon model. Iterate the
+ * periodic correction against the resulting TDB date until binary64 reaches
+ * a fixed point; no display rounding or arbitrary time quantization is used.
  */
+int internal_tt_to_tdb_split(
+    double jd0_tt,
+    double fraction_tt,
+    double *jd0_tdb,
+    double *fraction_tdb,
+    char *error
+)
+{
+    double dtr;
+    double dtr_next;
+    double trial_fraction;
+    double trial_day;
+    double carry;
+    int iteration;
+    int converged = 0;
+
+    if (error != 0) error[0] = '\0';
+    if (jd0_tdb == 0 || fraction_tdb == 0) {
+        jme_set_error(error, "TDB two-part Julian-date outputs are required");
+        return JME_ERR;
+    }
+    *jd0_tdb = NAN;
+    *fraction_tdb = NAN;
+    if (!isfinite(jd0_tt) || !isfinite(fraction_tt)
+        || floor(jd0_tt) != jd0_tt || fraction_tt < 0.0 || fraction_tt >= 1.0) {
+        jme_set_error(error, "TT input must be a normalized two-part Julian date");
+        return JME_ERR;
+    }
+
+    dtr = jme_erfa_dtdb(jd0_tt, fraction_tt, 0.0, 0.0, 0.0, 0.0);
+    if (!isfinite(dtr)) {
+        jme_set_error(error, "ERFA TDB-TT conversion returned a non-finite offset");
+        return JME_ERR;
+    }
+
+    for (iteration = 0; iteration < 16; iteration++) {
+        trial_fraction = fraction_tt + dtr / JME_SECONDS_PER_DAY;
+        carry = floor(trial_fraction);
+        trial_day = jd0_tt + carry;
+        trial_fraction -= carry;
+
+        dtr_next = jme_erfa_dtdb(trial_day, trial_fraction, 0.0, 0.0, 0.0, 0.0);
+        if (!isfinite(dtr_next)) {
+            jme_set_error(error, "ERFA TDB-TT iteration returned a non-finite offset");
+            return JME_ERR;
+        }
+        if (dtr_next == dtr) {
+            converged = 1;
+            dtr = dtr_next;
+            break;
+        }
+        dtr = dtr_next;
+    }
+
+    if (!converged) {
+        jme_set_error(error, "TT-to-TDB iteration did not reach a binary64 fixed point");
+        return JME_ERR;
+    }
+
+    trial_fraction = fraction_tt + dtr / JME_SECONDS_PER_DAY;
+    carry = floor(trial_fraction);
+    *jd0_tdb = jd0_tt + carry;
+    *fraction_tdb = trial_fraction - carry;
+    if (!isfinite(*jd0_tdb) || !isfinite(*fraction_tdb)
+        || floor(*jd0_tdb) != *jd0_tdb || *fraction_tdb < 0.0 || *fraction_tdb >= 1.0) {
+        *jd0_tdb = NAN;
+        *fraction_tdb = NAN;
+        jme_set_error(error, "TT-to-TDB conversion did not produce a normalized date");
+        return JME_ERR;
+    }
+
+    return JME_OK;
+}
+
+/* IAU 2006 time-scale relation, delegated to the ERFA implementation. */
+int internal_tdb_to_tcb_split(
+    double jd0_tdb,
+    double fraction_tdb,
+    double *jd0_tcb,
+    double *fraction_tcb,
+    char *error
+)
+{
+    double carry;
+
+    if (error != 0) error[0] = '\0';
+    if (jd0_tcb == 0 || fraction_tcb == 0) {
+        jme_set_error(error, "TCB two-part Julian-date outputs are required");
+        return JME_ERR;
+    }
+    *jd0_tcb = NAN;
+    *fraction_tcb = NAN;
+
+    if (!isfinite(jd0_tdb) || !isfinite(fraction_tdb)
+        || floor(jd0_tdb) != jd0_tdb || fraction_tdb < 0.0 || fraction_tdb >= 1.0) {
+        jme_set_error(error, "TDB input must be a normalized two-part Julian date");
+        return JME_ERR;
+    }
+    if (jme_erfa_tdbtcb(jd0_tdb, fraction_tdb, jd0_tcb, fraction_tcb) != 0
+        || !isfinite(*jd0_tcb) || !isfinite(*fraction_tcb)) {
+        *jd0_tcb = NAN;
+        *fraction_tcb = NAN;
+        jme_set_error(error, "ERFA TDB-to-TCB conversion failed");
+        return JME_ERR;
+    }
+
+    carry = floor(*fraction_tcb);
+    *jd0_tcb += carry;
+    *fraction_tcb -= carry;
+    if (floor(*jd0_tcb) != *jd0_tcb || *fraction_tcb < 0.0 || *fraction_tcb >= 1.0) {
+        *jd0_tcb = NAN;
+        *fraction_tcb = NAN;
+        jme_set_error(error, "TDB-to-TCB conversion did not produce a normalized date");
+        return JME_ERR;
+    }
+    return JME_OK;
+}
+
 int internal_tt_split_to_jpl_time_split(
     double jd0_tt,
     double fraction_tt,
@@ -851,12 +970,9 @@ int internal_tt_split_to_jpl_time_split(
     char *error
 )
 {
-    double fraction;
-    double carry;
-    double dtr;
+    int native_scale;
     double jd0_tdb;
     double fraction_tdb;
-    int native_scale;
 
     if (error != 0) error[0] = '\0';
     if (jd0_native == 0 || fraction_native == 0) {
@@ -866,67 +982,25 @@ int internal_tt_split_to_jpl_time_split(
     *jd0_native = NAN;
     *fraction_native = NAN;
 
-    if (!isfinite(jd0_tt) || !isfinite(fraction_tt)
-        || floor(jd0_tt) != jd0_tt || fraction_tt < 0.0 || fraction_tt >= 1.0) {
-        jme_set_error(error, "TT input must be a normalized two-part Julian date");
-        return JME_ERR;
-    }
-
     native_scale = jme_jpl_timescale();
     if (native_scale != JME_JPL_TIMESCALE_TDB && native_scale != JME_JPL_TIMESCALE_TCB) {
         jme_set_error(error, "A loaded JPL kernel with a known TDB or TCB time scale is required");
         return JME_ERR;
     }
 
-    /*
-     * ERFA's geocentric Fairhead-Bretagnon series computes TDB-TT in seconds.
-     * Its date argument is nominally TDB; evaluating the slowly varying model
-     * at TT is the standard iterative approximation and is vastly better than
-     * passing TT unchanged to a TDB kernel.
-     */
-    dtr = jme_erfa_dtdb(jd0_tt, fraction_tt, 0.0, 0.0, 0.0, 0.0);
-    if (!isfinite(dtr)) {
-        jme_set_error(error, "ERFA TDB-TT conversion returned a non-finite offset");
+    if (internal_tt_to_tdb_split(
+            jd0_tt, fraction_tt, &jd0_tdb, &fraction_tdb, error) != JME_OK) {
         return JME_ERR;
     }
-
-    fraction = fraction_tt + dtr / JME_SECONDS_PER_DAY;
-    carry = floor(fraction);
-    jd0_tdb = jd0_tt + carry;
-    fraction_tdb = fraction - carry;
-    if (!isfinite(jd0_tdb) || !isfinite(fraction_tdb)
-        || fraction_tdb < 0.0 || fraction_tdb >= 1.0) {
-        jme_set_error(error, "TT-to-TDB conversion failed to normalize its two-part Julian date");
-        return JME_ERR;
-    }
-
     if (native_scale == JME_JPL_TIMESCALE_TDB) {
         *jd0_native = jd0_tdb;
         *fraction_native = fraction_tdb;
         return JME_OK;
     }
 
-    {
-        double jd0_tcb;
-        double fraction_tcb;
-        if (jme_erfa_tdbtcb(jd0_tdb, fraction_tdb, &jd0_tcb, &fraction_tcb) != 0
-            || !isfinite(jd0_tcb) || !isfinite(fraction_tcb)) {
-            jme_set_error(error, "ERFA TDB-to-TCB conversion failed");
-            return JME_ERR;
-        }
-
-        carry = floor(fraction_tcb);
-        jd0_tcb += carry;
-        fraction_tcb -= carry;
-        if (floor(jd0_tcb) != jd0_tcb || fraction_tcb < 0.0 || fraction_tcb >= 1.0) {
-            jme_set_error(error, "TDB-to-TCB conversion failed to normalize its two-part Julian date");
-            return JME_ERR;
-        }
-        *jd0_native = jd0_tcb;
-        *fraction_native = fraction_tcb;
-    }
-
-    return JME_OK;
+    return internal_tdb_to_tcb_split(
+        jd0_tdb, fraction_tdb, jd0_native, fraction_native, error
+    );
 }
 
 int internal_tt_to_jpl_time_split(
