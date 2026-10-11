@@ -1,0 +1,108 @@
+#include "jme/jme.h"
+#include "jme/jme_extended.h"
+
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
+
+static int all_finite(const double *values, int count)
+{
+    int i;
+    for (i = 0; i < count; i++) {
+        if (!isfinite(values[i])) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+static int fail(const char *message, const char *error)
+{
+    fprintf(stderr, "precision_contract: %s", message);
+    if (error != 0 && error[0] != '\0') {
+        fprintf(stderr, " (error: %s)", error);
+    }
+    fputc('\n', stderr);
+    return 1;
+}
+
+int main(void)
+{
+    char error[256] = "";
+    double dt;
+    const int unsupported_models[] = {
+        JME_MODEL_DELTAT_STEPHENSON_MORRISON_1984,
+        JME_MODEL_DELTAT_STEPHENSON_1997,
+        JME_MODEL_DELTAT_STEPHENSON_MORRISON_2004,
+        JME_MODEL_DELTAT_STEPHENSON_ETC_2016
+    };
+    size_t i;
+    double apparent[6];
+    double without_aberration[6];
+    double ra_difference;
+    int rc;
+
+    /* The implemented EM-2006 path is finite and uses the published 2000-era fit. */
+    dt = jme_delta_t_ex(2451544.5, JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, error);
+    if (!isfinite(dt) || error[0] != '\0' || dt < 62.8 || dt > 63.1) {
+        return fail("Espenak-Meeus 2006 result is invalid", error);
+    }
+
+    /* An unsupported model must never be silently evaluated as EM-2006. */
+    for (i = 0; i < sizeof(unsupported_models) / sizeof(unsupported_models[0]); i++) {
+        error[0] = '\0';
+        dt = jme_delta_t_ex(2451544.5, unsupported_models[i], error);
+        if (isfinite(dt) || strstr(error, "not implemented") == 0) {
+            return fail("unimplemented Delta-T model did not fail closed", error);
+        }
+    }
+
+    error[0] = '\0';
+    dt = jme_delta_t_ex(NAN, JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, error);
+    if (isfinite(dt) || strstr(error, "finite") == 0) {
+        return fail("non-finite Julian date was not rejected", error);
+    }
+
+    /*
+     * Without a JPL kernel, AUTO/analytical fixed-star calculations must still
+     * apply aberration. The old implementation silently skipped this block.
+     */
+    jme_jpl_close();
+    if (jme_set_astro_models("ENGINE=MOSHIER", 0) != JME_OK) {
+        return fail("could not select the Moshier engine", 0);
+    }
+
+    error[0] = '\0';
+    rc = jme_fixstar("Sirius", 2451545.0, JME_CALC_EQUATORIAL, apparent, error);
+    if (rc != JME_OK || !all_finite(apparent, 6)) {
+        return fail("apparent fixed-star calculation failed in Moshier mode", error);
+    }
+
+    error[0] = '\0';
+    rc = jme_fixstar("Sirius", 2451545.0,
+        JME_CALC_EQUATORIAL | JME_CALC_NO_ABERRATION,
+        without_aberration, error);
+    if (rc != JME_OK || !all_finite(without_aberration, 6)) {
+        return fail("fixed-star no-aberration calculation failed", error);
+    }
+
+    ra_difference = jme_degrees_difference_signed(apparent[0], without_aberration[0]);
+    if (fabs(ra_difference) + fabs(apparent[1] - without_aberration[1]) < 1.0e-6) {
+        return fail("analytical fixed-star calculation silently omitted aberration", error);
+    }
+
+    /* Explicit JPL mode must fail if its required kernel state is unavailable. */
+    jme_jpl_close();
+    if (jme_set_astro_models("ENGINE=JPL", 0) != JME_OK) {
+        return fail("could not select the JPL engine", 0);
+    }
+    error[0] = '\0';
+    rc = jme_fixstar("Sirius", 2451545.0, JME_CALC_EQUATORIAL, apparent, error);
+    if (rc != JME_ERR || error[0] == '\0') {
+        return fail("explicit JPL mode silently omitted unavailable aberration state", error);
+    }
+
+    /* Keep subsequent tests independent of this test's engine selection. */
+    (void)jme_set_astro_models("ENGINE=AUTO", 0);
+    return 0;
+}
