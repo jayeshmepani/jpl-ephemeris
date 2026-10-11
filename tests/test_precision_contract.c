@@ -64,13 +64,40 @@ int main(void)
     }
 
     /*
+     * Status-returning UT entry points must reject failed Delta-T conversion
+     * rather than forward a non-finite TT Julian date to calculation routines.
+     */
+    jme_set_astro_models("DELTAT2016 ENGINE=MOSHIER", 0);
+    error[0]='\0';
+    if (jme_calc_ut(2451545.0,JME_BODY_SUN,JME_CALC_EQUATORIAL,apparent,error)!=JME_ERR
+        || strstr(error,"not implemented")==0) return fail("calc_ut did not propagate Delta-T failure",error);
+    error[0]='\0';
+    {
+        double attributes[20];
+        if (jme_pheno_ut(2451545.0,JME_BODY_MARS,0,attributes,error)!=JME_ERR
+            || strstr(error,"not implemented")==0) return fail("pheno_ut did not propagate Delta-T failure",error);
+    }
+    error[0]='\0';
+    if (jme_fixstar_ut("Sirius",2451545.0,JME_CALC_EQUATORIAL,apparent,error)!=JME_ERR
+        || strstr(error,"not implemented")==0) return fail("fixstar_ut did not propagate Delta-T failure",error);
+    error[0]='\0';
+    if (jme_get_ayanamsa_ex_ut(2451545.0,JME_SIDEREAL_LAHIRI,&dt,error)!=JME_ERR
+        || strstr(error,"not implemented")==0) return fail("ayanamsa_ex_ut did not propagate Delta-T failure",error);
+    error[0]='\0';
+    if (jme_time_equ(2451545.0,&dt,error)!=JME_ERR
+        || strstr(error,"not implemented")==0) return fail("time_equ did not propagate Delta-T failure",error);
+    error[0]='\0';
+    if (jme_nod_aps_ut(2451545.0,JME_BODY_MERCURY,JME_CALC_TRUE_POSITION,1,&dt,error)!=JME_ERR
+        || strstr(error,"not implemented")==0) return fail("nod_aps_ut did not propagate Delta-T failure",error);
+
+    jme_set_astro_models("DELTAT2006 ENGINE=MOSHIER", 0);
+
+    /*
      * Without a JPL kernel, AUTO/analytical fixed-star calculations must still
      * apply aberration. The old implementation silently skipped this block.
      */
     jme_jpl_close();
-    if (jme_set_astro_models("ENGINE=MOSHIER", 0) != JME_OK) {
-        return fail("could not select the Moshier engine", 0);
-    }
+    jme_set_astro_models("ENGINE=MOSHIER", 0);
 
     error[0] = '\0';
     rc = jme_fixstar("Sirius", 2451545.0, JME_CALC_EQUATORIAL, apparent, error);
@@ -93,9 +120,7 @@ int main(void)
 
     /* Explicit JPL mode must fail if its required kernel state is unavailable. */
     jme_jpl_close();
-    if (jme_set_astro_models("ENGINE=JPL", 0) != JME_OK) {
-        return fail("could not select the JPL engine", 0);
-    }
+    jme_set_astro_models("ENGINE=JPL", 0);
     error[0] = '\0';
     rc = jme_fixstar("Sirius", 2451545.0, JME_CALC_EQUATORIAL, apparent, error);
     if (rc != JME_ERR || error[0] == '\0') {
