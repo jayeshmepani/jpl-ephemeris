@@ -2352,8 +2352,13 @@ int jme_helio_cross_ut(int body, double x2cross, double jd_ut, int flags, double
 
 int jme_nod_aps_ut(double jd_ut, int body, int flags, int method, double *tret, char *error)
 {
-    double dt = jme_delta_t(jd_ut);
-    double jd_et = jd_ut + dt / 86400.0;
+    double jd_et;
+    if (tret == 0) {
+        jme_set_error(error, "Nodal/apsidal event output is required");
+        return JME_ERR;
+    }
+    *tret = NAN;
+    if (internal_ut_to_et(jd_ut, &jd_et, error) != JME_OK) return JME_ERR;
     return jme_nod_aps(jd_et, body, flags, method, tret, error);
 }
 
