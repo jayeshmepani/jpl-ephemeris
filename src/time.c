@@ -73,74 +73,185 @@ double jme_delta_t(double jd_ut)
     return jme_delta_t_ex(jd_ut, jme_context_deltat_model(), 0);
 }
 
+#include "deltat_data.inc"
+
+/* Julian-epoch year: 2000.0 + (JD - J2000) / 365.25 (argument of the S15 spline). */
+static double jme_julian_epoch_year(double jd)
+{
+    return 2000.0 + (jd - 2451545.0) / 365.25;
+}
+
+/*
+ * Calendar decimal year used by Espenak & Meeus (NASA TP-2006-214141):
+ * year + fraction of that calendar year, with the Julian calendar before
+ * 1582-10-15 and the Gregorian calendar from then on (astronomical year
+ * numbering). NASA's published prescription y = year + (month - 0.5)/12 is the
+ * mid-month value of this continuous argument; using the continuous form
+ * removes the month-boundary steps of the mid-month form.
+ */
+static double jme_calendar_decimal_year(double jd)
+{
+    int calendar = jd < 2299160.5 ? JME_CALENDAR_JULIAN : JME_CALENDAR_GREGORIAN;
+    int year, month, day;
+    double hour, start, next;
+
+    jme_reverse_julian_day(jd, calendar, &year, &month, &day, &hour);
+    start = jme_julian_day(year, 1, 1, 0.0, calendar);
+    next = jme_julian_day(year + 1, 1, 1, 0.0, calendar);
+    return (double)year + (jd - start) / (next - start);
+}
+
+/*
+ * Espenak & Meeus (2006) piecewise polynomials, NASA TP-2006-214141, as published
+ * at https://eclipse.gsfc.nasa.gov/SEhelp/deltatpoly2004.html (all digits kept).
+ * No secular-acceleration correction is applied (the polynomials assume
+ * n-dot = -26 arcsec/cy^2, see docs/TIME_SCALES.md).
+ */
+static double jme_delta_t_espenak_meeus_y(double y)
+{
+    double t, u;
+
+    if (y < -500.0) {
+        u = (y - 1820.0) / 100.0;
+        return -20.0 + 32.0 * u * u;
+    } else if (y < 500.0) {
+        u = y / 100.0;
+        return 10583.6 + u * (-1014.41 + u * (33.78311 + u * (-5.952053
+            + u * (-0.1798452 + u * (0.022174192 + u * 0.0090316521)))));
+    } else if (y < 1600.0) {
+        u = (y - 1000.0) / 100.0;
+        return 1574.2 + u * (-556.01 + u * (71.23472 + u * (0.319781
+            + u * (-0.8503463 + u * (-0.005050998 + u * 0.0083572073)))));
+    } else if (y < 1700.0) {
+        t = y - 1600.0;
+        return 120.0 - 0.9808 * t - 0.01532 * t * t + t * t * t / 7129.0;
+    } else if (y < 1800.0) {
+        t = y - 1700.0;
+        return 8.83 + 0.1603 * t - 0.0059285 * t * t + 0.00013336 * t * t * t - t * t * t * t / 1174000.0;
+    } else if (y < 1860.0) {
+        t = y - 1800.0;
+        return 13.72 + t * (-0.332447 + t * (0.0068612 + t * (0.0041116 + t * (-0.00037436
+            + t * (0.0000121272 + t * (-0.0000001699 + t * 0.000000000875))))));
+    } else if (y < 1900.0) {
+        t = y - 1860.0;
+        return 7.62 + t * (0.5737 + t * (-0.251754 + t * (0.01680668 + t * (-0.0004473624))))
+            + t * t * t * t * t / 233174.0;
+    } else if (y < 1920.0) {
+        t = y - 1900.0;
+        return -2.79 + t * (1.494119 + t * (-0.0598939 + t * (0.0061966 + t * (-0.000197))));
+    } else if (y < 1941.0) {
+        t = y - 1920.0;
+        return 21.20 + 0.84493 * t - 0.076100 * t * t + 0.0020936 * t * t * t;
+    } else if (y < 1961.0) {
+        t = y - 1950.0;
+        return 29.07 + 0.407 * t - t * t / 233.0 + t * t * t / 2547.0;
+    } else if (y < 1986.0) {
+        t = y - 1975.0;
+        return 45.45 + 1.067 * t - t * t / 260.0 - t * t * t / 718.0;
+    } else if (y < 2005.0) {
+        t = y - 2000.0;
+        return 63.86 + t * (0.3345 + t * (-0.060374 + t * (0.0017275 + t * (0.000651814 + t * 0.00002373599))));
+    } else if (y < 2050.0) {
+        t = y - 2000.0;
+        return 62.92 + 0.32217 * t + 0.005589 * t * t;
+    } else if (y < 2150.0) {
+        u = (y - 1820.0) / 100.0;
+        return -20.0 + 32.0 * u * u - 0.5628 * (2150.0 - y);
+    }
+    u = (y - 1820.0) / 100.0;
+    return -20.0 + 32.0 * u * u;
+}
+
 static double jme_delta_t_espenak_meeus(double jd_ut)
 {
-    int year, month, day, hour, minute;
-    double second;
-    double y, t, u;
-    double dt = 0.0;
+    return jme_delta_t_espenak_meeus_y(jme_calendar_decimal_year(jd_ut));
+}
 
-    jme_jd_to_utc(jd_ut, JME_CALENDAR_GREGORIAN, &year, &month, &day, &hour, &minute, &second);
+/*
+ * Stephenson, Morrison & Hohenkerk (2016), Proc. R. Soc. A 472: 20160404, with
+ * the 2020 spline revision of Morrison, Stephenson, Hohenkerk & Zawilski (2021),
+ * Proc. R. Soc. A 477: 20200776 (Table S15): cubic splines for -720 <= y < 2019,
+ * and the published long-term parabola -320 + 32.5 ((y - 1825)/100)^2 outside.
+ * The parabola does not join the spline (published model; see docs/TIME_SCALES.md).
+ */
+static int jme_delta_t_s15_spline(double y, double *dt)
+{
+    const int n = (int)(sizeof(jme_deltat_s15) / sizeof(jme_deltat_s15[0]));
+    int lo = 0, hi = n - 1;
+    const double *c;
+    double t;
 
-    /* NASA polynomial fit uses y = year + (month - 0.5) / 12 */
-    y = (double)year + ((double)month - 0.5) / 12.0;
-
-    if (year < -500) {
-        u = (y - 1820.0) / 100.0;
-        dt = -20.0 + 32.0 * u * u;
-    } else if (year < 500) {
-        u = y / 100.0;
-        dt = 10583.6 - 1014.41 * u + 33.78311 * u * u - 5.952053 * u * u * u
-             - 0.1798452 * u * u * u * u + 0.022174192 * u * u * u * u * u
-             + 0.0090316521 * u * u * u * u * u * u;
-    } else if (year < 1600) {
-        u = (y - 1000.0) / 100.0;
-        dt = 1574.2 - 556.01 * u + 71.23472 * u * u + 0.319781 * u * u * u
-             - 0.8503463 * u * u * u * u - 0.005050998 * u * u * u * u * u
-             + 0.0083572073 * u * u * u * u * u * u;
-    } else if (year < 1700) {
-        t = y - 1600.0;
-        dt = 120.0 - 0.9808 * t - 0.01532 * t * t + t * t * t / 7129.0;
-    } else if (year < 1800) {
-        t = y - 1700.0;
-        dt = 8.83 + 0.1603 * t - 0.0059285 * t * t + 0.00013336 * t * t * t - t * t * t * t / 1174000.0;
-    } else if (year < 1860) {
-        t = y - 1800.0;
-        dt = 13.72 - 0.332447 * t + 0.0068612 * t * t + 0.0041116 * t * t * t - 0.00037436 * t * t * t * t
-             + 0.0000121272 * t * t * t * t * t - 0.0000001699 * t * t * t * t * t * t
-             + 0.000000000875 * t * t * t * t * t * t * t;
-    } else if (year < 1900) {
-        t = y - 1860.0;
-        dt = 7.62 + 0.5737 * t - 0.251754 * t * t + 0.0168066 * t * t * t - 0.000447362 * t * t * t * t
-             + t * t * t * t * t / 233174.0;
-    } else if (year < 1920) {
-        t = y - 1900.0;
-        dt = -2.73 + 0.1273 * t - 0.0055 * t * t;
-    } else if (year < 1941) {
-        t = y - 1920.0;
-        dt = 21.20 + 0.84493 * t - 0.076100 * t * t + 0.0020936 * t * t * t;
-    } else if (year < 1961) {
-        t = y - 1950.0;
-        dt = 29.07 + 0.407 * t - t * t / 233.0 + t * t * t / 2547.0;
-    } else if (year < 1986) {
-        t = y - 1975.0;
-        dt = 45.45 + 1.067 * t - t * t / 260.0 - t * t * t / 718.0;
-    } else if (year < 2005) {
-        t = y - 2000.0;
-        dt = 63.86 + 0.3345 * t - 0.060374 * t * t + 0.0017275 * t * t * t + 0.000651814 * t * t * t * t
-             + 0.00002373599 * t * t * t * t * t;
-    } else if (year < 2050) {
-        t = y - 2000.0;
-        dt = 62.92 + 0.32217 * t + 0.005589 * t * t;
-    } else if (year < 2150) {
-        u = (y - 1820.0) / 100.0;
-        dt = -20.0 + 32.0 * u * u - 0.5628 * (2150.0 - y);
-    } else {
-        u = (y - 1820.0) / 100.0;
-        dt = -20.0 + 32.0 * u * u;
+    if (!(y >= jme_deltat_s15[0][0] && y < jme_deltat_s15[n - 1][1])) return 0;
+    while (lo < hi) {
+        int mid = (lo + hi + 1) / 2;
+        if (jme_deltat_s15[mid][0] <= y) lo = mid; else hi = mid - 1;
     }
+    c = jme_deltat_s15[lo];
+    t = (y - c[0]) / (c[1] - c[0]);
+    *dt = c[2] + t * (c[3] + t * (c[4] + t * c[5]));
+    return 1;
+}
 
-    return dt;
+static double jme_delta_t_smh2016(double jd_ut)
+{
+    double y = jme_julian_epoch_year(jd_ut), dt, u;
+    if (jme_delta_t_s15_spline(y, &dt)) return dt;
+    u = (y - 1825.0) / 100.0;
+    return -320.0 + 32.5 * u * u;
+}
+
+/*
+ * IERS observed (and, after the last observed day, predicted) Delta-T from the
+ * embedded finals2000A table: Delta-T = 32.184 s - (UT1 - TAI), with UT1 - TAI
+ * interpolated by 4-point Lagrange interpolation in MJD, the scheme of the IERS
+ * EOP interpolation routine (Bizouard/IERS interp.f) without its sub-daily
+ * ocean-tide/libration terms (< 0.1 ms). The table argument is UTC; jd_ut is
+ * used for it (|UT1-UTC| < 0.9 s changes Delta-T by < 2e-8 s).
+ * Returns 1 inside the table, with *predicted = 1 for IERS predictions.
+ */
+static int jme_delta_t_iers(double jd_ut, double *dt, int *predicted)
+{
+    double x = (jd_ut - 2400000.5) - (double)JME_DELTAT_IERS_FIRST_MJD;
+    int i0, k, m;
+    double sum = 0.0;
+
+    if (!(x >= 0.0 && x <= (double)(JME_DELTAT_IERS_COUNT - 1))) return 0;
+    i0 = (int)floor(x) - 1;
+    if (i0 < 0) i0 = 0;
+    if (i0 > JME_DELTAT_IERS_COUNT - 4) i0 = JME_DELTAT_IERS_COUNT - 4;
+    for (k = 0; k < 4; k++) {
+        double w = 1.0;
+        for (m = 0; m < 4; m++) {
+            if (m != k) w *= (x - (double)(i0 + m)) / (double)(k - m);
+        }
+        sum += w * jme_deltat_iers_ut1_tai[i0 + k];
+    }
+    *dt = 32.184 - sum;
+    if (predicted != 0) *predicted = x > (double)JME_DELTAT_IERS_LAST_OBSERVED_INDEX;
+    return 1;
+}
+
+/*
+ * JME_TIME_DELTAT_AUTOMATIC: IERS observed/predicted values where the embedded
+ * table covers the date (1973-01-02 .. end of the IERS predictions), otherwise
+ * Stephenson-Morrison-Hohenkerk 2016/2021 (splines -720..2019, parabola before
+ * -720), and Espenak-Meeus 2006 after the end of the IERS predictions.
+ */
+static double jme_delta_t_automatic(double jd_ut)
+{
+    double dt;
+    if (jme_delta_t_iers(jd_ut, &dt, 0)) return dt;
+    if (jd_ut < 2400000.5 + (double)JME_DELTAT_IERS_FIRST_MJD) return jme_delta_t_smh2016(jd_ut);
+    return jme_delta_t_espenak_meeus(jd_ut);
+}
+
+int jme_delta_t_iers_table_info(double *jd_first, double *jd_last_observed, double *jd_last, char *error)
+{
+    if (jd_first != 0) *jd_first = 2400000.5 + (double)JME_DELTAT_IERS_FIRST_MJD;
+    if (jd_last_observed != 0) *jd_last_observed = 2400000.5 + (double)(JME_DELTAT_IERS_FIRST_MJD + JME_DELTAT_IERS_LAST_OBSERVED_INDEX);
+    if (jd_last != 0) *jd_last = 2400000.5 + (double)(JME_DELTAT_IERS_FIRST_MJD + JME_DELTAT_IERS_COUNT - 1);
+    jme_set_error(error, "");
+    return JME_OK;
 }
 
 double jme_delta_t_ex(double jd_ut, int model, char *error)
@@ -162,21 +273,23 @@ double jme_delta_t_ex(double jd_ut, int model, char *error)
 
     switch (model) {
     case JME_TIME_DELTAT_AUTOMATIC:
+        return jme_delta_t_automatic(jd_ut);
+
     case JME_MODEL_DELTAT_ESPENAK_MEEUS_2006:
         return jme_delta_t_espenak_meeus(jd_ut);
+
+    case JME_MODEL_DELTAT_STEPHENSON_ETC_2016:
+        return jme_delta_t_smh2016(jd_ut);
 
     case JME_MODEL_DELTAT_STEPHENSON_MORRISON_1984:
     case JME_MODEL_DELTAT_STEPHENSON_1997:
     case JME_MODEL_DELTAT_STEPHENSON_MORRISON_2004:
-    case JME_MODEL_DELTAT_STEPHENSON_ETC_2016:
         /*
-         * These model identifiers are public, but their model-specific
-         * historical tables and transition rules have no validated implementation.
-         * Returning the Espenak-Meeus polynomial under a different model
-         * name would silently return the wrong requested model. Fail closed
-         * until each model can be implemented and validated independently.
+         * The defining tables and interpolation rules of these models have not
+         * been transcribed from their primary publications and verified, so they
+         * are refused rather than substituted by another model.
          */
-        jme_set_error(error, "no validated implementation exists for the requested Delta-T model; refusing to substitute Espenak-Meeus 2006");
+        jme_set_error(error, "Delta-T model unavailable (primary tables not yet transcribed and verified); use AUTOMATIC, ESPENAK_MEEUS_2006 or STEPHENSON_ETC_2016");
         return NAN;
 
     default:

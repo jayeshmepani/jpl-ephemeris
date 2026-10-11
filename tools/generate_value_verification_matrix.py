@@ -170,8 +170,8 @@ def mode_status(mode: str) -> str:
 
 def main() -> int:
     funcs = load_functions()
-    if len(funcs) != 216:
-        raise SystemExit(f"expected 216 public functions, found {len(funcs)}")
+    if len(funcs) != 217:
+        raise SystemExit(f"expected 217 public functions, found {len(funcs)}")
 
     rows: list[tuple[str, str, str, str]] = []
     counts: dict[str, int] = {}
@@ -198,7 +198,7 @@ def main() -> int:
         "",
         "Current source of truth for inventory:",
         "",
-        "- `216` public functions from `include/jme/jme.h` and `include/jme/jme_extended.h`",
+        "- `217` public functions from `include/jme/jme.h` and `include/jme/jme_extended.h`",
         "",
         "### Summary",
         "",

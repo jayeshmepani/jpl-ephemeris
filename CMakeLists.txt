@@ -116,6 +116,11 @@ if (JME_BUILD_TESTS)
     target_link_libraries(test_time_scale_contract PRIVATE jme)
     add_test(NAME time_scale_contract COMMAND test_time_scale_contract)
 
+    add_executable(test_delta_t_reference tests/test_delta_t_reference.c)
+    target_include_directories(test_delta_t_reference PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    target_link_libraries(test_delta_t_reference PRIVATE jme)
+    add_test(NAME delta_t_reference COMMAND test_delta_t_reference)
+
     add_executable(test_jpl_runtime tests/test_jpl_runtime.c)
     target_link_libraries(test_jpl_runtime PRIVATE jme)
     add_test(NAME jpl_runtime COMMAND test_jpl_runtime)

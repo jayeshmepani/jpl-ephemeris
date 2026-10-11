@@ -278,7 +278,7 @@ int main(void)
         || strstr(path, "NUT=333") == 0
         || strstr(path, "OBL=336") == 0
         || strstr(path, "PREC=339") == 0
-        || strstr(path, "DELTAT=349") == 0) {
+        || strstr(path, "DELTAT=389") == 0) {
         fprintf(stderr, "astro model default getter mismatch: %s\n", path);
         return 1;
     }
@@ -1094,7 +1094,9 @@ int main(void)
         return 1;
     }
 
-    if (fabs(jme_delta_t(2451545.0) - 63.8735) > 0.001) {
+    /* Default (AUTOMATIC): IERS finals2000A, UT1-UTC = 0.3554779 s on 2000-01-01
+     * and 0.3540618 s on 2000-01-02 -> Delta-T ~ 63.8288 s at 12h UT. */
+    if (fabs(jme_delta_t(2451545.0) - 63.8288) > 0.001) {
         fprintf(stderr, "delta_t mismatch at J2000: %.17g\n", jme_delta_t(2451545.0));
         return 1;
     }
@@ -1102,25 +1104,28 @@ int main(void)
     {
         int implemented_models[] = {
             JME_TIME_DELTAT_AUTOMATIC,
-            JME_MODEL_DELTAT_ESPENAK_MEEUS_2006
+            JME_MODEL_DELTAT_ESPENAK_MEEUS_2006,
+            JME_MODEL_DELTAT_STEPHENSON_ETC_2016
         };
+        /* AUTOMATIC: IERS; EM-2006 at y = 2000.00137 (continuous decimal year);
+         * SMH-2016 S15 spline segment 1998-2001 at y = 2000.0 (t = 2/3). */
+        double implemented_expected[] = {63.8288, 63.8605, 63.8090};
         int unsupported_models[] = {
             JME_MODEL_DELTAT_STEPHENSON_MORRISON_1984,
             JME_MODEL_DELTAT_STEPHENSON_1997,
-            JME_MODEL_DELTAT_STEPHENSON_MORRISON_2004,
-            JME_MODEL_DELTAT_STEPHENSON_ETC_2016
+            JME_MODEL_DELTAT_STEPHENSON_MORRISON_2004
         };
         int i;
         for (i = 0; i < (int)(sizeof(implemented_models)/sizeof(implemented_models[0])); i++) {
             double dt = jme_delta_t_ex(2451545.0, implemented_models[i], error);
-            if (!isfinite(dt) || fabs(dt-63.8735)>0.001) {
+            if (!isfinite(dt) || fabs(dt-implemented_expected[i])>0.001) {
                 fprintf(stderr,"Delta-T model mismatch for %d: %s %.17g\n",implemented_models[i],error,dt);
                 return 1;
             }
         }
         for (i = 0; i < (int)(sizeof(unsupported_models)/sizeof(unsupported_models[0])); i++) {
             double dt = jme_delta_t_ex(2451545.0, unsupported_models[i], error);
-            if (isfinite(dt) || strstr(error,"no validated implementation")==0) {
+            if (isfinite(dt) || strstr(error,"Delta-T model unavailable")==0) {
                 fprintf(stderr,"unsupported Delta-T model did not fail closed for %d: %s %.17g\n",
                     unsupported_models[i],error,dt);
                 return 1;

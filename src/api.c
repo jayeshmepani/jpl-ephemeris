@@ -37,7 +37,7 @@ static void set_default_models(jme_context *ctx)
     ctx->model_obl = JME_MODEL_OBL_IAU_1980;
     ctx->model_prec = JME_MODEL_PREC_IAU_1976;
     ctx->model_sidt = JME_MODEL_SIDT_IAU_1976;
-    ctx->model_deltat = JME_MODEL_DELTAT_ESPENAK_MEEUS_2006;
+    ctx->model_deltat = JME_TIME_DELTAT_AUTOMATIC;
 }
 
 static const char *engine_policy_name(int engine_policy)
@@ -161,6 +161,9 @@ static int apply_model_token(jme_context *ctx, const char *token)
         ctx->model_deltat = JME_MODEL_DELTAT_STEPHENSON_MORRISON_2004;
     } else if (token_matches(token, "DELTAT2006") || token_value_matches(token, "DELTAT=", "ESPENAK_MEEUS_2006") || token_value_matches(token, "DELTAT=", "349")) {
         ctx->model_deltat = JME_MODEL_DELTAT_ESPENAK_MEEUS_2006;
+    } else if (token_matches(token, "DELTATAUTO") || token_value_matches(token, "DELTAT=", "AUTOMATIC")
+        || token_value_matches(token, "DELTAT=", "AUTO") || token_value_matches(token, "DELTAT=", "389")) {
+        ctx->model_deltat = JME_TIME_DELTAT_AUTOMATIC;
     } else if (token_matches(token, "DELTAT2016") || token_value_matches(token, "DELTAT=", "STEPHENSON_ETC_2016") || token_value_matches(token, "DELTAT=", "350")) {
         ctx->model_deltat = JME_MODEL_DELTAT_STEPHENSON_ETC_2016;
     } else if (token_matches(token, "ENGINE_AUTO") || token_value_matches(token, "ENGINE=", "AUTO")) {

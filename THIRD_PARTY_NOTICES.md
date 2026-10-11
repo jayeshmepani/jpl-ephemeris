@@ -15,7 +15,9 @@ This file is informational and is not legal advice.
 | VSOP87 code (VSOP87-Multilang) | Greg A. Miller: public domain dedication. Theory/data: Bretagnon & Francou 1988, CDS VI/81 | Planets in the VSOP87 + ELP2000 + Meeus engine (`src/vsop87a_full.c`, `src/vsop87d_full.c`) |
 | ERFA 2.0.x (vendored subset, renamed `jme_era*`) | BSD 3-Clause, Copyright (C) 2013-2023 NumFOCUS Foundation | Precession, nutation, frame bias, sidereal time, light deflection, aberration, star space motion, TT/TDB/TCB/TCG and calendar conversions (`src/erfa/`, `src/erfa/vendor/`) |
 | Meeus, *Astronomical Algorithms* | Formulas cited; no text or programs copied | Low-precision Sun/Moon arguments and mean elements (`src/meeus.c`) |
-| Espenak & Meeus ΔT polynomials | NASA publication | ΔT model (`src/time.c`) |
+| Espenak & Meeus ΔT polynomials | NASA publication | ΔT model `ESPENAK_MEEUS_2006` (`src/time.c`) |
+| Morrison, Stephenson, Hohenkerk & Zawilski 2021 ΔT splines (Table S15, 2020) | Published data (Proc. R. Soc. A, open access, CC BY 4.0); transcribed via Skyfield (MIT) | ΔT model `STEPHENSON_ETC_2016` and `AUTOMATIC` (`src/deltat_data.inc`, `tools/data/Table-S15.2020.csv`) |
+| IERS Earth orientation data (finals2000A) | Public IERS data | Observed/predicted ΔT for `AUTOMATIC` (`src/deltat_data.inc`, `tools/data/finals2000A.all`) |
 | Yale Bright Star Catalogue, 5th Rev. Ed. | NSSDC/ADC catalogue (CDS V/50) | Fixed-star names, catalogue and radial velocities (`src/fixstar_catalog.inc`) |
 | Hipparcos, the New Reduction (van Leeuwen 2007) and Hipparcos 1997 HD index | ESA / CDS catalogues I/311 and I/239 (attribution) | Fixed-star astrometry overlay (`src/fixstar_hipparcos.inc`, generator `tools/gen_fixstar_hipparcos.py`, input `tools/data/bsc5_hipparcos2007.csv`) |
 | IAU 2009 System of Astronomical Constants | Published constants (Luzum et al. 2011) | Planetary mass ratios for the analytical solar-system barycentre (`src/calc.c`) |
@@ -71,6 +73,12 @@ Some low-precision formulas (Sun and Moon fundamental arguments, mean orbital el
 ## Delta T (ΔT)
 
 ΔT polynomials: F. Espenak and J. Meeus, *Five Millennium Canon of Solar Eclipses: -1999 to +3000*, NASA Technical Publication TP-2006-214141; polynomial expressions published by NASA GSFC at https://eclipse.gsfc.nasa.gov/SEhelp/deltatpoly2004.html.
+
+## ΔT data
+
+- Espenak & Meeus: see above.
+- F. R. Stephenson, L. V. Morrison and C. Y. Hohenkerk, "Measurement of the Earth's rotation: 720 BC to AD 2015", *Proc. R. Soc. A* 472: 20160404 (2016), and L. V. Morrison, F. R. Stephenson, C. Y. Hohenkerk and M. Zawilski, "Addendum 2020 to 'Measurement of the Earth's rotation: 720 BC to AD 2015'", *Proc. R. Soc. A* 477: 20200776 (2021). The cubic-spline coefficients of their Table S15 (2020 revision, published by HM Nautical Almanac Office at https://astro.ukho.gov.uk/nao/lvm/) are kept unmodified in `tools/data/Table-S15.2020.csv`; they were transcribed from the copy bundled with Skyfield 1.55 (Brandon Rhodes, MIT License; file `skyfield/data/delta_t.npz`, SHA-256 recorded in the CSV header) because the HMNAO server was unreachable when the data were added.
+- IERS Rapid Service/Prediction Centre (USNO) and IERS Earth Orientation Centre: `finals2000A.all` (Bulletin A and Bulletin B UT1-UTC), from https://datacenter.iers.org/data/9/finals2000A.all, kept unmodified in `tools/data/finals2000A.all` (SHA-256 checked by `tools/gen_deltat.py`).
 
 ## Yale Bright Star Catalogue
 

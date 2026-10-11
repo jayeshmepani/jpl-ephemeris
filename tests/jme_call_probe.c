@@ -838,6 +838,17 @@ static int do_probe(const char *function_name, const char *engine, const char *k
         end_record(out);
         return 0;
     }
+    if (strcmp(function_name, "jme_delta_t_iers_table_info") == 0) {
+        double v[3] = {NAN, NAN, NAN};
+        rc = jme_delta_t_iers_table_info(&v[0], &v[1], &v[2], errbuf);
+        begin_record(out, function_name, engine, fx->id, "engine_invariant");
+        fprintf(out, "\"status\":\"%s\",", rc == JME_OK ? "OK" : "ERROR");
+        print_int_obj(out, "return_code", rc, 1);
+        print_string_bytes_obj(out, "error_buffer", errbuf, sizeof(errbuf), 1);
+        print_double_array_obj(out, "values", v, 3, 0);
+        end_record(out);
+        return 0;
+    }
     if (strcmp(function_name, "jme_get_ayanamsa_ex2") == 0 || strcmp(function_name, "jme_get_ayanamsa_ex2_ut") == 0) {
         double v[2] = {NAN, NAN};
         if (strcmp(function_name, "jme_get_ayanamsa_ex2") == 0) rc = jme_get_ayanamsa_ex2(jd, JME_SIDEREAL_LAHIRI, JME_AYANAMSA_TRUE, &v[0], &v[1], errbuf);

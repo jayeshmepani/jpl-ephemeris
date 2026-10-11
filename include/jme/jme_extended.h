@@ -457,6 +457,13 @@ double jme_delta_t(double jd_ut);
 
 double jme_delta_t_ex(double jd_ut, int model, char *error);
 
+/*
+ * Embedded IERS Delta-T table (finals2000A, used by JME_TIME_DELTAT_AUTOMATIC):
+ * first day, last IERS-observed day and last predicted day (UTC Julian dates).
+ * Update procedure: docs/TIME_SCALES.md.
+ */
+int jme_delta_t_iers_table_info(double *jd_first, double *jd_last_observed, double *jd_last, char *error);
+
 int jme_get_obliquity(double jd_et, int model, double *eps, char *error);
 
 int jme_get_frame_bias_matrix(int model, double *m);
