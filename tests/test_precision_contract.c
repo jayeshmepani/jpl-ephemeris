@@ -84,7 +84,7 @@ int main(void)
     for (i = 0; i < sizeof(unsupported_models) / sizeof(unsupported_models[0]); i++) {
         error[0] = '\0';
         dt = jme_delta_t_ex(2451544.5, unsupported_models[i], error);
-        if (isfinite(dt) || strstr(error, "No validated implementation") == 0) {
+        if (isfinite(dt) || strstr(error, "no validated implementation") == 0) {
             return fail("unsupported Delta-T model did not fail closed", error);
         }
     }
