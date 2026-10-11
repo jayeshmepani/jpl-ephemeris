@@ -25,8 +25,14 @@ This file is updated after each milestone. Status keys: FIXED / PARTIAL / OPEN.
 | Events use apparent places (was geometric: greatest eclipse off by 35-40 s) | FIXED | 9730e56 |
 | Global solar eclipses (Besselian, WGS84 3-D; P1/P4, U1/U4, C1/C2, hybrid) | FIXED | 9730e56; NASA canon within 0.5 s / 0.1 deg (10 eclipses) |
 | Local solar eclipses: next visible eclipse search, per-instant radii, obscuration | FIXED | 9730e56 |
+| Lunar eclipses: Danjon shadow (0.998340, 1/85), axis-distance maximum, contacts | FIXED | NASA canon: 8 eclipses within 1 s, magnitude within 0.0006 |
+| VSOP87A: full official IMCCE series (42,520 terms), analytic velocity, compensated summation | FIXED | dd293e9, tests/test_vsop87_reference.c (90 vsop87.chk epochs, 5e-11 au) |
+| Event root and extremum finding (Illinois, syzygy, Brent + stationary-point refinement) | FIXED | dd293e9 |
+| Event evaluation cost (position-only apparent place) | FIXED | dd293e9; engine_matrix 368 s -> 118 s |
 
 ## Commits (this session, newest first)
+- dd293e9 VSOP87A from official IMCCE files; position-only event evaluation; Illinois/Brent root and extremum finding
+- 8f9eed3 Lunar eclipses: Danjon shadow, angular greatest eclipse, per-instant contacts, type filter
 - 9730e56 Events: scoped topocentre, apparent places, exact Besselian global solar eclipses
 - ba8b9e1 Houses: TT/apparent GAST, true obliquity, sidereal flag, Morinus/Meridian/Horizontal, 5-point rates, Gauquelin at GAST
 - ec72c21 Delta-T: IERS observed table, SMH-2016/2021 splines, exact Espenak-Meeus; AUTOMATIC default
@@ -46,4 +52,4 @@ This file is updated after each milestone. Status keys: FIXED / PARTIAL / OPEN.
 - Eclipse contact tangency evaluated on the axis silhouette (generator tilt 0.27 deg; < 0.2 s).
 
 ## Pending (in progress)
-Lunar eclipse verification vs NASA, occultations, rise/set vs Skyfield, houses reference fixtures, docs (ACCURACY, TIME_SCALES, AYANAMSA_MODELS), CI matrix (CALCEPH, kernel cache, clang, macOS/Windows), PR description draft.
+Position-only calls in rise/set and occultation paths, occultations, rise/set vs Skyfield, houses reference fixtures, docs (ACCURACY, TIME_SCALES, AYANAMSA_MODELS), CI matrix (CALCEPH, kernel cache, clang, macOS/Windows), PR description draft.
