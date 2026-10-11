@@ -10653,8 +10653,9 @@ static double phases[] =
   860492.1546,
 };
 
-static double ss[9][24];
-static double cc[9][24];
+#include "jme_tls.h"
+static JME_THREAD_LOCAL double ss[9][24];
+static JME_THREAD_LOCAL double cc[9][24];
 
 static int sscc (int,double,int);
 
