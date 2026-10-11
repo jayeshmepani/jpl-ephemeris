@@ -239,23 +239,30 @@ int jme_fixstar(const char *star, double jd_et, int flags, double *results, char
             double v_dot_u, beta;
             double v2 = 0.0;
 
-            if (jme_jpl_body_state(jd_et, JME_BODY_EARTH, JME_BODY_SOLAR_SYSTEM_BARYCENTER, JME_VECTOR_AU_PER_DAY, earth_state, error) == JME_OK) {
-                for (i = 0; i < 3; i++) {
-                    v_obs[i] = earth_state[i + 3] / 173.1446; /* c in AU/day */
-                    v2 += v_obs[i] * v_obs[i];
-                }
-
-                for (i = 0; i < 3; i++) { u[i] = pos[i]; } /* pos is already unit vector */
-
-                v_dot_u = 0.0;
-                for (i = 0; i < 3; i++) { v_dot_u += v_obs[i] * u[i]; }
-
-                beta = sqrt(1.0 - v2);
-                for (i = 0; i < 3; i++) {
-                    u_prime[i] = (u[i] + v_obs[i] + (v_dot_u * v_obs[i] / (1.0 + beta))) / (1.0 + v_dot_u);
-                }
-                for (i = 0; i < 3; i++) { pos[i] = u_prime[i]; }
+            if (internal_earth_aberration_state(jd_et, earth_state, error) != JME_OK) {
+                return JME_ERR;
             }
+
+            for (i = 0; i < 3; i++) {
+                v_obs[i] = earth_state[i + 3] / JME_C_AU_PER_DAY;
+                v2 += v_obs[i] * v_obs[i];
+            }
+
+            for (i = 0; i < 3; i++) { u[i] = pos[i]; } /* pos is already unit vector */
+
+            v_dot_u = 0.0;
+            for (i = 0; i < 3; i++) { v_dot_u += v_obs[i] * u[i]; }
+
+            beta = sqrt(1.0 - v2);
+            if (!isfinite(beta)) {
+                jme_set_error(error, "Earth observer velocity is invalid for stellar aberration");
+                return JME_ERR;
+            }
+
+            for (i = 0; i < 3; i++) {
+                u_prime[i] = (u[i] + v_obs[i] + (v_dot_u * v_obs[i] / (1.0 + beta))) / (1.0 + v_dot_u);
+            }
+            for (i = 0; i < 3; i++) { pos[i] = u_prime[i]; }
         }
     }
 
