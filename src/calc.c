@@ -1362,6 +1362,41 @@ int internal_calc_position_ut(double jd_ut, int body, int flags, double *pos, ch
     return JME_OK;
 }
 
+/*
+ * jme_calc_ut output layout for positions only: results[0..2] are bit-identical
+ * to jme_calc_ut (same reduction and conversions); results[3..5] (rates) are
+ * NaN because they are not computed. Used by internal event searches.
+ */
+int internal_calc_ut_positions(double jd_ut, int body, int flags, double *results, char *error)
+{
+    double st[6], sph[6];
+    int i;
+
+    if (results == 0) {
+        jme_set_error(error, "Output buffer is required");
+        return JME_ERR;
+    }
+    for (i = 0; i < 6; i++) results[i] = 0.0;
+    if (internal_calc_position_ut(jd_ut, body, flags & ~(JME_CALC_DISTANCE_KM | JME_CALC_VELOCITY_PER_SECOND), st, error) != JME_OK) {
+        return JME_ERR;
+    }
+    st[3] = st[4] = st[5] = 0.0;
+    if (flags & JME_CALC_XYZ) {
+        for (i = 0; i < 3; i++) results[i] = st[i];
+        if (flags & JME_CALC_DISTANCE_KM) for (i = 0; i < 3; i++) results[i] *= JME_AU_KM;
+    } else {
+        if (jme_rectangular_to_spherical_state(st, sph) != JME_OK) {
+            jme_set_error(error, "Rectangular-to-spherical conversion failed");
+            return JME_ERR;
+        }
+        results[0] = angle_to_output_unit(sph[0], flags);
+        results[1] = angle_to_output_unit(sph[1], flags);
+        results[2] = (flags & JME_CALC_DISTANCE_KM) ? sph[2] * JME_AU_KM : sph[2];
+    }
+    results[3] = results[4] = results[5] = NAN;
+    return JME_OK;
+}
+
 int jme_calc(double jd_et, int body, int flags, double *results, char *error)
 {
     double p0[3], q[4][3];

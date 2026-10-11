@@ -837,8 +837,6 @@ static int moon_target_state(double jd_ut, int body, const char *starname, int f
 {
     double moon_eq_xyz[6];
     double target_eq_xyz[6];
-    double topo_pos[3];
-    double topo_state[6];
     double moon_topo_xyz[6];
     double target_topo_xyz[6];
     double moon_dist_km;
@@ -851,44 +849,30 @@ static int moon_target_state(double jd_ut, int body, const char *starname, int f
     }
     (void)flags;
 
-    if (jme_calc_ut(jd_ut, JME_BODY_MOON, JME_CALC_XYZ | JME_CALC_EQUATORIAL, moon_eq_xyz, error) != JME_OK) {
-        return JME_ERR;
-    }
-
-    if (starname != 0 && starname[0] != '\0') {
-        if (jme_fixstar_ut(starname, jd_ut, JME_CALC_XYZ | JME_CALC_EQUATORIAL, target_eq_xyz, error) != JME_OK) {
+    {
+        /* Complete apparent places (geocentric, or topocentric with the
+         * observer's own light time, aberration and deflection) of the Moon
+         * and the target, true equator and equinox of date. */
+        int geom_flags = JME_CALC_XYZ | JME_CALC_EQUATORIAL;
+        if (local_mode) {
+            internal_topo_override_set(geopos[0], geopos[1], geopos[2]);
+            geom_flags |= JME_CALC_TOPOCENTRIC;
+        }
+        if (internal_calc_position_ut(jd_ut, JME_BODY_MOON, geom_flags, moon_eq_xyz, error) != JME_OK) {
             return JME_ERR;
         }
-    } else if (jme_calc_ut(jd_ut, body, JME_CALC_XYZ | JME_CALC_EQUATORIAL, target_eq_xyz, error) != JME_OK) {
-        return JME_ERR;
-    }
-
-    for (i = 0; i < 6; i++) {
-        moon_topo_xyz[i] = moon_eq_xyz[i];
-        target_topo_xyz[i] = target_eq_xyz[i];
-    }
-
-    if (local_mode) {
-        double jd_tt;
-        internal_topo_override_set(geopos[0], geopos[1], geopos[2]);
-        /* Observer in the true equator and equinox of date (same frame as the
-         * apparent equatorial Moon/target vectors), at TT. */
-        if (internal_ut_to_et(jd_ut, &jd_tt, error) != JME_OK
-            || internal_topo_state_true_equator(jd_tt, topo_pos, 0, error) != JME_OK) {
-            return JME_ERR;
-        }
-        topo_state[0] = topo_pos[0];
-        topo_state[1] = topo_pos[1];
-        topo_state[2] = topo_pos[2];
-        topo_state[3] = 0.0;
-        topo_state[4] = 0.0;
-        topo_state[5] = 0.0;
-
-        for (i = 0; i < 3; i++) {
-            moon_topo_xyz[i] -= topo_state[i];
-            if (!(starname != 0 && starname[0] != '\0')) {
-                target_topo_xyz[i] -= topo_state[i];
+        if (starname != 0 && starname[0] != '\0') {
+            if (jme_fixstar_ut(starname, jd_ut, geom_flags, target_eq_xyz, error) != JME_OK) {
+                return JME_ERR;
             }
+        } else if (internal_calc_position_ut(jd_ut, body, geom_flags, target_eq_xyz, error) != JME_OK) {
+            return JME_ERR;
+        }
+        for (i = 0; i < 3; i++) {
+            moon_topo_xyz[i] = moon_eq_xyz[i];
+            target_topo_xyz[i] = target_eq_xyz[i];
+            moon_topo_xyz[i + 3] = 0.0;
+            target_topo_xyz[i + 3] = 0.0;
         }
     }
 
@@ -957,14 +941,14 @@ static int find_moon_target_conjunction(double jd_start, int body, const char *s
         double moon_state[6];
         double target_state[6];
 
-        if (jme_calc_ut(t0, JME_BODY_MOON, 0, moon_state, error) != JME_OK) {
+        if (internal_calc_ut_positions(t0, JME_BODY_MOON, 0, moon_state, error) != JME_OK) {
             return JME_ERR;
         }
         if (starname != 0 && starname[0] != '\0') {
             if (jme_fixstar_ut(starname, t0, 0, target_state, error) != JME_OK) {
                 return JME_ERR;
             }
-        } else if (jme_calc_ut(t0, body, 0, target_state, error) != JME_OK) {
+        } else if (internal_calc_ut_positions(t0, body, 0, target_state, error) != JME_OK) {
             return JME_ERR;
         }
         prev_diff = jme_degrees_difference_signed(moon_state[0], target_state[0]);
@@ -977,14 +961,14 @@ static int find_moon_target_conjunction(double jd_start, int body, const char *s
         double diff;
         int j;
 
-        if (jme_calc_ut(t1, JME_BODY_MOON, 0, moon_state, error) != JME_OK) {
+        if (internal_calc_ut_positions(t1, JME_BODY_MOON, 0, moon_state, error) != JME_OK) {
             return JME_ERR;
         }
         if (starname != 0 && starname[0] != '\0') {
             if (jme_fixstar_ut(starname, t1, 0, target_state, error) != JME_OK) {
                 return JME_ERR;
             }
-        } else if (jme_calc_ut(t1, body, 0, target_state, error) != JME_OK) {
+        } else if (internal_calc_ut_positions(t1, body, 0, target_state, error) != JME_OK) {
             return JME_ERR;
         }
         diff = jme_degrees_difference_signed(moon_state[0], target_state[0]);
@@ -1000,14 +984,14 @@ static int find_moon_target_conjunction(double jd_start, int body, const char *s
                 double target_mid[6];
                 double fm;
 
-                if (jme_calc_ut(m, JME_BODY_MOON, 0, moon_mid, error) != JME_OK) {
+                if (internal_calc_ut_positions(m, JME_BODY_MOON, 0, moon_mid, error) != JME_OK) {
                     return JME_ERR;
                 }
                 if (starname != 0 && starname[0] != '\0') {
                     if (jme_fixstar_ut(starname, m, 0, target_mid, error) != JME_OK) {
                         return JME_ERR;
                     }
-                } else if (jme_calc_ut(m, body, 0, target_mid, error) != JME_OK) {
+                } else if (internal_calc_ut_positions(m, body, 0, target_mid, error) != JME_OK) {
                     return JME_ERR;
                 }
                 fm = jme_degrees_difference_signed(moon_mid[0], target_mid[0]);
@@ -1216,7 +1200,7 @@ static double get_altitude_internal(double jd_ut, int body, const char *starname
         res = jme_fixstar_ut(starname, jd_ut, flags, results, error);
     } else {
         flags = flags | (int)JME_CALC_TOPOCENTRIC | equatorial_flag;
-        res = jme_calc_ut(jd_ut, body, flags, results, error);
+        res = internal_calc_ut_positions(jd_ut, body, flags, results, error);
     }
 
     if (res != JME_OK) {
@@ -1331,7 +1315,7 @@ static int refine_meridian_transit(
         if (jme_fixstar_ut(starname, t0, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
             return JME_ERR;
         }
-    } else if (jme_calc_ut(t0, body, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
+    } else if (internal_calc_ut_positions(t0, body, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
         return JME_ERR;
     }
     ha0 = jme_degrees_difference_signed(
@@ -1343,7 +1327,7 @@ static int refine_meridian_transit(
         if (jme_fixstar_ut(starname, t1, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
             return JME_ERR;
         }
-    } else if (jme_calc_ut(t1, body, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
+    } else if (internal_calc_ut_positions(t1, body, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
         return JME_ERR;
     }
     ha1 = jme_degrees_difference_signed(
@@ -1364,7 +1348,7 @@ static int refine_meridian_transit(
             if (jme_fixstar_ut(starname, tm, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
                 return JME_ERR;
             }
-        } else if (jme_calc_ut(tm, body, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
+        } else if (internal_calc_ut_positions(tm, body, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
             return JME_ERR;
         }
 
@@ -1449,7 +1433,7 @@ static int rise_trans_search(double jd_ut, int body, const char *starname, int f
                 return JME_ERR;
             }
         } else {
-            if (jme_calc_ut(t, body, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
+            if (internal_calc_ut_positions(t, body, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
                 return JME_ERR;
             }
         }
@@ -1465,7 +1449,7 @@ static int rise_trans_search(double jd_ut, int body, const char *starname, int f
                     return JME_ERR;
                 }
             } else {
-                if (jme_calc_ut(t, body, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
+                if (internal_calc_ut_positions(t, body, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
                     return JME_ERR;
                 }
             }
@@ -1540,7 +1524,7 @@ static int longitude_difference_at(double jd_ut, int body, int flags, int helioc
         return JME_ERR;
     }
 
-    if (jme_calc_ut(jd_ut, body, flags | (heliocentric ? JME_CALC_HELIOCENTRIC : 0), results, error) != JME_OK) {
+    if (internal_calc_ut_positions(jd_ut, body, flags | (heliocentric ? JME_CALC_HELIOCENTRIC : 0), results, error) != JME_OK) {
         return JME_ERR;
     }
 
@@ -1601,12 +1585,12 @@ static int jme_solcross_impl(double x2cross, double jd_ut, int flags, double *tr
 
     x2cross = jme_degree_normalize(x2cross);
     for (i = 0; i < 365 * 2; i++) {
-        if (jme_calc_ut(t, JME_BODY_SUN, flags, results, error) != JME_OK) {
+        if (internal_calc_ut_positions(t, JME_BODY_SUN, flags, results, error) != JME_OK) {
             return JME_ERR;
         }
         lon = results[0];
         t += 0.5;
-        if (jme_calc_ut(t, JME_BODY_SUN, flags, results, error) != JME_OK) {
+        if (internal_calc_ut_positions(t, JME_BODY_SUN, flags, results, error) != JME_OK) {
             return JME_ERR;
         }
         lon_next = results[0];
@@ -1634,12 +1618,12 @@ static int jme_mooncross_impl(double x2cross, double jd_ut, int flags, double *t
 
     x2cross = jme_degree_normalize(x2cross);
     for (i = 0; i < 30 * 2; i++) {
-        if (jme_calc_ut(t, JME_BODY_MOON, flags, results, error) != JME_OK) {
+        if (internal_calc_ut_positions(t, JME_BODY_MOON, flags, results, error) != JME_OK) {
             return JME_ERR;
         }
         lon = results[0];
         t += 0.5;
-        if (jme_calc_ut(t, JME_BODY_MOON, flags, results, error) != JME_OK) {
+        if (internal_calc_ut_positions(t, JME_BODY_MOON, flags, results, error) != JME_OK) {
             return JME_ERR;
         }
         lon_next = results[0];
@@ -2486,14 +2470,14 @@ static int jme_mooncross_node_impl(double jd_ut, int flags, double *tret, char *
         return JME_ERR;
     }
 
-    if (jme_calc_ut(t, JME_BODY_MOON, flags, pos, error) != JME_OK) {
+    if (internal_calc_ut_positions(t, JME_BODY_MOON, flags, pos, error) != JME_OK) {
         return JME_ERR;
     }
     lat = pos[1];
 
     for (i = 0; i < 60; i++) {
         t += 0.25;
-        if (jme_calc_ut(t, JME_BODY_MOON, flags, pos, error) != JME_OK) {
+        if (internal_calc_ut_positions(t, JME_BODY_MOON, flags, pos, error) != JME_OK) {
             return JME_ERR;
         }
         next_lat = pos[1];
@@ -2506,7 +2490,7 @@ static int jme_mooncross_node_impl(double jd_ut, int flags, double *tret, char *
             for (j = 0; j < 48; j++) {
                 double tm = (t0 + t1) / 2.0;
                 double lm;
-                if (jme_calc_ut(tm, JME_BODY_MOON, flags, pos, error) != JME_OK) {
+                if (internal_calc_ut_positions(tm, JME_BODY_MOON, flags, pos, error) != JME_OK) {
                     return JME_ERR;
                 }
                 lm = pos[1];
@@ -2551,12 +2535,12 @@ static int jme_helio_cross_impl(int body, double x2cross, double jd_ut, int flag
 
     x2cross = jme_degree_normalize(x2cross);
     for (i = 0; i < 365 * 20; i++) {
-        if (jme_calc_ut(t, body, flags | JME_CALC_HELIOCENTRIC, pos, error) != JME_OK) {
+        if (internal_calc_ut_positions(t, body, flags | JME_CALC_HELIOCENTRIC, pos, error) != JME_OK) {
             return JME_ERR;
         }
         lon = pos[0];
         t += 0.5;
-        if (jme_calc_ut(t, body, flags | JME_CALC_HELIOCENTRIC, pos, error) != JME_OK) {
+        if (internal_calc_ut_positions(t, body, flags | JME_CALC_HELIOCENTRIC, pos, error) != JME_OK) {
             return JME_ERR;
         }
         lon_next = pos[0];
@@ -2615,8 +2599,8 @@ static int jme_heliacal_pheno_ut_impl(double jd_ut, double *geopos, double *dat_
         return JME_ERR;
     }
 
-    if (jme_calc_ut(jd_ut, JME_BODY_SUN, JME_CALC_EQUATORIAL, sun_eq, error) != JME_OK
-        || jme_calc_ut(jd_ut, body, JME_CALC_EQUATORIAL, body_eq, error) != JME_OK
+    if (internal_calc_ut_positions(jd_ut, JME_BODY_SUN, JME_CALC_EQUATORIAL, sun_eq, error) != JME_OK
+        || internal_calc_ut_positions(jd_ut, body, JME_CALC_EQUATORIAL, body_eq, error) != JME_OK
         || jme_pheno_ut(jd_ut, body, 0, pheno, error) != JME_OK) {
         return JME_ERR;
     }
