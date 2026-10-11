@@ -14,13 +14,13 @@ This file is updated after each milestone. Status keys: FIXED / PARTIAL / OPEN.
 | Thread safety of Moshier scratch arrays | FIXED | 4d83987 |
 | Delta-T: IERS observed+predicted table (AUTOMATIC default), SMH-2016/2021 S15 splines, exact Espenak-Meeus 2006 | FIXED | ec72c21, tests/test_delta_t_reference.c |
 | Refused Delta-T models SM1984/S1997/SM2004 (explicit error, no aliasing) | FIXED (explicit) | test_precision_contract |
-| Laskar 1986 precession | OPEN (explicit error) | coefficients not transcribed/verified |
+| Laskar 1986 precession | OPEN (explicit error, justified) | Laskar 1986 (A&A 157, 59) Table 8 publishes only p_A and eps_A (t^1..t^10); no ecliptic-pole angles, so a complete precession matrix cannot be built from it without importing another model's ecliptic |
 | Houses: time scales (UT1/TT), apparent GAST, true obliquity, input validation | FIXED | ba8b9e1 |
 | Houses: Morinus / Meridian / Horizontal definitions | FIXED | ba8b9e1 (Swiss Ephemeris documentation 6.2.7-6.2.9, conventions only) |
 | Houses: rates (5-point stencil, NaN when undefined) | FIXED | ba8b9e1 |
 | Houses: sidereal flag | FIXED | ba8b9e1 |
 | Gauquelin sectors 0/1 at GAST/TT | FIXED | ba8b9e1 |
-| Gauquelin as a 36-sector house system in jme_houses* | OPEN | cusp arrays are 13 long in the public API; needs a new API |
+| Gauquelin 36-sector cusps | FIXED / CERTIFIED | 5244784: jme_houses_gauquelin(_armc); independent sector check 3e-14, Placidus coincidence |
 | Events do not mutate caller topocentre (thread-local scoped override) | FIXED | 9730e56 |
 | Events use apparent places (was geometric: greatest eclipse off by 35-40 s) | FIXED | 9730e56 |
 | Global solar eclipses (Besselian, WGS84 3-D; P1/P4, U1/U4, C1/C2, hybrid) | FIXED | 9730e56; NASA canon within 0.5 s / 0.1 deg (10 eclipses) |
@@ -43,8 +43,24 @@ This file is updated after each milestone. Status keys: FIXED / PARTIAL / OPEN.
 | Houses: Polich-Page applied a double pole reduction (Regiomontanus formula on topocentric pole) | FIXED / CERTIFIED | d4be836 |
 | Houses reference vs independent vector geometry (P,R,C,A,T,O,E,W; 2354 sets) + UT->ARMC/eps chain vs ERFA | CERTIFIED | tests/test_houses_reference.c, 2.3e-13 deg cusps, 1.1e-10 deg time chain |
 | Polar motion for topocentric observer / horizon frame | OPEN | finals2000A has x_p,y_p; needs pom00/sp00 vendoring |
+| Fixed stars without Hipparcos data (101 BSC5): FK5 -> ICRS | FIXED / CERTIFIED | 3a082b8 (eraFk52h; removes 24-29 mas); star_reference max 0.0004 mas |
+| Exact memoisation of TDB-TT and nutation series | FIXED | 64213e1 (bit-identical; searches 4.3 s -> 0.29 s; engine_matrix 118 s -> ~60 s) |
+| Lunar occultations of planets and stars (where/when_loc/when_glob) | FIXED / CERTIFIED | 6046e6b: generalised Besselian construction; occult_reference 27 local (0.08 ms) + 8 global (7.9 ms) vs Skyfield/DE440s |
+| Eclipse/occultation contact geometry: astrometric (no aberration) | FIXED | 6046e6b (aberrated vectors shifted contacts up to ~0.6 s); solar eclipse NASA canon still within 0.5 s |
+| Lunar-eclipse shadow: rigorous retarded shadow vs aberration terms | OPEN (verification) | ~41" light-time lag and aberration terms of equal size; NASA canon matched to 1 s |
+| Docs: ACCURACY, TIME_SCALES, AYANAMSA_MODELS; API_REFERENCE regenerated | FIXED | e32fd0a, 5244784, 6046e6b |
+| Ayanamsa provenance (Krishnamurti, J.N. Bhasin) | FLAGGED | docs/AYANAMSA_MODELS.md (KP formula zero 291.22 CE; 54.38" above table-fit KP) |
+| Galactic Centre ayanamsa: Sgr A* apparent proper motion (Reid & Brunthaler 2004) | OPEN | -3.151/-5.547 mas/yr; needs the epoch at which the source sits at the paper's nominal J2000 position (<= 0.6"/century) |
+| Delta-T SM1984/S1997/SM2004 | OPEN (explicit error, justified) | SM2004 (JHA 35, 327) publishes Table 1 at 100-yr steps from an unpublished spline (full spline only in SMH 2016, implemented); S1997 (CUP book) and SM1984 (Phil. Trans. A 313, 47) tables not accessible |
+| Tidal acceleration (jme_set_tid_acc) | OPEN | stored but not applied to Delta-T (documented in TIME_SCALES.md) |
 
 ## Commits (this session, newest first)
+- 6046e6b Occultations: generalised Besselian construction (planets, stars); astrometric contact geometry; occult_reference CTest; ACCURACY.md
+- 5244784 Houses: Gauquelin 36-sector cusps API; API_REFERENCE regenerated
+- e32fd0a Docs: AYANAMSA_MODELS, TIME_SCALES
+- 64213e1 Exact per-thread memos for TDB-TT and nutation series
+- 3a082b8 Fixed stars: FK5->ICRS for BSC5 entries; star_reference CTest
+- 04e7442 Report update
 - d4be836 Houses: Placidus 2/3/8/9, Campanus, Polich-Page corrected; bracketed Placidus solver; houses_reference CTest
 - 1b13746 Tests: signed angle differences (macOS)
 - 6d5dbcf Rise/set/transit Illinois refinement to 1e-10 d; Skyfield certification
@@ -69,6 +85,11 @@ This file is updated after each milestone. Status keys: FIXED / PARTIAL / OPEN.
 - Occultations use the topocentric apparent Moon; event timings shift at the 0.1 ms - 27 ms level from the refinement change.
 - Light deflection now includes Jupiter and Saturn (sub-mas changes); nutation preset IAU2006A uses eraNut06a (new constant 351, constant count 478).
 - Houses: Morinus cusp 10 is not the MC; Horizontal cusp 1 is not the Ascendant; MERIDIAN and MORINUS are distinct.
+- New functions jme_houses_gauquelin, jme_houses_gauquelin_armc (function count 217 -> 219).
+- Solar eclipse and occultation contacts now use astrometric geometry: timings shift by ~0.1-0.6 s versus the previous apparent-vector construction.
+- jme_lun_occult_when_glob: tret[2]/[3] first/last contact anywhere, [4]/[5] total phase, [6]/[7] central phase; invalid inputs return JME_ERR; searches span up to 2000 conjunctions (previously only the next conjunction).
+- jme_lun_occult_where/when_loc: attr[0] fraction of target diameter covered, attr[1] obscuration, attr[2] astrometric separation; attr[9] maximum visible; any part of [C1,C4] with the target above the horizon counts.
+- Fixed stars without Hipparcos astrometry move by 24-29 mas (FK5 -> ICRS).
 
 ## Unresolved / documented limits
 - Default frame models remain IAU 1976/1980 without frame bias (historical default); they differ from IAU 2006/2000A by ~0.3"/century (e.g. 52 mas in 2023). Recommendation: select IAU2006A for modern work; changing the default is a product decision.
@@ -77,5 +98,8 @@ This file is updated after each milestone. Status keys: FIXED / PARTIAL / OPEN.
 - Polar motion not applied to topocentric positions (< 15 m).
 - Eclipse contact tangency evaluated on the axis silhouette (generator tilt 0.27 deg; < 0.2 s).
 
-## Pending (in progress)
-Occultation reference test, docs (ACCURACY, TIME_SCALES, AYANAMSA_MODELS), CI matrix (CALCEPH, kernel cache, clang, macOS/Windows), PR description draft.
+## Test count
+21 CTest tests (19 in builds without PowerShell): all pass in GCC+CALCEPH, Clang+CALCEPH and GCC without CALCEPH (reference tests skip there).
+
+## Pending
+PR description draft (in the final report; not posted).
