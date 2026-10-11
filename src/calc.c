@@ -202,6 +202,16 @@ static int lunar_node_spherical_state(double jd_et, int body, double *state)
     return JME_OK;
 }
 
+/*
+ * Heliocentric planetary state (AU, AU/day, J2000 ecliptic) from exactly one
+ * published theory per engine; there is no silent fallback to another model:
+ *   MOSHIER and AUTO (analytical case): Moshier plan404 (DE404 fit) for
+ *     Mercury..Pluto and Earth;
+ *   VSOP_ELP_MEEUS: VSOP87A (Bretagnon & Francou 1988) for Mercury..Neptune
+ *     and Earth; VSOP87 has no Pluto, so Pluto uses Moshier plan404.
+ * (The approximate Keplerian elements behind jme_meeus_planet_state are no
+ * longer used by jme_calc; they remain available as a separate API.)
+ */
 static int analytic_body_state(double jd_et, int body, double *state, int engine_policy)
 {
     double pos[6];
@@ -214,61 +224,23 @@ static int analytic_body_state(double jd_et, int body, double *state, int engine
         }
         return JME_OK;
     }
-
-    if (body == JME_BODY_MOON) {
-        double moon_geo[6];
-        double earth_helio[6];
-        if (engine_policy == JME_ENGINE_MOSHIER) {
-            if (jme_internal_moshier_moon_state(jd_et, moon_geo) != JME_OK) {
-                return JME_ERR;
-            }
-        } else if (jme_elp2000_moon_state(jd_et, moon_geo) != JME_OK) {
-            if (jme_meeus_moon_state(jd_et, moon_geo) != JME_OK) {
-                return JME_ERR;
-            }
-        }
-        if (engine_policy == JME_ENGINE_VSOP_ELP_MEEUS) {
-            if (jme_vsop87_planet_state(jd_et, JME_BODY_EARTH, earth_helio) != JME_OK
-                && jme_meeus_planet_state(jd_et, JME_BODY_EARTH, earth_helio) != JME_OK) {
-                return JME_ERR;
-            }
-        } else if (jme_moshier_planet_state(jd_et, JME_BODY_EARTH, earth_helio) != JME_OK
-            && (engine_policy == JME_ENGINE_MOSHIER
-                || (jme_vsop87_planet_state(jd_et, JME_BODY_EARTH, earth_helio) != JME_OK
-                    && jme_meeus_planet_state(jd_et, JME_BODY_EARTH, earth_helio) != JME_OK))) {
-            return JME_ERR;
-        }
-        if (state != 0) {
-            for (i = 0; i < 6; i++) { state[i] = moon_geo[i] + earth_helio[i]; }
-        }
-        return JME_OK;
+    if (body < JME_BODY_MERCURY || body > JME_BODY_EARTH || body == JME_BODY_MOON) {
+        return JME_ERR;
     }
-
-    if (engine_policy == JME_ENGINE_VSOP_ELP_MEEUS) {
+    if (engine_policy == JME_ENGINE_VSOP_ELP_MEEUS && body != JME_BODY_PLUTO) {
         rc = jme_vsop87_planet_state(jd_et, body, pos);
-        if (rc != JME_OK) {
-            rc = jme_meeus_planet_state(jd_et, body, pos);
-        }
     } else {
         rc = jme_moshier_planet_state(jd_et, body, pos);
-        if (rc != JME_OK && engine_policy != JME_ENGINE_MOSHIER) {
-            rc = jme_vsop87_planet_state(jd_et, body, pos);
-        }
-        if (rc != JME_OK && engine_policy != JME_ENGINE_MOSHIER) {
-            rc = jme_meeus_planet_state(jd_et, body, pos);
-        }
     }
     if (rc != JME_OK) {
         return JME_ERR;
     }
-
-    if (state != 0) {
-        for (i = 0; i < 3; i++) {
-            state[i] = pos[i];
-            state[i + 3] = pos[i + 3];
-        }
+    for (i = 0; i < 6; i++) {
+        if (!isfinite(pos[i])) return JME_ERR;
     }
-
+    if (state != 0) {
+        for (i = 0; i < 6; i++) state[i] = pos[i];
+    }
     return JME_OK;
 }
 
@@ -602,11 +574,16 @@ static int analytic_moon_geocentric_j2000_uncached(double jd_et, int engine_poli
     double moon[6];
     int i;
 
-    if (engine_policy == JME_ENGINE_MOSHIER) {
+    if (engine_policy == JME_ENGINE_MOSHIER || engine_policy == JME_ENGINE_AUTO) {
         /*
          * Moshier's lunar theory returns geocentric coordinates referred to
          * the mean ecliptic and equinox of date. Rotate to the mean equator of
          * date with the mean obliquity of date, then precess back to J2000.
+         * This is part of the theory's own reference frame, so it uses a fixed
+         * model (IAU 2006 / P03 precession and obliquity, the modern
+         * equivalent of the precession Moshier fitted against) and does NOT
+         * follow the user's precession/obliquity selection: the geometric Moon
+         * must not change when only the output-frame models change.
          */
         double eps = 0.0, eq_date[6], prec[9], inv[9];
         int r, c;
@@ -614,11 +591,11 @@ static int analytic_moon_geocentric_j2000_uncached(double jd_et, int engine_poli
             jme_set_error(error, "Moshier engine cannot compute Moon state");
             return JME_ERR;
         }
-        if (jme_get_obliquity(jd_et, jme_context_obliquity_model(), &eps, error) != JME_OK
+        if (jme_get_obliquity(jd_et, JME_MODEL_OBL_IAU_2006, &eps, error) != JME_OK
             || jme_ecliptic_to_equatorial_rectangular_state(moon, eps, eq_date) != JME_OK) {
             return JME_ERR;
         }
-        if (jme_get_precession_matrix(2451545.0, jd_et, jme_context_precession_model(), prec) != JME_OK) {
+        if (jme_get_precession_matrix(2451545.0, jd_et, JME_MODEL_PREC_IAU_2006, prec) != JME_OK) {
             jme_set_error(error, "Unsupported precession model");
             return JME_ERR;
         }
@@ -774,6 +751,37 @@ static int choose_backend(double jd_et, int body, int engine_policy, int *backen
     }
     (void)error;
     *backend = JME_BACKEND_ANALYTIC;
+    return JME_OK;
+}
+
+int jme_calc_resolve_engine(double jd_et, int body, int *engine_id, int *jpl_center_substituted, char *error)
+{
+    int policy = jme_context_engine_policy();
+    int backend;
+    double probe[6];
+
+    if (engine_id != 0) *engine_id = 0;
+    if (jpl_center_substituted != 0) *jpl_center_substituted = 0;
+    if (engine_id == 0) {
+        jme_set_error(error, "engine_id output is required");
+        return JME_ERR;
+    }
+    if (!isfinite(jd_et)) {
+        jme_set_error(error, "Julian date must be finite");
+        return JME_ERR;
+    }
+    if (choose_backend(jd_et, body, policy, &backend, error) != JME_OK) return JME_ERR;
+    if (backend == JME_BACKEND_JPL) {
+        if (internal_jpl_body_state_tt(jd_et, body, JME_BODY_SOLAR_SYSTEM_BARYCENTER,
+                JME_VECTOR_AU_PER_DAY, probe, error) != JME_OK) {
+            return JME_ERR;
+        }
+        if (jpl_center_substituted != 0) *jpl_center_substituted = internal_jpl_last_center_substituted();
+        *engine_id = JME_ENGINE_ID_JPL;
+    } else {
+        *engine_id = policy == JME_ENGINE_VSOP_ELP_MEEUS ? JME_ENGINE_ID_VSOP87_ELP82B : JME_ENGINE_ID_MOSHIER;
+    }
+    jme_set_error(error, "");
     return JME_OK;
 }
 

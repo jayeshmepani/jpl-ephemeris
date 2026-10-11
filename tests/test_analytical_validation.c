@@ -572,13 +572,14 @@ static int check_high_level_analytical_fallback_order(void)
         }
 
         if (jme_calc(jd_cases[j], JME_BODY_PLUTO, JME_CALC_TRUE_POSITION | JME_CALC_HELIOCENTRIC | JME_CALC_XYZ, calc_state, error) != JME_OK
-            || expected_calc_state(jme_meeus_planet_state, JME_BODY_PLUTO, jd_cases[j], meeus_state, error) != JME_OK) {
-            fprintf(stderr, "VSOP+ELP+Meeus Pluto fallback failed at JD %.1f\n", jd_cases[j]);
+            || expected_calc_state(jme_moshier_planet_state, JME_BODY_PLUTO, jd_cases[j], meeus_state, error) != JME_OK) {
+            /* VSOP87 has no Pluto: the VSOP_ELP_MEEUS engine uses Moshier plan404. */
+            fprintf(stderr, "VSOP+ELP Pluto (Moshier plan404) failed at JD %.1f\n", jd_cases[j]);
             return 1;
         }
         for (k = 0; k < 6; k++) {
             char label[128];
-            snprintf(label, sizeof(label), "jme_calc Meeus-selected Pluto JD %.1f[%d]", jd_cases[j], k);
+            snprintf(label, sizeof(label), "jme_calc plan404-selected Pluto JD %.1f[%d]", jd_cases[j], k);
             if (check_close(label, calc_state[k], meeus_state[k], 1.0e-13) != 0) {
                 return 1;
             }

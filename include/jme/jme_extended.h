@@ -483,6 +483,58 @@ int jme_get_ayanamsa_ex_ut(double jd_ut, int model, double *ayan, char *error);
 int jme_get_ayanamsa_ex2(double jd_et, int model, int flags, double *ayan, double *rate, char *error);
 int jme_get_ayanamsa_ex2_ut(double jd_ut, int model, int flags, double *ayan, double *rate, char *error);
 
+/*
+ * Planet-centre policy of the JPL engine (jme_calc and related functions).
+ * The JPL DE4xx planetary kernels contain the Mars..Pluto system barycentres
+ * but not the planet centres (those come from satellite kernels such as
+ * mar097.bsp or jup365.bsp, which can be loaded with jme_jpl_open_array).
+ *   JME_JPL_CENTER_STRICT (default): a planet centre that the loaded kernels
+ *     do not provide is an error (ENGINE=JPL) or makes ENGINE=AUTO use the
+ *     analytical engine for that call (see jme_calc_resolve_engine).
+ *   JME_JPL_CENTER_BARYCENTER (opt-in): when the planet centre is missing,
+ *     the planetary-system barycentre is used instead. Centre-barycentre
+ *     offsets: Mars ~0.2 m, Jupiter up to ~230 km, Saturn ~290 km,
+ *     Uranus ~tens of km, Neptune ~75 km, Pluto ~2100 km.
+ * Also settable with jme_set_astro_models("JPL_CENTER=STRICT|BARYCENTER").
+ */
+typedef enum jme_jpl_center_policy {
+    JME_JPL_CENTER_STRICT = 0,
+    JME_JPL_CENTER_BARYCENTER = 1
+} jme_jpl_center_policy;
+
+int jme_set_jpl_center_policy(int policy, char *error);
+int jme_get_jpl_center_policy(void);
+
+/* Engines reported by jme_calc_resolve_engine(). */
+typedef enum jme_engine_id {
+    JME_ENGINE_ID_JPL = 1,
+    JME_ENGINE_ID_MOSHIER = 2,
+    JME_ENGINE_ID_VSOP87_ELP82B = 3
+} jme_engine_id;
+
+/*
+ * Reports which engine jme_calc() uses for body at jd_et (TT) under the
+ * current settings, so that ENGINE=AUTO never substitutes a model silently.
+ * *engine_id receives a jme_engine_id; *jpl_center_substituted (optional)
+ * is 1 when the JPL planet centre was replaced by its system barycentre
+ * under JME_JPL_CENTER_BARYCENTER. Returns JME_OK or JME_ERR.
+ */
+int jme_calc_resolve_engine(double jd_et, int body, int *engine_id, int *jpl_center_substituted, char *error);
+
+/*
+ * Validating setters. Unlike the legacy void setters (kept unchanged), these
+ * reject invalid input with JME_ERR and an error message and leave the
+ * configuration untouched:
+ *   jme_set_astro_models_checked: unknown or over-long tokens are errors;
+ *   jme_set_topo_checked: non-finite values or |lat| > 90 are errors
+ *     (longitude is normalised to [-180, 180));
+ *   jme_set_sidereal_mode_checked: unknown modes or non-finite t0/ayan_t0
+ *     are errors.
+ */
+int jme_set_astro_models_checked(const char *models, char *error);
+int jme_set_topo_checked(double lon, double lat, double altitude, char *error);
+int jme_set_sidereal_mode_checked(int sidereal_mode, double t0, double ayan_t0, char *error);
+
 int jme_time_equ(double jd_ut, double *e, char *error);
 
 void jme_matrix_identity(double *m);

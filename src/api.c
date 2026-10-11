@@ -1,4 +1,5 @@
 #include "jme/jme.h"
+#include "jme/jme_extended.h"
 
 #include "context.h"
 
@@ -62,6 +63,10 @@ static void write_model_summary(jme_context *ctx)
         ctx->model_sidt,
         ctx->model_deltat,
         engine_policy_name(ctx->engine_policy));
+    if (ctx->jpl_center_policy == JME_JPL_CENTER_BARYCENTER) {
+        size_t n = strlen(ctx->astro_models);
+        snprintf(ctx->astro_models + n, sizeof(ctx->astro_models) - n, ";JPL_CENTER=BARYCENTER");
+    }
 }
 
 static void set_engine_policy(jme_context *ctx, int engine_policy)
@@ -92,7 +97,7 @@ static int token_value_matches(const char *token, const char *prefix, const char
     return token_matches(token + i, expected);
 }
 
-static void apply_model_token(jme_context *ctx, const char *token)
+static int apply_model_token(jme_context *ctx, const char *token)
 {
     if (token_matches(token, "DEFAULT") || token_matches(token, "IAU1980") || token_matches(token, "IAU1976")) {
         set_default_models(ctx);
@@ -169,7 +174,15 @@ static void apply_model_token(jme_context *ctx, const char *token)
         || token_value_matches(token, "ENGINE=", "VSOP_ELP_MEEUS")
         || token_value_matches(token, "ENGINE=", "ANALYTICAL")) {
         set_engine_policy(ctx, JME_ENGINE_VSOP_ELP_MEEUS);
+    } else if (token_value_matches(token, "JPL_CENTER=", "STRICT")) {
+        ctx->jpl_center_policy = JME_JPL_CENTER_STRICT;
+    } else if (token_value_matches(token, "JPL_CENTER=", "BARYCENTER")
+        || token_value_matches(token, "JPL_CENTER=", "BARYCENTRE")) {
+        ctx->jpl_center_policy = JME_JPL_CENTER_BARYCENTER;
+    } else {
+        return 0;
     }
+    return 1;
 }
 
 static int engine_policy_from_env(void)
@@ -294,7 +307,7 @@ void jme_set_astro_models(const char *models, int flags)
         if (c == ',' || c == ';' || c == ' ' || c == '\t' || c == '\n') {
             if (j > 0) {
                 token[j] = '\0';
-                apply_model_token(ctx, token);
+                (void)apply_model_token(ctx, token);
                 j = 0;
             }
         } else if (j + 1 < sizeof(token)) {
@@ -304,10 +317,117 @@ void jme_set_astro_models(const char *models, int flags)
 
     if (j > 0) {
         token[j] = '\0';
-        apply_model_token(ctx, token);
+        (void)apply_model_token(ctx, token);
     }
 
     write_model_summary(ctx);
+}
+
+/* Tokenise and apply models to ctx; returns 0 on success, 1 on the first
+ * unknown or over-long token (reported through bad_index / bad_token). */
+static int parse_models(jme_context *ctx, const char *models, int *bad_index, char *bad_token, size_t bad_size)
+{
+    char token[64];
+    size_t i = 0, j = 0;
+    int index = 0, overflow = 0;
+
+    for (;;) {
+        char c = models[i];
+        if (c == '\0' || c == ',' || c == ';' || c == ' ' || c == '\t' || c == '\n' || c == '\r') {
+            if (j > 0 || overflow) {
+                index++;
+                token[j] = '\0';
+                if (overflow || !apply_model_token(ctx, token)) {
+                    if (bad_index != 0) *bad_index = index;
+                    jme_set_string(bad_token, bad_size, token);
+                    return 1;
+                }
+                j = 0;
+                overflow = 0;
+            }
+            if (c == '\0') break;
+        } else if (j + 1 < sizeof(token)) {
+            token[j++] = c;
+        } else {
+            overflow = 1;
+        }
+        i++;
+    }
+    return 0;
+}
+
+int jme_set_astro_models_checked(const char *models, char *error)
+{
+    jme_context *ctx = jme_get_context();
+    jme_context trial;
+    char bad[64];
+    int bad_index = 0;
+
+    if (models == 0 || models[0] == '\0') {
+        jme_set_astro_models(models, 0);
+        jme_set_error(error, "");
+        return JME_OK;
+    }
+    trial = *ctx;
+    if (parse_models(&trial, models, &bad_index, bad, sizeof(bad)) != 0) {
+        char msg[160];
+        snprintf(msg, sizeof(msg), "Unknown or over-long astro-model token #%d: '%s'", bad_index, bad);
+        jme_set_error(error, msg);
+        return JME_ERR;
+    }
+    *ctx = trial;
+    write_model_summary(ctx);
+    jme_set_error(error, "");
+    return JME_OK;
+}
+
+int jme_set_jpl_center_policy(int policy, char *error)
+{
+    if (policy != JME_JPL_CENTER_STRICT && policy != JME_JPL_CENTER_BARYCENTER) {
+        jme_set_error(error, "Unknown JPL planet-centre policy");
+        return JME_ERR;
+    }
+    jme_get_context()->jpl_center_policy = policy;
+    write_model_summary(jme_get_context());
+    jme_set_error(error, "");
+    return JME_OK;
+}
+
+int jme_get_jpl_center_policy(void)
+{
+    return jme_get_context()->jpl_center_policy;
+}
+
+int jme_set_topo_checked(double lon, double lat, double altitude, char *error)
+{
+    if (!isfinite(lon) || !isfinite(lat) || !isfinite(altitude)) {
+        jme_set_error(error, "Topocentric longitude, latitude and altitude must be finite");
+        return JME_ERR;
+    }
+    if (lat < -90.0 || lat > 90.0) {
+        jme_set_error(error, "Topocentric latitude must be within [-90, 90] degrees");
+        return JME_ERR;
+    }
+    jme_set_topo(lon, lat, altitude);
+    jme_set_error(error, "");
+    return JME_OK;
+}
+
+int jme_set_sidereal_mode_checked(int sidereal_mode, double t0, double ayan_t0, char *error)
+{
+    const char *name;
+    if (!isfinite(t0) || !isfinite(ayan_t0)) {
+        jme_set_error(error, "Sidereal t0 and ayan_t0 must be finite");
+        return JME_ERR;
+    }
+    name = jme_get_ayanamsa_name(sidereal_mode);
+    if (name == 0 || strcmp(name, "Unknown sidereal mode") == 0) {
+        jme_set_error(error, "Unknown sidereal mode");
+        return JME_ERR;
+    }
+    jme_set_sidereal_mode(sidereal_mode, t0, ayan_t0);
+    jme_set_error(error, "");
+    return JME_OK;
 }
 
 int jme_get_astro_models(char *models, int flags)

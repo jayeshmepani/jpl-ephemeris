@@ -1,4 +1,5 @@
 #include "jme/jme.h"
+#include "jme/jme_extended.h"
 
 #include "context.h"
 #include "erfa/jme_erfa.h"
@@ -14,7 +15,58 @@
 #include <calceph.h>
 static t_calcephbin *g_kernel = 0;
 static char g_kernel_path[JME_PATH_MAX] = "";
+
+/*
+ * CALCEPH diagnostics are captured per thread (error-handler type 3) instead
+ * of being printed to stderr, and are appended to the JME error message.
+ */
+static JME_THREAD_LOCAL char g_calceph_message[192];
+
+static void jme_calceph_error_capture(const char *message)
+{
+    jme_set_string(g_calceph_message, sizeof(g_calceph_message), message);
+}
+
+static void jme_calceph_install_handler(void)
+{
+    calceph_seterrorhandler(3, jme_calceph_error_capture);
+}
+
+static void jme_calceph_clear_message(void)
+{
+    g_calceph_message[0] = '\0';
+}
+
+static void jme_calceph_fail(char *error, const char *what)
+{
+    if (error == 0) return;
+    if (g_calceph_message[0] != '\0') {
+        char buf[256];
+        size_t n = strlen(what), i = 0, k;
+        const char *m = g_calceph_message;
+        while (*m == ' ' || *m == '\n') m++;
+        if (n > 120) n = 120;
+        memcpy(buf, what, n);
+        i = n;
+        buf[i++] = ':';
+        buf[i++] = ' ';
+        for (k = 0; m[k] != '\0' && i + 1 < sizeof(buf) && i < 255; k++) {
+            buf[i++] = (m[k] == '\n') ? ' ' : m[k];
+        }
+        while (i > 0 && buf[i - 1] == ' ') i--;
+        buf[i] = '\0';
+        jme_set_error(error, buf);
+    } else {
+        jme_set_error(error, what);
+    }
+}
 #endif
+
+/* Integer-day split for CALCEPH: jd0 = floor(jd) keeps fraction = jd - jd0 exact. */
+static double jme_jpl_day_floor(double jd_time)
+{
+    return isfinite(jd_time) ? floor(jd_time) : NAN;
+}
 
 static void jme_zero_state(double *state)
 {
@@ -127,7 +179,7 @@ int jme_jpl_open(const char *path, char *error)
     }
 
     jme_jpl_close();
-    calceph_seterrorhandler(1, 0);
+    jme_calceph_install_handler();
     g_kernel = calceph_open(resolved_path);
 
     if (g_kernel == 0) {
@@ -165,7 +217,7 @@ int jme_jpl_open_array(int path_count, const char *const *paths, char *error)
     }
 
     jme_jpl_close();
-    calceph_seterrorhandler(1, 0);
+    jme_calceph_install_handler();
     g_kernel = calceph_open_array(path_count, paths);
 
     if (g_kernel == 0) {
@@ -804,6 +856,7 @@ int jme_jpl_orientation_record_index(
 #endif
 }
 
+#ifdef JME_HAVE_CALCEPH
 static int jme_calceph_unit(int unit)
 {
 #ifdef JME_HAVE_CALCEPH
@@ -833,6 +886,7 @@ static int jme_calceph_orientation_unit(int unit)
     return 0;
 #endif
 }
+#endif
 
 static int jme_order_is_valid(int order)
 {
@@ -1049,6 +1103,28 @@ int internal_tt_to_jpl_time_split(
     );
 }
 
+static JME_THREAD_LOCAL int g_jpl_center_substituted;
+
+int internal_jpl_last_center_substituted(void)
+{
+    return g_jpl_center_substituted;
+}
+
+static int jme_planet_system_barycenter(int body)
+{
+    switch (body) {
+    case JME_BODY_MERCURY: return JME_BODY_MERCURY_BARYCENTER;
+    case JME_BODY_VENUS: return JME_BODY_VENUS_BARYCENTER;
+    case JME_BODY_MARS: return JME_BODY_MARS_BARYCENTER;
+    case JME_BODY_JUPITER: return JME_BODY_JUPITER_BARYCENTER;
+    case JME_BODY_SATURN: return JME_BODY_SATURN_BARYCENTER;
+    case JME_BODY_URANUS: return JME_BODY_URANUS_BARYCENTER;
+    case JME_BODY_NEPTUNE: return JME_BODY_NEPTUNE_BARYCENTER;
+    case JME_BODY_PLUTO: return JME_BODY_PLUTO_BARYCENTER;
+    default: return -1;
+    }
+}
+
 int internal_jpl_body_state_tt(
     double jd_tt,
     int target_body,
@@ -1060,7 +1136,9 @@ int internal_jpl_body_state_tt(
 {
     double jd0_native;
     double fraction_native;
+    int bary;
 
+    g_jpl_center_substituted = 0;
     if (state == 0) {
         jme_set_error(error, "JPL body-state output is required");
         return JME_ERR;
@@ -1072,9 +1150,21 @@ int internal_jpl_body_state_tt(
         return JME_ERR;
     }
 
-    return jme_jpl_body_state_split(
-        jd0_native, fraction_native, target_body, center_body, unit, state, error
-    );
+    if (jme_jpl_body_state_split(
+            jd0_native, fraction_native, target_body, center_body, unit, state, error) == JME_OK) {
+        return JME_OK;
+    }
+    /* Opt-in planet-centre -> system-barycentre substitution (never silent: see
+     * jme_calc_resolve_engine and docs/ACCURACY.md). */
+    bary = jme_planet_system_barycenter(target_body);
+    if (jme_context_jpl_center_policy() == JME_JPL_CENTER_BARYCENTER && bary >= 0
+        && jme_jpl_body_state_split(
+            jd0_native, fraction_native, bary, center_body, unit, state, error) == JME_OK) {
+        g_jpl_center_substituted = 1;
+        jme_set_error(error, "");
+        return JME_OK;
+    }
+    return JME_ERR;
 }
 
 static int jme_utc_to_jpl_jd_split(
@@ -1111,6 +1201,7 @@ static int jme_utc_to_jpl_jd_split(
     );
 }
 
+#ifdef JME_HAVE_CALCEPH
 static void jme_convert_order_state_from_km(double *state, int order, int output_unit)
 {
     int i;
@@ -1124,6 +1215,7 @@ static void jme_convert_order_state_from_km(double *state, int order, int output
         state[i] /= JME_AU_KM;
     }
 }
+#endif
 
 int jme_jpl_orientation_state_naif(
     double jd_time,
@@ -1133,7 +1225,7 @@ int jme_jpl_orientation_state_naif(
     char *error
 )
 {
-    double jd0 = (double)((long)jd_time);
+    double jd0 = jme_jpl_day_floor(jd_time);
     double fraction = jd_time - jd0;
 
     return jme_jpl_orientation_state_split_naif(jd0, fraction, target_naif, unit, state, error);
@@ -1169,9 +1261,14 @@ int jme_jpl_orientation_state_split_naif(
         return JME_ERR;
     }
 
+    if (!isfinite(jd0) || !isfinite(time_offset)) {
+        jme_set_error(error, "JPL time argument is not finite");
+        return JME_ERR;
+    }
+    jme_calceph_clear_message();
     if (calceph_orient_unit(g_kernel, jd0, time_offset, target_naif, calceph_unit, state) == 0) {
         jme_zero_state(state);
-        jme_set_error(error, "JPL orientation state computation failed");
+        jme_calceph_fail(error, "JPL orientation state computation failed");
         return JME_ERR;
     }
 
@@ -1223,9 +1320,14 @@ int jme_jpl_orientation_state_order_naif(
         return JME_ERR;
     }
 
+    if (!isfinite(jd0) || !isfinite(time_offset)) {
+        jme_set_error(error, "JPL time argument is not finite");
+        return JME_ERR;
+    }
+    jme_calceph_clear_message();
     if (calceph_orient_order(g_kernel, jd0, time_offset, target_naif, calceph_unit, order, state) == 0) {
         jme_zero_order_state(state, order);
-        jme_set_error(error, "JPL orientation order state computation failed");
+        jme_calceph_fail(error, "JPL orientation order state computation failed");
         return JME_ERR;
     }
 
@@ -1280,7 +1382,7 @@ int jme_jpl_rotational_angular_momentum_state_naif(
     char *error
 )
 {
-    double jd0 = (double)((long)jd_time);
+    double jd0 = jme_jpl_day_floor(jd_time);
     double fraction = jd_time - jd0;
 
     return jme_jpl_rotational_angular_momentum_state_split_naif(jd0, fraction, target_naif, unit, state, error);
@@ -1345,9 +1447,14 @@ int jme_jpl_rotational_angular_momentum_state_split_naif(
         return JME_ERR;
     }
 
+    if (!isfinite(jd0) || !isfinite(time_offset)) {
+        jme_set_error(error, "JPL time argument is not finite");
+        return JME_ERR;
+    }
+    jme_calceph_clear_message();
     if (calceph_rotangmom_unit(g_kernel, jd0, time_offset, target_naif, calceph_unit, state) == 0) {
         jme_zero_state(state);
-        jme_set_error(error, "JPL rotational angular momentum state computation failed");
+        jme_calceph_fail(error, "JPL rotational angular momentum state computation failed");
         return JME_ERR;
     }
 
@@ -1399,9 +1506,14 @@ int jme_jpl_rotational_angular_momentum_state_order_naif(
         return JME_ERR;
     }
 
+    if (!isfinite(jd0) || !isfinite(time_offset)) {
+        jme_set_error(error, "JPL time argument is not finite");
+        return JME_ERR;
+    }
+    jme_calceph_clear_message();
     if (calceph_rotangmom_order(g_kernel, jd0, time_offset, target_naif, calceph_unit, order, state) == 0) {
         jme_zero_order_state(state, order);
-        jme_set_error(error, "JPL rotational angular momentum order state computation failed");
+        jme_calceph_fail(error, "JPL rotational angular momentum order state computation failed");
         return JME_ERR;
     }
 
@@ -1428,7 +1540,7 @@ int jme_jpl_body_state_naif(
     char *error
 )
 {
-    double jd0 = (double)((long)jd_time);
+    double jd0 = jme_jpl_day_floor(jd_time);
     double fraction = jd_time - jd0;
 
     return jme_jpl_body_state_split_naif(jd0, fraction, target_naif, center_naif, unit, state, error);
@@ -1471,9 +1583,14 @@ int jme_jpl_body_state_split_naif(
         unit == JME_VECTOR_AU_PER_SECOND ? JME_VECTOR_KM_PER_SECOND :
         unit;
 
+    if (!isfinite(jd0) || !isfinite(time_offset)) {
+        jme_set_error(error, "JPL time argument is not finite");
+        return JME_ERR;
+    }
+    jme_calceph_clear_message();
     if (calceph_compute_unit(g_kernel, jd0, time_offset, target_naif, center_naif, calceph_unit, raw_state) == 0) {
         jme_zero_state(state);
-        jme_set_error(error, "JPL body state computation failed");
+        jme_calceph_fail(error, "JPL body state computation failed");
         return JME_ERR;
     }
 
@@ -1504,7 +1621,7 @@ int jme_jpl_body_state_native_naif(
     char *error
 )
 {
-    double jd0 = (double)((long)jd_time);
+    double jd0 = jme_jpl_day_floor(jd_time);
     double fraction = jd_time - jd0;
 
     return jme_jpl_body_state_native_split_naif(jd0, fraction, target_naif, center_naif, state, error);
@@ -1608,9 +1725,14 @@ int jme_jpl_body_state_order_naif(
         return JME_ERR;
     }
 
+    if (!isfinite(jd0) || !isfinite(time_offset)) {
+        jme_set_error(error, "JPL time argument is not finite");
+        return JME_ERR;
+    }
+    jme_calceph_clear_message();
     if (calceph_compute_order(g_kernel, jd0, time_offset, target_naif, center_naif, calceph_unit, order, state) == 0) {
         jme_zero_order_state(state, order);
-        jme_set_error(error, "JPL body order state computation failed");
+        jme_calceph_fail(error, "JPL body order state computation failed");
         return JME_ERR;
     }
 
@@ -1777,7 +1899,7 @@ int jme_jpl_ecliptic_state_naif(
     char *error
 )
 {
-    double jd0 = (double)((long)jd_time);
+    double jd0 = jme_jpl_day_floor(jd_time);
     double fraction = jd_time - jd0;
 
     return jme_jpl_ecliptic_state_split_naif(jd0, fraction, target_naif, center_naif, unit, state, error);

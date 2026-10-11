@@ -38,6 +38,7 @@ typedef struct jme_context {
     double tidal_acceleration;
     int delta_t_userdef_enabled;
     double delta_t_userdef;
+    int jpl_center_policy;
 } jme_context;
 
 jme_context *jme_get_context(void);
@@ -50,6 +51,7 @@ int jme_context_precession_model(void);
 int jme_context_sidereal_time_model(void);
 int jme_context_deltat_model(void);
 int jme_context_engine_policy(void);
+int jme_context_jpl_center_policy(void);
 int jme_context_interpolate_nut(void);
 int jme_get_frame_bias_matrix(int model, double *m);
 int jme_get_topo_pos_true_equator(double jd_et, double *pos_au, char *error);
@@ -85,6 +87,7 @@ int internal_tt_split_to_jpl_time_split(
 int internal_jpl_body_state_tt(
     double jd_tt, int target_body, int center_body, int unit, double *state, char *error
 );
+int internal_jpl_last_center_substituted(void);
 double jme_erfa_dtdb(double date1, double date2, double ut, double elong, double u, double v);
 int jme_erfa_tdbtcb(double tdb1, double tdb2, double *tcb1, double *tcb2);
 
