@@ -941,25 +941,97 @@ static int apply_aberration(double *p, const double *v_au_per_day, double sun_di
     return JME_OK;
 }
 
-/*
- * Gravitational light deflection by the Sun (ERFA eraLd, Klioner 2003).
- * p: unit observer->body direction (in/out); q: unit Sun->body direction;
- * e: unit Sun->observer direction; em: Sun-observer distance (AU).
- */
-static void apply_solar_deflection(double *p, const double *q, const double *e, double em)
-{
-    double p1[3];
-    double pp[3], qq[3], ee[3];
-    int i;
-    for (i = 0; i < 3; i++) { pp[i] = p[i]; qq[i] = q[i]; ee[i] = e[i]; }
-    /* dlim 1e-6 follows ERFA eraLdsun-style limiting for grazing geometry. */
-    jme_eraLd(1.0, pp, qq, ee, em, 1.0e-6, p1);
-    for (i = 0; i < 3; i++) p[i] = p1[i];
-}
-
 static double vec_norm3(const double *a)
 {
     return sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
+}
+
+/*
+ * Gravitational light deflection by the Sun, the Jupiter system and the
+ * Saturn system (and, for a topocentric observer, the Earth): the deflectors
+ * of the IERS Conventions 2010 ch. 7 / Explanatory Supplement (3rd ed., 2013)
+ * sect. 7.2.4 model, each with eraLd (Klioner 2003) and the deflector placed
+ * at the time of closest approach of the light ray (as in ERFA eraLdn), from
+ * the backend ephemeris without linearisation.
+ * Mass ratios GM/GM_Sun: DE440/DE441 values (Park et al. 2021, AJ 161:105,
+ * Table 2). Deflection limiters dl = phi^2/2 (phi = angular radius scale at
+ * which the deflection is tapered): Sun 1e-6 (as before), Jupiter 3e-9 and
+ * Saturn 3e-10 (SOFA/ERFA eraLdn documentation).
+ *   p    : unit observer->source direction (in/out)
+ *   obs  : observer position (backend frame, AU)
+ *   src  : source position at emission (backend frame) or 0 for infinity
+ *   tau  : light time observer<-source (day); ignored when src == 0
+ *   geo  : geocentre position (topocentric observers) or 0
+ */
+#define JME_GM_SUN_KM3S2 132712440041.279419
+static int apply_light_deflection(int backend, int engine_policy, double jd_et, int body,
+    const double *obs, const double *src, double tau, const double *geo, double *p, char *error)
+{
+    static const double gm[3] = { JME_GM_SUN_KM3S2, 126712764.100000, 37940584.841800 };
+    static const double dl[3] = { 1.0e-6, 3.0e-9, 3.0e-10 };
+    int k, i;
+
+    for (k = 0; k < 3; k++) {
+        int dbody;
+        double d0[6], d[6], ev[3], qv[3], em, qn, dt, p1[3], pp[3];
+        if (k == 0) {
+            dbody = JME_BODY_SUN;
+            if (body == JME_BODY_SUN) continue;
+        } else if (k == 1) {
+            dbody = backend == JME_BACKEND_JPL ? JME_BODY_JUPITER_BARYCENTER : JME_BODY_JUPITER;
+            if (body == JME_BODY_JUPITER || body == JME_BODY_JUPITER_BARYCENTER) continue;
+        } else {
+            dbody = backend == JME_BACKEND_JPL ? JME_BODY_SATURN_BARYCENTER : JME_BODY_SATURN;
+            if (body == JME_BODY_SATURN || body == JME_BODY_SATURN_BARYCENTER) continue;
+        }
+        if (backend_state(backend, jd_et, dbody, engine_policy, d0, error) != JME_OK) return JME_ERR;
+        /* Light from the closest-approach point reaches the observer after
+         * dt = p.(obs - D)/c, bounded by [0, tau] for a source at finite distance. */
+        dt = 0.0;
+        for (i = 0; i < 3; i++) dt += p[i] * (obs[i] - d0[i]);
+        dt /= JME_C_AU_PER_DAY;
+        if (dt < 0.0) dt = 0.0;
+        if (src != 0 && dt > tau) dt = tau;
+        if (dt > 0.0) {
+            if (backend_state_offset(backend, jd_et, -dt, dbody, engine_policy, d, error) != JME_OK) return JME_ERR;
+        } else {
+            for (i = 0; i < 6; i++) d[i] = d0[i];
+        }
+        for (i = 0; i < 3; i++) {
+            ev[i] = obs[i] - d[i];
+            qv[i] = src != 0 ? src[i] - d[i] : p[i];
+        }
+        em = vec_norm3(ev);
+        qn = vec_norm3(qv);
+        if (!(em > 0.0) || !(qn > 0.0)) {
+            jme_set_error(error, "Degenerate deflector-observer-source geometry");
+            return JME_ERR;
+        }
+        for (i = 0; i < 3; i++) { ev[i] /= em; qv[i] /= qn; pp[i] = p[i]; }
+        jme_eraLd(gm[k] / JME_GM_SUN_KM3S2, pp, qv, ev, em, dl[k], p1);
+        for (i = 0; i < 3; i++) p[i] = p1[i];
+    }
+
+    if (geo != 0) {
+        /* Earth deflection for an observer on the Earth (GM_Earth from DE440).
+         * eraLd divides by max(q.(q+e), dlim); dlim = 1 leaves every source
+         * above the observer's geocentric horizon (q.(q+e) >= 1) exact and
+         * keeps the term continuous across the horizon and bounded towards
+         * the nadir, where no light reaches the observer. */
+        double ev[3], qv[3], em, qn, p1[3], pp[3];
+        for (i = 0; i < 3; i++) {
+            ev[i] = obs[i] - geo[i];
+            qv[i] = src != 0 ? src[i] - geo[i] : p[i];
+        }
+        em = vec_norm3(ev);
+        qn = vec_norm3(qv);
+        if (em > 0.0 && qn > 0.0) {
+            for (i = 0; i < 3; i++) { ev[i] /= em; qv[i] /= qn; pp[i] = p[i]; }
+            jme_eraLd(398600.435507 / JME_GM_SUN_KM3S2, pp, qv, ev, em, 1.0, p1);
+            for (i = 0; i < 3; i++) p[i] = p1[i];
+        }
+    }
+    return JME_OK;
 }
 
 /*
@@ -1047,29 +1119,32 @@ static int observer_relative_state(
 
         if (geocentric && body != JME_BODY_SUN
             && (!(flags & JME_CALC_NO_LIGHT_DEFLECTION) || !(flags & JME_CALC_NO_ABERRATION))) {
-            double sun_t[6], sun_ret[6];
-            double p[3], q[3], e[3], em, qn;
+            double sun_t[6], geo[6];
+            double p[3], e[3], em;
 
-            if (backend_state(backend, jd_et, JME_BODY_SUN, engine_policy, sun_t, error) != JME_OK
-                || backend_state_offset(backend, jd_et, -tau, JME_BODY_SUN, engine_policy, sun_ret, error) != JME_OK) {
+            if (backend_state(backend, jd_et, JME_BODY_SUN, engine_policy, sun_t, error) != JME_OK) {
                 return JME_ERR;
             }
             dist = vec_norm3(rel);
             for (i = 0; i < 3; i++) {
                 p[i] = rel[i] / dist;
                 e[i] = obs[i] - sun_t[i];
-                q[i] = tgt[i] - sun_ret[i];
             }
             em = vec_norm3(e);
-            qn = vec_norm3(q);
-            if (!(em > 0.0) || !(qn > 0.0)) {
-                jme_set_error(error, "Degenerate Sun-observer-target geometry");
+            if (!(em > 0.0)) {
+                jme_set_error(error, "Degenerate Sun-observer geometry");
                 return JME_ERR;
             }
-            for (i = 0; i < 3; i++) { e[i] /= em; q[i] /= qn; }
 
             if (!(flags & JME_CALC_NO_LIGHT_DEFLECTION)) {
-                apply_solar_deflection(p, q, e, em);
+                if (topocentric
+                    && backend_state(backend, jd_et, JME_BODY_EARTH, engine_policy, geo, error) != JME_OK) {
+                    return JME_ERR;
+                }
+                if (apply_light_deflection(backend, engine_policy, jd_et, body, obs, tgt, tau,
+                        topocentric ? geo : 0, p, error) != JME_OK) {
+                    return JME_ERR;
+                }
             }
             if (!(flags & JME_CALC_NO_ABERRATION)) {
                 if (apply_aberration(p, vobs, em, error) != JME_OK) return JME_ERR;
@@ -1410,9 +1485,17 @@ int internal_star_observer_vector(double jd_et, int flags, const double *u, doub
         }
         for (i = 0; i < 3; i++) e[i] /= em;
         if (!(flags & JME_CALC_NO_LIGHT_DEFLECTION)) {
-            double p1[3];
-            jme_eraLdsun(p, e, em, p1);
-            for (i = 0; i < 3; i++) p[i] = p1[i];
+            /* Analytical backends are heliocentric: express the observer in
+             * the same origin as the deflector states. */
+            double obs_b[3], geo_b[6];
+            for (i = 0; i < 3; i++) obs_b[i] = obs[i] - sunoff[i];
+            if (topocentric) {
+                if (backend_state(backend, jd_et, JME_BODY_EARTH, engine_policy, geo_b, error) != JME_OK) return JME_ERR;
+            }
+            if (apply_light_deflection(backend, engine_policy, jd_et, -1, obs_b, 0, 0.0,
+                    topocentric ? geo_b : 0, p, error) != JME_OK) {
+                return JME_ERR;
+            }
         }
         if (!(flags & JME_CALC_NO_ABERRATION)) {
             if (apply_aberration(p, vobs, em, error) != JME_OK) return JME_ERR;

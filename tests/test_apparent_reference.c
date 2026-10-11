@@ -16,8 +16,8 @@
 #define N(a) ((int)(sizeof(a) / sizeof((a)[0])))
 
 /* Tolerances (milliarcseconds). Skyfield and JME/ERFA differ in the
- * light-deflection bodies and iteration details at the 0.1 mas level. */
-#define TOL_MAS 0.5
+ * deflector-epoch details and Skyfield uses its own TDB-TT series (micro-arcsecond level). */
+#define TOL_MAS 0.02
 #define TOL_AU 1.0e-11
 
 static double max_mas[4];

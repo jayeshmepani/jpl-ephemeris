@@ -34,7 +34,7 @@ digest = hashlib.sha256(open(path, 'rb').read()).hexdigest()
 BODIES = [(0, 'sun'), (1, 'moon'), (2, 'mercury'), (3, 'venus'),
           (15, 'mars barycenter'), (16, 'jupiter barycenter'), (17, 'saturn barycenter'),
           (18, 'uranus barycenter'), (19, 'neptune barycenter'), (20, 'pluto barycenter')]
-EPOCHS = [2396770.5, 2415020.31352, 2433282.4235, 2440587.5, 2451545.0,
+EPOCHS = [2396770.5, 2415020.31352, 2459205.25, 2433282.4235, 2440587.5, 2451545.0,
           2451545.000001, 2455197.5, 2460000.5, 2460676.25, 2466154.75,
           2488069.5, 2506321.5]
 
