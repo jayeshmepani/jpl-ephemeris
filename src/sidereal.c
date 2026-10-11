@@ -196,8 +196,9 @@ static double earth_rotation_angle_iau2000(double jd_ut)
  */
 static double sidereal_time_iau2006(double jd_ut)
 {
-    double jd_tt = jd_ut + jme_delta_t(jd_ut) / 86400.0;
-    double t = (jd_tt - 2451545.0) / 36525.0;
+    double jd_tt, t;
+    if (internal_ut_to_et(jd_ut, &jd_tt, 0) != JME_OK) return NAN;
+    t = (jd_tt - 2451545.0) / 36525.0;
     double gmst = earth_rotation_angle_iau2000(jd_ut)
         + (0.014506
             + (4612.156534
@@ -247,8 +248,8 @@ double jme_get_ayanamsa(double jd_et)
 
 double jme_get_ayanamsa_ut(double jd_ut)
 {
-    double dt = jme_delta_t(jd_ut);
-    double jd_et = jd_ut + dt / 86400.0;
+    double jd_et;
+    if (internal_ut_to_et(jd_ut, &jd_et, 0) != JME_OK) return NAN;
     return jme_get_ayanamsa(jd_et);
 }
 
@@ -258,9 +259,13 @@ int jme_get_ayanamsa_ex(double jd_et, int model, double *ayan, char *error)
     double t0 = 2451545.0;
     jme_context *ctx = jme_get_context();
 
-    if (ayan != 0) { *ayan = 0.0; }
+    if (ayan != 0) { *ayan = NAN; }
     if (ayan == 0) {
         jme_set_error(error, "Ayanamsa output is required");
+        return JME_ERR;
+    }
+    if (!isfinite(jd_et)) {
+        jme_set_error(error, "Ayanamsa Julian date must be finite");
         return JME_ERR;
     }
 
@@ -418,8 +423,13 @@ int jme_get_ayanamsa_ex(double jd_et, int model, double *ayan, char *error)
 
 int jme_get_ayanamsa_ex_ut(double jd_ut, int model, double *ayan, char *error)
 {
-    double dt = jme_delta_t(jd_ut);
-    double jd_et = jd_ut + dt / 86400.0;
+    double jd_et;
+    if (ayan == 0) {
+        jme_set_error(error, "Ayanamsa output is required");
+        return JME_ERR;
+    }
+    *ayan = NAN;
+    if (internal_ut_to_et(jd_ut, &jd_et, error) != JME_OK) return JME_ERR;
     return jme_get_ayanamsa_ex(jd_et, model, ayan, error);
 }
 
