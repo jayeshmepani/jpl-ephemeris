@@ -98,6 +98,10 @@ if (JME_BUILD_TESTS)
     target_link_libraries(test_api_contract PRIVATE jme)
     add_test(NAME api_contract COMMAND test_api_contract)
 
+    add_executable(test_precision_contract tests/test_precision_contract.c)
+    target_link_libraries(test_precision_contract PRIVATE jme)
+    add_test(NAME precision_contract COMMAND test_precision_contract)
+
     add_executable(test_jpl_runtime tests/test_jpl_runtime.c)
     target_link_libraries(test_jpl_runtime PRIVATE jme)
     add_test(NAME jpl_runtime COMMAND test_jpl_runtime)
