@@ -57,5 +57,18 @@ int jme_get_topo_pos_true_equator(double jd_et, double *pos_au, char *error);
 /* Internal helper shared by the main and fixed-star apparent-position paths. */
 int internal_earth_aberration_state(double jd_et, double *state, char *error);
 int internal_ut_to_et(double jd_ut, double *jd_et, char *error);
+int internal_utc_to_tt_split(
+    int year, int month, int day, int hour, int minute, double second, int calendar,
+    double *jd0_tt, double *fraction_tt, char *error
+);
+int internal_tt_to_jpl_time_split(double jd_tt, double *jd0_native, double *fraction_native, char *error);
+int internal_tt_split_to_jpl_time_split(
+    double jd0_tt, double fraction_tt, double *jd0_native, double *fraction_native, char *error
+);
+int internal_jpl_body_state_tt(
+    double jd_tt, int target_body, int center_body, int unit, double *state, char *error
+);
+double jme_erfa_dtdb(double date1, double date2, double ut, double elong, double u, double v);
+int jme_erfa_tdbtcb(double tdb1, double tdb2, double *tcb1, double *tcb2);
 
 #endif
