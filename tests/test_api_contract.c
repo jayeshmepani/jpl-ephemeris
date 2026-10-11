@@ -373,13 +373,13 @@ int main(void)
 
         if (jme_fixstar("Aldebaran", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_NO_NUTATION | JME_CALC_BARYCENTRIC, star_ecl, error) != JME_OK
             || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_ALDEBARAN_15TAU, &ayan_anchor, error) != JME_OK
-            || fabs(jme_degrees_difference(star_ecl[0] - ayan_anchor, 45.0)) > 1.0e-9
+            || fabs(jme_degrees_difference_signed(star_ecl[0] - ayan_anchor, 45.0)) > 1.0e-9
             || jme_fixstar("Spica", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_NO_NUTATION | JME_CALC_BARYCENTRIC, star_ecl, error) != JME_OK
             || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_TRUE_CITRA, &ayan_anchor, error) != JME_OK
-            || fabs(jme_degrees_difference(star_ecl[0] - ayan_anchor, 180.0)) > 1.0e-9
+            || fabs(jme_degrees_difference_signed(star_ecl[0] - ayan_anchor, 180.0)) > 1.0e-9
             || jme_fixstar("Revati", 2451545.0, JME_CALC_TRUE_POSITION | JME_CALC_NO_NUTATION | JME_CALC_BARYCENTRIC, star_ecl, error) != JME_OK
             || jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_TRUE_REVATI, &ayan_anchor, error) != JME_OK
-            || fabs(jme_degrees_difference(star_ecl[0] - ayan_anchor, 359.8333333333333)) > 1.0e-9) {
+            || fabs(jme_degrees_difference_signed(star_ecl[0] - ayan_anchor, 359.8333333333333)) > 1.0e-9) {
             fprintf(stderr, "fixed-star anchored ayanamsa contract mismatch: %s %.17g %.17g\n", error, star_ecl[0], ayan_anchor);
             return 1;
         }
@@ -1685,17 +1685,17 @@ int main(void)
         if (jme_houses(2451545.0, 51.5, 0.0, JME_HOUSE_EQUAL, cusps_equal, ascmc) != JME_OK
             || !finite_values(cusps_equal + 1, 12)
             || !finite_values(ascmc, 10)
-            || fabs(jme_degrees_difference(cusps_equal[1], ascmc[0])) > 1e-12) {
+            || fabs(jme_degrees_difference_signed(cusps_equal[1], ascmc[0])) > 1e-12) {
             fprintf(stderr, "numeric JME equal house contract mismatch\n");
             return 1;
         }
 
         if (jme_houses(2451545.0, 51.5, 0.0, JME_HOUSE_PLACIDUS, cusps_placidus, ascmc) != JME_OK
             || !finite_values(cusps_placidus + 1, 12)
-            || fabs(jme_degrees_difference(cusps_placidus[1], ascmc[0])) > 1e-12
-            || fabs(jme_degrees_difference(cusps_placidus[10], ascmc[1])) > 1e-12
-            || fabs(jme_degrees_difference(cusps_placidus[7], cusps_placidus[1] + 180.0)) > 1e-12
-            || fabs(jme_degrees_difference(cusps_placidus[4], cusps_placidus[10] + 180.0)) > 1e-12) {
+            || fabs(jme_degrees_difference_signed(cusps_placidus[1], ascmc[0])) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_placidus[10], ascmc[1])) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_placidus[7], cusps_placidus[1] + 180.0)) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_placidus[4], cusps_placidus[10] + 180.0)) > 1e-12) {
             fprintf(stderr, "Placidus house contract mismatch\n");
             return 1;
         }
@@ -1720,60 +1720,60 @@ int main(void)
 
         if (jme_houses(2451545.0, 51.5, 0.0, JME_HOUSE_REGIOMONTANUS, cusps_regiomontanus, ascmc) != JME_OK
             || !finite_values(cusps_regiomontanus + 1, 12)
-            || fabs(jme_degrees_difference(cusps_regiomontanus[1], ascmc[0])) > 1e-12
-            || fabs(jme_degrees_difference(cusps_regiomontanus[10], ascmc[1])) > 1e-12
-            || fabs(jme_degrees_difference(cusps_regiomontanus[7], cusps_regiomontanus[1] + 180.0)) > 1e-12
-            || fabs(jme_degrees_difference(cusps_regiomontanus[4], cusps_regiomontanus[10] + 180.0)) > 1e-12) {
+            || fabs(jme_degrees_difference_signed(cusps_regiomontanus[1], ascmc[0])) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_regiomontanus[10], ascmc[1])) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_regiomontanus[7], cusps_regiomontanus[1] + 180.0)) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_regiomontanus[4], cusps_regiomontanus[10] + 180.0)) > 1e-12) {
             fprintf(stderr, "Regiomontanus house contract mismatch\n");
             return 1;
         }
 
         if (jme_houses(2451545.0, 51.5, 0.0, JME_HOUSE_CAMPANUS, cusps_campanus, ascmc) != JME_OK
             || !finite_values(cusps_campanus + 1, 12)
-            || fabs(jme_degrees_difference(cusps_campanus[1], ascmc[0])) > 1e-12
-            || fabs(jme_degrees_difference(cusps_campanus[10], ascmc[1])) > 1e-12
-            || fabs(jme_degrees_difference(cusps_campanus[7], cusps_campanus[1] + 180.0)) > 1e-12
-            || fabs(jme_degrees_difference(cusps_campanus[4], cusps_campanus[10] + 180.0)) > 1e-12) {
+            || fabs(jme_degrees_difference_signed(cusps_campanus[1], ascmc[0])) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_campanus[10], ascmc[1])) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_campanus[7], cusps_campanus[1] + 180.0)) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_campanus[4], cusps_campanus[10] + 180.0)) > 1e-12) {
             fprintf(stderr, "Campanus house contract mismatch\n");
             return 1;
         }
 
         if (jme_houses(2451545.0, 51.5, 0.0, JME_HOUSE_KOCH, cusps_koch, ascmc) != JME_OK
             || !finite_values(cusps_koch + 1, 12)
-            || fabs(jme_degrees_difference(cusps_koch[1], ascmc[0])) > 1e-12
-            || fabs(jme_degrees_difference(cusps_koch[10], ascmc[1])) > 1e-12
-            || fabs(jme_degrees_difference(cusps_koch[7], cusps_koch[1] + 180.0)) > 1e-12
-            || fabs(jme_degrees_difference(cusps_koch[4], cusps_koch[10] + 180.0)) > 1e-12) {
+            || fabs(jme_degrees_difference_signed(cusps_koch[1], ascmc[0])) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_koch[10], ascmc[1])) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_koch[7], cusps_koch[1] + 180.0)) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_koch[4], cusps_koch[10] + 180.0)) > 1e-12) {
             fprintf(stderr, "Koch house contract mismatch\n");
             return 1;
         }
 
         if (jme_houses(2451545.0, 51.5, 0.0, JME_HOUSE_KRUSINSKI, cusps_krusinski, ascmc) != JME_OK
             || !finite_values(cusps_krusinski + 1, 12)
-            || fabs(jme_degrees_difference(cusps_krusinski[1], ascmc[0])) > 1e-12
-            || fabs(jme_degrees_difference(cusps_krusinski[10], ascmc[1])) > 1e-12
-            || fabs(jme_degrees_difference(cusps_krusinski[7], cusps_krusinski[1] + 180.0)) > 1e-12
-            || fabs(jme_degrees_difference(cusps_krusinski[4], cusps_krusinski[10] + 180.0)) > 1e-12) {
+            || fabs(jme_degrees_difference_signed(cusps_krusinski[1], ascmc[0])) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_krusinski[10], ascmc[1])) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_krusinski[7], cusps_krusinski[1] + 180.0)) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_krusinski[4], cusps_krusinski[10] + 180.0)) > 1e-12) {
             fprintf(stderr, "Krusinski house contract mismatch\n");
             return 1;
         }
 
         if (jme_houses(2451545.0, 51.5, 0.0, JME_HOUSE_APC, cusps_apc, ascmc) != JME_OK
             || !finite_values(cusps_apc + 1, 12)
-            || fabs(jme_degrees_difference(cusps_apc[1], ascmc[0])) > 1e-12
-            || fabs(jme_degrees_difference(cusps_apc[10], ascmc[1])) > 1e-12
-            || fabs(jme_degrees_difference(cusps_apc[7], cusps_apc[1] + 180.0)) > 1e-12
-            || fabs(jme_degrees_difference(cusps_apc[4], cusps_apc[10] + 180.0)) > 1e-12) {
+            || fabs(jme_degrees_difference_signed(cusps_apc[1], ascmc[0])) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_apc[10], ascmc[1])) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_apc[7], cusps_apc[1] + 180.0)) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_apc[4], cusps_apc[10] + 180.0)) > 1e-12) {
             fprintf(stderr, "APC house contract mismatch\n");
             return 1;
         }
 
         if (jme_houses(2451545.0, 51.5, 0.0, JME_HOUSE_SUNSHINE, cusps_sunshine, ascmc) != JME_OK
             || !finite_values(cusps_sunshine + 1, 12)
-            || fabs(jme_degrees_difference(cusps_sunshine[1], ascmc[0])) > 1e-12
-            || fabs(jme_degrees_difference(cusps_sunshine[10], ascmc[1])) > 1e-12
-            || fabs(jme_degrees_difference(cusps_sunshine[7], cusps_sunshine[1] + 180.0)) > 1e-12
-            || fabs(jme_degrees_difference(cusps_sunshine[4], cusps_sunshine[10] + 180.0)) > 1e-12) {
+            || fabs(jme_degrees_difference_signed(cusps_sunshine[1], ascmc[0])) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_sunshine[10], ascmc[1])) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_sunshine[7], cusps_sunshine[1] + 180.0)) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_sunshine[4], cusps_sunshine[10] + 180.0)) > 1e-12) {
             fprintf(stderr, "Sunshine house contract mismatch\n");
             return 1;
         }
@@ -1786,10 +1786,10 @@ int main(void)
         ascmc[9] = 22.0;
         if (jme_houses_armc(120.0, 51.5, 23.4392911, JME_HOUSE_SUNSHINE, cusps_sunshine, ascmc) != JME_OK
             || !finite_values(cusps_sunshine + 1, 12)
-            || fabs(jme_degrees_difference(cusps_sunshine[1], ascmc[0])) > 1e-12
-            || fabs(jme_degrees_difference(cusps_sunshine[10], ascmc[1])) > 1e-12
-            || fabs(jme_degrees_difference(cusps_sunshine[7], cusps_sunshine[1] + 180.0)) > 1e-12
-            || fabs(jme_degrees_difference(cusps_sunshine[4], cusps_sunshine[10] + 180.0)) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_sunshine[1], ascmc[0])) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_sunshine[10], ascmc[1])) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_sunshine[7], cusps_sunshine[1] + 180.0)) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_sunshine[4], cusps_sunshine[10] + 180.0)) > 1e-12
             || fabs(ascmc[9] - 22.0) > 1e-12) {
             fprintf(stderr, "ARMC Sunshine with Sun declination mismatch\n");
             return 1;
@@ -1797,27 +1797,27 @@ int main(void)
 
         if (jme_houses(2451545.0, 51.5, 0.0, JME_HOUSE_ALCABITIUS, cusps_alcabitius, ascmc) != JME_OK
             || !finite_values(cusps_alcabitius + 1, 12)
-            || fabs(jme_degrees_difference(cusps_alcabitius[1], ascmc[0])) > 1e-12
-            || fabs(jme_degrees_difference(cusps_alcabitius[10], ascmc[1])) > 1e-12
-            || fabs(jme_degrees_difference(cusps_alcabitius[7], cusps_alcabitius[1] + 180.0)) > 1e-12
-            || fabs(jme_degrees_difference(cusps_alcabitius[4], cusps_alcabitius[10] + 180.0)) > 1e-12) {
+            || fabs(jme_degrees_difference_signed(cusps_alcabitius[1], ascmc[0])) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_alcabitius[10], ascmc[1])) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_alcabitius[7], cusps_alcabitius[1] + 180.0)) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_alcabitius[4], cusps_alcabitius[10] + 180.0)) > 1e-12) {
             fprintf(stderr, "Alcabitius house contract mismatch\n");
             return 1;
         }
 
         if (jme_houses(2451545.0, 51.5, 0.0, JME_HOUSE_POLICH_PAGE, cusps_topocentric, ascmc) != JME_OK
             || !finite_values(cusps_topocentric + 1, 12)
-            || fabs(jme_degrees_difference(cusps_topocentric[1], ascmc[0])) > 1e-12
-            || fabs(jme_degrees_difference(cusps_topocentric[10], ascmc[1])) > 1e-12
-            || fabs(jme_degrees_difference(cusps_topocentric[7], cusps_topocentric[1] + 180.0)) > 1e-12
-            || fabs(jme_degrees_difference(cusps_topocentric[4], cusps_topocentric[10] + 180.0)) > 1e-12) {
+            || fabs(jme_degrees_difference_signed(cusps_topocentric[1], ascmc[0])) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_topocentric[10], ascmc[1])) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_topocentric[7], cusps_topocentric[1] + 180.0)) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_topocentric[4], cusps_topocentric[10] + 180.0)) > 1e-12) {
             fprintf(stderr, "Polich/Page house contract mismatch\n");
             return 1;
         }
 
         if (jme_houses(2451545.0, 51.5, 0.0, JME_HOUSE_MERIDIAN, cusps_morinus, ascmc) != JME_OK
             || !finite_values(cusps_morinus + 1, 12)
-            || fabs(jme_degrees_difference(cusps_morinus[10], ascmc[1])) > 1e-12) {
+            || fabs(jme_degrees_difference_signed(cusps_morinus[10], ascmc[1])) > 1e-12) {
             fprintf(stderr, "Meridian house contract mismatch\n");
             return 1;
         }
@@ -1826,8 +1826,8 @@ int main(void)
             || !finite_values(cusps_horizontal + 1, 12)
             /* cusp 1 lies on the prime vertical (due east), not on the Ascendant */
             || fabs(jme_degrees_difference_signed(cusps_horizontal[1], ascmc[0])) < 1e-3
-            || fabs(jme_degrees_difference(cusps_horizontal[10], ascmc[1])) > 1e-12
-            || fabs(jme_degrees_difference(cusps_horizontal[7], cusps_horizontal[1] + 180.0)) > 1e-12) {
+            || fabs(jme_degrees_difference_signed(cusps_horizontal[10], ascmc[1])) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_horizontal[7], cusps_horizontal[1] + 180.0)) > 1e-12) {
             fprintf(stderr, "Horizontal house contract mismatch\n");
             return 1;
         }
@@ -1835,7 +1835,7 @@ int main(void)
         if (jme_houses(2451545.0, 51.5, 0.0, JME_HOUSE_AZIMUTHAL, cusps_horizontal, ascmc) != JME_OK
             || !finite_values(cusps_horizontal + 1, 12)
             || fabs(jme_degrees_difference_signed(cusps_horizontal[1], ascmc[0])) < 1e-3
-            || fabs(jme_degrees_difference(cusps_horizontal[10], ascmc[1])) > 1e-12) {
+            || fabs(jme_degrees_difference_signed(cusps_horizontal[10], ascmc[1])) > 1e-12) {
             fprintf(stderr, "Azimuthal house contract mismatch\n");
             return 1;
         }
@@ -2306,7 +2306,7 @@ int main(void)
             || mercury_node[0] >= 360.0
             || mercury_node[1] <= 0.0
             || mercury_aphelion[1] <= mercury_perihelion[1]
-            || fabs(jme_degrees_difference(mercury_aphelion[0], mercury_perihelion[0] + 180.0)) > 1e-9) {
+            || fabs(jme_degrees_difference_signed(mercury_aphelion[0], mercury_perihelion[0] + 180.0)) > 1e-9) {
             fprintf(stderr, "non-lunar node/apside contract mismatch: %s\n", error);
             return 1;
         }
