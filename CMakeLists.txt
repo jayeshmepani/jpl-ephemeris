@@ -28,6 +28,8 @@ add_library(jme SHARED
     src/elp2000/elp2000-82b.c
     src/elp2000/series.c
     src/events.c
+    src/erfa/dtdb.c
+    src/erfa/tdbtcb.c
     src/fixstar.c
     src/houses.c
     src/julian.c
@@ -58,6 +60,7 @@ target_include_directories(jme
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${CMAKE_CURRENT_SOURCE_DIR}/src/elp2000
         ${CMAKE_CURRENT_SOURCE_DIR}/src/moshier
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/erfa
 )
 
 if (calceph_FOUND)
