@@ -29,8 +29,15 @@ This file is updated after each milestone. Status keys: FIXED / PARTIAL / OPEN.
 | VSOP87A: full official IMCCE series (42,520 terms), analytic velocity, compensated summation | FIXED | dd293e9, tests/test_vsop87_reference.c (90 vsop87.chk epochs, 5e-11 au) |
 | Event root and extremum finding (Illinois, syzygy, Brent + stationary-point refinement) | FIXED | dd293e9 |
 | Event evaluation cost (position-only apparent place) | FIXED | dd293e9; engine_matrix 368 s -> 118 s |
+| Light-time retarded JPL states rounded to 2^-31 day (40 us; 0.3 mas Moon) | FIXED | ad94650 (offset carried in day fraction) |
+| IAU 2006/2000A nutation with P03 adjustments (eraNut06a); IAU2006A preset uses it | FIXED | ad94650, JME_MODEL_NUT_IAU_2006A = 351 |
+| Light deflection: Sun only -> Sun + Jupiter + Saturn systems (+ Earth topocentric) | FIXED | f08bfb6 |
+| JPL apparent places vs Skyfield/ERFA (ICRS, J2000, of-date, ecliptic; 130 places) | CERTIFIED | tests/test_apparent_reference.c, max 0.009 mas |
+| Polar motion for topocentric observer / horizon frame | OPEN | finals2000A has x_p,y_p; needs pom00/sp00 vendoring |
 
 ## Commits (this session, newest first)
+- f08bfb6 Light deflection by Sun, Jupiter, Saturn (+ Earth topocentric)
+- ad94650 JPL light time without date rounding; IAU 2006/2000A nutation; Skyfield/ERFA apparent-place certification
 - dd293e9 VSOP87A from official IMCCE files; position-only event evaluation; Illinois/Brent root and extremum finding
 - 8f9eed3 Lunar eclipses: Danjon shadow, angular greatest eclipse, per-instant contacts, type filter
 - 9730e56 Events: scoped topocentre, apparent places, exact Besselian global solar eclipses
@@ -46,6 +53,7 @@ This file is updated after each milestone. Status keys: FIXED / PARTIAL / OPEN.
 - Houses: Morinus cusp 10 is not the MC; Horizontal cusp 1 is not the Ascendant; MERIDIAN and MORINUS are distinct.
 
 ## Unresolved / documented limits
+- Default frame models remain IAU 1976/1980 without frame bias (historical default); they differ from IAU 2006/2000A by ~0.3"/century (e.g. 52 mas in 2023). Recommendation: select IAU2006A for modern work; changing the default is a product decision.
 - Laskar 1986 precession, SM1984/S1997/SM2004 Delta-T: explicit errors.
 - Delta-T steps: 0.22 s at the 1973 IERS switch; 358 s at -720 (parabola/spline).
 - Polar motion not applied to topocentric positions (< 15 m).
