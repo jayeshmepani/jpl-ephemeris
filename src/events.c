@@ -1243,6 +1243,18 @@ static double get_altitude(double jd_ut, int body, const char *starname, int fla
     return get_altitude_internal(jd_ut, body, starname, flags, geopos, atpress, attemp, 1, error);
 }
 
+typedef struct events_alt_ctx {
+    int body; const char *starname; int flags; double *geopos; double atpress, attemp, h0;
+} events_alt_ctx;
+
+static double events_alt_fn(double t, const void *c, char *error)
+{
+    const events_alt_ctx *x = (const events_alt_ctx *)c;
+    double a = get_altitude_internal(t, x->body, x->starname, x->flags, x->geopos, x->atpress, x->attemp, 0, error);
+    return a == -100.0 ? NAN : a - x->h0;
+}
+
+/* Altitude crossing of h0 in [t0, t1], refined to 1e-10 day (events_refine_root). */
 static int refine_altitude_crossing(
     double t0,
     double t1,
@@ -1257,43 +1269,43 @@ static int refine_altitude_crossing(
     char *error
 )
 {
-    double a0;
-    double a1;
-    double mid;
-    double amid;
-    int i;
+    events_alt_ctx c;
+    double a0, a1;
 
     internal_topo_override_set(geopos[0], geopos[1], geopos[2]);
-    a0 = get_altitude_internal(t0, body, starname, flags, geopos, atpress, attemp, 0, error) - h0;
-    a1 = get_altitude_internal(t1, body, starname, flags, geopos, atpress, attemp, 0, error) - h0;
-
-    if (a0 == -100.0 - h0 || a1 == -100.0 - h0 || a0 * a1 > 0.0) {
+    c.body = body; c.starname = starname; c.flags = flags; c.geopos = geopos;
+    c.atpress = atpress; c.attemp = attemp; c.h0 = h0;
+    a0 = events_alt_fn(t0, &c, error);
+    a1 = events_alt_fn(t1, &c, error);
+    if (!isfinite(a0) || !isfinite(a1) || a0 * a1 > 0.0) {
         return JME_ERR;
     }
-
-    for (i = 0; i < 20; i++) {
-        mid = (t0 + t1) / 2.0;
-        amid = get_altitude_internal(mid, body, starname, flags, geopos, atpress, attemp, 0, error) - h0;
-
-        if (fabs(amid) < 1e-6 || fabs(t1 - t0) < 1e-6) {
-            *tret = mid;
-            return JME_OK;
-        }
-
-        if (a0 * amid <= 0.0) {
-            t1 = mid;
-            a1 = amid;
-        } else {
-            t0 = mid;
-            a0 = amid;
-        }
-    }
-
-    (void)a1;
-    *tret = (t0 + t1) / 2.0;
-    return JME_OK;
+    if (a0 == 0.0) { *tret = t0; return JME_OK; }
+    if (a1 == 0.0) { *tret = t1; return JME_OK; }
+    return a0 < 0.0
+        ? events_refine_root(events_alt_fn, &c, t0, a0, t1, a1, tret, error)
+        : events_refine_root(events_alt_fn, &c, t1, a1, t0, a0, tret, error);
 }
 
+typedef struct events_ha_ctx {
+    int body; const char *starname; int flags; double *geopos; double target_hour_angle;
+} events_ha_ctx;
+
+static double events_ha_fn(double t, const void *c, char *error)
+{
+    const events_ha_ctx *x = (const events_ha_ctx *)c;
+    double results[6];
+    if (x->starname != 0 && x->starname[0] != '\0') {
+        if (jme_fixstar_ut(x->starname, t, x->flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) return NAN;
+    } else if (internal_calc_ut_positions(t, x->body, x->flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
+        return NAN;
+    }
+    return jme_degrees_difference_signed(
+        jme_degrees_difference_signed(events_gst_hours(t, x->flags) * 15.0 + x->geopos[0], results[0]),
+        x->target_hour_angle);
+}
+
+/* Hour angle reaching target_hour_angle in [t0, t1], refined to 1e-10 day. */
 static int refine_meridian_transit(
     double t0,
     double t1,
@@ -1306,74 +1318,23 @@ static int refine_meridian_transit(
     char *error
 )
 {
-    double ha0;
-    double ha1;
-    double results[6];
-    int i;
+    events_ha_ctx c;
+    double ha0, ha1;
 
-    if (starname != 0 && starname[0] != '\0') {
-        if (jme_fixstar_ut(starname, t0, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
-            return JME_ERR;
-        }
-    } else if (internal_calc_ut_positions(t0, body, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
+    c.body = body; c.starname = starname; c.flags = flags; c.geopos = geopos;
+    c.target_hour_angle = target_hour_angle;
+    ha0 = events_ha_fn(t0, &c, error);
+    ha1 = events_ha_fn(t1, &c, error);
+    if (!isfinite(ha0) || !isfinite(ha1) || ha0 * ha1 > 0.0) {
         return JME_ERR;
     }
-    ha0 = jme_degrees_difference_signed(
-        jme_degrees_difference_signed(events_gst_hours(t0, flags) * 15.0 + geopos[0], results[0]),
-        target_hour_angle
-    );
-
-    if (starname != 0 && starname[0] != '\0') {
-        if (jme_fixstar_ut(starname, t1, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
-            return JME_ERR;
-        }
-    } else if (internal_calc_ut_positions(t1, body, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
-        return JME_ERR;
-    }
-    ha1 = jme_degrees_difference_signed(
-        jme_degrees_difference_signed(events_gst_hours(t1, flags) * 15.0 + geopos[0], results[0]),
-        target_hour_angle
-    );
-
-    if (ha0 * ha1 > 0.0) {
-        return JME_ERR;
-    }
-
-    for (i = 0; i < 20; i++) {
-        double tm = (t0 + t1) / 2.0;
-        double ra;
-        double ham;
-
-        if (starname != 0 && starname[0] != '\0') {
-            if (jme_fixstar_ut(starname, tm, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
-                return JME_ERR;
-            }
-        } else if (internal_calc_ut_positions(tm, body, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
-            return JME_ERR;
-        }
-
-        ra = results[0];
-        ham = jme_degrees_difference_signed(jme_degrees_difference_signed(events_gst_hours(tm, flags) * 15.0 + geopos[0], ra), target_hour_angle);
-
-        if (fabs(ham) < 1e-4 || fabs(t1 - t0) < 1e-6) {
-            *tret = tm;
-            return JME_OK;
-        }
-
-        if (ha0 * ham <= 0.0) {
-            t1 = tm;
-            ha1 = ham;
-        } else if (ha1 * ham <= 0.0) {
-            t0 = tm;
-            ha0 = ham;
-        } else {
-            *tret = tm;
-            return JME_OK;
-        }
-    }
-
-    *tret = (t0 + t1) / 2.0;
-    return JME_OK;
+    /* reject the +-180 degree wrap: a true crossing has a small step */
+    if (fabs(ha0 - ha1) > 180.0) return JME_ERR;
+    if (ha0 == 0.0) { *tret = t0; return JME_OK; }
+    if (ha1 == 0.0) { *tret = t1; return JME_OK; }
+    return ha0 < 0.0
+        ? events_refine_root(events_ha_fn, &c, t0, ha0, t1, ha1, tret, error)
+        : events_refine_root(events_ha_fn, &c, t1, ha1, t0, ha0, tret, error);
 }
 
 static int rise_trans_search(double jd_ut, int body, const char *starname, int flags, int rsmi, double *geopos, double atpress, double attemp, int use_true_horizon, double true_horizon, double *tret, char *error)

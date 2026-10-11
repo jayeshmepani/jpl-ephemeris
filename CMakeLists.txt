@@ -128,6 +128,12 @@ if (JME_BUILD_TESTS)
     add_test(NAME apparent_reference COMMAND test_apparent_reference)
     set_tests_properties(apparent_reference PROPERTIES SKIP_RETURN_CODE 77)
 
+    add_executable(test_riseset_reference tests/test_riseset_reference.c)
+    target_include_directories(test_riseset_reference PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    target_link_libraries(test_riseset_reference PRIVATE jme)
+    add_test(NAME riseset_reference COMMAND test_riseset_reference)
+    set_tests_properties(riseset_reference PROPERTIES SKIP_RETURN_CODE 77)
+
     add_executable(test_jpl_runtime tests/test_jpl_runtime.c)
     target_link_libraries(test_jpl_runtime PRIVATE jme)
     add_test(NAME jpl_runtime COMMAND test_jpl_runtime)
