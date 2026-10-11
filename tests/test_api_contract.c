@@ -224,6 +224,7 @@ int main(void)
         fprintf(stderr, "astro model profile getter mismatch: %s\n", path);
         return 1;
     }
+    jme_set_astro_models("IAU2006 NUT2000B DELTAT2006", 0);
     if (fabs(jme_sidereal_time(2451545.0) - 18.697374828694365) > 1e-12) {
         fprintf(stderr, "IAU 2006 sidereal time mismatch: %.17g\n", jme_sidereal_time(2451545.0));
         return 1;
@@ -1022,26 +1023,34 @@ int main(void)
     }
 
     {
-        int models[] = {
+        int implemented_models[] = {
             JME_TIME_DELTAT_AUTOMATIC,
+            JME_MODEL_DELTAT_ESPENAK_MEEUS_2006
+        };
+        int unimplemented_models[] = {
             JME_MODEL_DELTAT_STEPHENSON_MORRISON_1984,
             JME_MODEL_DELTAT_STEPHENSON_1997,
             JME_MODEL_DELTAT_STEPHENSON_MORRISON_2004,
-            JME_MODEL_DELTAT_ESPENAK_MEEUS_2006,
             JME_MODEL_DELTAT_STEPHENSON_ETC_2016
         };
         int i;
-
-        for (i = 0; i < (int)(sizeof(models) / sizeof(models[0])); i++) {
-            double dt = jme_delta_t_ex(2451545.0, models[i], error);
-            if (!isfinite(dt) || fabs(dt - 63.8735) > 0.001) {
-                fprintf(stderr, "Delta-T model mismatch for %d: %s %.17g\n", models[i], error, dt);
+        for (i = 0; i < (int)(sizeof(implemented_models)/sizeof(implemented_models[0])); i++) {
+            double dt = jme_delta_t_ex(2451545.0, implemented_models[i], error);
+            if (!isfinite(dt) || fabs(dt-63.8735)>0.001) {
+                fprintf(stderr,"Delta-T model mismatch for %d: %s %.17g\n",implemented_models[i],error,dt);
                 return 1;
             }
         }
-
-        if (isfinite(jme_delta_t_ex(2451545.0, -999, error)) || strstr(error, "Unsupported Delta-T model") == 0) {
-            fprintf(stderr, "unsupported Delta-T model was not rejected: %s\n", error);
+        for (i = 0; i < (int)(sizeof(unimplemented_models)/sizeof(unimplemented_models[0])); i++) {
+            double dt = jme_delta_t_ex(2451545.0, unimplemented_models[i], error);
+            if (isfinite(dt) || strstr(error,"not implemented")==0) {
+                fprintf(stderr,"unimplemented Delta-T model did not fail closed for %d: %s %.17g\n",
+                    unimplemented_models[i],error,dt);
+                return 1;
+            }
+        }
+        if (isfinite(jme_delta_t_ex(2451545.0, -999, error)) || strstr(error,"Unsupported Delta-T model")==0) {
+            fprintf(stderr,"unsupported Delta-T model was not rejected: %s\n",error);
             return 1;
         }
     }
