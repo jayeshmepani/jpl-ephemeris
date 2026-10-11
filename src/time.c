@@ -185,11 +185,41 @@ double jme_delta_t_ex(double jd_ut, int model, char *error)
     }
 }
 
+int internal_ut_to_et(double jd_ut, double *jd_et, char *error)
+{
+    double dt;
+
+    if (error != 0) error[0] = '\0';
+    if (jd_et == 0) {
+        jme_set_error(error, "Terrestrial-time output is required");
+        return JME_ERR;
+    }
+    *jd_et = NAN;
+    if (!isfinite(jd_ut)) {
+        jme_set_error(error, "UT Julian date must be finite");
+        return JME_ERR;
+    }
+
+    dt = jme_delta_t_ex(jd_ut, jme_context_deltat_model(), error);
+    if (!isfinite(dt)) {
+        if (error == 0 || error[0] == '\0') jme_set_error(error, "Delta-T calculation failed");
+        return JME_ERR;
+    }
+
+    *jd_et = jd_ut + dt / JME_SECONDS_PER_DAY;
+    if (!isfinite(*jd_et)) {
+        jme_set_error(error, "UT-to-TT conversion produced a non-finite Julian date");
+        *jd_et = NAN;
+        return JME_ERR;
+    }
+    return JME_OK;
+}
+
 int jme_time_equ(double jd_ut, double *e, char *error)
 {
-    double jd_et = jd_ut + jme_delta_t(jd_ut) / JME_SECONDS_PER_DAY;
-    double t = (jd_et - 2451545.0) / 36525.0;
-    double l0 = 280.46646 + 36000.76983 * t + 0.0003032 * t * t;
+    double jd_et;
+    double t;
+    double l0;
     double sun_equ[6];
     double dpsi = 0.0;
     double deps = 0.0;
@@ -200,26 +230,24 @@ int jme_time_equ(double jd_ut, double *e, char *error)
         jme_set_error(error, "Equation-of-time output is required");
         return JME_ERR;
     }
+    *e = NAN;
+    if (internal_ut_to_et(jd_ut, &jd_et, error) != JME_OK) return JME_ERR;
 
-    *e = 0.0;
+    t = (jd_et - 2451545.0) / 36525.0;
+    l0 = 280.46646 + 36000.76983 * t + 0.0003032 * t * t;
 
-    if (jme_calc_ut(jd_ut, JME_BODY_SUN, JME_CALC_EQUATORIAL, sun_equ, error) != JME_OK) {
-        return JME_ERR;
-    }
-
+    if (jme_calc_ut(jd_ut, JME_BODY_SUN, JME_CALC_EQUATORIAL, sun_equ, error) != JME_OK) return JME_ERR;
     if (jme_get_nutation(jd_et, jme_context_nutation_model(), &dpsi, &deps, error) != JME_OK
         || jme_get_obliquity(jd_et, jme_context_obliquity_model(), &eps, error) != JME_OK) {
         return JME_ERR;
     }
 
     l0 = jme_degree_normalize(l0);
-
     eot_deg = jme_degrees_difference_signed(
         l0 - 0.0057183 - sun_equ[0] + dpsi * cos(eps * (acos(-1.0) / 180.0)),
         0.0
     );
     *e = eot_deg / 360.0;
-
     return JME_OK;
 }
 
