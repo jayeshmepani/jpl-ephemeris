@@ -2649,6 +2649,10 @@ int jme_nod_aps(double jd_et, int body, int flags, int method, double *tret, cha
     for (i = 0; i < 4; i++) {
         tret[i] = 0.0;
     }
+    if (!isfinite(jd_et)) {
+        jme_set_error(error, "Terrestrial-time Julian date must be finite");
+        return JME_ERR;
+    }
 
     if (body == JME_BODY_MOON) {
         t = (jd_et - 2451545.0) / 36525.0;
