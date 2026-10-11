@@ -355,6 +355,51 @@ int internal_sidereal_time_rad(double jd_ut, double jd_tt, int apparent, double 
 }
 
 /*
+ * Thread-local observer override used by the event/house routines, which take
+ * the observer as an argument (geopos): they must not modify the user's global
+ * jme_set_topo() configuration.
+ */
+static JME_THREAD_LOCAL int g_topo_override_active;
+static JME_THREAD_LOCAL double g_topo_override[3];
+
+void internal_topo_override_save(double saved[4])
+{
+    saved[0] = (double)g_topo_override_active;
+    saved[1] = g_topo_override[0];
+    saved[2] = g_topo_override[1];
+    saved[3] = g_topo_override[2];
+}
+
+void internal_topo_override_restore(const double saved[4])
+{
+    g_topo_override_active = saved[0] != 0.0;
+    g_topo_override[0] = saved[1];
+    g_topo_override[1] = saved[2];
+    g_topo_override[2] = saved[3];
+}
+
+void internal_topo_override_set(double lon, double lat, double alt)
+{
+    g_topo_override_active = 1;
+    g_topo_override[0] = isfinite(lon) ? jme_degrees_difference_signed(lon, 0.0) : lon;
+    g_topo_override[1] = lat;
+    g_topo_override[2] = alt;
+}
+
+static void internal_current_topo(const jme_context *ctx, double *lon, double *lat, double *alt)
+{
+    if (g_topo_override_active) {
+        *lon = g_topo_override[0];
+        *lat = g_topo_override[1];
+        *alt = g_topo_override[2];
+    } else {
+        *lon = ctx->topo_lon;
+        *lat = ctx->topo_lat;
+        *alt = ctx->topo_alt;
+    }
+}
+
+/*
  * Observer geocentric position/velocity on the WGS84 ellipsoid, rotated by
  * Greenwich apparent sidereal time (computed from UT1 obtained by inverting
  * the selected Delta-T model) into the true equator and equinox of date.
@@ -364,6 +409,7 @@ int internal_topo_state_true_equator(double jd_et, double *pos_au, double *vel_a
 {
     jme_context *ctx = jme_get_context();
     double jd_ut, gast, lst_rad;
+    double topo_lon, topo_lat, topo_alt;
     double cos_phi, sin_phi;
     const double a = 6378.137; /* WGS84 semi-major axis in km */
     const double f = 1.0 / 298.257223563; /* WGS84 flattening */
@@ -375,7 +421,9 @@ int internal_topo_state_true_equator(double jd_et, double *pos_au, double *vel_a
         jme_set_error(error, "Topocentric position output is required");
         return JME_ERR;
     }
-    if (!isfinite(ctx->topo_lon) || !isfinite(ctx->topo_lat) || !isfinite(ctx->topo_alt)) {
+    internal_current_topo(ctx, &topo_lon, &topo_lat, &topo_alt);
+    if (!isfinite(topo_lon) || !isfinite(topo_lat) || !isfinite(topo_alt)
+        || topo_lat < -90.0 || topo_lat > 90.0) {
         jme_set_error(error, "Topocentric observer location is invalid");
         return JME_ERR;
     }
@@ -385,15 +433,15 @@ int internal_topo_state_true_equator(double jd_et, double *pos_au, double *vel_a
     if (internal_sidereal_time_rad(jd_ut, jd_et, 1, &gast, error) != JME_OK) {
         return JME_ERR;
     }
-    lst_rad = gast + ctx->topo_lon * JME_DEG_TO_RAD;
+    lst_rad = gast + topo_lon * JME_DEG_TO_RAD;
 
-    cos_phi = cos(ctx->topo_lat * JME_DEG_TO_RAD);
-    sin_phi = sin(ctx->topo_lat * JME_DEG_TO_RAD);
+    cos_phi = cos(topo_lat * JME_DEG_TO_RAD);
+    sin_phi = sin(topo_lat * JME_DEG_TO_RAD);
     c = 1.0 / sqrt(cos_phi * cos_phi + (1.0 - f) * (1.0 - f) * sin_phi * sin_phi);
     s = (1.0 - f) * (1.0 - f) * c;
 
-    rxy = (a * c + ctx->topo_alt * 0.001) * cos_phi;
-    z_km = (a * s + ctx->topo_alt * 0.001) * sin_phi;
+    rxy = (a * c + topo_alt * 0.001) * cos_phi;
+    z_km = (a * s + topo_alt * 0.001) * sin_phi;
 
     pos_au[0] = rxy * cos(lst_rad) / JME_AU_KM;
     pos_au[1] = rxy * sin(lst_rad) / JME_AU_KM;

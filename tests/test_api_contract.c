@@ -1708,7 +1708,12 @@ int main(void)
 
         if (jme_houses(2451545.0, 51.5, 0.0, JME_HOUSE_MORINUS, cusps_morinus, ascmc) != JME_OK
             || !finite_values(cusps_morinus + 1, 12)
-            || fabs(jme_degrees_difference(cusps_morinus[10], ascmc[1])) > 1e-12) {
+            /* Morinus cusp 10: equator point at the ARMC in ecliptic coordinates,
+             * tan(lambda) = tan(ARMC) cos(eps); differs from the MC. */
+            || fabs(jme_degrees_difference_signed(cusps_morinus[10],
+                    fmod(atan2(sin(ascmc[6] * 0.017453292519943295) * cos(ascmc[7] * 0.017453292519943295),
+                               cos(ascmc[6] * 0.017453292519943295)) * 57.29577951308232 + 360.0, 360.0))) > 1e-10
+            || fabs(jme_degrees_difference_signed(cusps_morinus[10], ascmc[1])) < 1e-3) {
             fprintf(stderr, "Morinus house contract mismatch\n");
             return 1;
         }
@@ -1819,7 +1824,8 @@ int main(void)
 
         if (jme_houses(2451545.0, 51.5, 0.0, JME_HOUSE_HORIZONTAL, cusps_horizontal, ascmc) != JME_OK
             || !finite_values(cusps_horizontal + 1, 12)
-            || fabs(jme_degrees_difference(cusps_horizontal[1], ascmc[0])) > 1e-12
+            /* cusp 1 lies on the prime vertical (due east), not on the Ascendant */
+            || fabs(jme_degrees_difference_signed(cusps_horizontal[1], ascmc[0])) < 1e-3
             || fabs(jme_degrees_difference(cusps_horizontal[10], ascmc[1])) > 1e-12
             || fabs(jme_degrees_difference(cusps_horizontal[7], cusps_horizontal[1] + 180.0)) > 1e-12) {
             fprintf(stderr, "Horizontal house contract mismatch\n");
@@ -1828,7 +1834,7 @@ int main(void)
 
         if (jme_houses(2451545.0, 51.5, 0.0, JME_HOUSE_AZIMUTHAL, cusps_horizontal, ascmc) != JME_OK
             || !finite_values(cusps_horizontal + 1, 12)
-            || fabs(jme_degrees_difference(cusps_horizontal[1], ascmc[0])) > 1e-12
+            || fabs(jme_degrees_difference_signed(cusps_horizontal[1], ascmc[0])) < 1e-3
             || fabs(jme_degrees_difference(cusps_horizontal[10], ascmc[1])) > 1e-12) {
             fprintf(stderr, "Azimuthal house contract mismatch\n");
             return 1;
@@ -1890,7 +1896,7 @@ int main(void)
         double annular_global_max = jme_julian_day(2023, 10, 14, 18.0 + 0.0 / 60.0 + 41.0 / 3600.0, JME_CALENDAR_GREGORIAN);
         double albuquerque_annular_max = jme_julian_day(2023, 10, 14, 16.0 + 37.0 / 60.0, JME_CALENDAR_GREGORIAN);
         double partial_solar_start = jme_julian_day(2022, 10, 25, 0.0, JME_CALENDAR_GREGORIAN);
-        double partial_solar_max = jme_julian_day(2022, 10, 25, 11.0 + 0.0 / 60.0 + 9.0 / 3600.0, JME_CALENDAR_GREGORIAN);
+        double partial_solar_max = jme_julian_day(2022, 10, 25, 11.0 + 1.0 / 60.0 + 20.0 / 3600.0, JME_CALENDAR_GREGORIAN);
         double hybrid_start = jme_julian_day(2023, 4, 20, 0.0, JME_CALENDAR_GREGORIAN);
         double hybrid_global_max = jme_julian_day(2023, 4, 20, 4.0 + 17.0 / 60.0 + 56.0 / 3600.0, JME_CALENDAR_GREGORIAN);
         double lunar_total_start = jme_julian_day(2022, 5, 15, 0.0, JME_CALENDAR_GREGORIAN);
@@ -1903,30 +1909,34 @@ int main(void)
         double los_angeles_geopos[3] = {-118.2437, 34.0522, 0.0};
         int solar_rc = 0;
 
-        if ((jme_sol_eclipse_when_glob(solar_start, JME_CALC_TRUE_POSITION, 0, tret, 0, error) & JME_ECLIPSE_SOLAR_TOTAL) == 0
-            || fabs(tret[0] - solar_total_max) > (20.0 / 1440.0)) {
+        /* NASA Five Millennium Canon (Espenak & Meeus 2006), greatest
+         * eclipse in TD, quoted to 1 s: 2024-04-08 18:18:29 TD, 25.3N 104.1W. */
+        if (jme_sol_eclipse_when_glob(solar_start, JME_CALC_TRUE_POSITION, 0, tret, 0, error) != JME_ECLIPSE_SOLAR_TOTAL
+            || fabs(tret[0] + jme_delta_t(tret[0]) / 86400.0 - solar_total_max) > (2.0 / 86400.0)) {
             fprintf(stderr, "solar total eclipse global search mismatch: %s %.17g\n", error, tret[0]);
             return 1;
         }
 
-        if (!(tret[2] < tret[0] && tret[0] < tret[3])
-            || tret[4] != 0.0
-            || tret[5] != 0.0) {
+        /* P1 < U1 < C1 < max < C2 < U4 < P4 */
+        if (!(tret[2] < tret[4] && tret[4] < tret[6] && tret[6] < tret[0] && tret[0] < tret[7]
+              && tret[7] < tret[5] && tret[5] < tret[3])
+            || tret[8] != 0.0 || tret[9] != 0.0) {
             fprintf(stderr, "solar total eclipse global contacts are not ordered\n");
             return 1;
         }
 
-        if ((jme_sol_eclipse_when_glob(solar_start + 5.0, JME_CALC_TRUE_POSITION, 0, tret, 1, error) & JME_ECLIPSE_SOLAR_TOTAL) == 0
-            || fabs(tret[0] - solar_total_max) > (20.0 / 1440.0)
-            || !(tret[2] < tret[0] && tret[0] < tret[3])
-            || tret[4] != 0.0
-            || tret[5] != 0.0) {
+        if (jme_sol_eclipse_when_glob(solar_start + 5.0, JME_CALC_TRUE_POSITION, 0, tret, 1, error) != JME_ECLIPSE_SOLAR_TOTAL
+            || fabs(tret[0] + jme_delta_t(tret[0]) / 86400.0 - solar_total_max) > (2.0 / 86400.0)
+            || !(tret[2] < tret[4] && tret[4] < tret[0] && tret[0] < tret[5] && tret[5] < tret[3])) {
             fprintf(stderr, "solar total eclipse backward search mismatch: %s %.17g\n", error, tret[0]);
             return 1;
         }
 
-        if ((jme_sol_eclipse_where(tret[0], JME_CALC_TRUE_POSITION, geopos, attr, error) & JME_ECLIPSE_SOLAR_TOTAL) == 0
-            || !finite_values(attr, 5)) {
+        if (jme_sol_eclipse_where(tret[0], JME_CALC_TRUE_POSITION, geopos, attr, error) != JME_ECLIPSE_SOLAR_TOTAL
+            || !finite_values(attr, 10)
+            || fabs(geopos[0] - (-104.1)) > 0.1 || fabs(geopos[1] - 25.3) > 0.1
+            || attr[8] != JME_ECLIPSE_SOLAR_CENTRAL
+            || attr[9] <= 1.0) {
             fprintf(stderr, "solar total eclipse where mismatch: %s\n", error);
             return 1;
         }
@@ -1965,18 +1975,19 @@ int main(void)
             return 1;
         }
 
-        if ((jme_sol_eclipse_when_glob(annular_start, JME_CALC_TRUE_POSITION, 0, tret, 0, error) & JME_ECLIPSE_SOLAR_ANNULAR) == 0
-            || fabs(tret[0] - annular_global_max) > (25.0 / 1440.0)
-            || !(tret[2] < tret[0] && tret[0] < tret[3])
-            || tret[4] != 0.0
-            || tret[5] != 0.0) {
+        /* NASA: 2023-10-14 18:00:41 TD */
+        if (jme_sol_eclipse_when_glob(annular_start, JME_CALC_TRUE_POSITION, 0, tret, 0, error) != JME_ECLIPSE_SOLAR_ANNULAR
+            || fabs(tret[0] + jme_delta_t(tret[0]) / 86400.0 - annular_global_max) > (2.0 / 86400.0)
+            || !(tret[2] < tret[4] && tret[4] < tret[6] && tret[6] < tret[0] && tret[0] < tret[7]
+                 && tret[7] < tret[5] && tret[5] < tret[3])) {
             fprintf(stderr, "solar annular eclipse global mismatch: %s %.17g\n", error, tret[0]);
             return 1;
         }
 
         solar_rc = jme_sol_eclipse_when_glob(partial_solar_start, JME_CALC_TRUE_POSITION, 0, tret, 0, error);
+        /* NASA: 2022-10-25 11:01:20 TD (catalogue line), 61.6N 77.4E */
         if (solar_rc != JME_ECLIPSE_SOLAR_PARTIAL
-            || fabs(tret[0] - partial_solar_max) > (25.0 / 1440.0)) {
+            || fabs(tret[0] + jme_delta_t(tret[0]) / 86400.0 - partial_solar_max) > (2.0 / 86400.0)) {
             fprintf(stderr, "solar partial eclipse global mismatch: %s %.17g %d\n", error, tret[0], solar_rc);
             return 1;
         }
@@ -1990,22 +2001,25 @@ int main(void)
             return 1;
         }
 
-        if (tret[2] != 0.0 || tret[3] != 0.0 || tret[4] != 0.0 || tret[5] != 0.0) {
-            fprintf(stderr, "solar partial global search unexpectedly returned contact times\n");
+        if (!(tret[2] < tret[0] && tret[0] < tret[3])
+            || tret[4] != 0.0 || tret[5] != 0.0 || tret[6] != 0.0 || tret[7] != 0.0) {
+            fprintf(stderr, "solar partial global contacts are inconsistent\n");
             return 1;
         }
 
         solar_rc = jme_sol_eclipse_when_glob(hybrid_start, JME_CALC_TRUE_POSITION, 0, tret, 0, error);
+        /* NASA: 2023-04-20 04:17:56 TD, hybrid, 9.6S 125.8E */
         if (solar_rc != JME_ECLIPSE_SOLAR_HYBRID
-            || fabs(tret[0] - hybrid_global_max) > (30.0 / 1440.0)
+            || fabs(tret[0] + jme_delta_t(tret[0]) / 86400.0 - hybrid_global_max) > (2.0 / 86400.0)
             || !(tret[2] < tret[0] && tret[0] < tret[3])
-            || tret[4] != 0.0
-            || tret[5] != 0.0) {
+            || !(tret[6] < tret[8] && tret[8] < tret[0] && tret[0] < tret[9] && tret[9] < tret[7])) {
             fprintf(stderr, "solar hybrid eclipse global mismatch: %s %.17g %d\n", error, tret[0], solar_rc);
             return 1;
         }
 
-        if (jme_sol_eclipse_where(tret[0], JME_CALC_TRUE_POSITION, geopos, attr, error) != JME_ECLIPSE_SOLAR_HYBRID
+        /* the instantaneous type at greatest eclipse of this hybrid is total */
+        if (jme_sol_eclipse_where(tret[0], JME_CALC_TRUE_POSITION, geopos, attr, error) != JME_ECLIPSE_SOLAR_TOTAL
+            || fabs(geopos[0] - 125.8) > 0.1 || fabs(geopos[1] - (-9.6)) > 0.1
             || attr[8] != JME_ECLIPSE_SOLAR_CENTRAL) {
             fprintf(stderr, "solar hybrid eclipse where mismatch: %s %.17g %.17g\n", error, attr[7], attr[8]);
             return 1;
