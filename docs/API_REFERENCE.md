@@ -28,7 +28,7 @@ Numeric calculation APIs return their computed binary64 values; they do not appl
 
 Apparent fixed-star calculations apply aberration using the observer state selected by the engine policy. Automatic mode may use the analytical backend when a usable JPL barycentric state is unavailable; explicit JPL mode returns an error rather than silently omitting aberration. The analytical observer velocity is transformed into the same J2000 equatorial frame as the stellar direction before applying the correction.
 
-The internal UT-to-TT conversion routine is shared by status-returning UT wrappers, so an unsupported Delta-T model or non-finite date is returned as an error before downstream calculations. Scalar APIs without a status return use `NAN` when that conversion cannot be completed. The TT input to APIs whose parameter is named `jd_et` is interpreted as Terrestrial Time in this engine.
+The internal UT-to-TT conversion routine is shared by status-returning UT wrappers, so an unsupported Delta-T model or non-finite date is returned as an error before downstream calculations. Scalar APIs without a status return use `NAN` when that conversion cannot be completed. Direct status-returning numeric APIs also reject non-finite TT Julian dates before entering model-specific branches. The TT input to APIs whose parameter is named `jd_et` is interpreted as Terrestrial Time in this engine.
 
 ## Current Public Functions
 
