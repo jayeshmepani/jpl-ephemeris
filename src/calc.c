@@ -397,6 +397,48 @@ static int selected_body_state(
     return JME_OK;
 }
 
+static int transform_j2000_equatorial_state_to_ecliptic_date(
+    double jd_et,
+    double state[6],
+    char *error
+)
+{
+    double bias[9];
+    double precession[9];
+    double stage[6];
+    double date_equatorial[6];
+    double date_ecliptic[6];
+    double obliquity = 0.0;
+    int i;
+
+    if (state == 0 || !isfinite(jd_et) || !state_is_finite(state, 6)) {
+        jme_set_error(error, "Coordinate-frame transform requires finite state and Julian date");
+        return JME_ERR;
+    }
+
+    for (i = 0; i < 6; i++) {
+        stage[i] = state[i];
+    }
+    if (jme_get_frame_bias_matrix(jme_context_bias_model(), bias) == JME_OK) {
+        jme_matrix_transform_state(bias, stage, stage);
+    }
+    jme_get_precession_matrix(2451545.0, jd_et, jme_context_precession_model(), precession);
+    jme_matrix_transform_state(precession, stage, date_equatorial);
+
+    if (jme_get_obliquity(jd_et, jme_context_obliquity_model(), &obliquity, error) != JME_OK) {
+        return JME_ERR;
+    }
+    if (jme_equatorial_to_ecliptic_rectangular_state(date_equatorial, obliquity, date_ecliptic) != JME_OK) {
+        jme_set_error(error, "Equatorial-to-ecliptic state conversion failed");
+        return JME_ERR;
+    }
+
+    for (i = 0; i < 6; i++) {
+        state[i] = date_ecliptic[i];
+    }
+    return JME_OK;
+}
+
 int internal_earth_aberration_state(double jd_et, double *state, char *error)
 {
     int engine_policy = jme_context_engine_policy();
@@ -650,6 +692,10 @@ int jme_pheno(double jd_et, int body, int flags, double *attr, char *error)
     }
 
     for (i = 0; i < 20; i++) { attr[i] = 0.0; }
+    if (!isfinite(jd_et)) {
+        jme_set_error(error, "Terrestrial-time Julian date must be finite");
+        return JME_ERR;
+    }
 
     if (jme_calc(jd_et, body, flags | JME_CALC_XYZ | JME_CALC_TRUE_POSITION, planet_geo, error) != JME_OK) { return JME_ERR; }
     if (jme_calc(jd_et, JME_BODY_SUN, flags | JME_CALC_XYZ | JME_CALC_TRUE_POSITION, sun_geo, error) != JME_OK) { return JME_ERR; }
@@ -736,6 +782,10 @@ int jme_calc(double jd_et, int body, int flags, double *results, char *error)
     }
 
     for (i = 0; i < 6; i++) { results[i] = 0.0; }
+    if (!isfinite(jd_et)) {
+        jme_set_error(error, "Terrestrial-time Julian date must be finite");
+        return JME_ERR;
+    }
 
     if (body == JME_BODY_MEAN_NODE || body == JME_BODY_TRUE_NODE) {
         if (calc_lunar_node(jd_et, body, flags, results, error) != JME_OK) {
@@ -803,6 +853,10 @@ int jme_calc(double jd_et, int body, int flags, double *results, char *error)
             if (internal_earth_aberration_state(jd_et, earth_state, error) != JME_OK) {
                 return JME_ERR;
             }
+            if (target_is_ecliptic
+                && transform_j2000_equatorial_state_to_ecliptic_date(jd_et, earth_state, error) != JME_OK) {
+                return JME_ERR;
+            }
 
             for (i = 0; i < 3; i++) {
                 v_obs[i] = earth_state[i + 3] / JME_C_AU_PER_DAY;
@@ -843,6 +897,10 @@ int jme_calc(double jd_et, int body, int flags, double *results, char *error)
             }
 
             if (sun_state_ok == JME_OK) {
+                if (target_is_ecliptic && !sun_is_ecliptic
+                    && transform_j2000_equatorial_state_to_ecliptic_date(jd_et, sun_state, error) != JME_OK) {
+                    return JME_ERR;
+                }
                 if (state_distance_is_usable(sun_state, &sun_dist, error) != JME_OK) {
                     return JME_ERR;
                 }
