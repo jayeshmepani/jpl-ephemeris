@@ -1,14 +1,14 @@
 # JPL Moshier Ephemeris
 
-Independent C ephemeris engine using JPL kernels through CALCEPH as the primary backend and independently verified Moshier-derived/public-domain algorithms as secondary components where appropriate.
+Independent C ephemeris engine using JPL kernels through CALCEPH as the primary backend, with analytical engines based on Moshier's DE404-fit theories and on VSOP87 + ELP2000 + Meeus as secondary paths.
 
-This library is developed and owned by Jayesh Mepani. It provides an independently implemented JPL/Moshier/VSOP+ELP+Meeus engine and a project-owned API surface.
+This library is developed and maintained by Jayesh Mepani (Jayesh Patel), who owns the original JME code and the project-owned `jme_*` API. It combines that code with credited third-party theories, data, and code (see [Credits](#credits)) to provide JPL, Moshier, and VSOP+ELP+Meeus engines.
 
 ## Goal
 
 - Provide an independent ephemeris engine for astrology, astronomy, and calendrical calculations.
 - JPL `.bsp` kernels through CALCEPH provide the high-precision numerical ephemeris path.
-- Add verified analytical/public-domain components only when provenance is clear.
+- Add analytical components only when their provenance and license terms are clear.
 - Keep the primary public API under the project-owned `jme_*` prefix.
 - Preserve lossless I/O contracts: no presentation rounding, no hidden output reshaping, no dropped status values, and no silent downgrade to a different calculation contract.
 
@@ -77,6 +77,24 @@ jme_set_astro_models("ENGINE=AUTO", 0);            /* JPL first, then analytical
 
 If no explicit engine token is set, the library also reads `JME_ENGINE=JPL`, `JME_ENGINE=MOSHIER`, `JME_ENGINE=VSOP_ELP_MEEUS`, or `JME_ENGINE=ANALYTICAL`.
 
+## Credits
+
+JME builds on the work of others:
+
+- **JPL DE440 / DE441** planetary and lunar ephemerides (NASA/JPL; Park et al. 2021), redistributed unmodified per the NAIF rules.
+- **CALCEPH** (CNRS, Observatoire de Paris, Observatoire de la Côte d'Azur), used under CeCILL-B to read JPL kernels.
+- **Stephen L. Moshier**: plan404 and Astronomical Almanac 5.6 analytical theories (Moshier engine). No explicit license; permission requested.
+- **ELP2000-82B** lunar theory by M. Chapront-Touzé and J. Chapront (CDS VI/79); C implementation by Serhii Tsyba. No license file; permission requested.
+- **VSOP87** by P. Bretagnon and G. Francou (CDS VI/81); C code from Greg A. Miller's VSOP87-Multilang (public domain dedication).
+- **Jean Meeus**, *Astronomical Algorithms* (formulas cited).
+- **ERFA** (BSD 3-Clause, NumFOCUS Foundation): IAU 2000B nutation.
+- **F. Espenak and J. Meeus** (NASA): ΔT polynomials.
+- **Yale Bright Star Catalogue**, 5th Rev. Ed. (Hoffleit and Warren): fixed stars.
+
+Full credits, terms, and required notice texts: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
 ## License
 
-The independent code in this repository is licensed under the MIT License. Third-party backend libraries and data keep their own licenses/notices.
+The original code in this repository is licensed under the [MIT License](LICENSE), Copyright (c) 2026 Jayesh Mepani (Jayesh Patel).
+
+**Scope:** MIT applies to the original code in this repository; third-party components keep their own terms, see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). In particular, the Moshier material (`src/moshier_full.c`, `src/moshier_moon.c`, `src/moshier/`) and the ELP2000-82B code in `src/elp2000/` are not covered by the MIT License.

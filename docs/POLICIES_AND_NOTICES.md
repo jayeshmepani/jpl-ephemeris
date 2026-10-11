@@ -4,9 +4,9 @@
 
 The public C API is project-owned: public functions use `jme_*`, public constants use `JME_*`, and internal symbols use `jme_*`.
 
-This C library is developed and owned by Jayesh Mepani. It is designed as an independently implemented ephemeris engine with three calculation paths: JPL/CALCEPH, Moshier, and VSOP87+ELP2000+Meeus.
+This C library is developed and maintained by Jayesh Mepani (Jayesh Patel). It is designed as an independently implemented ephemeris engine with three calculation paths: JPL/CALCEPH, Moshier, and VSOP87+ELP2000+Meeus.
 
-Implementation work is based on independent and public sources such as JPL/NAIF data and documentation, CALCEPH API behavior, public-domain Moshier material, VSOP/ELP/Meeus references, peer-reviewed papers, public standards, and independently derived formulas.
+Implementation work is based on independent and public sources such as JPL/NAIF data and documentation, CALCEPH API behavior, Moshier's freely distributed DE404-fit theories (plan404 and Astronomical Almanac 5.6; no explicit license, permission requested from the author), VSOP/ELP/Meeus references, peer-reviewed papers, public standards, and independently derived formulas.
 
 The design goal is a broad project-owned API for astrology, astronomy, vector/state, metadata, validation, and calendrical workflows. The current surface is 204 public functions and 462 public constants.
 
@@ -35,7 +35,7 @@ Non-trivial algorithms are traced to independent sources. Accepted source catego
 - IAU/IERS/SOFA/ERFA style public standards, subject to their licenses
 - NASA/JPL/NAIF documentation and kernels, subject to their terms
 - CALCEPH documentation and source API behavior, subject to its terms
-- Moshier public-domain code or documentation, only where provenance is confirmed
+- Moshier's freely distributed code and documentation (no explicit license; used with attribution, permission requested from the author)
 - independently derived formulas and tests
 
 ### Black-Box Verification
@@ -80,8 +80,12 @@ New implementations are considered complete when:
 
 CALCEPH is not vendored in this repository. When used, it is linked as an external library.
 
-CALCEPH is governed by CeCILL-C, CeCILL-B, or CeCILL v2 terms according to the official CALCEPH documentation. If binaries are distributed with CALCEPH, include CALCEPH copyright/license notices and provide source for any CALCEPH modifications.
+CALCEPH is triple-licensed (CeCILL-C, CeCILL-B, or CeCILL v2.1) according to the official CALCEPH documentation; the JME ecosystem uses it under CeCILL-B. If binaries are distributed with CALCEPH, include the CeCILL-B license text, the CALCEPH copyright notices, the limited warranty/liability notice (CeCILL-B Articles 8 and 9), and a pointer to the CALCEPH source code.
 
 ### JPL Ephemeris Kernels
 
 JPL `.bsp` kernels are data files supplied separately by NASA/JPL/NAIF or related official sources. They are not vendored here by default.
+
+### Other Third-Party Components
+
+Moshier theories, the ELP2000-82B implementation, VSOP87 code, ERFA-derived nutation, ΔT polynomials, and star catalogue data are listed with their authors and terms in [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md). The MIT License applies to the original code in this repository; third-party components keep their own terms.
