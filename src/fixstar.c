@@ -187,8 +187,14 @@ static double fixstar_ayanamsa_rate(double jd_et)
 
 int jme_fixstar_ut(const char *star, double jd_ut, int flags, double *results, char *error)
 {
-    double dt = jme_delta_t(jd_ut);
-    double jd_et = jd_ut + dt / 86400.0;
+    double jd_et;
+    int i;
+    if (results == 0) {
+        jme_set_error(error, "Fixed-star output is required");
+        return JME_ERR;
+    }
+    for (i=0;i<6;i++) results[i]=0.0;
+    if (internal_ut_to_et(jd_ut, &jd_et, error) != JME_OK) return JME_ERR;
     return jme_fixstar(star, jd_et, flags, results, error);
 }
 
