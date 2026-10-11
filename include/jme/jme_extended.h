@@ -539,6 +539,12 @@ double jme_jd_add_seconds(double jd, double seconds);
 
 double jme_jd_difference_seconds(double jd_end, double jd_start);
 
+/*
+ * Low-level JPL numeric APIs take the currently opened kernel's native time
+ * scale (TDB or TCB); split variants preserve that two-part Julian date.
+ * High-level jme_calc/jme_calc_ut accept TT/UT and convert internally.
+ * UTC calendar variants convert UTC -> TAI -> TT -> kernel-native time.
+ */
 int jme_jpl_body_state(
     double jd_time,
     int target_body,
