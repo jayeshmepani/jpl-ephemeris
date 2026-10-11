@@ -44,7 +44,7 @@ int main(void)
 
     /* The implemented EM-2006 path is finite and uses the published 2000-era fit. */
     dt = jme_delta_t_ex(2451544.5, JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, error);
-    if (!isfinite(dt) || error[0] != '\0' || dt < 62.8 || dt > 63.1) {
+    if (!isfinite(dt) || error[0] != '\0' || dt < 63.8 || dt > 64.0) {
         return fail("Espenak-Meeus 2006 result is invalid", error);
     }
 
