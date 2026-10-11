@@ -1134,8 +1134,28 @@ int internal_jpl_body_state_tt(
     char *error
 )
 {
+    return internal_jpl_body_state_tt_offset(jd_tt, 0.0, target_body, center_body, unit, state, error);
+}
+
+/*
+ * State at TT = jd_tt + offset_days. The offset (e.g. minus a light time) is
+ * added to the day fraction, not to jd_tt, so that it is not rounded to the
+ * binary64 spacing of a full Julian date (2^-31 day = 40 microseconds near
+ * JD 2.4e6, i.e. up to 0.6 m at 30 km/s).
+ */
+int internal_jpl_body_state_tt_offset(
+    double jd_tt,
+    double offset_days,
+    int target_body,
+    int center_body,
+    int unit,
+    double *state,
+    char *error
+)
+{
     double jd0_native;
     double fraction_native;
+    double jd0_tt, fraction_tt, carry;
     int bary;
 
     g_jpl_center_substituted = 0;
@@ -1144,9 +1164,22 @@ int internal_jpl_body_state_tt(
         return JME_ERR;
     }
     jme_zero_state(state);
+    if (!isfinite(jd_tt) || !isfinite(offset_days)) {
+        jme_set_error(error, "TT Julian date must be finite");
+        return JME_ERR;
+    }
+    jd0_tt = floor(jd_tt);
+    fraction_tt = (jd_tt - jd0_tt) + offset_days;
+    carry = floor(fraction_tt);
+    jd0_tt += carry;
+    fraction_tt -= carry;
+    if (fraction_tt >= 1.0) {
+        jd0_tt += 1.0;
+        fraction_tt = 0.0;
+    }
 
-    if (internal_tt_to_jpl_time_split(
-            jd_tt, &jd0_native, &fraction_native, error) != JME_OK) {
+    if (internal_tt_split_to_jpl_time_split(
+            jd0_tt, fraction_tt, &jd0_native, &fraction_native, error) != JME_OK) {
         return JME_ERR;
     }
 

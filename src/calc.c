@@ -731,6 +731,22 @@ static int backend_state(int backend, double jd_et, int body, int engine_policy,
     }
 }
 
+/*
+ * State at TT = jd_et + offset_days (offset = minus a light time). The JPL
+ * path keeps the offset in the day fraction (no rounding to the binary64
+ * spacing of a full Julian date). The analytical theories take one TDB date,
+ * so for them jd_et + offset is rounded to that spacing (<= 20 microseconds,
+ * < 1 m for any body: far below the theories' own accuracy).
+ */
+static int backend_state_offset(int backend, double jd_et, double offset_days, int body, int engine_policy, double *state, char *error)
+{
+    if (backend == JME_BACKEND_JPL) {
+        return internal_jpl_body_state_tt_offset(jd_et, offset_days, body, JME_BODY_SOLAR_SYSTEM_BARYCENTER,
+            JME_VECTOR_AU_PER_DAY, state, error);
+    }
+    return backend_state(backend, jd_et + offset_days, body, engine_policy, state, error);
+}
+
 /* Choose the backend for one calculation; AUTO uses JPL only if it can serve the target. */
 static int choose_backend(double jd_et, int body, int engine_policy, int *backend, char *error)
 {
@@ -1019,7 +1035,7 @@ static int observer_relative_state(
                 break;
             }
             tau = new_tau;
-            if (backend_state(backend, jd_et - tau, body, engine_policy, tgt, error) != JME_OK) {
+            if (backend_state_offset(backend, jd_et, -tau, body, engine_policy, tgt, error) != JME_OK) {
                 return JME_ERR;
             }
             for (i = 0; i < 6; i++) rel[i] = tgt[i] - obs[i];
@@ -1035,7 +1051,7 @@ static int observer_relative_state(
             double p[3], q[3], e[3], em, qn;
 
             if (backend_state(backend, jd_et, JME_BODY_SUN, engine_policy, sun_t, error) != JME_OK
-                || backend_state(backend, jd_et - tau, JME_BODY_SUN, engine_policy, sun_ret, error) != JME_OK) {
+                || backend_state_offset(backend, jd_et, -tau, JME_BODY_SUN, engine_policy, sun_ret, error) != JME_OK) {
                 return JME_ERR;
             }
             dist = vec_norm3(rel);

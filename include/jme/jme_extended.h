@@ -357,6 +357,9 @@ typedef enum jme_extended_constant {
     JME_MODEL_DELTAT_STEPHENSON_MORRISON_2004 = 348,
     JME_MODEL_DELTAT_ESPENAK_MEEUS_2006 = 349,
     JME_MODEL_DELTAT_STEPHENSON_ETC_2016 = 350,
+    /* IAU 2000A nutation with the IAU 2006 (P03) adjustments, IERS Conventions
+     * 2010 eq. 5.35 (ERFA eraNut06a): the nutation consistent with IAU 2006 precession. */
+    JME_MODEL_NUT_IAU_2006A = 351,
     JME_RISE_ANTI_MERIDIAN_TRANSIT = 1 << 3,
     JME_RISE_ASTRONOMICAL_TWILIGHT = 1 << 9,
     JME_RISE_CIVIL_TWILIGHT = 1 << 7,

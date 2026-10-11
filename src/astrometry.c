@@ -54,6 +54,11 @@ static int nutation_raw(double jd_et, int model, double *dpsi_rad, double *deps_
     case JME_MODEL_NUT_IAU_2000B:
         jme_eraNut00b(d1, d2, dpsi_rad, deps_rad);
         return JME_OK;
+    case JME_MODEL_NUT_IAU_2006A:
+        /* IAU 2000A with the P03 J2-rate and obliquity-ratio adjustments
+         * (Capitaine et al. 2005; IERS Conventions 2010 sect. 5.6.3). */
+        jme_eraNut06a(d1, d2, dpsi_rad, deps_rad);
+        return JME_OK;
     default:
         jme_set_error(error, "Unsupported nutation model");
         return JME_ERR;

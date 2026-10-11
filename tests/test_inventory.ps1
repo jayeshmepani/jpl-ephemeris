@@ -24,8 +24,8 @@ if ($jmeFunctions.Count -ne 217) {
     throw "Expected JME function surface = 217, found $($jmeFunctions.Count)"
 }
 
-if ($jmeConstants.Count -ne 477) {
-    throw "Expected JME constant surface = 477, found $($jmeConstants.Count)"
+if ($jmeConstants.Count -ne 478) {
+    throw "Expected JME constant surface = 478, found $($jmeConstants.Count)"
 }
 
 Write-Output "jme_functions=$($jmeFunctions.Count)"

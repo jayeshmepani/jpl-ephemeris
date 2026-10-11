@@ -399,6 +399,7 @@ int main(void) {
     (void)JME_MODEL_NUT_IAU_1980;
     (void)JME_MODEL_NUT_IAU_2000A;
     (void)JME_MODEL_NUT_IAU_2000B;
+    (void)JME_MODEL_NUT_IAU_2006A;
     (void)JME_MODEL_OBL_IAU_1980;
     (void)JME_MODEL_OBL_IAU_2000;
     (void)JME_MODEL_OBL_IAU_2006;

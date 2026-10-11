@@ -88,6 +88,9 @@ int internal_tt_split_to_jpl_time_split(
 int internal_jpl_body_state_tt(
     double jd_tt, int target_body, int center_body, int unit, double *state, char *error
 );
+int internal_jpl_body_state_tt_offset(
+    double jd_tt, double offset_days, int target_body, int center_body, int unit, double *state, char *error
+);
 int internal_jpl_last_center_substituted(void);
 void internal_topo_override_save(double saved[4]);
 void internal_topo_override_restore(const double saved[4]);

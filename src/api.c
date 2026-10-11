@@ -119,10 +119,12 @@ static int apply_model_token(jme_context *ctx, const char *token)
         ctx->model_prec = JME_MODEL_PREC_IAU_2000;
     } else if (token_matches(token, "IAU2006A")) {
         ctx->model_bias = JME_MODEL_BIAS_IAU2006;
-        ctx->model_nut = JME_MODEL_NUT_IAU_2000A;
+        ctx->model_nut = JME_MODEL_NUT_IAU_2006A;
         ctx->model_obl = JME_MODEL_OBL_IAU_2006;
         ctx->model_prec = JME_MODEL_PREC_IAU_2006;
         ctx->model_sidt = JME_MODEL_SIDT_IAU_2006;
+    } else if (token_matches(token, "NUT2006A") || token_value_matches(token, "NUT=", "IAU2006A") || token_value_matches(token, "NUT=", "351")) {
+        ctx->model_nut = JME_MODEL_NUT_IAU_2006A;
     } else if (token_matches(token, "NUT2000A") || token_value_matches(token, "NUT=", "IAU2000A") || token_value_matches(token, "NUT=", "334")) {
         ctx->model_nut = JME_MODEL_NUT_IAU_2000A;
     } else if (token_matches(token, "PREC_VONDRAK2011") || token_value_matches(token, "PREC=", "VONDRAK2011") || token_value_matches(token, "PREC=", "343")) {
