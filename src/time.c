@@ -171,12 +171,12 @@ double jme_delta_t_ex(double jd_ut, int model, char *error)
     case JME_MODEL_DELTAT_STEPHENSON_ETC_2016:
         /*
          * These model identifiers are public, but their model-specific
-         * historical tables and transition rules are not implemented here.
+         * historical tables and transition rules are no validated implementation here.
          * Returning the Espenak-Meeus polynomial under a different model
          * name would silently return the wrong requested model. Fail closed
          * until each model can be implemented and validated independently.
          */
-        jme_set_error(error, "Requested Delta-T model is recognized but not implemented; refusing to substitute Espenak-Meeus 2006");
+        jme_set_error(error, "No validated implementation exists for the requested Delta-T model; refusing to substitute Espenak-Meeus 2006");
         return NAN;
 
     default:
