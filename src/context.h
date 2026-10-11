@@ -56,5 +56,6 @@ int jme_get_topo_pos_true_equator(double jd_et, double *pos_au, char *error);
 
 /* Internal helper shared by the main and fixed-star apparent-position paths. */
 int internal_earth_aberration_state(double jd_et, double *state, char *error);
+int internal_ut_to_et(double jd_ut, double *jd_et, char *error);
 
 #endif
