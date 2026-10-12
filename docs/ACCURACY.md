@@ -98,7 +98,7 @@ See `TIME_SCALES.md`.
 | Rise, set, transit | Illinois refinement to 1e−10 d on full topocentric apparent places with refraction (`riseset_reference`) | Skyfield, 320 events: worst 0.16 ms |
 | Solar eclipses, global | Generalised Besselian elements: WGS84 3-D observer, P1/P4, U1/U4, C1/C2, hybrid transitions | NASA canon (10 eclipses): within 0.5 s and 0.1° |
 | Solar eclipses, local | Per-instant topocentric radii; contacts by root finding | Same contact code as local occultations (certified above) |
-| Lunar eclipses | Danjon shadow: Earth radius at latitude 45° (0.998340 a), shadow radii enlarged by 1/85 | NASA canon (8 eclipses): 1 s, magnitude 0.0006 |
+| Lunar eclipses | Danjon shadow: Earth radius at latitude 45° (0.998340 a), shadow radii enlarged by 1/85 | NASA canon (228 eclipses, 2001–2100): greatest eclipse 2.3 s, magnitude 0.0008 |
 | Occultations of planets and stars by the Moon (`occult_reference`) | Generalised Besselian construction (§5.1). Stars use a cylinder shadow; local contacts by Illinois root finding | Independent Skyfield + DE440s generator (27 local, 8 global): local contacts 0.08 ms; global P1/P4 7.9 ms |
 | Houses (`houses_reference`) | Closed forms from the house definitions | Independent vector geometry, 2354 sets: 2.3e−13° |
 
@@ -120,15 +120,36 @@ The solar-eclipse and occultation contact code therefore uses astrometric
 places (`JME_EVENTS_GEOMETRY_FLAGS` in `src/events.c`). Altitudes used for
 visibility keep full apparent places with refraction.
 
-Lunar-eclipse contacts keep their construction because two terms of the
-same size cancel:
+Lunar-eclipse shadow (retarded shadow). Let a contact be observed at the
+geocentre at time t, and let τ = d_moon/c (about 1.28 s). The light leaving
+the Moon left at t − τ. The shadow on the Moon at that instant was cast by
+light grazing the Earth at t − 2τ, so its axis runs through E(t − 2τ) along
+the light-time-corrected Sun direction of that epoch. Relative to the
+astrometric Moon, the axis is therefore displaced by 2τ·v_E, where v_E is
+the barycentric velocity of the Earth (about 77 km, or 41″ at the Moon).
+The engine forms the shadow from the apparent Moon and the negated apparent
+Sun. Each annual aberration term contributes τ·v_E with the same sign, so
+this construction equals the retarded model to first order in v/c. The
+residual second-order terms are below 0.1″.
 
-* the Earth's shadow lags by the light time of the Sun–Earth–Moon path
-  (about 41″);
-* the aberration terms are equal in size.
+Measured against all 228 eclipses of the NASA Five Millennium Catalog
+(Espenak & Meeus 2009), 2001–2100, compared in TD at greatest eclipse
+(DE440s, catalog times rounded to 1 s):
 
-The resulting contacts match the NASA canon to 1 s. A rigorous retarded
-shadow model is listed as a verification item.
+| Shadow construction | worst \|Δt\| | mean Δt | worst \|Δ umbral mag\| |
+|---|---|---|---|
+| apparent Moon − apparent Sun (engine) | 2.3 s | −0.04 s | 0.0007 |
+| explicit retardation: astrometric, axis at E(t−2τ), Sun at t−2τ | 2.5 s | −0.24 s | 0.0007 |
+| astrometric, no retardation | 91.8 s | +78.3 s | 0.0028 |
+| geometric, no light time | 44.7 s | +37.8 s | 0.0017 |
+
+The two constructions with retardation agree with each other within 0.2 s
+and with the catalog within its rounding. Both constructions without it are
+rejected. `tests/test_lunar_eclipse_canon.c` asserts all 228 eclipses
+(tolerances 3 s and 0.0015 in magnitude) through the public
+`jme_lun_eclipse_when` and `jme_lun_eclipse_how`. The data are in
+`tools/data/NASA_LEcat5_2001-2100.txt` and the generator is
+`tools/gen_lunar_eclipse_canon_fixtures.py`.
 
 ### 5.2 Floors
 

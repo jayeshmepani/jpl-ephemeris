@@ -16,3 +16,4 @@ CMakeLists.txt text eol=lf
 
 # Verbatim published data files (SHA-256 checked by tools/gen_deltat.py)
 tools/data/Table-S15.2016.txt -text
+tools/data/NASA_LEcat5_2001-2100.txt -text
