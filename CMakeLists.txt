@@ -76,7 +76,7 @@ else()
 endif()
 
 if (MSVC)
-    target_compile_options(jme PRIVATE /W4)
+    target_compile_options(jme PRIVATE /W4 /fp:precise)
     set_source_files_properties(
         src/elp82b.c
         src/moshier_full.c
@@ -86,6 +86,9 @@ if (MSVC)
     )
 else()
     target_compile_options(jme PRIVATE -Wall -Wextra -Wpedantic)
+    # Bit-reproducible results across platforms: forbid fused multiply-add
+    # contraction (clang contracts by default on arm64, GCC does not on x86-64).
+    target_compile_options(jme PRIVATE -ffp-contract=off)
     target_link_libraries(jme PUBLIC m)
 endif()
 
