@@ -146,6 +146,11 @@ if (JME_BUILD_TESTS)
     add_test(NAME occult_reference COMMAND test_occult_reference)
     set_tests_properties(occult_reference PROPERTIES SKIP_RETURN_CODE 77)
 
+    add_executable(test_galcent_reference tests/test_galcent_reference.c)
+    target_include_directories(test_galcent_reference PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    target_link_libraries(test_galcent_reference PRIVATE jme)
+    add_test(NAME galcent_reference COMMAND test_galcent_reference)
+
     add_executable(test_houses_reference tests/test_houses_reference.c)
     target_include_directories(test_houses_reference PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
     target_link_libraries(test_houses_reference PRIVATE jme)

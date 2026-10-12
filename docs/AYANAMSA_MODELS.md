@@ -124,16 +124,38 @@ sidereal origin oscillate by about ±20″ over the year.
 
 ## 3. Known limits and open points
 
-* **Sgr A\* proper motion.** Reid & Brunthaler (2004, Table 2) measure an
-  apparent motion of μα cos δ = −3.151 ± 0.018 mas/yr and
-  μδ = −5.547 ± 0.026 mas/yr relative to J1745−283. This is dominated by the
-  Sun's Galactic orbit. The engine keeps the catalogue position fixed in
-  ICRS. The effect is at most 6.4 mas/yr × |t − t_ref|, about 0.6″ per
-  century. t_ref is the epoch at which the source sits at the paper's
-  coordinate origin. The paper gives that origin as a nominal J2000
-  phase-reference position, not as a fitted epoch position, so applying the
-  motion exactly needs the epoch at which the Table 1 relative offsets
-  vanish. This is listed as an open item rather than assumed.
+* **Galactic Centre convention (settled).** `GALCENT_0SAG` places Sgr A\* at
+  240° (0° Sagittarius) on the mean ecliptic of date. This is the Swiss
+  documentation's model 17, introduced in 1999 at D. Koch's suggestion. The
+  documentation was consulted for the definition only. Rafael Gil Brand's
+  model (Galactic Centre at the golden section between 0° Scorpio and
+  0° Aquarius), Cochrane's (0° Capricorn) and Wilhelm's Dhruva/mid-Mula
+  model are different definitions. JME does not provide them; no
+  `GALCENT_0SAG` value is reused for them.
+* **Reference position and epoch.** RA 17h45m40.0409s, Dec −29°00′28.118″,
+  the J2000 phase-reference position of Reid & Brunthaler (2004, ApJ 616,
+  872, Table 1 note). It is a nominal position, not a fitted one. A weighted
+  linear fit to the paper's Table 1 J1745−283 east offsets
+  (`3.151 mas/yr`, which reproduces Table 2) gives zero offset at
+  **1996.08**. In right ascension, therefore, the nominal position is
+  Sgr A\*'s position at about 1996.1. At J2000 the source lies 12.4 mas east
+  of it. That is a 0.01″-level effect on the ayanamsa. The text of the
+  north-offset column could not be extracted, so no northerly epoch is
+  claimed.
+* **Proper motion: deliberately not applied.** The apparent motion
+  (μα cos δ = −3.151, μδ = −5.547 mas/yr; ℓ: −6.379, b: −0.202 mas/yr,
+  Table 2) is the Sun's Galactic orbit reflected onto Sgr A\*. The
+  Galactic frame (IAU ℓ = b = 0) is non-rotating with respect to the ICRS.
+  A "Galactic Centre" anchor therefore stays fixed in ICRS, and the model
+  uses a constant ICRS direction. Following the moving radio source instead
+  would change the ayanamsa by at most 6.4 mas/yr. That is 0.64″ per
+  century, or 32″ at ±5000 years from J2000. This is a definition choice,
+  documented here, not an omitted term.
+* **Certification.** `tests/test_galcent_reference.c` compares the engine
+  with independent pyerfa values (`tools/gen_galcent_fixtures.py`) at 11
+  epochs from −3000 to +3000. Two model sets are checked: the default
+  (no bias, `eraPmat76`, `eraObl80`) and `IAU2006` (`eraEcm06`).
+  Tolerance is 1 µas; the measured agreement is ~1e-12°.
 * **Models whose sources are flagged** (`KRISHNAMURTI`, `JN_BHASIN`) are
   kept bit-compatible with earlier releases until a primary source is found.
 * The precession of §1.2 is accurate to the IAU 1976 model's validity
