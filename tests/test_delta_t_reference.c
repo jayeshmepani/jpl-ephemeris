@@ -128,6 +128,55 @@ int main(void)
     }
     jme_set_astro_models(0, 0);
 
+    /*
+     * Named tidal selectors resolve to physical accelerations and adjust
+     * historical Espenak-Meeus Delta-T by NASA's published secular-acceleration
+     * correction. The setting must not alter observations from 1955 onward.
+     */
+    {
+        const double jd_year_zero = jme_julian_day(0, 1, 1, 0.0, JME_CALENDAR_GREGORIAN);
+        const double jd_year_2000 = 2451545.0;
+        double baseline, adjusted, expected, y;
+        int year, month, day;
+        double hour;
+
+        jme_set_tid_acc(JME_TIME_TIDAL_AUTOMATIC);
+        baseline = jme_delta_t_ex(jd_year_zero, JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, error);
+        jme_set_tid_acc(JME_TIME_TIDAL_DE431);
+        if (jme_get_tid_acc() != (double)JME_TIME_TIDAL_DE431) {
+            fprintf(stderr, "tidal selector was not preserved by getter\n");
+            failures++;
+        }
+        adjusted = jme_delta_t_ex(jd_year_zero, JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, error);
+        jme_reverse_julian_day(jd_year_zero, JME_CALENDAR_GREGORIAN, &year, &month, &day, &hour);
+        y = (double)year;
+        expected = -0.91072 * (-25.80 + 26.0) * ((y - 1955.0) / 100.0) * ((y - 1955.0) / 100.0);
+        if (!isfinite(adjusted) || fabs((adjusted - baseline) - expected) > 1.0e-8) {
+            fprintf(stderr, "DE431 tidal correction mismatch: got %.12f expected delta %.12f\n",
+                adjusted - baseline, expected);
+            failures++;
+        }
+
+        jme_set_tid_acc(-25.858);
+        adjusted = jme_delta_t_ex(jd_year_zero, JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, error);
+        expected = -0.91072 * (-25.858 + 26.0) * ((y - 1955.0) / 100.0) * ((y - 1955.0) / 100.0);
+        if (!isfinite(adjusted) || fabs((adjusted - baseline) - expected) > 1.0e-8) {
+            fprintf(stderr, "numeric tidal correction mismatch: got %.12f expected delta %.12f\n",
+                adjusted - baseline, expected);
+            failures++;
+        }
+
+        jme_set_tid_acc(JME_TIME_TIDAL_DE200);
+        baseline = jme_delta_t_ex(jd_year_2000, JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, error);
+        jme_set_tid_acc(JME_TIME_TIDAL_AUTOMATIC);
+        adjusted = jme_delta_t_ex(jd_year_2000, JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, error);
+        if (fabs(adjusted - baseline) > 1.0e-10) {
+            fprintf(stderr, "tidal correction changed the 1955-2005 observational interval\n");
+            failures++;
+        }
+    }
+    jme_set_tid_acc(JME_TIME_TIDAL_AUTOMATIC);
+
     if (failures == 0) printf("Delta-T reference certification passed\n");
     return failures == 0 ? 0 : 1;
 }
