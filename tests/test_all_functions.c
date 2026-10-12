@@ -372,6 +372,60 @@ void test_extended_functions() {
     jme_lat_to_lmt(2451545.0, 0, &d1, err);
 }
 
+static int all_finite(const double *v, int n) {
+    int i;
+    for (i = 0; i < n; i++) if (!isfinite(v[i])) return 0;
+    return 1;
+}
+
+void test_surface_1_1() {
+    printf("Testing functions added in 1.1...\n");
+    char err[256];
+    double st[6], m[9], a, b, c, cusps[40], ascmc[10];
+    int i1, i2;
+    double o1, o2;
+
+    TEST_ASSERT(jme_moshier_planet_state(2451545.0, JME_BODY_MARS, st) == JME_OK && all_finite(st, 6));
+    TEST_ASSERT(jme_vsop87_planet_state(2451545.0, JME_BODY_MARS, st) == JME_OK && all_finite(st, 6));
+    TEST_ASSERT(jme_meeus_planet_state(2451545.0, JME_BODY_MARS, st) == JME_OK && all_finite(st, 6));
+    TEST_ASSERT(jme_meeus_sun_state(2451545.0, st) == JME_OK && all_finite(st, 6));
+    TEST_ASSERT(jme_meeus_moon_state(2451545.0, st) == JME_OK && all_finite(st, 6));
+    TEST_ASSERT(jme_elp2000_moon_state(2451545.0, st) == JME_OK && all_finite(st, 6));
+    TEST_ASSERT(jme_get_frame_bias_matrix(JME_MODEL_BIAS_IAU2006, m) == JME_OK && all_finite(m, 9));
+
+    TEST_ASSERT(jme_time_scale_convert(2451545.0, 0.0, JME_TIME_SCALE_TT, JME_TIME_SCALE_TAI, &o1, &o2, err) == JME_OK);
+    TEST_ASSERT(fabs(((2451545.0 - o1) - o2) * 86400.0 - 32.184) < 1e-6);
+    TEST_ASSERT(strcmp(jme_time_scale_name(JME_TIME_SCALE_UTC), "UTC") == 0);
+    TEST_ASSERT(jme_time_scale_name(JME_TIME_SCALE_TCB) != NULL);
+
+    TEST_ASSERT(jme_delta_t_iers_table_info(&a, &b, &c, err) == JME_OK && a < b && b <= c);
+    TEST_ASSERT(jme_leap_second_table_info(&a, &b, err) == JME_OK && b >= 37.0);
+
+    jme_eop_clear();
+    TEST_ASSERT(jme_eop_coverage(&a, &b, err) == JME_ERR);
+    TEST_ASSERT(jme_eop_load_file("/non/existent/finals2000A.all", err) == JME_ERR);
+    TEST_ASSERT(jme_eop_polar_motion(51544.0, &a, &b, &i1, err) == JME_ERR);
+    jme_set_polar_motion(1);
+    TEST_ASSERT(jme_get_polar_motion() == 1);
+    jme_set_polar_motion(0);
+    TEST_ASSERT(jme_get_polar_motion() == 0);
+
+    TEST_ASSERT(jme_houses_gauquelin(2451545.0, 0, 28.6, 77.2, cusps, ascmc, err) == JME_OK && all_finite(cusps + 1, 36));
+    TEST_ASSERT(jme_houses_gauquelin_armc(100.0, 28.6, 23.4392911, cusps, ascmc, err) == JME_OK && all_finite(cusps + 1, 36));
+
+    TEST_ASSERT(jme_set_astro_models_checked("ENGINE=MOSHIER", err) == JME_OK);
+    TEST_ASSERT(jme_set_astro_models_checked("ENGINE=NO_SUCH_ENGINE", err) == JME_ERR);
+    TEST_ASSERT(jme_calc_resolve_engine(2451545.0, JME_BODY_MARS, &i1, &i2, err) == JME_OK && i1 == JME_ENGINE_ID_MOSHIER);
+    TEST_ASSERT(jme_get_jpl_center_policy() == JME_JPL_CENTER_STRICT);
+    TEST_ASSERT(jme_set_jpl_center_policy(JME_JPL_CENTER_BARYCENTER, err) == JME_OK);
+    TEST_ASSERT(jme_set_jpl_center_policy(JME_JPL_CENTER_STRICT, err) == JME_OK);
+    TEST_ASSERT(jme_set_topo_checked(77.2, 28.6, 216.0, err) == JME_OK);
+    TEST_ASSERT(jme_set_sidereal_mode_checked(JME_SIDEREAL_LAHIRI, 0.0, 0.0, err) == JME_OK);
+    TEST_ASSERT(jme_sidereal_time_ex(2451545.0, 1, &a, err) == JME_OK && a >= 0.0 && a < 24.0);
+    TEST_ASSERT(jme_get_ayanamsa_ex2(2451545.0, JME_SIDEREAL_LAHIRI, JME_AYANAMSA_MEAN, &a, &b, err) == JME_OK);
+    TEST_ASSERT(jme_get_ayanamsa_ex2_ut(2451545.0, JME_SIDEREAL_LAHIRI, JME_AYANAMSA_TRUE, &a, NULL, err) == JME_OK);
+}
+
 int main() {
     setbuf(stdout, NULL);
     test_metadata_and_paths();
@@ -387,6 +441,7 @@ int main() {
     test_eclipses_and_phenomena();
     test_jpl_calls();
     test_extended_functions();
+    test_surface_1_1();
     
     printf("\nAll functions tested successfully!\n");
     return 0;

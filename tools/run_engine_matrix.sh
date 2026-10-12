@@ -36,11 +36,12 @@ engines = ["JPL", "MOSHIER", "VSOP_ELP_MEEUS"]
 
 text = (root / "include/jme/jme.h").read_text() + "\n" + (root / "include/jme/jme_extended.h").read_text()
 funcs = sorted(set(re.findall(r'(?m)^\s*(?:const\s+char\s*\*\s*|char\s*\*\s*|void\s+|double\s+|int\s+)(jme_[a-zA-Z0-9_]+)\s*\(', text)))
-constants = sorted(set(re.findall(r'\bJME_[A-Z0-9_]+\b', text)))
+guards = set(re.findall(r'(?m)^\s*#\s*ifndef\s+(JME_[A-Z0-9_]+_H)\s*$', text))
+constants = sorted(set(re.findall(r'\bJME_[A-Z0-9_]+\b', text)) - guards)
 if len(funcs) != 225:
     raise SystemExit(f"expected 225 functions, discovered {len(funcs)}")
-if len(constants) != 480:
-    raise SystemExit(f"expected 480 constants, discovered {len(constants)}")
+if len(constants) != 478:
+    raise SystemExit(f"expected 478 constants, discovered {len(constants)}")
 
 full_jsonl = out_dir / "engine_matrix.full.jsonl"
 summary_csv = out_dir / "engine_matrix.summary.csv"

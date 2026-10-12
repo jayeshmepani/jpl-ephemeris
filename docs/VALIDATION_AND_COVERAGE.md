@@ -9,7 +9,7 @@ Current header-derived inventory:
 | Public `jme_*` functions | 225 | `pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1` |
 | Defined public `jme_*` functions | 225 | `pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1` |
 | Directly C-test-referenced public `jme_*` functions | 225 | `pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1` |
-| Public `JME_*` constants | 480 | `pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1` |
+| Public `JME_*` constants | 478 | `pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1` |
 
 The generated value-verification matrix in this file is maintained by `tools/generate_value_verification_matrix.py`; that tool updates only the marked generated section.
 
@@ -188,7 +188,7 @@ This file tracks behavior certification, not symbol existence. Symbol coverage i
 jme_functions_total=225
 jme_functions_defined=225
 jme_functions_directly_tested=225
-jme_constants_total=480
+jme_constants_total=478
 ```
 
 ## Closure Rule
@@ -225,11 +225,11 @@ The total is not `106 + 113`. The 106 reference rows are behavior rows, not uniq
 Recent rows moved from not-closed to closed:
 
 - [x] 112 mapped-function adversarial validation: `test_mapped_adversarial` now sweeps the unique `jme_*` functions behind the 106 reference rows with randomized angle/coordinate round-trips, malformed strings, null/error contracts, production-like date/location/body workflows, model-state serialization, repeated determinism checks, polar-location domain handling, and read-only multithreaded calls.
-- [x] 225 public-function validation gate: `test_symbol_coverage.ps1` now fails unless every declared public `jme_*` function is both defined and directly referenced by C tests. Current enforced count is `204/204`.
+- [x] 225 public-function validation gate: `test_symbol_coverage.ps1` now fails unless every declared public `jme_*` function is both defined and directly referenced by C tests. Current enforced count is `225/225`.
 - [x] Extra public-function adversarial validation: `test_extra_adversarial` covers the extra public surface with calendar fuzzing, matrix/state round-trips, astrometry model checks, direct analytical state providers, raw JPL no-kernel behavior, and read-only multithreaded calls.
 - [x] External value validation: `test_analytical_validation` includes NASA/JPL Horizons quantity-31 observer ecliptic checks for 2026-05-22 geocentric Sun and Moon. This caught and fixed a no-kernel analytical fallback frame mismatch; the regression now fails if Sun/Moon longitudes drift outside the documented fallback tolerance.
 - [x] Broader external value screen: `test_analytical_validation` now checks Horizons quantity-31 geocentric apparent ecliptic-of-date longitude/latitude for Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, and Pluto at three epochs (`2000-01-01`, `2026-05-22`, `2050-01-01`) under both `ENGINE=MOSHIER` and `ENGINE=VSOP_ELP_MEEUS`.
-- [x] Verification-mode ledger: `docs/VALIDATION_AND_COVERAGE.md` now classifies the original `204` public functions by current validation mode so "called in tests" is no longer conflated with "externally numerically certified." The 21 functions added in 1.1.0 are covered by the symbol gate and their own reference/contract tests.
+- [x] Verification-mode ledger: `docs/VALIDATION_AND_COVERAGE.md` now classifies all `225` public functions by current validation mode so "called in tests" is no longer conflated with "externally numerically certified." The ledger is generated from the headers by `tools/generate_value_verification_matrix.py`.
 - [x] Robustness fixes from the adversarial pass: `jme_set_astro_models` now accepts key/value tokens for bias, nutation, obliquity, precession, sidereal-time, and Delta-T model families; `jme_body_name` returns deterministic `"Unknown"` for unknown IDs; `jme_house_pos` returns `NaN` for invalid input instead of ambiguous zero.
 - [x] Row 68, `reference_set_lapse_rate` / `jme_set_lapse_rate`: lapse-rate state is now consumed by extended refraction and rise/transit altitude refraction.
 - [x] Row 79, `reference_time_equ` / `jme_time_equ`: now uses the public calculation pipeline with analytic fallback and rejects null output.
@@ -491,11 +491,11 @@ The product API remains `jme_*`. Mapping a reference row to a `jme_*` function i
 | Rows still partial or open | 0 |
 | Reference constants tracked | 348 |
 | Reference constants guaranteed drop-in semantic parity | Not yet all 348 |
-| JME public functions currently defined | 204 |
-| JME public functions directly referenced by C tests | 204 |
+| JME public functions currently defined | 225 |
+| JME public functions directly referenced by C tests | 225 |
 | Unique mapped `jme_*` functions behind the 106 rows | 112 |
 | 112-function adversarial validation target | Passing |
-| 204-function symbol/direct-test validation gate | Passing |
+| 225-function symbol/direct-test validation gate | Passing |
 
 ## Reference Parity Status
 
@@ -766,20 +766,20 @@ This document tracks reference coverage against the project-owned JME API. Symbo
 | Metric | external reference engine (Reference) | **JPL Moshier Ephemeris (Current)** | **Parity %** |
 | :--- | :--- | :--- | :--- |
 | **Reference Function Rows Mapped** | 106 | **106** | **100% mapping, not 100% behavior** |
-| **Total Functions (API Surface)** | - | **204** | 112 unique mapped `jme_*` functions + 92 extra `jme_*` functions |
+| **Total Functions (API Surface)** | - | **225** | 112 unique mapped `jme_*` functions + 113 extra `jme_*` functions |
 | **Reference Constants** | 348 | **348** | **100% mapped, not 100% semantic parity** |
-| **Total Constants (API Surface)** | - | **462** | (114 extra constants) |
+| **Total Constants (API Surface)** | - | **478** | (130 extra constants) |
 
 ---
 
 ### 1. Verification Summary
 
-The two suites below were written for the 1.0 surface. The current full-surface gate is `tests/test_symbol_coverage.ps1`: 225/225 functions defined and directly tested, 480 constants.
+The full-surface gate is `tests/test_symbol_coverage.ps1`: 225/225 functions defined and directly tested, 478 constants.
 
-1. **Strict Constant Validation (462/462):**
+1. **Strict Constant Validation (478/478):**
     - **Test Suite:** `tests/test_all_constants.c`
-    - **Result:** 100% Success. Verified existence and spelling for all 462 public `JME_*` constants of the 1.0 surface.
-2. **Function Symbol Validation (204/204):**
+    - **Result:** 100% Success. Verified existence and spelling for all 478 public `JME_*` constants.
+2. **Function Symbol Validation (225/225):**
     - **Test Suite:** `tests/test_all_functions.c`
     - **Result:** 100% Success for declared/defined symbol coverage and smoke-level call coverage. This is not a full reference behavior-parity claim.
 3. **Clean-Room Compliance:**
@@ -847,17 +847,17 @@ All 106 reference behavior rows are mapped to native `jme_` equivalents. In the 
 | 50 | `reference_houses_armc_ex2` | `jme_houses_armc_ex2` | **Mapped; finite speeds implemented** |
 | 51 | `reference_house_pos` | `jme_house_pos` | **Verified** |
 | 52 | `reference_house_name` | `jme_house_system_name` | **Verified** |
-| 53 | `reference_gauquelin_sector` | `jme_gauquelin_sector` | **Mapped; methods 0/1 semiarc and 2/3 rise/set implemented; certification pending** |
-| 54 | `reference_sol_eclipse_where` | `jme_sol_eclipse_where` | **Mapped; native geometry implemented; exact locality certification pending** |
-| 55 | `reference_lun_occult_where` | `jme_lun_occult_where` | **Mapped; first-pass native geometry implemented; certification pending** |
-| 56 | `reference_sol_eclipse_how` | `jme_sol_eclipse_how` | **Mapped; native local circumstances implemented; exact-contact certification pending** |
-| 57 | `reference_sol_eclipse_when_loc` | `jme_sol_eclipse_when_loc` | **Mapped; native local search implemented; contact validation pending** |
-| 58 | `reference_lun_occult_when_loc` | `jme_lun_occult_when_loc` | **Mapped; first-pass local topocentric search implemented; certification pending** |
-| 59 | `reference_sol_eclipse_when_glob` | `jme_sol_eclipse_when_glob` | **Mapped; native global search and classification implemented; broader validation pending** |
-| 60 | `reference_lun_occult_when_glob` | `jme_lun_occult_when_glob` | **Mapped; first-pass global search implemented; certification pending** |
-| 61 | `reference_lun_eclipse_how` | `jme_lun_eclipse_how` | **Mapped; native lunar circumstances implemented; broader validation pending** |
-| 62 | `reference_lun_eclipse_when` | `jme_lun_eclipse_when` | **Mapped; native lunar search implemented; broader validation pending** |
-| 63 | `reference_lun_eclipse_when_loc` | `jme_lun_eclipse_when_loc` | **Mapped; local visibility/contact clipping implemented; certification pending** |
+| 53 | `reference_gauquelin_sector` | `jme_gauquelin_sector` | **Mapped; methods 0/1 semiarc and 2/3 rise/set implemented; contract-tested, not externally certified** |
+| 54 | `reference_sol_eclipse_where` | `jme_sol_eclipse_where` | **Mapped; greatest-eclipse location matches the NASA canon to 0.1° (2024-04-08 total, 2023-04-20 hybrid; `test_api_contract`)** |
+| 55 | `reference_lun_occult_where` | `jme_lun_occult_where` | **Mapped; native geometry implemented; contract-tested, not externally certified** |
+| 56 | `reference_sol_eclipse_how` | `jme_sol_eclipse_how` | **Mapped; native local circumstances implemented; contract-tested, local magnitudes not externally certified** |
+| 57 | `reference_sol_eclipse_when_loc` | `jme_sol_eclipse_when_loc` | **Mapped; native local search implemented; contact ordering contract-tested, local contact times not externally certified** |
+| 58 | `reference_lun_occult_when_loc` | `jme_lun_occult_when_loc` | **Mapped; contacts and maximum match independent Skyfield computations at eight sites within 2 ms and 10 ms (`test_occult_reference`, JPL path)** |
+| 59 | `reference_sol_eclipse_when_glob` | `jme_sol_eclipse_when_glob` | **Mapped; greatest eclipse matches the NASA canon within 2 s for total, annular, partial and hybrid cases (`test_api_contract`)** |
+| 60 | `reference_lun_occult_when_glob` | `jme_lun_occult_when_glob` | **Mapped; global first/last contact matches independent Skyfield computations within 50 ms (`test_occult_reference`, JPL path)** |
+| 61 | `reference_lun_eclipse_how` | `jme_lun_eclipse_how` | **Mapped; umbral/penumbral magnitudes match the NASA Five Millennium Catalog for all 228 eclipses 2001-2100 (`test_lunar_eclipse_canon`)** |
+| 62 | `reference_lun_eclipse_when` | `jme_lun_eclipse_when` | **Mapped; greatest eclipse matches the NASA Five Millennium Catalog for all 228 eclipses 2001-2100 (`test_lunar_eclipse_canon`)** |
+| 63 | `reference_lun_eclipse_when_loc` | `jme_lun_eclipse_when_loc` | **Mapped; local visibility/contact clipping implemented; contract-tested, local contact times not externally certified** |
 | 64 | `reference_pheno` | `jme_pheno` | **Verified; standard fields plus extended geometry exported** |
 | 65 | `reference_pheno_ut` | `jme_pheno_ut` | **Verified; standard fields plus extended geometry exported** |
 | 66 | `reference_refrac` | `jme_refract` | **Verified** |
@@ -937,11 +937,11 @@ Current source of truth for inventory:
 
 | Verification mode | Count | Meaning |
 |---|---:|---|
-| `external_web_numeric` | 15 | Compared against authoritative external web/reference values. |
+| `external_web_numeric` | 11 | Compared against authoritative external web/reference values. |
 | `embedded_reference_numeric` | 6 | Compared against bundled reference datasets or known-value source material. |
-| `independent_formula_or_identity` | 71 | Validated by deterministic mathematical identities, formulae, or round-trips. |
+| `independent_formula_or_identity` | 76 | Validated by deterministic mathematical identities, formulae, or round-trips. |
 | `kernel_runtime_or_error_contract` | 52 | Validated by CALCEPH runtime success paths or explicit unavailable/error contracts. |
-| `api_or_behavior_contract` | 60 | Called directly and contract-tested, but not yet broadly externally value-certified. |
+| `api_or_behavior_contract` | 80 | Called directly and contract-tested, but not yet broadly externally value-certified. |
 
 ### Interpretation
 
@@ -958,6 +958,7 @@ Current source of truth for inventory:
 | `jme_body_name` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_calc` | `external_web_numeric` | web-source numeric verified | Checked against authoritative web/reference values in the current test suite. |
 | `jme_calc_pctr` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
+| `jme_calc_resolve_engine` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_calc_ut` | `external_web_numeric` | web-source numeric verified | Checked against authoritative web/reference values in the current test suite. |
 | `jme_calendar_is_leap_year` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_centiseconds_difference` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
@@ -982,10 +983,15 @@ Current source of truth for inventory:
 | `jme_degrees_to_radians` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_delta_t` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_delta_t_ex` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
+| `jme_delta_t_iers_table_info` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_double_to_long` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_ecliptic_to_equatorial` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_ecliptic_to_equatorial_rectangular_state` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_elp2000_moon_state` | `embedded_reference_numeric` | reference numeric verified | Checked against bundled known-value/reference datasets or derived reference cases. |
+| `jme_eop_clear` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
+| `jme_eop_coverage` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
+| `jme_eop_load_file` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
+| `jme_eop_polar_motion` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_ephemeris_path` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_equatorial_to_ecliptic` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_equatorial_to_ecliptic_rectangular_state` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
@@ -1000,14 +1006,18 @@ Current source of truth for inventory:
 | `jme_get_astro_models` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_get_ayanamsa` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_get_ayanamsa_ex` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
+| `jme_get_ayanamsa_ex2` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
+| `jme_get_ayanamsa_ex2_ut` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_get_ayanamsa_ex_ut` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_get_ayanamsa_name` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_get_ayanamsa_ut` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_get_frame_bias_matrix` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
+| `jme_get_jpl_center_policy` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_get_nutation` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_get_nutation_matrix` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_get_obliquity` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_get_orbital_elements` | `external_web_numeric` | web-source numeric verified | Checked against authoritative web/reference values in the current test suite. |
+| `jme_get_polar_motion` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_get_precession_matrix` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_get_sidereal_mode` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_get_tid_acc` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
@@ -1027,6 +1037,8 @@ Current source of truth for inventory:
 | `jme_houses_armc_ex2` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_houses_ex` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_houses_ex2` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
+| `jme_houses_gauquelin` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
+| `jme_houses_gauquelin_armc` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_jd_add_seconds` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_jd_difference_seconds` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_jd_to_utc` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
@@ -1084,14 +1096,15 @@ Current source of truth for inventory:
 | `jme_jpl_timescale` | `kernel_runtime_or_error_contract` | runtime/error contract verified | Checked through CALCEPH/runtime capability tests or explicit unavailable/error-path contracts. |
 | `jme_julian_day` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_lat_to_lmt` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
+| `jme_leap_second_table_info` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_library_path` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_lmt_to_lat` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_lun_eclipse_how` | `external_web_numeric` | web-source numeric verified | Checked against authoritative web/reference values in the current test suite. |
 | `jme_lun_eclipse_when` | `external_web_numeric` | web-source numeric verified | Checked against authoritative web/reference values in the current test suite. |
-| `jme_lun_eclipse_when_loc` | `external_web_numeric` | web-source numeric verified | Checked against authoritative web/reference values in the current test suite. |
+| `jme_lun_eclipse_when_loc` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_lun_occult_when_glob` | `external_web_numeric` | web-source numeric verified | Checked against authoritative web/reference values in the current test suite. |
 | `jme_lun_occult_when_loc` | `external_web_numeric` | web-source numeric verified | Checked against authoritative web/reference values in the current test suite. |
-| `jme_lun_occult_where` | `external_web_numeric` | web-source numeric verified | Checked against authoritative web/reference values in the current test suite. |
+| `jme_lun_occult_where` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_matrix_identity` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_matrix_multiply` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_matrix_rotate_x` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
@@ -1122,19 +1135,25 @@ Current source of truth for inventory:
 | `jme_rise_trans` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_rise_trans_true_hor` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_set_astro_models` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
+| `jme_set_astro_models_checked` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_set_delta_t_userdef` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_set_ephemeris_path` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_set_interpolate_nut` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
+| `jme_set_jpl_center_policy` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_set_jpl_file` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_set_lapse_rate` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
+| `jme_set_polar_motion` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_set_sidereal_mode` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
+| `jme_set_sidereal_mode_checked` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_set_tid_acc` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_set_topo` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
+| `jme_set_topo_checked` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_sidereal_time` | `external_web_numeric` | web-source numeric verified | Checked against authoritative web/reference values in the current test suite. |
 | `jme_sidereal_time0` | `external_web_numeric` | web-source numeric verified | Checked against authoritative web/reference values in the current test suite. |
-| `jme_sol_eclipse_how` | `external_web_numeric` | web-source numeric verified | Checked against authoritative web/reference values in the current test suite. |
+| `jme_sidereal_time_ex` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
+| `jme_sol_eclipse_how` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_sol_eclipse_when_glob` | `external_web_numeric` | web-source numeric verified | Checked against authoritative web/reference values in the current test suite. |
-| `jme_sol_eclipse_when_loc` | `external_web_numeric` | web-source numeric verified | Checked against authoritative web/reference values in the current test suite. |
+| `jme_sol_eclipse_when_loc` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_sol_eclipse_where` | `external_web_numeric` | web-source numeric verified | Checked against authoritative web/reference values in the current test suite. |
 | `jme_solcross` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_solcross_ut` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
@@ -1151,6 +1170,8 @@ Current source of truth for inventory:
 | `jme_state_speed` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_state_subtract` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_time_equ` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
+| `jme_time_scale_convert` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
+| `jme_time_scale_name` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_topo_arcus_visionis` | `api_or_behavior_contract` | contract verified only | Directly tested, but not yet broadly externally value-certified against an independent web oracle. |
 | `jme_utc_time_zone` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |
 | `jme_utc_to_jd` | `independent_formula_or_identity` | formula/identity verified | Checked by closed-form formula, round-trip identity, or deterministic mathematical invariant. |

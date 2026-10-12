@@ -33,8 +33,12 @@ $jmeFunctions = [regex]::Matches(
     "(?m)^\s*(?:const\s+char\s*\*\s*|char\s*\*\s*|void\s+|double\s+|int\s+)(jme_[a-zA-Z0-9_]+)\s*\("
 ) | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique
 
+$jmeIncludeGuards = [regex]::Matches($jmeText, "(?m)^\s*#\s*ifndef\s+(JME_[A-Z0-9_]+_H)\s*$") |
+    ForEach-Object { $_.Groups[1].Value }
+
 $jmeConstants = [regex]::Matches($jmeText, "\bJME_[A-Z0-9_]+\b") |
     ForEach-Object { $_.Value } |
+    Where-Object { $jmeIncludeGuards -notcontains $_ } |
     Sort-Object -Unique
 
 $missingJme = New-Object System.Collections.Generic.List[string]

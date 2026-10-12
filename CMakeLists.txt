@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 project(jme
-    VERSION 0.1.0
+    VERSION 1.1.1
     DESCRIPTION "Independent JPL/Moshier ephemeris engine in C"
     LANGUAGES C
 )
@@ -106,6 +106,10 @@ if (JME_BUILD_TESTS)
     add_executable(test_precision_contract tests/test_precision_contract.c)
     target_link_libraries(test_precision_contract PRIVATE jme)
     add_test(NAME precision_contract COMMAND test_precision_contract)
+
+    add_executable(test_extensions_contract tests/test_extensions_contract.c)
+    target_link_libraries(test_extensions_contract PRIVATE jme)
+    add_test(NAME extensions_contract COMMAND test_extensions_contract)
 
     add_executable(test_time_scale_contract tests/test_time_scale_contract.c)
     target_include_directories(test_time_scale_contract PRIVATE

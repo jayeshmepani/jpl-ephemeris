@@ -5,7 +5,6 @@ import csv
 import re
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parent.parent
 HEADERS = [ROOT / "include/jme/jme.h", ROOT / "include/jme/jme_extended.h"]
 DOC_PATH = ROOT / "docs/VALIDATION_AND_COVERAGE.md"
@@ -33,15 +32,11 @@ EXTERNAL_WEB_NUMERIC = {
     "jme_get_orbital_elements",
     "jme_lun_eclipse_how",
     "jme_lun_eclipse_when",
-    "jme_lun_eclipse_when_loc",
-    "jme_lun_occult_where",
     "jme_lun_occult_when_glob",
     "jme_lun_occult_when_loc",
     "jme_sidereal_time",
     "jme_sidereal_time0",
-    "jme_sol_eclipse_how",
     "jme_sol_eclipse_when_glob",
-    "jme_sol_eclipse_when_loc",
     "jme_sol_eclipse_where",
 }
 
@@ -82,6 +77,8 @@ INDEPENDENT_FORMULA = {
     "jme_get_ayanamsa",
     "jme_get_ayanamsa_ex",
     "jme_get_ayanamsa_ex_ut",
+    "jme_get_ayanamsa_ex2",
+    "jme_get_ayanamsa_ex2_ut",
     "jme_get_ayanamsa_ut",
     "jme_get_nutation",
     "jme_get_nutation_matrix",
@@ -89,6 +86,8 @@ INDEPENDENT_FORMULA = {
     "jme_get_precession_matrix",
     "jme_get_topo_pos",
     "jme_horizontal_to_equatorial",
+    "jme_houses_gauquelin",
+    "jme_houses_gauquelin_armc",
     "jme_hours_normalize",
     "jme_hours_to_degrees",
     "jme_jd_add_seconds",
@@ -111,6 +110,7 @@ INDEPENDENT_FORMULA = {
     "jme_refract",
     "jme_refract_extended",
     "jme_reverse_julian_day",
+    "jme_sidereal_time_ex",
     "jme_spherical_angular_separation",
     "jme_spherical_position_angle",
     "jme_spherical_to_rectangular_state",
@@ -170,8 +170,8 @@ def mode_status(mode: str) -> str:
 
 def main() -> int:
     funcs = load_functions()
-    if len(funcs) != 217:
-        raise SystemExit(f"expected 217 public functions, found {len(funcs)}")
+    if not funcs:
+        raise SystemExit("no public functions found in the headers")
 
     rows: list[tuple[str, str, str, str]] = []
     counts: dict[str, int] = {}
@@ -198,7 +198,7 @@ def main() -> int:
         "",
         "Current source of truth for inventory:",
         "",
-        "- `217` public functions from `include/jme/jme.h` and `include/jme/jme_extended.h`",
+        f"- `{len(funcs)}` public functions from `include/jme/jme.h` and `include/jme/jme_extended.h`",
         "",
         "### Summary",
         "",

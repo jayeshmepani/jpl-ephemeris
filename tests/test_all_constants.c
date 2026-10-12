@@ -12,6 +12,8 @@ int main(void) {
     (void)JME_BODY_JUPITER;
     (void)JME_BODY_JUPITER_BARYCENTER;
     (void)JME_BODY_MARS;
+    (void)JME_BODY_MEAN_NODE;
+    (void)JME_BODY_TRUE_NODE;
     (void)JME_BODY_MARS_BARYCENTER;
     (void)JME_BODY_MERCURY;
     (void)JME_BODY_MERCURY_BARYCENTER;
@@ -467,6 +469,21 @@ int main(void) {
     (void)JME_TIME_TIDAL_DE431;
     (void)JME_TIME_TIDAL_DE441;
     (void)JME_VERSION_ID;
+    (void)JME_SIDEREAL_LAHIRI_ICRC;
+    (void)JME_TIME_SCALE_UTC;
+    (void)JME_TIME_SCALE_UT1;
+    (void)JME_TIME_SCALE_TAI;
+    (void)JME_TIME_SCALE_TT;
+    (void)JME_TIME_SCALE_TDB;
+    (void)JME_TIME_SCALE_TCG;
+    (void)JME_TIME_SCALE_TCB;
+    (void)JME_AYANAMSA_MEAN;
+    (void)JME_AYANAMSA_TRUE;
+    (void)JME_JPL_CENTER_STRICT;
+    (void)JME_JPL_CENTER_BARYCENTER;
+    (void)JME_ENGINE_ID_JPL;
+    (void)JME_ENGINE_ID_MOSHIER;
+    (void)JME_ENGINE_ID_VSOP87_ELP82B;
 
     /* Verify major constants */
     assert(JME_OK == 0);
@@ -479,7 +496,7 @@ int main(void) {
     assert(JME_CALC_XYZ == 4);
     assert(JME_CALC_RADIANS == 8);
     assert(fabs(JME_SECONDS_PER_DAY - 86400.0) < 1e-9);
-    assert(strcmp(JME_VERSION, "0.1.0") == 0);
+    assert(strcmp(JME_VERSION, "1.1.1") == 0);
 
     printf("All constants verified successfully.\n");
     return 0;

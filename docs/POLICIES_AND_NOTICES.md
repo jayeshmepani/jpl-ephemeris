@@ -8,7 +8,7 @@ This C library is developed and maintained by Jayesh Mepani (Jayesh Patel). It i
 
 Implementation work is based on independent and public sources such as JPL/NAIF data and documentation, CALCEPH API behavior, Moshier's DE404-fit theories (plan404 and Astronomical Almanac 5.6; MIT License by permission of the author, 12 October 2026, see [`permissions/MOSHIER_PERMISSION.md`](permissions/MOSHIER_PERMISSION.md)), VSOP/ELP/Meeus references, peer-reviewed papers, public standards, and independently derived formulas.
 
-The design goal is a broad project-owned API for astrology, astronomy, vector/state, metadata, validation, and calendrical workflows. The current surface is 204 public functions and 462 public constants.
+The design goal is a broad project-owned API for astrology, astronomy, vector/state, metadata, validation, and calendrical workflows. The current surface is 225 public functions and 478 public constants.
 
 ## Independent Development Policy
 

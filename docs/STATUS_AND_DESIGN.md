@@ -1,7 +1,7 @@
 # Status And Design
 
-> **Status update (jpl-ephemeris 1.1.0).** The following statements further
-> down this document are superseded:
+> **Status (jpl-ephemeris 1.1.1).** Current state of the areas most often
+> asked about:
 >
 > * IAU 2000A nutation is implemented, as is IAU 2006/2000A with P03
 >   (`JME_MODEL_NUT_IAU_2006A`).
@@ -24,7 +24,7 @@
 
 ## Current Design Snapshot
 
-The current public C surface is defined by `include/jme/jme.h` and `include/jme/jme_extended.h`: 225 public `jme_*` functions and 480 public `JME_*` constants.
+The current public C surface is defined by `include/jme/jme.h` and `include/jme/jme_extended.h`: 225 public `jme_*` functions and 478 public `JME_*` constants.
 
 The current `.c` and `.h` source tree contains only project-owned `jme_*` / `JME_*` symbols and independently maintained implementation code. External ephemeris engines may be used for black-box comparison, but not as implementation sources.
 
@@ -58,9 +58,9 @@ Current verified counts from `tests/test_symbol_coverage.ps1`:
 | Inventory | Count | Source of truth |
 |---|---:|---|
 | Public `jme_*` functions | 225 | `docs/API_REFERENCE.md`, `include/jme/jme.h`, `include/jme/jme_extended.h` |
-| Public `JME_*` constants | 480 | `docs/API_REFERENCE.md`, `include/jme/jme.h`, `include/jme/jme_extended.h` |
+| Public `JME_*` constants | 478 | `docs/API_REFERENCE.md`, `include/jme/jme.h`, `include/jme/jme_extended.h` |
 
-`docs/API_REFERENCE.md` is the full 225-function and 480-constant inventory. This file avoids duplicating that complete list so there is only one source of truth.
+`docs/API_REFERENCE.md` is the full 225-function and 478-constant inventory. This file avoids duplicating that complete list so there is only one source of truth.
 
 `docs/VALIDATION_AND_COVERAGE.md` is the live behavior-closure checklist and records function-family closure status.
 
@@ -77,7 +77,7 @@ Expected current output:
 ```text
 jme_functions_total=225
 jme_functions_defined=225
-jme_constants_total=480
+jme_constants_total=478
 ```
 
 ## JPL/CALCEPH Layer
@@ -139,7 +139,7 @@ All functions below are implemented in `src/jpl.c`. When `JME_HAVE_CALCEPH` is e
 
 ### JPL Constants Currently Tracked
 
-The complete 480-constant inventory is maintained in `docs/API_REFERENCE.md`.
+The complete 478-constant inventory is maintained in `docs/API_REFERENCE.md`.
 
 JPL-specific constants currently include:
 
@@ -157,7 +157,7 @@ Remaining work is above the JPL boundary, not inside kernel access:
 
 - full apparent geocentric reduction pipeline using JPL vectors
 - full topocentric reduction pipeline using JPL vectors
-- remaining nutation variants, aberration, light-deflection, and time-scale policy validation
+- aberration, light-deflection, and time-scale policy validation
 - full physical ephemeris attributes built from JPL states
 - full eclipse circumstances and locality algorithms built from JPL states
 - full rise/set/transit model breadth built from JPL states
@@ -172,7 +172,7 @@ The in-tree public surface is the project-owned `jme_*` / `JME_*` API. The forme
 Current native hardening:
 
 - `jme_set_astro_models` and `jme_get_astro_models` now maintain canonical model state for bias, nutation, obliquity, precession, sidereal time, and Delta-T profiles instead of only storing a raw string.
-- `jme_get_nutation` is closed for the project-owned public contract: IAU 1980 and IAU 2000B abridged nutation are supported and tested; IAU 2000B uses the 77-term MHB_2000_SHORT/Luzum series and fixed planetary-bias offsets used by ERFA/SOFA; the declared IAU 2000A constant is intentionally rejected until the full 1365-term model is implemented; unknown model IDs and null output pointers reject instead of silently falling back.
+- `jme_get_nutation` is closed for the project-owned public contract: IAU 1980, IAU 2000B (77-term MHB_2000_SHORT/Luzum series with the fixed planetary-bias offsets used by ERFA), IAU 2000A (complete series, vendored ERFA `nut00a`) and IAU 2006/2000A with the P03 adjustments (`JME_MODEL_NUT_IAU_2006A`) are supported and tested; unknown model IDs and null output pointers reject instead of silently falling back.
 - `jme_sidereal_time` now consumes the selected sidereal-time model: default/IAU 1976 keeps the historical GMST expression, while IAU 2006 uses the Earth-rotation-angle plus Capitaine-compatible GMST06 polynomial with TT from the active Delta-T model.
 - Frame-bias model state is now consumed by the equatorial reduction pipeline. IAU 2000/2006 bias uses the fixed MHB2000/Chapront frame-bias angles before precession in planet, fixed-star, and topocentric event reductions; `JME_MODEL_BIAS_NONE` remains an identity transform.
 - Direct public contracts now assert that `jme_moshier_planet_state` succeeds for supported planet bodies and rejects unsupported ones, and that `jme_meeus_planet_state` does the same for its supported-body subset. That is a contract check, not a precision certification.
@@ -209,22 +209,22 @@ Known limits:
 - Solar eclipse search/circumstance behavior is closed for the current JME-native contract. The suite covers total, annular, hybrid, and partial global known-value regressions, visible local circumstance/search cases, backward global search, ordered outer contacts, centrality classification, non-eclipse rejection, and null-output/geopos rejection. The current API intentionally does not overclaim second/third contacts where the solver returns zero.
 - Solar partial-only global circumstances no longer report negative magnitude from geocentric apparent separation; `jme_sol_eclipse_where()` now derives the circumstance fields at the returned shadow-surface location, and 2022-10-25 is covered as a partial solar known-value regression.
 - Global lunar eclipse search/circumstance behavior is closed for JME-native behavior: total, partial, and penumbral eclipse regressions are covered against external known-value maxima/magnitudes, backward search works, non-eclipse instants reject, and null-output paths are tested.
-- Lunar occultation locality/contact/search are closed for the current JME-native Mars occultation contract: the 2022-12-08 Mars occultation is covered globally and locally for Los Angeles, with positive circumstances, ordered outer contacts, and null required-output/geopos rejection.
+- Lunar occultations cover planets and fixed stars with a generalised Besselian construction and multi-conjunction searches. Local disappearance/reappearance, inner contacts and maximum at eight sites, and global first/last contact, are certified against independent Skyfield computations (`test_occult_reference`, JPL path); the 2022-12-08 Mars occultation also has global and Los Angeles regressions with null required-output/geopos rejection.
 - Solar eclipse, lunar eclipse, and lunar occultation public entry points now have direct null required-output/geopos rejection tests. This is input-contract hardening, not exact contact/locality closure.
 - Sunshine is implemented for date-aware `jme_houses`/`jme_houses_ex`; ARMC Sunshine is also available when the caller supplies Sun declination in `ascmc[9]`.
-- Gauquelin sector now branches by method: ecliptic longitude/latitude semiarc, longitude-only semiarc, disk-center rise/set, and refracted disk-center rise/set. It returns fractional sectors, but it is not yet certified as full reference-method parity.
+- Gauquelin sector branches by method: ecliptic longitude/latitude semiarc, longitude-only semiarc, disk-center rise/set, and refracted disk-center rise/set, returning fractional sectors; it is contract-tested but not certified against an external reference. The 36 sector cusps (`jme_houses_gauquelin`, `jme_houses_gauquelin_armc`) are certified in `test_houses_reference`: every cusp starts its sector under the hour-angle/semi-arc definition, and the cusps at thirds of a quadrant equal the Placidus cusps.
 - Heliacal visibility is closed for the current JME-native contract using local twilight, Sun/body altitude, arcus visionis, elongation, apparent magnitude, and an explicit arcus-visionis threshold model. The contract uses `required_arcus = 10.50 + 1.40 * visual_magnitude` and `limiting_magnitude = (arcus - 10.50) / 1.40`; event search evaluates twilight candidates at the required solar depression, revalidates the returned event through `jme_heliacal_pheno_ut`, and rejects unsupported body IDs and null required outputs.
 - Heliacal body selection is now explicit for array-output APIs: unsupported IDs, fractional IDs, node bodies, and null required outputs return errors instead of silently changing the request to Venus. Scalar helpers may still use Venus only when the caller omits `dat_hel` because they return one scalar value and use an internal default.
 - Physical phenomena provide the standard first five phenomenon fields plus extended geometric fields; rotation-axis and central-meridian style physical ephemeris attributes remain open.
 
 ## Remaining Gaps
 
-- `jme_lun_occult_where`, `jme_lun_occult_when_loc`, and `jme_lun_occult_when_glob` are closed for the current Mars occultation contract. Additional star/planet catalog breadth can still be added, but these mapped rows are no longer open under the current JME-native closure rule.
+- `jme_lun_occult_when_loc` and `jme_lun_occult_when_glob` are certified against independent Skyfield computations for planets and stars; `jme_lun_occult_where` is contract-tested.
 - `jme_heliacal_ut`, `jme_heliacal_pheno_ut`, `jme_heliacal_angle`, `jme_topo_arcus_visionis`, and `jme_vis_limit_mag` are closed for the JME-native visibility contract with explicit required-arcus and limiting-magnitude semantics, body sweeps, event revalidation, scalar-helper consistency, and invalid-input coverage.
 - Eclipse coverage is materially stronger: solar eclipse global/local behavior, lunar occultation, global lunar eclipse search/circumstance behavior, and local lunar eclipse visibility behavior are closed for the current JME-native contract.
 - `jme_lun_eclipse_when_loc` now intersects the global lunar eclipse phase window with the local Moon-above-horizon interval, clips local-visible contacts, reports visible duration, supports forward/backward search, and rejects hidden observer cases. It still intentionally uses global geocentric shadow contacts clipped to local visibility rather than claiming a separate topocentric lunar-shadow model.
 - Physical phenomena are still partial: phase/elongation/diameter/magnitude, distance, light-time, apparent-radius, phase-defect, and bright-limb position-angle fields are implemented, but full rotational physical ephemeris outputs remain open.
-- Gauquelin support is stronger but still partial: `jme_gauquelin_sector` supports methods 0 through 3 with fractional sectors; polar-region semiarc edge behavior and independent known-value certification remain open.
+- Gauquelin support: `jme_gauquelin_sector` supports methods 0 through 3 with fractional sectors; polar-region semiarc edge behavior and independent known-value certification of the sector positions remain open. The 36-cusp functions are certified (see above).
 - Sunshine support is stronger but still partial: date-aware Sunshine is implemented, and ARMC Sunshine works with caller-supplied Sun declination in `ascmc[9]`; independent reference-value validation remains open.
 - Broader independent known-value validation remains a model-certification task for dense analytical fallback edge cases.
 - Mixed fallback path validation now covers the selected high-level no-kernel stack for representative planets and Moon across multiple dates. Broader all-body/all-date certification across VSOP87, Moshier, ELP2000, and Meeus remains model-certification work.
@@ -446,12 +446,9 @@ The project currently has all 225 public `jme_*` functions declared and defined.
 
 Examples of implemented-but-not-yet-complete high-level areas:
 
-- `jme_elp2000_moon_state`
 - `jme_sol_eclipse_where`
 - `jme_sol_eclipse_how` exact circumstances
 - `jme_lun_occult_where`
-- `jme_lun_occult_when_loc`
-- `jme_lun_occult_when_glob`
 - `jme_nod_aps` complete reference method variants
 - `jme_nod_aps_ut` complete reference method variants
 - `jme_get_orbital_elements` full reference attribute layout and validation
@@ -485,9 +482,9 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1
 
 Current verified results:
 
-- normal Linux build: `9/9` tests passed
+- normal Linux build with `JME_BUILD_TESTS=ON` and CALCEPH: `24/24` CTest tests passed
 - CALCEPH-enabled Linux runtime subset with real `de440s.bsp`, text constants, binary PCK orientation, version, and angular-momentum fixture files: `3/3` tests passed for `jpl_runtime`, `analytical_validation`, and `extra_contract`
-- symbol coverage: `204/204` functions defined, `462` constants tracked
+- symbol coverage: `225/225` functions defined and directly tested, `478` constants tracked
 
 ## Next Work Order
 
@@ -580,8 +577,8 @@ The runner derives the public function inventory directly from:
 
 The expected counts are:
 
-- `204` public functions
-- `462` constants
+- `225` public functions
+- `478` constants (include guards are not counted)
 
 If the discovered counts differ, the runner stops as an infrastructure failure.
 
@@ -665,7 +662,7 @@ Primary precision layer:
 JPL kernels through CALCEPH
 
 Analytical fallback layer:
-VSOP87 + ELP2000/ELP82/ELPMPP02 + Meeus + Moshier
+VSOP87 + ELP 2000-82B + Meeus + Moshier
 
 Reference-frame/time layer:
 SOFA/ERFA + IAU models + IERS/EOP data
@@ -854,9 +851,9 @@ VSOP87 does not solve:
 - rise/set with observer conditions
 - full coordinate-frame reduction pipeline
 
-## ELP2000 / ELP82 / ELPMPP02
+## ELP 2000-82B
 
-ELP is a lunar analytical theory family.
+ELP is a lunar analytical theory family. JME implements ELP 2000-82B (`src/elp82b.c`, series data `src/elp82b_data.inc`); ELP/MPP02 is not part of the engine.
 
 It is mainly for Moon position. It is not a complete astronomy engine by itself.
 
@@ -874,7 +871,6 @@ Known ELP-related roles:
 - lunar latitude
 - lunar distance/radius
 - lunar perturbation terms
-- possible corrections depending on the selected ELP variant
 
 ELP does not solve:
 
@@ -1244,7 +1240,7 @@ The recommended architecture:
 2. VSOP87
    Analytical planetary fallback.
 
-3. ELP2000 / ELP82 / ELPMPP02
+3. ELP 2000-82B
    Analytical lunar fallback.
 
 4. Meeus
