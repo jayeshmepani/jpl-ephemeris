@@ -791,8 +791,7 @@ static int fill_house_cusps_from_angles(double asc, double mc, double ramc, doub
          * equal parts from the ARMC and each cusp is the ecliptic point
          * having that right ascension (projection along hour circles), so
          * cusp 10 is the MC and cusp 1 generally differs from the Ascendant.
-         * Definition: Swiss Ephemeris documentation sect. 6.2.7 (conventions
-         * only).
+         * Definition: R. Holden, The Elements of House Division (1977).
          */
         for (i = 1; i <= 12; i++) {
             cusps[i] = ecliptic_longitude_from_ra(ramc + (double)((i + 2) % 12) * 30.0, eps);
@@ -806,8 +805,7 @@ static int fill_house_cusps_from_angles(double asc, double mc, double ramc, doub
          * to ecliptic coordinates (projection along circles of ecliptic
          * longitude): tan(lambda) = sin(alpha) cos(eps) / cos(alpha).
          * Cusp 1 differs from the Ascendant and cusp 10 from the MC.
-         * Definition: Swiss Ephemeris documentation sect. 6.2.8 (conventions
-         * only).
+         * Definition: R. Holden, The Elements of House Division (1977).
          */
         for (i = 1; i <= 12; i++) {
             double a = (ramc + (double)((i + 2) % 12) * 30.0) * JME_DEG_TO_RAD;
@@ -919,8 +917,7 @@ static int fill_house_cusps_from_angles(double asc, double mc, double ramc, doub
          * the ecliptic with the vertical circle (through the zenith) at that
          * azimuth. Cusp 10 lies on the meridian (the MC); cusp 1 lies on the
          * prime vertical due east and generally differs from the Ascendant.
-         * Definition: Swiss Ephemeris documentation sect. 6.2.9 (conventions
-         * only).
+         * Definition: R. Holden, The Elements of House Division (1977).
          */
         if (horizontal_east_cusp(ramc, lat, eps, &cusps[1]) != JME_OK) {
             return JME_ERR;

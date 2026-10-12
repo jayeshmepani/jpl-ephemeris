@@ -5,8 +5,7 @@ plain 3-D vector geometry in the true equator/equinox frame of date (no
 spherical-trigonometry cusp formulas shared with src/houses.c), and the
 sidereal-time / obliquity chain from pyerfa (ERFA, BSD-3).
 
-Definitions (standard; e.g. R. Hand, "Astrological houses" literature and
-the Swiss Ephemeris documentation sect. 6, consulted for conventions only):
+Definitions (standard; R. Holden, "The Elements of House Division", 1977):
   Asc  ecliptic intersection with the horizon, east side.
   MC   ecliptic intersection with the meridian, upper side (hour angle 0).
   Equal: Asc + 30(k-1).  Whole sign: sign of Asc + 30(k-1).

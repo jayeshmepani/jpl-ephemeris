@@ -16,8 +16,11 @@ This file is informational and is not legal advice.
 | ERFA 2.0.x (vendored subset, renamed `jme_era*`) | BSD 3-Clause, Copyright (C) 2013-2023 NumFOCUS Foundation | Precession, nutation, frame bias, sidereal time, polar motion (`pom00`, `sp00`), light deflection, aberration, star space motion, FK5->ICRS, TT/TDB/TCB/TCG and calendar conversions (`src/erfa/`, `src/erfa/vendor/`) |
 | Meeus, *Astronomical Algorithms* | Formulas cited; no text or programs copied | Low-precision Sun/Moon arguments and mean elements (`src/meeus.c`) |
 | Espenak & Meeus ΔT polynomials | NASA publication | ΔT model `ESPENAK_MEEUS_2006` (`src/time.c`) |
-| Morrison, Stephenson, Hohenkerk & Zawilski 2021 ΔT splines (Table S15, 2020) | Published data (Proc. R. Soc. A, open access, CC BY 4.0); transcribed via Skyfield (MIT) | ΔT model `STEPHENSON_ETC_2016` and `AUTOMATIC` (`src/deltat_data.inc`, `tools/data/Table-S15.2020.csv`) |
-| IERS Earth orientation data (finals2000A) | Public IERS data | Observed/predicted ΔT for `AUTOMATIC` (`src/deltat_data.inc`, `tools/data/finals2000A.all`) |
+| Stephenson, Morrison & Hohenkerk 2016 ΔT splines (Table S15, 2016) | Published data (Proc. R. Soc. A, open access, CC BY 4.0); official supplementary ASCII table | ΔT model `STEPHENSON_ETC_2016` (`src/deltat_data.inc`, `tools/data/Table-S15.2016.txt`) |
+| Morrison, Stephenson, Hohenkerk & Zawilski 2021 ΔT splines (Table S15, 2020 revision) | Published data (Proc. R. Soc. A, open access, CC BY 4.0); transcribed via Skyfield (MIT) | ΔT models `STEPHENSON_ETC_2021` and `AUTOMATIC` (`src/deltat_data.inc`, `tools/data/Table-S15.2020.csv`) |
+| Morrison & Stephenson 2004 ΔT Table 1 | Published values (J. Hist. Astron. 35, 327), transcribed from the ADS scan and checked row by row | ΔT model `MS2004_TABLE1_LINEAR` (`src/deltat_ms2004_data.inc`, `tools/data/MS2004_Table1.txt`) |
+| IERS Earth orientation data (finals2000A) | Public IERS data | Observed/predicted ΔT for `AUTOMATIC` (`src/deltat_data.inc`, `tools/data/finals2000A.all`); polar motion when loaded by the caller (`src/eop.c`) |
+| NASA Five Millennium Catalog of Lunar Eclipses (Espenak & Meeus 2009) | NASA publication | Test reference only (`tools/data/NASA_LEcat5_2001-2100.txt`, `tests/test_lunar_eclipse_canon.c`) |
 | Yale Bright Star Catalogue, 5th Rev. Ed. | NSSDC/ADC catalogue (CDS V/50) | Fixed-star names, catalogue and radial velocities (`src/fixstar_catalog.inc`) |
 | Hipparcos, the New Reduction (van Leeuwen 2007) and Hipparcos 1997 HD index | ESA / CDS catalogues I/311 and I/239 (attribution) | Fixed-star astrometry overlay (`src/fixstar_hipparcos.inc`, generator `tools/gen_fixstar_hipparcos.py`, input `tools/data/bsc5_hipparcos2007.csv`) |
 | IAU 2009 System of Astronomical Constants | Published constants (Luzum et al. 2011) | Planetary mass ratios for the analytical solar-system barycentre (`src/calc.c`) |
@@ -80,6 +83,9 @@ Some low-precision formulas (Sun and Moon fundamental arguments, mean orbital el
 ## ΔT data
 
 - Espenak & Meeus: see above.
+- F. R. Stephenson, L. V. Morrison and C. Y. Hohenkerk 2016 (cited below): their official supplementary Table S15 (2016 edition, ASCII, from the Europe PMC supplementary archive of the article) is kept unmodified in `tools/data/Table-S15.2016.txt` (SHA-256 checked by `tools/gen_deltat.py`).
+- L. V. Morrison and F. R. Stephenson, "Historical values of the Earth's clock error ΔT and the calculation of eclipses", *J. Hist. Astron.* 35, 327 (2004), Table 1 (p. 332), used with the authors' stated rule "intermediate figures for ΔT can be found with adequate precision by simple interpolation" (p. 331) and their parabola −20 + 32t² outside the table.
+- Lunar tidal acceleration values for the ΔT correction: Chapront, Chapront-Touzé & Francou 2002 (*A&A* 387, 700, Table 7); Williams, Boggs & Folkner 2008 (JPL IOM 335-JW,DB,WF-20080314-001); Folkner et al. 2014 (IPN Progress Report 42-196).
 - F. R. Stephenson, L. V. Morrison and C. Y. Hohenkerk, "Measurement of the Earth's rotation: 720 BC to AD 2015", *Proc. R. Soc. A* 472: 20160404 (2016), and L. V. Morrison, F. R. Stephenson, C. Y. Hohenkerk and M. Zawilski, "Addendum 2020 to 'Measurement of the Earth's rotation: 720 BC to AD 2015'", *Proc. R. Soc. A* 477: 20200776 (2021). The cubic-spline coefficients of their Table S15 (2020 revision, published by HM Nautical Almanac Office at https://astro.ukho.gov.uk/nao/lvm/) are kept unmodified in `tools/data/Table-S15.2020.csv`; they were transcribed from the copy bundled with Skyfield 1.55 (Brandon Rhodes, MIT License; file `skyfield/data/delta_t.npz`, SHA-256 recorded in the CSV header) because the HMNAO server was unreachable when the data were added.
 - IERS Rapid Service/Prediction Centre (USNO) and IERS Earth Orientation Centre: `finals2000A.all` (Bulletin A and Bulletin B UT1-UTC), from https://datacenter.iers.org/data/9/finals2000A.all, kept unmodified in `tools/data/finals2000A.all` (SHA-256 checked by `tools/gen_deltat.py`).
 
@@ -96,7 +102,7 @@ For bright stars with a Hipparcos counterpart, positions (ICRS, epoch J1991.25),
 - Sun/planet mass ratios: B. Luzum et al., "The IAU 2009 system of astronomical constants: the report of the IAU working group on numerical standards for Fundamental Astronomy", *Celestial Mechanics and Dynamical Astronomy* 110, 293 (2011).
 - Leap seconds (TAI-UTC): IERS Bulletin C (https://hpiers.obspm.fr/iers/bul/bulc/), latest used: Bulletin C 72 (no leap second at the end of December 2026).
 - Galactic-centre anchor: M. J. Reid and A. Brunthaler, "The Proper Motion of Sagittarius A*", *ApJ* 616, 872 (2004).
-- Lahiri / ICRC definition and the Indian Astronomical Ephemeris values used for verification: Positional Astronomy Centre, India Meteorological Department, *Indian Astronomical Ephemeris* (published values only). Other ayanamsa definitions and their sources are listed in `docs/AYANAMSA_MODELS.md`; only published defining constants are used. No Swiss Ephemeris source code was consulted or copied; its public documentation was read only for the names and defining conventions of some models, as cited there.
+- Lahiri / ICRC definition and the Indian Astronomical Ephemeris values used for verification: Positional Astronomy Centre, India Meteorological Department, *Indian Astronomical Ephemeris* (published values only). Other ayanamsa definitions and their sources are listed in `docs/AYANAMSA_MODELS.md`; only published defining constants are used.
 
 ## ERFA (Essential Routines for Fundamental Astronomy)
 
@@ -181,6 +187,6 @@ Only the numbers they produce are committed, as `tests/fixtures/*.h`, together w
 
 The following publications were consulted for definitions and are cited in the documentation:
 
-* J. Laskar, "Secular terms of classical planetary theories using the results of general theory", *A&A* 157, 59 (1986), Table 8 (see `CENGINE_COMPLETION_REPORT.md`; the model is refused with an explicit error);
-* L. V. Morrison and F. R. Stephenson, *JHA* 35, 327 (2004) (ΔT; the model is refused with an explicit error);
-* the Swiss Ephemeris General Documentation, §2.8, for the definitions of ayanamsa conventions only.
+* J. Laskar, "Secular terms of classical planetary theories using the results of general theory", *A&A* 157, 59 (1986), Tables 5 and 8, and its erratum *A&A* 164, 437 (1986) (see `CENGINE_COMPLETION_REPORT.md`);
+* M. J. Reid and A. Brunthaler, *ApJ* 616, 872 (2004) (Sgr A* position for `GALCENT_0SAG`);
+* R. Holden, *The Elements of House Division* (1977) (Meridian, Morinus and Horizontal house definitions);

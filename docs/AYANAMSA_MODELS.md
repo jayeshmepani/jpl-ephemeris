@@ -6,12 +6,7 @@ and why the model is mapped the way it is.
 
 **Sources.** Model definitions (epochs and values) are conventions of the
 astrological traditions concerned. Where the original publication is
-available, it is cited. Many of these conventions are catalogued in the
-*Swiss Ephemeris General Documentation*, §2.8 "Sidereal ephemerides"
-(Astrodienst, https://www.astro.com/swisseph/swisseph.htm). That
-**documentation** was read for the *definitions of the conventions only*.
-No Swiss Ephemeris source code was consulted, and none of the code here is
-derived from it. All numerical procedures (precession, nutation, frame
+available, it is cited. All numerical procedures (precession, nutation, frame
 rotations, star propagation) are implemented from IAU/IERS/ERFA and the
 publications cited below.
 
@@ -95,39 +90,38 @@ sidereal origin oscillate by about ±20″ over the year.
 
 | Constant | Definition implemented | Source / justification |
 |---|---|---|
-| `FAGAN_BRADLEY` | 24°02′31.36″ at 1950.0, taken as B1950.0 = JD 2433282.42345905 TT; §1.2 | C. Fagan & R. C. Firebrace, *A Primer of Sidereal Astrology* (1971): the "synetic vernal point", with Spica at 29 Vir 06′05″ without aberration. The epoch is stated as "1950", which the Swiss documentation gives as 1 Jan 1950. B1950.0 (1949 Dec 31 22:09 UT) is the Besselian epoch the 1950s ephemerides used; the difference from 1950 Jan 1 0h is 1.8 h, or 0.01″ of precession. |
-| `LAHIRI` | **True** ayanamsa 23°15′00.658″ at 1956-03-21 0h ET (= TT, JD 2435553.5). Mean value at t0 = true − Δψ(IAU 1980, t0); §1.2. | *Indian Astronomical Ephemeris 1989*, p. 556 footnote: the ICRC value revised with effect from 1985. The value is a true ayanamsa, as the yearly IAE true-ayanamsa tables show (also argued in the Swiss documentation §2.8.5). IAE uses IAU 1976 precession and IAU 1980 nutation, so the IAU 1980 Δψ removes nutation exactly as the definition requires. |
+| `FAGAN_BRADLEY` | 24°02′31.36″ at 1950.0, taken as B1950.0 = JD 2433282.42345905 TT; §1.2 | C. Fagan & R. C. Firebrace, *A Primer of Sidereal Astrology* (1971): the "synetic vernal point", with Spica at 29 Vir 06′05″ without aberration. The epoch is stated as "1950". B1950.0 (1949 Dec 31 22:09 UT) is the Besselian epoch the 1950s ephemerides used; the difference from 1950 Jan 1 0h is 1.8 h, or 0.01″ of precession. |
+| `LAHIRI` | **True** ayanamsa 23°15′00.658″ at 1956-03-21 0h ET (= TT, JD 2435553.5). Mean value at t0 = true − Δψ(IAU 1980, t0); §1.2. | *Indian Astronomical Ephemeris 1989*, p. 556 footnote: the ICRC value revised with effect from 1985. The value is a true ayanamsa, as the yearly IAE true-ayanamsa tables show. IAE uses IAU 1976 precession and IAU 1980 nutation, so the IAU 1980 Δψ removes nutation exactly as the definition requires. |
 | `LAHIRI_ICRC` | As `LAHIRI`, with 23°15′00″ | M. N. Saha & N. C. Lahiri, *Report of the Calendar Reform Committee*, CSIR, New Delhi, 1955. Also used by the IAE/IENA before 1985. |
-| `KRISHNAMURTI` | A = 80564.38104″ + 50.2564″ t + 0.000111″ t², where t is in tropical (Besselian) years of 365.242198781 d from B1900.0 = JD 2415020.31352 | **Provenance flagged: no primary source.** K. S. Krishnamurti's *KP Reader 1* (pp. 55–59) could not be obtained. Secondary sources (logicastro.com, "ayanamsa" page; V. Subramanian, *Ayanamsa*, logicastro.com PDF) report three things: Krishnamurti followed Newcomb's precession; he took 291 CE as the year of coincidence; and he tabulated values for 1840–2001, adding 50.2388475″ per year after 2001. The engine's formula integrates Newcomb's general precession rate 50.2564″ + 0.000222″ t per year, which is zero in 291.22 CE. It is a reconstruction consistent with that description, not a transcription of Krishnamurti's table. It is **54.38″ larger** at 1900 than the table-fitted value 22.363889° at 1 Jan 1900, as defined in the Swiss Ephemeris documentation §2.8.6, model 5 (used for the definition only). Two other definitions exist and are **not** provided under this name: M. C. Khare's 1978 "KP straight line" (Y − 291) × 50.2388475″, and S. P. Khullar's formula. For the table-fitted variant, use `JME_SIDEREAL_USER` with t0 = JD 2415020.5 and A0 = 22.363889. |
-| `RAMAN` | (Gregorian year − 397) × 50⅓″, constant within a calendar year | B. V. Raman, *Hindu Predictive Astrology*, pp. 378–379 (whole-year rule as used by Raman's tables). The Swiss documentation mentions 389 CE as Raman's zero year in one place. JME keeps its documented whole-year rule (zero year 397). |
+| `KRISHNAMURTI` | A = 80564.38104″ + 50.2564″ t + 0.000111″ t², where t is in tropical (Besselian) years of 365.242198781 d from B1900.0 = JD 2415020.31352 | **Provenance flagged: no primary source.** K. S. Krishnamurti's *KP Reader 1* (pp. 55–59) could not be obtained. Secondary sources (logicastro.com, "ayanamsa" page; V. Subramanian, *Ayanamsa*, logicastro.com PDF) report three things: Krishnamurti followed Newcomb's precession; he took 291 CE as the year of coincidence; and he tabulated values for 1840–2001, adding 50.2388475″ per year after 2001. The engine's formula integrates Newcomb's general precession rate 50.2564″ + 0.000222″ t per year, which is zero in 291.22 CE. It is a reconstruction consistent with that description, not a transcription of Krishnamurti's table. It is **54.38″ larger** at 1900 than a table-fitted variant in circulation (22.363889° at 1 Jan 1900; its primary source is not established). Two other definitions exist and are **not** provided under this name: M. C. Khare's 1978 "KP straight line" (Y − 291) × 50.2388475″, and S. P. Khullar's formula. For the table-fitted variant, use `JME_SIDEREAL_USER` with t0 = JD 2415020.5 and A0 = 22.363889. |
+| `RAMAN` | (Gregorian year − 397) × 50⅓″, constant within a calendar year | B. V. Raman, *Hindu Predictive Astrology*, pp. 378–379 (whole-year rule as used by Raman's tables). JME keeps its documented whole-year rule (zero year 397). |
 | `YUKTESHWAR` | (Gregorian year − 499) × 54″, whole-year rule | Sri Yukteswar, *The Holy Science*: zero in 499 CE with 54″/yr (360°/24 000 yr). His stated 20°54′36″ for 1894 follows from this rule (it actually applies to 1893). |
-| `ARYABHATA` | 0 at 499-03-21 06:56:55.57 UT (Julian); §1.2 | Kali 3600 counted with the Aryabhata year from sunrise of the Kaliyuga epoch: the mean Sun at the mean equinox (Swiss documentation §2.8.4, model 23; Simon et al. 1994 mean elements). |
-| `SURYASIDDHANTA` | 0 at 499-03-21 07:30:31.57 UT; §1.2 | Kali 3600 with the Surya Siddhanta year from midnight (Burgess, *Surya Siddhanta*; Swiss documentation §2.8.4, model 21). |
-| `SS_REVATI` | −0.79167046° at the SS epoch above | ζ Psc (Revati) at **polar** longitude 359°50′ in 499 CE (Surya Siddhanta star list; Swiss documentation model 25). Defined as an epoch value; the polar projection is already in the value. |
+| `ARYABHATA` | 0 at 499-03-21 06:56:55.57 UT (Julian); §1.2 | Kali 3600 counted with the Aryabhata year from sunrise of the Kaliyuga epoch: the mean Sun at the mean equinox (Simon et al. 1994 mean elements). |
+| `SURYASIDDHANTA` | 0 at 499-03-21 07:30:31.57 UT; §1.2 | Kali 3600 with the Surya Siddhanta year from midnight (Burgess, *Surya Siddhanta*). |
+| `SS_REVATI` | −0.79167046° at the SS epoch above | ζ Psc (Revati) at **polar** longitude 359°50′ in 499 CE (Surya Siddhanta star list). Defined as an epoch value; the polar projection is already in the value. |
 | `SS_CITRA` | +2.11070444° at the SS epoch above | Spica (Citra) at polar longitude 180° in 499 CE (model 26). |
-| `USHASHASHI` | 18°39′39.46″ at 1900-01-01 0h UT | Ushā-Shashī value, Revati-based zodiac (Mercier 1976/77; Swiss documentation model 4). |
+| `USHASHASHI` | 18°39′39.46″ at 1900-01-01 0h UT | Ushā-Shashī value, Revati-based zodiac (Mercier 1976/77). |
 | `BABYL_KUGLER1/2/3` | −5°40′, −4°16′, −3°25′ at −100 Jan 1 (Julian) | F. X. Kugler's three groups of Babylonian positions, as summarised by R. Mercier, *Arch. Int. Hist. Sci.* 26 (1976) 197 and 27 (1977) 33. |
-| `BABYL_HUBER` | −4°28′ at −100 | P. Huber, *Centaurus* 5 (1958) 192–208. The corrected value; the −4°34′ found in some literature is a transcription error, as noted in the Swiss documentation. |
+| `BABYL_HUBER` | −4°28′ at −100 | P. Huber, *Centaurus* 5 (1958) 192–208. The corrected value; the −4°34′ found in some literature is a transcription error. |
 | `BABYL_ETPSC` | −5°04′46″ at −129 | η Psc culminating with the zero point (Mercier 1977). |
 | `DELUCE` | 26°24′47″ at 1900-01-01 0h TT | R. DeLuce, *Constellational Astrology According to the Hindu System* (1963), p. 5: the value for 1900 (zero about 4 June 1 BCE). |
 | `HIPPARCHOS` | −9°20′ at JD 1674484.0 (27 June −128) | Mercier's Hipparchan zero point (ζ Psc at 29 Psc 33′49″). |
-| `SASSANIAN` | 0 at JD 1927135.8747793 TT (18 Mar 564, 7:53:23 UT) | The Zīj al-Shāh reform (Mercier 1977; Swiss documentation model 16). |
+| `SASSANIAN` | 0 at JD 1927135.8747793 TT (18 Mar 564, 7:53:23 UT) | The Zīj al-Shāh reform (Mercier 1977). |
 | `JN_BHASIN` | 0 at JD 1854239.3 | **Provenance flagged:** the epoch of J. N. Bhasin's ayanamsa as historically carried in the Nova/Solar Fire tradition. No primary publication located. |
 | `J2000`, `J1900`, `B1950` | 0 at JD 2451545.0, 2415020.0 and 2433282.42345905 (TT) | Sidereal frame aligned to the mean equinox of the standard epoch. |
-| `ALDEBARAN_15TAU` | Aldebaran (α Tau) at 45°00′ (15 Tau); §1.3 | Bradley's proposed fiducial (Fagan; Swiss documentation model 14). |
+| `ALDEBARAN_15TAU` | Aldebaran (α Tau) at 45°00′ (15 Tau); §1.3 | Bradley's proposed fiducial (Fagan). |
 | `TRUE_CITRA` | Spica (α Vir) at 180°; §1.3 | "True Chitrapaksha": Spica always at 0° Libra in ecliptic longitude. |
 | `TRUE_REVATI` | ζ Psc at 359°50′; §1.3 | Surya Siddhanta longitude of Revati (non-polar form). |
 | `TRUE_MULA` | Shaula (λ Sco) at 240° | Mula nakshatra start at 0 Sag (Chandra Hari). |
 | `TRUE_PUSHYA` | δ Cnc at 106°; §1.3 | P. V. R. Narasimha Rao, "Introducing Pushya-paksha Ayanamsha" (2013). |
-| `GALCENT_0SAG` | Sgr A* at 240° (0 Sag) on the mean ecliptic of date | Position 17h45m40.0409s, −29°00′28.118″ (J2000/ICRS frame; M. J. Reid & A. Brunthaler, ApJ 616, 872, 2004), rotated by IAU 2006 bias-precession to the mean equator of date, then to the mean ecliptic. The model was introduced in 1999 at D. Koch's suggestion (Swiss documentation §2.8.7). See §3 for the proper motion. |
+| `GALCENT_0SAG` | Sgr A* at 240° (0 Sag) on the mean ecliptic of date | Position 17h45m40.0409s, −29°00′28.118″ (J2000/ICRS frame; M. J. Reid & A. Brunthaler, ApJ 616, 872, 2004), rotated by IAU 2006 bias-precession to the mean equator of date, then to the mean ecliptic. See §3 for the proper motion. |
 | `USER` | `jme_set_sidereal_mode(JME_SIDEREAL_USER, t0, ayan_t0)` | §1.2 with the caller's t0 and A(t0). t0 = 0 gives a constant ayanamsa (documented legacy behaviour). |
 
 ## 3. Known limits and open points
 
 * **Galactic Centre convention (settled).** `GALCENT_0SAG` places Sgr A\* at
-  240° (0° Sagittarius) on the mean ecliptic of date. This is the Swiss
-  documentation's model 17, introduced in 1999 at D. Koch's suggestion. The
-  documentation was consulted for the definition only. Rafael Gil Brand's
+  240° (0° Sagittarius) on the mean ecliptic of date. The anchor is the defining
+  convention of the model: the Galactic Centre marks 0° Sagittarius. Rafael Gil Brand's
   model (Galactic Centre at the golden section between 0° Scorpio and
   0° Aquarius), Cochrane's (0° Capricorn) and Wilhelm's Dhruva/mid-Mula
   model are different definitions. JME does not provide them; no
