@@ -61,6 +61,35 @@ int main(void)
     }
     failures += check_set("em2006", dt_em2006, N(dt_em2006), JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, 1.0e-9, 1.0e-13);
 
+    /*
+     * MS2004 Table-1 reconstruction: linear between rows of Table 1 (scan-
+     * verified), parabola -20 + 32((y - 1820)/100)^2 outside; the spline model
+     * itself stays refused.
+     */
+    {
+        const struct { int year; int julian; double expected; } ms[] = {
+            {-1000, 1, 25400.0}, {-750, 1, 21500.0}, {0, 1, 10580.0}, {1000, 1, 1570.0},
+            {1705, 0, 9.5}, {1835, 0, 7.0}, {1995, 0, 61.0}, {2000, 0, 65.0},
+            {-1500, 1, -20.0 + 32.0 * 33.2 * 33.2}, {2100, 0, -20.0 + 32.0 * 2.8 * 2.8}
+        };
+        size_t k;
+        for (k = 0; k < N(ms); k++) {
+            double jd = jme_julian_day(ms[k].year, 1, 1, 0.0, ms[k].julian ? JME_CALENDAR_JULIAN : JME_CALENDAR_GREGORIAN);
+            double v = jme_delta_t_ex(jd, JME_MODEL_DELTAT_MS2004_TABLE1_LINEAR, error);
+            if (!(fabs(v - ms[k].expected) < 1.0e-9 * (1.0 + fabs(ms[k].expected)))) {
+                fprintf(stderr, "MS2004 Table-1 reconstruction %d: %.9f vs %.9f\n", ms[k].year, v, ms[k].expected);
+                failures++;
+            }
+        }
+        if (!isnan(jme_delta_t_ex(2451545.0, JME_MODEL_DELTAT_STEPHENSON_MORRISON_2004, error))
+            || jme_set_astro_models_checked("DELTAT=MS2004_TABLE1_LINEAR", error) != JME_OK
+            || jme_delta_t(2451545.0) != jme_delta_t_ex(2451545.0, JME_MODEL_DELTAT_MS2004_TABLE1_LINEAR, 0)) {
+            fprintf(stderr, "MS2004 refusal/token contract failed: %s\n", error);
+            failures++;
+        }
+        jme_set_astro_models(0, 0);
+    }
+
     /* AUTOMATIC composition: SMH-2016 before the IERS table, EM-2006 after it. */
     if (jme_delta_t_iers_table_info(&first, &last_obs, &last, error) != JME_OK
         || !(first == 2441684.5) || !(last_obs > 2461000.5) || !(last >= last_obs)) {

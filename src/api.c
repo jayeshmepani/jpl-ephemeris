@@ -166,6 +166,8 @@ static int apply_model_token(jme_context *ctx, const char *token)
     } else if (token_matches(token, "DELTATAUTO") || token_value_matches(token, "DELTAT=", "AUTOMATIC")
         || token_value_matches(token, "DELTAT=", "AUTO") || token_value_matches(token, "DELTAT=", "389")) {
         ctx->model_deltat = JME_TIME_DELTAT_AUTOMATIC;
+    } else if (token_value_matches(token, "DELTAT=", "MS2004_TABLE1_LINEAR") || token_value_matches(token, "DELTAT=", "408")) {
+        ctx->model_deltat = JME_MODEL_DELTAT_MS2004_TABLE1_LINEAR;
     } else if (token_matches(token, "DELTAT2021") || token_value_matches(token, "DELTAT=", "STEPHENSON_ETC_2021") || token_value_matches(token, "DELTAT=", "407")) {
         ctx->model_deltat = JME_MODEL_DELTAT_STEPHENSON_ETC_2021;
     } else if (token_matches(token, "DELTAT2016") || token_value_matches(token, "DELTAT=", "STEPHENSON_ETC_2016") || token_value_matches(token, "DELTAT=", "350")) {

@@ -39,8 +39,8 @@ funcs = sorted(set(re.findall(r'(?m)^\s*(?:const\s+char\s*\*\s*|char\s*\*\s*|voi
 constants = sorted(set(re.findall(r'\bJME_[A-Z0-9_]+\b', text)))
 if len(funcs) != 225:
     raise SystemExit(f"expected 225 functions, discovered {len(funcs)}")
-if len(constants) != 479:
-    raise SystemExit(f"expected 479 constants, discovered {len(constants)}")
+if len(constants) != 480:
+    raise SystemExit(f"expected 480 constants, discovered {len(constants)}")
 
 full_jsonl = out_dir / "engine_matrix.full.jsonl"
 summary_csv = out_dir / "engine_matrix.summary.csv"

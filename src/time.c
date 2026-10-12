@@ -75,6 +75,7 @@ double jme_delta_t(double jd_ut)
 }
 
 #include "deltat_data.inc"
+#include "deltat_ms2004_data.inc"
 
 /* Julian-epoch year evaluated from a two-part JD without first summing the parts. */
 static double jme_julian_epoch_year_split(double jd1, double jd2)
@@ -278,6 +279,48 @@ static double jme_delta_t_smh2021_split(double jd1, double jd2)
 }
 
 /*
+ * JME_MODEL_DELTAT_MS2004_TABLE1_LINEAR: a reconstruction from Morrison &
+ * Stephenson (2004), J. Hist. Astron. 35, 327, Table 1 (values read from
+ * their cubic-spline curve, -1000 .. +2000, rounded to whole seconds). The
+ * authors state (p. 331) that "intermediate figures for Delta-T can be found
+ * with adequate precision by simple interpolation"; JME uses linear
+ * interpolation in the calendar decimal year between adjacent rows. Outside
+ * the table it uses the paper's long-term parabola -20 + 32 t^2,
+ * t = (year - 1820)/100 (p. 332). This is not the authors' spline: that
+ * curve is not published in tabular coefficient form, so
+ * JME_MODEL_DELTAT_STEPHENSON_MORRISON_2004 remains refused.
+ * Reference lunar acceleration: -26.0 arcsec/century^2 (p. 332).
+ */
+static double jme_delta_t_ms2004_table1_split(double jd1, double jd2)
+{
+    jme_context *ctx = jme_get_context();
+    const int n = (int)(sizeof(jme_deltat_ms2004_table1) / sizeof(jme_deltat_ms2004_table1[0]));
+    double y = jme_calendar_decimal_year_split(jd1, jd2), dt;
+
+    if (!isfinite(y)) return NAN;
+    if (y >= jme_deltat_ms2004_table1[0][0] && y <= jme_deltat_ms2004_table1[n - 1][0]) {
+        int lo = 0, hi = n - 1;
+        while (hi - lo > 1) {
+            int mid = (lo + hi) / 2;
+            if (jme_deltat_ms2004_table1[mid][0] <= y) lo = mid; else hi = mid;
+        }
+        dt = jme_deltat_ms2004_table1[lo][1]
+            + (y - jme_deltat_ms2004_table1[lo][0])
+            * (jme_deltat_ms2004_table1[hi][1] - jme_deltat_ms2004_table1[lo][1])
+            / (jme_deltat_ms2004_table1[hi][0] - jme_deltat_ms2004_table1[lo][0]);
+    } else {
+        double t = (y - 1820.0) / 100.0;
+        dt = -20.0 + 32.0 * t * t;
+    }
+    if (ctx->tidal_acceleration_unresolved && y < 1955.0) return NAN;
+    if (ctx->tidal_acceleration_explicit && y < 1955.0) {
+        double centuries = (y - 1955.0) / 100.0;
+        dt += -0.91072 * (ctx->tidal_acceleration_effective + 26.0) * centuries * centuries;
+    }
+    return dt;
+}
+
+/*
  * IERS observed (and, after the last observed day, predicted) Delta-T from the
  * embedded finals2000A table: Delta-T = 32.184 s - (UT1 - TAI), with UT1 - TAI
  * interpolated by 4-point Lagrange interpolation in MJD, the scheme of the IERS
@@ -361,6 +404,10 @@ double internal_delta_t_ex_split(double jd1, double jd2, int model, char *error)
 
     case JME_MODEL_DELTAT_STEPHENSON_ETC_2021:
         dt = jme_delta_t_smh2021_split(jd1, jd2);
+        break;
+
+    case JME_MODEL_DELTAT_MS2004_TABLE1_LINEAR:
+        dt = jme_delta_t_ms2004_table1_split(jd1, jd2);
         break;
 
     case JME_MODEL_DELTAT_STEPHENSON_MORRISON_1984:
