@@ -187,6 +187,6 @@ Only the numbers they produce are committed, as `tests/fixtures/*.h`, together w
 
 The following publications were consulted for definitions and are cited in the documentation:
 
-* J. Laskar, "Secular terms of classical planetary theories using the results of general theory", *A&A* 157, 59 (1986), Tables 5 and 8, and its erratum *A&A* 164, 437 (1986) (see `CENGINE_COMPLETION_REPORT.md`);
+* J. Laskar, "Secular terms of classical planetary theories using the results of general theory", *A&A* 157, 59 (1986), Tables 5 and 8, and its erratum *A&A* 164, 437 (1986) (see `docs/ACCURACY.md` §2.1);
 * M. J. Reid and A. Brunthaler, *ApJ* 616, 872 (2004) (Sgr A* position for `GALCENT_0SAG`);
 * R. Holden, *The Elements of House Division* (1977) (Meridian, Morinus and Horizontal house definitions);

@@ -1,6 +1,6 @@
 # Status And Design
 
-> **Status update (October 2026, PR #3).** The following statements further
+> **Status update (jpl-ephemeris 1.1.0).** The following statements further
 > down this document are superseded:
 >
 > * IAU 2000A nutation is implemented, as is IAU 2006/2000A with P03
@@ -14,12 +14,12 @@
 > * Eclipse and occultation contacts use astrometric geometry
 >   (`ACCURACY.md` §5.1).
 > * ΔT defaults to AUTOMATIC (IERS table, then SMHZ 2016/2021 and
->   Espenak–Meeus). SM1984, S1997 and SM2004 are refused with an explicit
->   error (`TIME_SCALES.md`).
+>   Espenak–Meeus). MS2004 is available from its published Table 1 with
+>   the authors' linear interpolation. SM1984 and S1997 are refused with an
+>   explicit error (`TIME_SCALES.md`).
 >
 > Current accuracy and certification: `ACCURACY.md`,
-> `VALIDATION_AND_COVERAGE.md` (Reference certification),
-> `CENGINE_COMPLETION_REPORT.md`.
+> `VALIDATION_AND_COVERAGE.md` (Reference certification).
 
 
 ## Current Design Snapshot
@@ -283,7 +283,7 @@ Known remaining Moshier work:
 - integrate lunar Moshier latitude/radius tables if they are intended as a lunar fallback
 - decide whether `src/moshier_full.c` is transitional source material or production source
 
-Exact resume point for broader Moshier certification:
+Next certification steps for Moshier:
 
 - keep `jme_moshier_planet_state` closed under the public API contract
 - do not call the whole Moshier theory “zero-error precision-certified”
@@ -333,7 +333,7 @@ Known remaining VSOP87 work:
 - expand velocity validation beyond central-difference shape and representative finite/non-zero checks
 - expand high-level fallback tests to force VSOP87-selected branches if a future body/policy path exposes one; the current public planet path selects Moshier first for all bodies supported by Moshier
 
-Exact resume point for broader VSOP87 certification:
+Next certification steps for VSOP87:
 
 - keep `jme_vsop87_planet_state` closed under the public API contract
 - treat the current state as materially validated for supported bodies, J2000 known values, multiple-date finite output, and invalid-input rejection
@@ -362,7 +362,7 @@ Callable symbol:
 |---|---|---|
 | `jme_elp2000_moon_state` | `src/elp2000.c` | Calls `jme_elp82b_geocentric_state_km()` (complete ELP 2000-82B series), converts kilometers to AU, and returns position plus the analytical velocity in AU/day (J2000 ecliptic). |
 
-Source material currently present (PR #3): `src/elp82b.c`, JME's own ELP 2000-82B evaluator, and `src/elp82b_data.inc`, generated from the unmodified CDS VI/79 files by `tools/gen_elp82b.py`. The earlier third-party implementation (`src/elp2000/`) was removed.
+Source material currently present: `src/elp82b.c`, JME's own ELP 2000-82B evaluator, and `src/elp82b_data.inc`, generated from the unmodified CDS VI/79 files by `tools/gen_elp82b.py`. The earlier third-party implementation (`src/elp2000/`) was removed.
 
 Current ELP2000 validation:
 
@@ -379,7 +379,7 @@ Known remaining ELP2000 work:
 - document date range and expected numerical precision
 - decide whether to add Moshier Moon tables as a production fallback between ELP2000 and Meeus
 
-Exact resume point for broader ELP2000 certification:
+Next certification steps for ELP2000:
 
 - keep `jme_elp2000_moon_state` closed under the public API contract
 - do not mark the whole ELP2000 theory as all-date zero-error certified
@@ -434,7 +434,7 @@ Known remaining Meeus work:
 - validate velocity outputs and frame semantics for every state-returning function
 - complete eclipse and physical phenomena formulas only if they meet project accuracy requirements
 
-Exact resume point for Meeus:
+Next certification steps for Meeus:
 
 - keep the Sun/Moon/planet state helpers as implemented analytical support
 - treat the broader Meeus presence as real but still requiring dedicated certification

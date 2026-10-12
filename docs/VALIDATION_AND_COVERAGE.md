@@ -497,11 +497,11 @@ The product API remains `jme_*`. Mapping a reference row to a `jme_*` function i
 | 112-function adversarial validation target | Passing |
 | 204-function symbol/direct-test validation gate | Passing |
 
-## Resume Status
+## Reference Parity Status
 
-This section is the current handoff and resume point for reference reality. It is intentionally descriptive so later work can continue without re-auditing the whole repo.
+This section describes the current state of reference parity.
 
-For the live unchecked worklist, use `docs/VALIDATION_AND_COVERAGE.md`. That checklist is the batch-by-batch progress tracker for closing the remaining rows and extra public functions.
+For the live unchecked worklist, use `docs/VALIDATION_AND_COVERAGE.md`. That checklist tracks the remaining rows and extra public functions.
 
 ### How To Read This Status
 
