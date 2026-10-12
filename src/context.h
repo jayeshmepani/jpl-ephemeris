@@ -74,6 +74,8 @@ int internal_finish_output(const double *p0, const double *const *stencil, doubl
 int internal_star_observer_vector(double jd_et, int flags, const double *u, double dist_au, double *out, char *error);
 int internal_tt_to_tdb_jd(double jd_tt, double *jd_tdb, char *error);
 double internal_dtdb(double jd0_tt, double fraction_tt);
+/* Evaluate a Delta-T model on a two-part UT1 Julian date without collapsing the parts. */
+double internal_delta_t_ex_split(double jd_ut1, double jd_ut2, int model, char *error);
 int internal_tai_minus_utc(int gregorian_year, int gregorian_month, int gregorian_day, double fraction_of_utc_day, double *tai_minus_utc, char *error);
 int internal_sidereal_time_rad(double jd_ut, double jd_tt, int apparent, double *gst, char *error);
 int internal_topo_state_true_equator(double jd_et, double *pos_au, double *vel_au_per_day, char *error);
