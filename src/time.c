@@ -219,11 +219,26 @@ static int jme_delta_t_s15_spline(double y, double *dt)
 
 static double jme_delta_t_smh2016_split(double jd1, double jd2)
 {
+    jme_context *ctx = jme_get_context();
     double y = jme_julian_epoch_year_split(jd1, jd2), dt, u;
     if (!isfinite(y)) return NAN;
-    if (jme_delta_t_s15_spline(y, &dt)) return dt;
-    u = (y - 1825.0) / 100.0;
-    return -320.0 + 32.5 * u * u;
+    if (!jme_delta_t_s15_spline(y, &dt)) {
+        u = (y - 1825.0) / 100.0;
+        dt = -320.0 + 32.5 * u * u;
+    }
+
+    /*
+     * The SMH-2016/2021 curve uses its own reference lunar acceleration,
+     * -25.85 arcsec/century^2 (not the -26.0 baseline of the EM-2006
+     * polynomial). Adjust only the pre-1955 historical domain.
+     */
+    if (ctx->tidal_acceleration_explicit && y < 1955.0) {
+        double centuries = (y - 1955.0) / 100.0;
+        dt += -0.91072 * (ctx->tidal_acceleration_effective + 25.85)
+            * centuries * centuries;
+    }
+
+    return dt;
 }
 
 /*
