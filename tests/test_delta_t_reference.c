@@ -166,6 +166,21 @@ int main(void)
             failures++;
         }
 
+        /*
+         * SMH-2016/2021 uses -25.85 arcsec/century^2 as its own reference
+         * acceleration, so the correction must use that baseline instead.
+         */
+        jme_set_tid_acc(JME_TIME_TIDAL_AUTOMATIC);
+        baseline = jme_delta_t_ex(jd_year_zero, JME_MODEL_DELTAT_STEPHENSON_ETC_2016, error);
+        jme_set_tid_acc(-25.858);
+        adjusted = jme_delta_t_ex(jd_year_zero, JME_MODEL_DELTAT_STEPHENSON_ETC_2016, error);
+        expected = -0.91072 * (-25.858 + 25.85) * ((y - 1955.0) / 100.0) * ((y - 1955.0) / 100.0);
+        if (!isfinite(adjusted) || fabs((adjusted - baseline) - expected) > 1.0e-8) {
+            fprintf(stderr, "SMH-2016 tidal correction mismatch: got %.12f expected delta %.12f\n",
+                adjusted - baseline, expected);
+            failures++;
+        }
+
         jme_set_tid_acc(JME_TIME_TIDAL_DE200);
         baseline = jme_delta_t_ex(jd_year_2000, JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, error);
         jme_set_tid_acc(JME_TIME_TIDAL_AUTOMATIC);
