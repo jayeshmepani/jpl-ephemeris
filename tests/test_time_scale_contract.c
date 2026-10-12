@@ -213,7 +213,7 @@ int main(void)
     {
         double first, last_observed, last;
         double split_dt, reference_dt;
-        error[0] = '\\0';
+        error[0] = '\0';
         if (jme_delta_t_iers_table_info(&first, &last_observed, &last, error) != JME_OK) {
             return fail("IERS table metadata unavailable for split-date test", error);
         }
