@@ -24,7 +24,7 @@
 
 ## Current Design Snapshot
 
-The current public C surface is defined by `include/jme/jme.h` and `include/jme/jme_extended.h`: 204 public `jme_*` functions and 462 public `JME_*` constants.
+The current public C surface is defined by `include/jme/jme.h` and `include/jme/jme_extended.h`: 225 public `jme_*` functions and 480 public `JME_*` constants.
 
 The current `.c` and `.h` source tree contains only project-owned `jme_*` / `JME_*` symbols and independently maintained implementation code. External ephemeris engines may be used for black-box comparison, but not as implementation sources.
 
@@ -57,10 +57,10 @@ Current verified counts from `tests/test_symbol_coverage.ps1`:
 
 | Inventory | Count | Source of truth |
 |---|---:|---|
-| Public `jme_*` functions | 204 | `docs/API_REFERENCE.md`, `include/jme/jme.h`, `include/jme/jme_extended.h` |
-| Public `JME_*` constants | 462 | `docs/API_REFERENCE.md`, `include/jme/jme.h`, `include/jme/jme_extended.h` |
+| Public `jme_*` functions | 225 | `docs/API_REFERENCE.md`, `include/jme/jme.h`, `include/jme/jme_extended.h` |
+| Public `JME_*` constants | 480 | `docs/API_REFERENCE.md`, `include/jme/jme.h`, `include/jme/jme_extended.h` |
 
-`docs/API_REFERENCE.md` is the full 204-function and 462-constant inventory. This file avoids duplicating that complete list so there is only one source of truth.
+`docs/API_REFERENCE.md` is the full 225-function and 480-constant inventory. This file avoids duplicating that complete list so there is only one source of truth.
 
 `docs/VALIDATION_AND_COVERAGE.md` is the live behavior-closure checklist and records function-family closure status.
 
@@ -75,9 +75,9 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1
 Expected current output:
 
 ```text
-jme_functions_total=204
-jme_functions_defined=204
-jme_constants_total=462
+jme_functions_total=225
+jme_functions_defined=225
+jme_constants_total=480
 ```
 
 ## JPL/CALCEPH Layer
@@ -139,7 +139,7 @@ All functions below are implemented in `src/jpl.c`. When `JME_HAVE_CALCEPH` is e
 
 ### JPL Constants Currently Tracked
 
-The complete 462-constant inventory is maintained in `docs/API_REFERENCE.md`.
+The complete 480-constant inventory is maintained in `docs/API_REFERENCE.md`.
 
 JPL-specific constants currently include:
 
@@ -190,7 +190,7 @@ Current native hardening:
 - The stricter adversarial validation pass surfaced and fixed two concrete API-contract bugs: `jme_set_astro_models()` now accepts canonical key/value tokens for bias/nutation/obliquity/precession/sidereal-time/Delta-T model selection instead of only shorthand tokens for several families, and `jme_house_pos()` now returns `NaN` on null input / unavailable house-system error instead of a silent numeric zero.
 - The extra public surface beyond the reference mapping now has a dedicated adversarial suite (`test_extra_adversarial`) that stress-tests the 92 extra functions with randomized helpers, malformed/null input rejection, repeated determinism checks, production-like analytical sweeps, raw JPL no-kernel error-path checks, and multithreaded read-only execution.
 - The 112 unique mapped `jme_*` functions behind the 106 reference rows now have an additional adversarial validation target. The pass adds randomized angle/coordinate round-trips, boundary calendar checks, malformed fixed-star strings including UTF-8 input, null/error contract checks, production-like date/location/body workflows, deterministic repeated calculations, model-state serialization/deserialization checks, and read-only multithreaded calls.
-- The full public `jme_*` surface now has a 204-function direct-test gate in `tests/test_symbol_coverage.ps1`, and the extra public surface is covered by `test_extra_adversarial` with calendar fuzzing, matrix/state round-trips, astrometry model checks, analytical state-provider sweeps, raw JPL no-kernel contracts, and read-only multithreaded calls.
+- The full public `jme_*` surface now has a 225-function direct-test gate in `tests/test_symbol_coverage.ps1`, and the extra public surface is covered by `test_extra_adversarial` with calendar fuzzing, matrix/state round-trips, astrometry model checks, analytical state-provider sweeps, raw JPL no-kernel contracts, and read-only multithreaded calls.
 - The adversarial pass found and fixed three API robustness issues: key/value model tokens such as `NUT=IAU2000B` now parse consistently with serialized `jme_get_astro_models` output; unknown body names now return deterministic `"Unknown"` instead of a null string; invalid `jme_house_pos` input now returns `NaN` instead of ambiguous zero.
 - `jme_fixstar*` is closed for the JME-native fixed-star contract: a generated 9,096-entry Bright Star/Yale-derived catalog is used for broad coverage; common-name aliases plus HR/HD/SAO/catalog-name lookup are supported; J2000 true-position coordinates, proper-motion speed output, radians and sidereal behavior, UT wrappers, alternate entry points, magnitude lookup, catalog endpoints, and invalid-input paths are covered. Exact reference catalog-name and black-box parity are still not claimed.
 - The analytical validation suite also checks direct public state production for representative Moshier, VSOP87, and Meeus bodies at J2000 so the stack remains callable as state providers, not just through derived-element paths.
@@ -442,7 +442,7 @@ Exact resume point for Meeus:
 
 ## High-Level Public API Status
 
-The project currently has all 204 public `jme_*` functions declared and defined. Some functions are complete utilities or complete JPL-boundary functions. Some are partial high-level algorithms. Some are explicit error-returning contracts.
+The project currently has all 225 public `jme_*` functions declared and defined. Some functions are complete utilities or complete JPL-boundary functions. Some are partial high-level algorithms. Some are explicit error-returning contracts.
 
 Examples of implemented-but-not-yet-complete high-level areas:
 

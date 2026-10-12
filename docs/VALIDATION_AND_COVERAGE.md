@@ -185,10 +185,10 @@ This is the working checklist for closing the public behavior surface. It is upd
 This file tracks behavior certification, not symbol existence. Symbol coverage is already verified separately:
 
 ```text
-jme_functions_total=204
-jme_functions_defined=204
-jme_functions_directly_tested=204
-jme_constants_total=462
+jme_functions_total=225
+jme_functions_defined=225
+jme_functions_directly_tested=225
+jme_constants_total=480
 ```
 
 ## Closure Rule
@@ -211,25 +211,25 @@ Current status after the recent closure batches:
 | Area | Closed enough | Not closed | Total |
 |---|---:|---:|---:|
 | reference rows by JME-native code/tests | 106 | 0 | 106 |
-| Distinct extra JME public functions outside the 106-row mapping | 92 | 0 | 92 |
+| Distinct extra JME public functions outside the 106-row mapping | 113 | 0 | 113 |
 
 Public function arithmetic:
 
-- Total public `jme_*` functions: `204`
+- Total public `jme_*` functions: `225`
 - Unique public `jme_*` functions used by the 106-row reference mapping table: `112`
-- Distinct extra public `jme_*` functions not used by that table: `92`
-- Therefore: `112 + 92 = 204`
+- Distinct extra public `jme_*` functions not used by that table: `113`
+- Therefore: `112 + 113 = 225`
 
-The total is not `106 + 92`. The 106 reference rows are behavior rows, not unique JME function names. Several reference rows map to more than one JME function, so the 106-row table currently uses 112 distinct public `jme_*` functions.
+The total is not `106 + 113`. The 106 reference rows are behavior rows, not unique JME function names. Several reference rows map to more than one JME function, so the 106-row table currently uses 112 distinct public `jme_*` functions.
 
 Recent rows moved from not-closed to closed:
 
 - [x] 112 mapped-function adversarial validation: `test_mapped_adversarial` now sweeps the unique `jme_*` functions behind the 106 reference rows with randomized angle/coordinate round-trips, malformed strings, null/error contracts, production-like date/location/body workflows, model-state serialization, repeated determinism checks, polar-location domain handling, and read-only multithreaded calls.
-- [x] 204 public-function validation gate: `test_symbol_coverage.ps1` now fails unless every declared public `jme_*` function is both defined and directly referenced by C tests. Current enforced count is `204/204`.
+- [x] 225 public-function validation gate: `test_symbol_coverage.ps1` now fails unless every declared public `jme_*` function is both defined and directly referenced by C tests. Current enforced count is `204/204`.
 - [x] Extra public-function adversarial validation: `test_extra_adversarial` covers the extra public surface with calendar fuzzing, matrix/state round-trips, astrometry model checks, direct analytical state providers, raw JPL no-kernel behavior, and read-only multithreaded calls.
 - [x] External value validation: `test_analytical_validation` includes NASA/JPL Horizons quantity-31 observer ecliptic checks for 2026-05-22 geocentric Sun and Moon. This caught and fixed a no-kernel analytical fallback frame mismatch; the regression now fails if Sun/Moon longitudes drift outside the documented fallback tolerance.
 - [x] Broader external value screen: `test_analytical_validation` now checks Horizons quantity-31 geocentric apparent ecliptic-of-date longitude/latitude for Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, and Pluto at three epochs (`2000-01-01`, `2026-05-22`, `2050-01-01`) under both `ENGINE=MOSHIER` and `ENGINE=VSOP_ELP_MEEUS`.
-- [x] Verification-mode ledger: `docs/VALIDATION_AND_COVERAGE.md` now classifies all `204` public functions by current validation mode so "called in tests" is no longer conflated with "externally numerically certified."
+- [x] Verification-mode ledger: `docs/VALIDATION_AND_COVERAGE.md` now classifies the original `204` public functions by current validation mode so "called in tests" is no longer conflated with "externally numerically certified." The 21 functions added in 1.1.0 are covered by the symbol gate and their own reference/contract tests.
 - [x] Robustness fixes from the adversarial pass: `jme_set_astro_models` now accepts key/value tokens for bias, nutation, obliquity, precession, sidereal-time, and Delta-T model families; `jme_body_name` returns deterministic `"Unknown"` for unknown IDs; `jme_house_pos` returns `NaN` for invalid input instead of ambiguous zero.
 - [x] Row 68, `reference_set_lapse_rate` / `jme_set_lapse_rate`: lapse-rate state is now consumed by extended refraction and rise/transit altitude refraction.
 - [x] Row 79, `reference_time_equ` / `jme_time_equ`: now uses the public calculation pipeline with analytic fallback and rejects null output.
@@ -324,11 +324,11 @@ None. All 106 mapped reference rows are closed for the JME-native contract track
 
 ## Extra JME Functions Closure Remainder
 
-The 92 extra functions are split as:
+The 113 extra functions are split as:
 
-- 92 closed extras
+- 113 closed extras
 - 0 not-closed extras
-- [x] Extra-surface adversarial validation: the 92 public `jme_*` functions outside the reference 106/112 mapping now have a dedicated `test_extra_adversarial` pass covering helper fuzz, matrix/state round-trips, astrometry model helpers, analytical state-provider sweeps, raw JPL no-kernel error paths, and multithreaded read-only stress.
+- [x] Extra-surface adversarial validation: the original 92 public `jme_*` functions outside the reference 106/112 mapping now have a dedicated `test_extra_adversarial` pass covering helper fuzz, matrix/state round-trips, astrometry model helpers, analytical state-provider sweeps, raw JPL no-kernel error paths, and multithreaded read-only stress. The 21 functions added in 1.1.0 (time scales, ayanamsa mean/true, Gauquelin sectors, engine resolution, JPL centre policy, validating setters, EOP/polar motion) are covered by their own reference and contract tests.
 
 ### Closed Extra Utility And Metadata Functions
 
@@ -774,9 +774,11 @@ This document tracks reference coverage against the project-owned JME API. Symbo
 
 ### 1. Verification Summary
 
+The two suites below were written for the 1.0 surface. The current full-surface gate is `tests/test_symbol_coverage.ps1`: 225/225 functions defined and directly tested, 480 constants.
+
 1. **Strict Constant Validation (462/462):**
     - **Test Suite:** `tests/test_all_constants.c`
-    - **Result:** 100% Success. Verified existence and spelling for all 462 public `JME_*` constants.
+    - **Result:** 100% Success. Verified existence and spelling for all 462 public `JME_*` constants of the 1.0 surface.
 2. **Function Symbol Validation (204/204):**
     - **Test Suite:** `tests/test_all_functions.c`
     - **Result:** 100% Success for declared/defined symbol coverage and smoke-level call coverage. This is not a full reference behavior-parity claim.
@@ -904,7 +906,7 @@ All 106 reference behavior rows are mapped to native `jme_` equivalents. In the 
 
 ### 3. Extended JME-Only Utilities
 
-JME provides **92 distinct public functions outside the 106-row reference behavior mapping**. The arithmetic is `112` unique mapped `jme_*` functions plus `92` extra `jme_*` functions, for `204` total public `jme_*` functions. The `106` value is a behavior-row count, not a unique-function count, so it is not added directly to `92`.
+JME provides **113 distinct public functions outside the 106-row reference behavior mapping**. The arithmetic is `112` unique mapped `jme_*` functions plus `113` extra `jme_*` functions, for `225` total public `jme_*` functions. The `106` value is a behavior-row count, not a unique-function count, so it is not added directly to `113`.
 
 - **Matrix Algebra:** `jme_matrix_multiply`, `jme_matrix_identity`, `jme_matrix_rotate_x/y/z`.
 - **Native JPL State Lookups:** `jme_jpl_body_state_native_naif`, `jme_jpl_orientation_state_order_naif`.
@@ -929,7 +931,7 @@ It separates four different ideas that are often conflated:
 
 Current source of truth for inventory:
 
-- `204` public functions from `include/jme/jme.h` and `include/jme/jme_extended.h`
+- `225` public functions from `include/jme/jme.h` and `include/jme/jme_extended.h`
 
 ### Summary
 
