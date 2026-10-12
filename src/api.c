@@ -461,10 +461,45 @@ double jme_get_tid_acc(void)
     return jme_get_context()->tidal_acceleration;
 }
 
+/*
+ * Resolve the public tidal-acceleration selectors to their documented
+ * lunar mean-longitude acceleration (arcsec/century^2).  The configured
+ * selector is retained separately so jme_get_tid_acc() remains a round trip.
+ *
+ * DE441's value is reported as unpublished in the source cited by the
+ * Swiss Ephemeris public header; it is provided for compatibility, not as a
+ * value independently published by JPL.
+ */
+static double jme_tidal_acceleration_value(double t_acc, int *is_explicit)
+{
+    *is_explicit = 1;
+
+    if (t_acc == (double)JME_TIME_TIDAL_AUTOMATIC) {
+        *is_explicit = 0;
+        return 0.0;
+    }
+    if (t_acc == (double)JME_TIME_TIDAL_DE200) return -23.8946;
+    if (t_acc == (double)JME_TIME_TIDAL_DE403) return -25.580;
+    if (t_acc == (double)JME_TIME_TIDAL_DE404) return -25.580;
+    if (t_acc == (double)JME_TIME_TIDAL_DE405) return -25.826;
+    if (t_acc == (double)JME_TIME_TIDAL_DE406) return -25.826;
+    if (t_acc == (double)JME_TIME_TIDAL_DE421) return -25.85;
+    if (t_acc == (double)JME_TIME_TIDAL_DE430) return -25.82;
+    if (t_acc == (double)JME_TIME_TIDAL_DE431) return -25.80;
+    if (t_acc == (double)JME_TIME_TIDAL_DE441) return -25.936;
+
+    /* Any other finite input is a user-supplied acceleration value. */
+    return t_acc;
+}
+
 void jme_set_tid_acc(double t_acc)
 {
     if (isfinite(t_acc)) {
-        jme_get_context()->tidal_acceleration = t_acc;
+        jme_context *ctx = jme_get_context();
+        int is_explicit;
+        ctx->tidal_acceleration = t_acc;
+        ctx->tidal_acceleration_effective = jme_tidal_acceleration_value(t_acc, &is_explicit);
+        ctx->tidal_acceleration_explicit = is_explicit;
     }
 }
 
