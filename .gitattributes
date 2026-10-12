@@ -13,3 +13,6 @@ CMakeLists.txt text eol=lf
 *.lib binary
 *.zip binary
 
+
+# Verbatim published data files (SHA-256 checked by tools/gen_deltat.py)
+tools/data/Table-S15.2016.txt -text
