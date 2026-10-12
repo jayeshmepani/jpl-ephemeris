@@ -4,8 +4,8 @@
 
 | Area | Count | Source |
 |---|---:|---|
-| Public `jme_*` functions | 219 | `include/jme/jme.h`, `include/jme/jme_extended.h` |
-| Public `JME_*` constants | 478 | `include/jme/jme.h`, `include/jme/jme_extended.h` |
+| Public `jme_*` functions | 225 | `include/jme/jme.h`, `include/jme/jme_extended.h` |
+| Public `JME_*` constants | 479 | `include/jme/jme.h`, `include/jme/jme_extended.h` |
 
 ## Current Implementation Map
 
@@ -24,7 +24,7 @@
 
 Numeric calculation APIs return their computed binary64 values; they do not apply display rounding. Functions whose names explicitly request a rounded or formatted representation are presentation helpers and are separate from the underlying numeric calculations. The speed-of-light conversion to AU/day is derived from the defined SI speed-of-light, day-length, and astronomical-unit constants instead of a shorter decimal literal.
 
-`jme_delta_t_ex` implements `JME_TIME_DELTAT_AUTOMATIC` (default: IERS finals2000A observed and predicted values, Stephenson–Morrison–Hohenkerk 2016/2021 before them, Espenak–Meeus 2006 after them), `JME_MODEL_DELTAT_STEPHENSON_ETC_2016` and `JME_MODEL_DELTAT_ESPENAK_MEEUS_2006`. The identifiers for Stephenson–Morrison 1984, Stephenson 1997 and Stephenson–Morrison 2004 are not backed by transcribed and verified primary tables; requests for them return `NAN` and an explicit error instead of silently calculating another model under the wrong name. `jme_set_delta_t_userdef(seconds)` sets a constant Delta-T (a non-finite value clears it). See `TIME_SCALES.md`. A non-finite Julian date is rejected before calendar conversion.
+`jme_delta_t_ex` implements `JME_TIME_DELTAT_AUTOMATIC` (default: IERS finals2000A observed and predicted values, Stephenson–Morrison–Hohenkerk 2021 revision before them, Espenak–Meeus 2006 after them), `JME_MODEL_DELTAT_STEPHENSON_ETC_2016` and `JME_MODEL_DELTAT_ESPENAK_MEEUS_2006`. The identifiers for Stephenson–Morrison 1984, Stephenson 1997 and Stephenson–Morrison 2004 are not backed by transcribed and verified primary tables; requests for them return `NAN` and an explicit error instead of silently calculating another model under the wrong name. `jme_set_delta_t_userdef(seconds)` sets a constant Delta-T (a non-finite value clears it). See `TIME_SCALES.md`. A non-finite Julian date is rejected before calendar conversion.
 
 High-level calculation inputs named `jd_et` are TT. JPL kernels use native TDB or TCB, so the core now converts TT to kernel-native time with ERFA's Fairhead–Bretagnon TDB−TT series and, where required, the IAU 2006 TDB→TCB relation. Low-level `jme_jpl_*` numeric APIs accept their opened kernel's native time scale; split-date entry points preserve the two-part date. UTC calendar entry points perform UTC→TAI→TT conversion, including pre-1972 UTC rate adjustments and validation of `23:59:60`, before converting to the kernel scale. The embedded UTC table is supported through 2027-06-30 (IERS Bulletin C 72) because future leap seconds are unknowable in advance; later UTC calendar dates fail explicitly until the IERS table is updated. Apparent fixed-star calculations apply aberration using the observer state selected by the engine policy. Automatic mode may use the analytical backend when a usable JPL barycentric state is unavailable; explicit JPL mode returns an error rather than silently omitting aberration. The analytical observer velocity is transformed into the same J2000 equatorial frame as the stellar direction before applying the correction.
 
@@ -69,190 +69,196 @@ The internal UT-to-TT conversion routine is shared by status-returning UT wrappe
 | 33 | `jme_ecliptic_to_equatorial` | Declared and defined |
 | 34 | `jme_ecliptic_to_equatorial_rectangular_state` | Declared and defined |
 | 35 | `jme_elp2000_moon_state` | Declared and defined |
-| 36 | `jme_ephemeris_path` | Declared and defined |
-| 37 | `jme_equatorial_to_ecliptic` | Declared and defined |
-| 38 | `jme_equatorial_to_ecliptic_rectangular_state` | Declared and defined |
-| 39 | `jme_equatorial_to_horizontal` | Declared and defined |
-| 40 | `jme_fixstar` | Declared and defined |
-| 41 | `jme_fixstar2` | Declared and defined |
-| 42 | `jme_fixstar2_mag` | Declared and defined |
-| 43 | `jme_fixstar2_ut` | Declared and defined |
-| 44 | `jme_fixstar_mag` | Declared and defined |
-| 45 | `jme_fixstar_ut` | Declared and defined |
-| 46 | `jme_gauquelin_sector` | Declared and defined |
-| 47 | `jme_get_astro_models` | Declared and defined |
-| 48 | `jme_get_ayanamsa` | Declared and defined |
-| 49 | `jme_get_ayanamsa_ex` | Declared and defined |
-| 50 | `jme_get_ayanamsa_ex2` | Declared and defined |
-| 51 | `jme_get_ayanamsa_ex2_ut` | Declared and defined |
-| 52 | `jme_get_ayanamsa_ex_ut` | Declared and defined |
-| 53 | `jme_get_ayanamsa_name` | Declared and defined |
-| 54 | `jme_get_ayanamsa_ut` | Declared and defined |
-| 55 | `jme_get_frame_bias_matrix` | Declared and defined |
-| 56 | `jme_get_jpl_center_policy` | Declared and defined |
-| 57 | `jme_get_nutation` | Declared and defined |
-| 58 | `jme_get_nutation_matrix` | Declared and defined |
-| 59 | `jme_get_obliquity` | Declared and defined |
-| 60 | `jme_get_orbital_elements` | Declared and defined |
-| 61 | `jme_get_precession_matrix` | Declared and defined |
-| 62 | `jme_get_sidereal_mode` | Declared and defined |
-| 63 | `jme_get_tid_acc` | Declared and defined |
-| 64 | `jme_get_topo_pos` | Declared and defined |
-| 65 | `jme_heliacal_angle` | Declared and defined |
-| 66 | `jme_heliacal_pheno_ut` | Declared and defined |
-| 67 | `jme_heliacal_ut` | Declared and defined |
-| 68 | `jme_helio_cross` | Declared and defined |
-| 69 | `jme_helio_cross_ut` | Declared and defined |
-| 70 | `jme_horizontal_to_equatorial` | Declared and defined |
-| 71 | `jme_hours_normalize` | Declared and defined |
-| 72 | `jme_hours_to_degrees` | Declared and defined |
-| 73 | `jme_house_pos` | Declared and defined |
-| 74 | `jme_house_system_name` | Declared and defined |
-| 75 | `jme_houses` | Declared and defined |
-| 76 | `jme_houses_armc` | Declared and defined |
-| 77 | `jme_houses_armc_ex2` | Declared and defined |
-| 78 | `jme_houses_ex` | Declared and defined |
-| 79 | `jme_houses_ex2` | Declared and defined |
-| 80 | `jme_houses_gauquelin` | Declared and defined |
-| 81 | `jme_houses_gauquelin_armc` | Declared and defined |
-| 82 | `jme_jd_add_seconds` | Declared and defined |
-| 83 | `jme_jd_difference_seconds` | Declared and defined |
-| 84 | `jme_jd_to_utc` | Declared and defined |
-| 85 | `jme_jpl_body_state` | Declared and defined |
-| 86 | `jme_jpl_body_state_naif` | Declared and defined |
-| 87 | `jme_jpl_body_state_native` | Declared and defined |
-| 88 | `jme_jpl_body_state_native_naif` | Declared and defined |
-| 89 | `jme_jpl_body_state_native_split` | Declared and defined |
-| 90 | `jme_jpl_body_state_native_split_naif` | Declared and defined |
-| 91 | `jme_jpl_body_state_order` | Declared and defined |
-| 92 | `jme_jpl_body_state_order_naif` | Declared and defined |
-| 93 | `jme_jpl_body_state_split` | Declared and defined |
-| 94 | `jme_jpl_body_state_split_naif` | Declared and defined |
-| 95 | `jme_jpl_body_state_utc` | Declared and defined |
-| 96 | `jme_jpl_body_state_utc_naif` | Declared and defined |
-| 97 | `jme_jpl_close` | Declared and defined |
-| 98 | `jme_jpl_constant` | Declared and defined |
-| 99 | `jme_jpl_constant_count` | Declared and defined |
-| 100 | `jme_jpl_constant_index` | Declared and defined |
-| 101 | `jme_jpl_constant_string` | Declared and defined |
-| 102 | `jme_jpl_constant_string_vector` | Declared and defined |
-| 103 | `jme_jpl_constant_vector` | Declared and defined |
-| 104 | `jme_jpl_coverage` | Declared and defined |
-| 105 | `jme_jpl_current_file_data` | Declared and defined |
-| 106 | `jme_jpl_ecliptic_state` | Declared and defined |
-| 107 | `jme_jpl_ecliptic_state_naif` | Declared and defined |
-| 108 | `jme_jpl_ecliptic_state_split` | Declared and defined |
-| 109 | `jme_jpl_ecliptic_state_split_naif` | Declared and defined |
-| 110 | `jme_jpl_ecliptic_state_utc` | Declared and defined |
-| 111 | `jme_jpl_ecliptic_state_utc_naif` | Declared and defined |
-| 112 | `jme_jpl_engine_version` | Declared and defined |
-| 113 | `jme_jpl_file` | Declared and defined |
-| 114 | `jme_jpl_file_version` | Declared and defined |
-| 115 | `jme_jpl_id_by_name` | Declared and defined |
-| 116 | `jme_jpl_is_available` | Declared and defined |
-| 117 | `jme_jpl_is_open` | Declared and defined |
-| 118 | `jme_jpl_is_thread_safe` | Declared and defined |
-| 119 | `jme_jpl_max_supported_order` | Declared and defined |
-| 120 | `jme_jpl_name_by_id` | Declared and defined |
-| 121 | `jme_jpl_open` | Declared and defined |
-| 122 | `jme_jpl_open_array` | Declared and defined |
-| 123 | `jme_jpl_orientation_record_count` | Declared and defined |
-| 124 | `jme_jpl_orientation_record_index` | Declared and defined |
-| 125 | `jme_jpl_orientation_state_naif` | Declared and defined |
-| 126 | `jme_jpl_orientation_state_order_naif` | Declared and defined |
-| 127 | `jme_jpl_orientation_state_split_naif` | Declared and defined |
-| 128 | `jme_jpl_orientation_state_utc_naif` | Declared and defined |
-| 129 | `jme_jpl_position_record_count` | Declared and defined |
-| 130 | `jme_jpl_position_record_index` | Declared and defined |
-| 131 | `jme_jpl_prefetch` | Declared and defined |
-| 132 | `jme_jpl_rotational_angular_momentum_state_naif` | Declared and defined |
-| 133 | `jme_jpl_rotational_angular_momentum_state_order_naif` | Declared and defined |
-| 134 | `jme_jpl_rotational_angular_momentum_state_split_naif` | Declared and defined |
-| 135 | `jme_jpl_rotational_angular_momentum_state_utc_naif` | Declared and defined |
-| 136 | `jme_jpl_timescale` | Declared and defined |
-| 137 | `jme_julian_day` | Declared and defined |
-| 138 | `jme_lat_to_lmt` | Declared and defined |
-| 139 | `jme_leap_second_table_info` | Declared and defined |
-| 140 | `jme_library_path` | Declared and defined |
-| 141 | `jme_lmt_to_lat` | Declared and defined |
-| 142 | `jme_lun_eclipse_how` | Declared and defined |
-| 143 | `jme_lun_eclipse_when` | Declared and defined |
-| 144 | `jme_lun_eclipse_when_loc` | Declared and defined |
-| 145 | `jme_lun_occult_when_glob` | Declared and defined |
-| 146 | `jme_lun_occult_when_loc` | Declared and defined |
-| 147 | `jme_lun_occult_where` | Declared and defined |
-| 148 | `jme_matrix_identity` | Declared and defined |
-| 149 | `jme_matrix_multiply` | Declared and defined |
-| 150 | `jme_matrix_rotate_x` | Declared and defined |
-| 151 | `jme_matrix_rotate_y` | Declared and defined |
-| 152 | `jme_matrix_rotate_z` | Declared and defined |
-| 153 | `jme_matrix_transform_state` | Declared and defined |
-| 154 | `jme_meeus_moon_state` | Declared and defined |
-| 155 | `jme_meeus_planet_state` | Declared and defined |
-| 156 | `jme_meeus_sun_state` | Declared and defined |
-| 157 | `jme_mooncross` | Declared and defined |
-| 158 | `jme_mooncross_node` | Declared and defined |
-| 159 | `jme_mooncross_node_ut` | Declared and defined |
-| 160 | `jme_mooncross_ut` | Declared and defined |
-| 161 | `jme_moshier_planet_state` | Declared and defined |
-| 162 | `jme_nod_aps` | Declared and defined |
-| 163 | `jme_nod_aps_ut` | Declared and defined |
-| 164 | `jme_orbit_max_min_true_distance` | Declared and defined |
-| 165 | `jme_pheno` | Declared and defined |
-| 166 | `jme_pheno_ut` | Declared and defined |
-| 167 | `jme_radian_midpoint` | Declared and defined |
-| 168 | `jme_radian_normalize` | Declared and defined |
-| 169 | `jme_radians_difference_signed` | Declared and defined |
-| 170 | `jme_radians_to_degrees` | Declared and defined |
-| 171 | `jme_rectangular_to_spherical_state` | Declared and defined |
-| 172 | `jme_refract` | Declared and defined |
-| 173 | `jme_refract_extended` | Declared and defined |
-| 174 | `jme_reverse_julian_day` | Declared and defined |
-| 175 | `jme_rise_trans` | Declared and defined |
-| 176 | `jme_rise_trans_true_hor` | Declared and defined |
-| 177 | `jme_set_astro_models` | Declared and defined |
-| 178 | `jme_set_astro_models_checked` | Declared and defined |
-| 179 | `jme_set_delta_t_userdef` | Declared and defined |
-| 180 | `jme_set_ephemeris_path` | Declared and defined |
-| 181 | `jme_set_interpolate_nut` | Declared and defined |
-| 182 | `jme_set_jpl_center_policy` | Declared and defined |
-| 183 | `jme_set_jpl_file` | Declared and defined |
-| 184 | `jme_set_lapse_rate` | Declared and defined |
-| 185 | `jme_set_sidereal_mode` | Declared and defined |
-| 186 | `jme_set_sidereal_mode_checked` | Declared and defined |
-| 187 | `jme_set_tid_acc` | Declared and defined |
-| 188 | `jme_set_topo` | Declared and defined |
-| 189 | `jme_set_topo_checked` | Declared and defined |
-| 190 | `jme_sidereal_time` | Declared and defined |
-| 191 | `jme_sidereal_time0` | Declared and defined |
-| 192 | `jme_sidereal_time_ex` | Declared and defined |
-| 193 | `jme_sol_eclipse_how` | Declared and defined |
-| 194 | `jme_sol_eclipse_when_glob` | Declared and defined |
-| 195 | `jme_sol_eclipse_when_loc` | Declared and defined |
-| 196 | `jme_sol_eclipse_where` | Declared and defined |
-| 197 | `jme_solcross` | Declared and defined |
-| 198 | `jme_solcross_ut` | Declared and defined |
-| 199 | `jme_spherical_angular_separation` | Declared and defined |
-| 200 | `jme_spherical_position_angle` | Declared and defined |
-| 201 | `jme_spherical_to_rectangular_state` | Declared and defined |
-| 202 | `jme_split_degree` | Declared and defined |
-| 203 | `jme_state_add` | Declared and defined |
-| 204 | `jme_state_convert_units` | Declared and defined |
-| 205 | `jme_state_distance` | Declared and defined |
-| 206 | `jme_state_light_time_days` | Declared and defined |
-| 207 | `jme_state_position_velocity_dot` | Declared and defined |
-| 208 | `jme_state_scale` | Declared and defined |
-| 209 | `jme_state_speed` | Declared and defined |
-| 210 | `jme_state_subtract` | Declared and defined |
-| 211 | `jme_time_equ` | Declared and defined |
-| 212 | `jme_time_scale_convert` | Declared and defined |
-| 213 | `jme_time_scale_name` | Declared and defined |
-| 214 | `jme_topo_arcus_visionis` | Declared and defined |
-| 215 | `jme_utc_time_zone` | Declared and defined |
-| 216 | `jme_utc_to_jd` | Declared and defined |
-| 217 | `jme_version` | Declared and defined |
-| 218 | `jme_vis_limit_mag` | Declared and defined |
-| 219 | `jme_vsop87_planet_state` | Declared and defined |
+| 36 | `jme_eop_clear` | Declared and defined |
+| 37 | `jme_eop_coverage` | Declared and defined |
+| 38 | `jme_eop_load_file` | Declared and defined |
+| 39 | `jme_eop_polar_motion` | Declared and defined |
+| 40 | `jme_ephemeris_path` | Declared and defined |
+| 41 | `jme_equatorial_to_ecliptic` | Declared and defined |
+| 42 | `jme_equatorial_to_ecliptic_rectangular_state` | Declared and defined |
+| 43 | `jme_equatorial_to_horizontal` | Declared and defined |
+| 44 | `jme_fixstar` | Declared and defined |
+| 45 | `jme_fixstar2` | Declared and defined |
+| 46 | `jme_fixstar2_mag` | Declared and defined |
+| 47 | `jme_fixstar2_ut` | Declared and defined |
+| 48 | `jme_fixstar_mag` | Declared and defined |
+| 49 | `jme_fixstar_ut` | Declared and defined |
+| 50 | `jme_gauquelin_sector` | Declared and defined |
+| 51 | `jme_get_astro_models` | Declared and defined |
+| 52 | `jme_get_ayanamsa` | Declared and defined |
+| 53 | `jme_get_ayanamsa_ex` | Declared and defined |
+| 54 | `jme_get_ayanamsa_ex2` | Declared and defined |
+| 55 | `jme_get_ayanamsa_ex2_ut` | Declared and defined |
+| 56 | `jme_get_ayanamsa_ex_ut` | Declared and defined |
+| 57 | `jme_get_ayanamsa_name` | Declared and defined |
+| 58 | `jme_get_ayanamsa_ut` | Declared and defined |
+| 59 | `jme_get_frame_bias_matrix` | Declared and defined |
+| 60 | `jme_get_jpl_center_policy` | Declared and defined |
+| 61 | `jme_get_nutation` | Declared and defined |
+| 62 | `jme_get_nutation_matrix` | Declared and defined |
+| 63 | `jme_get_obliquity` | Declared and defined |
+| 64 | `jme_get_orbital_elements` | Declared and defined |
+| 65 | `jme_get_polar_motion` | Declared and defined |
+| 66 | `jme_get_precession_matrix` | Declared and defined |
+| 67 | `jme_get_sidereal_mode` | Declared and defined |
+| 68 | `jme_get_tid_acc` | Declared and defined |
+| 69 | `jme_get_topo_pos` | Declared and defined |
+| 70 | `jme_heliacal_angle` | Declared and defined |
+| 71 | `jme_heliacal_pheno_ut` | Declared and defined |
+| 72 | `jme_heliacal_ut` | Declared and defined |
+| 73 | `jme_helio_cross` | Declared and defined |
+| 74 | `jme_helio_cross_ut` | Declared and defined |
+| 75 | `jme_horizontal_to_equatorial` | Declared and defined |
+| 76 | `jme_hours_normalize` | Declared and defined |
+| 77 | `jme_hours_to_degrees` | Declared and defined |
+| 78 | `jme_house_pos` | Declared and defined |
+| 79 | `jme_house_system_name` | Declared and defined |
+| 80 | `jme_houses` | Declared and defined |
+| 81 | `jme_houses_armc` | Declared and defined |
+| 82 | `jme_houses_armc_ex2` | Declared and defined |
+| 83 | `jme_houses_ex` | Declared and defined |
+| 84 | `jme_houses_ex2` | Declared and defined |
+| 85 | `jme_houses_gauquelin` | Declared and defined |
+| 86 | `jme_houses_gauquelin_armc` | Declared and defined |
+| 87 | `jme_jd_add_seconds` | Declared and defined |
+| 88 | `jme_jd_difference_seconds` | Declared and defined |
+| 89 | `jme_jd_to_utc` | Declared and defined |
+| 90 | `jme_jpl_body_state` | Declared and defined |
+| 91 | `jme_jpl_body_state_naif` | Declared and defined |
+| 92 | `jme_jpl_body_state_native` | Declared and defined |
+| 93 | `jme_jpl_body_state_native_naif` | Declared and defined |
+| 94 | `jme_jpl_body_state_native_split` | Declared and defined |
+| 95 | `jme_jpl_body_state_native_split_naif` | Declared and defined |
+| 96 | `jme_jpl_body_state_order` | Declared and defined |
+| 97 | `jme_jpl_body_state_order_naif` | Declared and defined |
+| 98 | `jme_jpl_body_state_split` | Declared and defined |
+| 99 | `jme_jpl_body_state_split_naif` | Declared and defined |
+| 100 | `jme_jpl_body_state_utc` | Declared and defined |
+| 101 | `jme_jpl_body_state_utc_naif` | Declared and defined |
+| 102 | `jme_jpl_close` | Declared and defined |
+| 103 | `jme_jpl_constant` | Declared and defined |
+| 104 | `jme_jpl_constant_count` | Declared and defined |
+| 105 | `jme_jpl_constant_index` | Declared and defined |
+| 106 | `jme_jpl_constant_string` | Declared and defined |
+| 107 | `jme_jpl_constant_string_vector` | Declared and defined |
+| 108 | `jme_jpl_constant_vector` | Declared and defined |
+| 109 | `jme_jpl_coverage` | Declared and defined |
+| 110 | `jme_jpl_current_file_data` | Declared and defined |
+| 111 | `jme_jpl_ecliptic_state` | Declared and defined |
+| 112 | `jme_jpl_ecliptic_state_naif` | Declared and defined |
+| 113 | `jme_jpl_ecliptic_state_split` | Declared and defined |
+| 114 | `jme_jpl_ecliptic_state_split_naif` | Declared and defined |
+| 115 | `jme_jpl_ecliptic_state_utc` | Declared and defined |
+| 116 | `jme_jpl_ecliptic_state_utc_naif` | Declared and defined |
+| 117 | `jme_jpl_engine_version` | Declared and defined |
+| 118 | `jme_jpl_file` | Declared and defined |
+| 119 | `jme_jpl_file_version` | Declared and defined |
+| 120 | `jme_jpl_id_by_name` | Declared and defined |
+| 121 | `jme_jpl_is_available` | Declared and defined |
+| 122 | `jme_jpl_is_open` | Declared and defined |
+| 123 | `jme_jpl_is_thread_safe` | Declared and defined |
+| 124 | `jme_jpl_max_supported_order` | Declared and defined |
+| 125 | `jme_jpl_name_by_id` | Declared and defined |
+| 126 | `jme_jpl_open` | Declared and defined |
+| 127 | `jme_jpl_open_array` | Declared and defined |
+| 128 | `jme_jpl_orientation_record_count` | Declared and defined |
+| 129 | `jme_jpl_orientation_record_index` | Declared and defined |
+| 130 | `jme_jpl_orientation_state_naif` | Declared and defined |
+| 131 | `jme_jpl_orientation_state_order_naif` | Declared and defined |
+| 132 | `jme_jpl_orientation_state_split_naif` | Declared and defined |
+| 133 | `jme_jpl_orientation_state_utc_naif` | Declared and defined |
+| 134 | `jme_jpl_position_record_count` | Declared and defined |
+| 135 | `jme_jpl_position_record_index` | Declared and defined |
+| 136 | `jme_jpl_prefetch` | Declared and defined |
+| 137 | `jme_jpl_rotational_angular_momentum_state_naif` | Declared and defined |
+| 138 | `jme_jpl_rotational_angular_momentum_state_order_naif` | Declared and defined |
+| 139 | `jme_jpl_rotational_angular_momentum_state_split_naif` | Declared and defined |
+| 140 | `jme_jpl_rotational_angular_momentum_state_utc_naif` | Declared and defined |
+| 141 | `jme_jpl_timescale` | Declared and defined |
+| 142 | `jme_julian_day` | Declared and defined |
+| 143 | `jme_lat_to_lmt` | Declared and defined |
+| 144 | `jme_leap_second_table_info` | Declared and defined |
+| 145 | `jme_library_path` | Declared and defined |
+| 146 | `jme_lmt_to_lat` | Declared and defined |
+| 147 | `jme_lun_eclipse_how` | Declared and defined |
+| 148 | `jme_lun_eclipse_when` | Declared and defined |
+| 149 | `jme_lun_eclipse_when_loc` | Declared and defined |
+| 150 | `jme_lun_occult_when_glob` | Declared and defined |
+| 151 | `jme_lun_occult_when_loc` | Declared and defined |
+| 152 | `jme_lun_occult_where` | Declared and defined |
+| 153 | `jme_matrix_identity` | Declared and defined |
+| 154 | `jme_matrix_multiply` | Declared and defined |
+| 155 | `jme_matrix_rotate_x` | Declared and defined |
+| 156 | `jme_matrix_rotate_y` | Declared and defined |
+| 157 | `jme_matrix_rotate_z` | Declared and defined |
+| 158 | `jme_matrix_transform_state` | Declared and defined |
+| 159 | `jme_meeus_moon_state` | Declared and defined |
+| 160 | `jme_meeus_planet_state` | Declared and defined |
+| 161 | `jme_meeus_sun_state` | Declared and defined |
+| 162 | `jme_mooncross` | Declared and defined |
+| 163 | `jme_mooncross_node` | Declared and defined |
+| 164 | `jme_mooncross_node_ut` | Declared and defined |
+| 165 | `jme_mooncross_ut` | Declared and defined |
+| 166 | `jme_moshier_planet_state` | Declared and defined |
+| 167 | `jme_nod_aps` | Declared and defined |
+| 168 | `jme_nod_aps_ut` | Declared and defined |
+| 169 | `jme_orbit_max_min_true_distance` | Declared and defined |
+| 170 | `jme_pheno` | Declared and defined |
+| 171 | `jme_pheno_ut` | Declared and defined |
+| 172 | `jme_radian_midpoint` | Declared and defined |
+| 173 | `jme_radian_normalize` | Declared and defined |
+| 174 | `jme_radians_difference_signed` | Declared and defined |
+| 175 | `jme_radians_to_degrees` | Declared and defined |
+| 176 | `jme_rectangular_to_spherical_state` | Declared and defined |
+| 177 | `jme_refract` | Declared and defined |
+| 178 | `jme_refract_extended` | Declared and defined |
+| 179 | `jme_reverse_julian_day` | Declared and defined |
+| 180 | `jme_rise_trans` | Declared and defined |
+| 181 | `jme_rise_trans_true_hor` | Declared and defined |
+| 182 | `jme_set_astro_models` | Declared and defined |
+| 183 | `jme_set_astro_models_checked` | Declared and defined |
+| 184 | `jme_set_delta_t_userdef` | Declared and defined |
+| 185 | `jme_set_ephemeris_path` | Declared and defined |
+| 186 | `jme_set_interpolate_nut` | Declared and defined |
+| 187 | `jme_set_jpl_center_policy` | Declared and defined |
+| 188 | `jme_set_jpl_file` | Declared and defined |
+| 189 | `jme_set_lapse_rate` | Declared and defined |
+| 190 | `jme_set_polar_motion` | Declared and defined |
+| 191 | `jme_set_sidereal_mode` | Declared and defined |
+| 192 | `jme_set_sidereal_mode_checked` | Declared and defined |
+| 193 | `jme_set_tid_acc` | Declared and defined |
+| 194 | `jme_set_topo` | Declared and defined |
+| 195 | `jme_set_topo_checked` | Declared and defined |
+| 196 | `jme_sidereal_time` | Declared and defined |
+| 197 | `jme_sidereal_time0` | Declared and defined |
+| 198 | `jme_sidereal_time_ex` | Declared and defined |
+| 199 | `jme_sol_eclipse_how` | Declared and defined |
+| 200 | `jme_sol_eclipse_when_glob` | Declared and defined |
+| 201 | `jme_sol_eclipse_when_loc` | Declared and defined |
+| 202 | `jme_sol_eclipse_where` | Declared and defined |
+| 203 | `jme_solcross` | Declared and defined |
+| 204 | `jme_solcross_ut` | Declared and defined |
+| 205 | `jme_spherical_angular_separation` | Declared and defined |
+| 206 | `jme_spherical_position_angle` | Declared and defined |
+| 207 | `jme_spherical_to_rectangular_state` | Declared and defined |
+| 208 | `jme_split_degree` | Declared and defined |
+| 209 | `jme_state_add` | Declared and defined |
+| 210 | `jme_state_convert_units` | Declared and defined |
+| 211 | `jme_state_distance` | Declared and defined |
+| 212 | `jme_state_light_time_days` | Declared and defined |
+| 213 | `jme_state_position_velocity_dot` | Declared and defined |
+| 214 | `jme_state_scale` | Declared and defined |
+| 215 | `jme_state_speed` | Declared and defined |
+| 216 | `jme_state_subtract` | Declared and defined |
+| 217 | `jme_time_equ` | Declared and defined |
+| 218 | `jme_time_scale_convert` | Declared and defined |
+| 219 | `jme_time_scale_name` | Declared and defined |
+| 220 | `jme_topo_arcus_visionis` | Declared and defined |
+| 221 | `jme_utc_time_zone` | Declared and defined |
+| 222 | `jme_utc_to_jd` | Declared and defined |
+| 223 | `jme_version` | Declared and defined |
+| 224 | `jme_vis_limit_mag` | Declared and defined |
+| 225 | `jme_vsop87_planet_state` | Declared and defined |
 
 ## Current Public Constants
 
@@ -644,98 +650,99 @@ The internal UT-to-TT conversion routine is shared by status-returning UT wrappe
 | 384 | `JME_MODEL_DELTAT_ESPENAK_MEEUS_2006` | Public constant |
 | 385 | `JME_MODEL_DELTAT_STEPHENSON_1997` | Public constant |
 | 386 | `JME_MODEL_DELTAT_STEPHENSON_ETC_2016` | Public constant |
-| 387 | `JME_MODEL_DELTAT_STEPHENSON_MORRISON_1984` | Public constant |
-| 388 | `JME_MODEL_DELTAT_STEPHENSON_MORRISON_2004` | Public constant |
-| 389 | `JME_MODEL_NUT_IAU_1980` | Public constant |
-| 390 | `JME_MODEL_NUT_IAU_2000A` | Public constant |
-| 391 | `JME_MODEL_NUT_IAU_2000B` | Public constant |
-| 392 | `JME_MODEL_NUT_IAU_2006A` | Public constant |
-| 393 | `JME_MODEL_OBL_IAU_1980` | Public constant |
-| 394 | `JME_MODEL_OBL_IAU_2000` | Public constant |
-| 395 | `JME_MODEL_OBL_IAU_2006` | Public constant |
-| 396 | `JME_MODEL_PREC_IAU_1976` | Public constant |
-| 397 | `JME_MODEL_PREC_IAU_2000` | Public constant |
-| 398 | `JME_MODEL_PREC_IAU_2006` | Public constant |
-| 399 | `JME_MODEL_PREC_LASKAR_1986` | Public constant |
-| 400 | `JME_MODEL_PREC_VONDRAK_2011` | Public constant |
-| 401 | `JME_MODEL_REVISED_IAU_2000` | Public constant |
-| 402 | `JME_MODEL_REVISED_IAU_2006` | Public constant |
-| 403 | `JME_MODEL_REVISED_PREC_LASKAR` | Public constant |
-| 404 | `JME_MODEL_REVISED_PREC_LIESKE` | Public constant |
-| 405 | `JME_MODEL_REVISED_PREC_VONDRAK` | Public constant |
-| 406 | `JME_MODEL_SIDT_IAU_1976` | Public constant |
-| 407 | `JME_MODEL_SIDT_IAU_2006` | Public constant |
-| 408 | `JME_OK` | Public constant |
-| 409 | `JME_ORIENTATION_RAD_PER_DAY` | Public constant |
-| 410 | `JME_ORIENTATION_RAD_PER_SECOND` | Public constant |
-| 411 | `JME_RISE_ANTI_MERIDIAN_TRANSIT` | Public constant |
-| 412 | `JME_RISE_ASTRONOMICAL_TWILIGHT` | Public constant |
-| 413 | `JME_RISE_CIVIL_TWILIGHT` | Public constant |
-| 414 | `JME_RISE_DISC_BOTTOM` | Public constant |
-| 415 | `JME_RISE_DISC_CENTER` | Public constant |
-| 416 | `JME_RISE_FIXED_DISC_SIZE` | Public constant |
-| 417 | `JME_RISE_HINDU_RISING` | Public constant |
-| 418 | `JME_RISE_MERIDIAN_TRANSIT` | Public constant |
-| 419 | `JME_RISE_NAUTICAL_TWILIGHT` | Public constant |
-| 420 | `JME_RISE_NO_REFRACTION` | Public constant |
-| 421 | `JME_RISE_RISE` | Public constant |
-| 422 | `JME_RISE_SET` | Public constant |
-| 423 | `JME_SECONDS_PER_DAY` | Public constant |
-| 424 | `JME_SIDEREAL_ALDEBARAN_15TAU` | Public constant |
-| 425 | `JME_SIDEREAL_ARYABHATA` | Public constant |
-| 426 | `JME_SIDEREAL_B1950` | Public constant |
-| 427 | `JME_SIDEREAL_BABYL_ETPSC` | Public constant |
-| 428 | `JME_SIDEREAL_BABYL_HUBER` | Public constant |
-| 429 | `JME_SIDEREAL_BABYL_KUGLER1` | Public constant |
-| 430 | `JME_SIDEREAL_BABYL_KUGLER2` | Public constant |
-| 431 | `JME_SIDEREAL_BABYL_KUGLER3` | Public constant |
-| 432 | `JME_SIDEREAL_DELUCE` | Public constant |
-| 433 | `JME_SIDEREAL_FAGAN_BRADLEY` | Public constant |
-| 434 | `JME_SIDEREAL_GALCENT_0SAG` | Public constant |
-| 435 | `JME_SIDEREAL_HIPPARCHOS` | Public constant |
-| 436 | `JME_SIDEREAL_J1900` | Public constant |
-| 437 | `JME_SIDEREAL_J2000` | Public constant |
-| 438 | `JME_SIDEREAL_JN_BHASIN` | Public constant |
-| 439 | `JME_SIDEREAL_KRISHNAMURTI` | Public constant |
-| 440 | `JME_SIDEREAL_LAHIRI` | Public constant |
-| 441 | `JME_SIDEREAL_LAHIRI_ICRC` | Public constant |
-| 442 | `JME_SIDEREAL_RAMAN` | Public constant |
-| 443 | `JME_SIDEREAL_SASSANIAN` | Public constant |
-| 444 | `JME_SIDEREAL_SS_CITRA` | Public constant |
-| 445 | `JME_SIDEREAL_SS_REVATI` | Public constant |
-| 446 | `JME_SIDEREAL_SURYASIDDHANTA` | Public constant |
-| 447 | `JME_SIDEREAL_TRUE_CITRA` | Public constant |
-| 448 | `JME_SIDEREAL_TRUE_MULA` | Public constant |
-| 449 | `JME_SIDEREAL_TRUE_PUSHYA` | Public constant |
-| 450 | `JME_SIDEREAL_TRUE_REVATI` | Public constant |
-| 451 | `JME_SIDEREAL_USER` | Public constant |
-| 452 | `JME_SIDEREAL_USHASHASHI` | Public constant |
-| 453 | `JME_SIDEREAL_YUKTESHWAR` | Public constant |
-| 454 | `JME_SPEED_OF_LIGHT_KM_PER_SEC` | Public constant |
-| 455 | `JME_TIME_DELTAT_AUTOMATIC` | Public constant |
-| 456 | `JME_TIME_SCALE_TAI` | Public constant |
-| 457 | `JME_TIME_SCALE_TCB` | Public constant |
-| 458 | `JME_TIME_SCALE_TCG` | Public constant |
-| 459 | `JME_TIME_SCALE_TDB` | Public constant |
-| 460 | `JME_TIME_SCALE_TT` | Public constant |
-| 461 | `JME_TIME_SCALE_UT1` | Public constant |
-| 462 | `JME_TIME_SCALE_UTC` | Public constant |
-| 463 | `JME_TIME_TIDAL_AUTOMATIC` | Public constant |
-| 464 | `JME_TIME_TIDAL_DE200` | Public constant |
-| 465 | `JME_TIME_TIDAL_DE403` | Public constant |
-| 466 | `JME_TIME_TIDAL_DE404` | Public constant |
-| 467 | `JME_TIME_TIDAL_DE405` | Public constant |
-| 468 | `JME_TIME_TIDAL_DE406` | Public constant |
-| 469 | `JME_TIME_TIDAL_DE421` | Public constant |
-| 470 | `JME_TIME_TIDAL_DE430` | Public constant |
-| 471 | `JME_TIME_TIDAL_DE431` | Public constant |
-| 472 | `JME_TIME_TIDAL_DE441` | Public constant |
-| 473 | `JME_VECTOR_AU_PER_DAY` | Public constant |
-| 474 | `JME_VECTOR_AU_PER_SECOND` | Public constant |
-| 475 | `JME_VECTOR_KM_PER_DAY` | Public constant |
-| 476 | `JME_VECTOR_KM_PER_SECOND` | Public constant |
-| 477 | `JME_VERSION` | Public constant |
-| 478 | `JME_VERSION_ID` | Public constant |
+| 387 | `JME_MODEL_DELTAT_STEPHENSON_ETC_2021` | Public constant |
+| 388 | `JME_MODEL_DELTAT_STEPHENSON_MORRISON_1984` | Public constant |
+| 389 | `JME_MODEL_DELTAT_STEPHENSON_MORRISON_2004` | Public constant |
+| 390 | `JME_MODEL_NUT_IAU_1980` | Public constant |
+| 391 | `JME_MODEL_NUT_IAU_2000A` | Public constant |
+| 392 | `JME_MODEL_NUT_IAU_2000B` | Public constant |
+| 393 | `JME_MODEL_NUT_IAU_2006A` | Public constant |
+| 394 | `JME_MODEL_OBL_IAU_1980` | Public constant |
+| 395 | `JME_MODEL_OBL_IAU_2000` | Public constant |
+| 396 | `JME_MODEL_OBL_IAU_2006` | Public constant |
+| 397 | `JME_MODEL_PREC_IAU_1976` | Public constant |
+| 398 | `JME_MODEL_PREC_IAU_2000` | Public constant |
+| 399 | `JME_MODEL_PREC_IAU_2006` | Public constant |
+| 400 | `JME_MODEL_PREC_LASKAR_1986` | Public constant |
+| 401 | `JME_MODEL_PREC_VONDRAK_2011` | Public constant |
+| 402 | `JME_MODEL_REVISED_IAU_2000` | Public constant |
+| 403 | `JME_MODEL_REVISED_IAU_2006` | Public constant |
+| 404 | `JME_MODEL_REVISED_PREC_LASKAR` | Public constant |
+| 405 | `JME_MODEL_REVISED_PREC_LIESKE` | Public constant |
+| 406 | `JME_MODEL_REVISED_PREC_VONDRAK` | Public constant |
+| 407 | `JME_MODEL_SIDT_IAU_1976` | Public constant |
+| 408 | `JME_MODEL_SIDT_IAU_2006` | Public constant |
+| 409 | `JME_OK` | Public constant |
+| 410 | `JME_ORIENTATION_RAD_PER_DAY` | Public constant |
+| 411 | `JME_ORIENTATION_RAD_PER_SECOND` | Public constant |
+| 412 | `JME_RISE_ANTI_MERIDIAN_TRANSIT` | Public constant |
+| 413 | `JME_RISE_ASTRONOMICAL_TWILIGHT` | Public constant |
+| 414 | `JME_RISE_CIVIL_TWILIGHT` | Public constant |
+| 415 | `JME_RISE_DISC_BOTTOM` | Public constant |
+| 416 | `JME_RISE_DISC_CENTER` | Public constant |
+| 417 | `JME_RISE_FIXED_DISC_SIZE` | Public constant |
+| 418 | `JME_RISE_HINDU_RISING` | Public constant |
+| 419 | `JME_RISE_MERIDIAN_TRANSIT` | Public constant |
+| 420 | `JME_RISE_NAUTICAL_TWILIGHT` | Public constant |
+| 421 | `JME_RISE_NO_REFRACTION` | Public constant |
+| 422 | `JME_RISE_RISE` | Public constant |
+| 423 | `JME_RISE_SET` | Public constant |
+| 424 | `JME_SECONDS_PER_DAY` | Public constant |
+| 425 | `JME_SIDEREAL_ALDEBARAN_15TAU` | Public constant |
+| 426 | `JME_SIDEREAL_ARYABHATA` | Public constant |
+| 427 | `JME_SIDEREAL_B1950` | Public constant |
+| 428 | `JME_SIDEREAL_BABYL_ETPSC` | Public constant |
+| 429 | `JME_SIDEREAL_BABYL_HUBER` | Public constant |
+| 430 | `JME_SIDEREAL_BABYL_KUGLER1` | Public constant |
+| 431 | `JME_SIDEREAL_BABYL_KUGLER2` | Public constant |
+| 432 | `JME_SIDEREAL_BABYL_KUGLER3` | Public constant |
+| 433 | `JME_SIDEREAL_DELUCE` | Public constant |
+| 434 | `JME_SIDEREAL_FAGAN_BRADLEY` | Public constant |
+| 435 | `JME_SIDEREAL_GALCENT_0SAG` | Public constant |
+| 436 | `JME_SIDEREAL_HIPPARCHOS` | Public constant |
+| 437 | `JME_SIDEREAL_J1900` | Public constant |
+| 438 | `JME_SIDEREAL_J2000` | Public constant |
+| 439 | `JME_SIDEREAL_JN_BHASIN` | Public constant |
+| 440 | `JME_SIDEREAL_KRISHNAMURTI` | Public constant |
+| 441 | `JME_SIDEREAL_LAHIRI` | Public constant |
+| 442 | `JME_SIDEREAL_LAHIRI_ICRC` | Public constant |
+| 443 | `JME_SIDEREAL_RAMAN` | Public constant |
+| 444 | `JME_SIDEREAL_SASSANIAN` | Public constant |
+| 445 | `JME_SIDEREAL_SS_CITRA` | Public constant |
+| 446 | `JME_SIDEREAL_SS_REVATI` | Public constant |
+| 447 | `JME_SIDEREAL_SURYASIDDHANTA` | Public constant |
+| 448 | `JME_SIDEREAL_TRUE_CITRA` | Public constant |
+| 449 | `JME_SIDEREAL_TRUE_MULA` | Public constant |
+| 450 | `JME_SIDEREAL_TRUE_PUSHYA` | Public constant |
+| 451 | `JME_SIDEREAL_TRUE_REVATI` | Public constant |
+| 452 | `JME_SIDEREAL_USER` | Public constant |
+| 453 | `JME_SIDEREAL_USHASHASHI` | Public constant |
+| 454 | `JME_SIDEREAL_YUKTESHWAR` | Public constant |
+| 455 | `JME_SPEED_OF_LIGHT_KM_PER_SEC` | Public constant |
+| 456 | `JME_TIME_DELTAT_AUTOMATIC` | Public constant |
+| 457 | `JME_TIME_SCALE_TAI` | Public constant |
+| 458 | `JME_TIME_SCALE_TCB` | Public constant |
+| 459 | `JME_TIME_SCALE_TCG` | Public constant |
+| 460 | `JME_TIME_SCALE_TDB` | Public constant |
+| 461 | `JME_TIME_SCALE_TT` | Public constant |
+| 462 | `JME_TIME_SCALE_UT1` | Public constant |
+| 463 | `JME_TIME_SCALE_UTC` | Public constant |
+| 464 | `JME_TIME_TIDAL_AUTOMATIC` | Public constant |
+| 465 | `JME_TIME_TIDAL_DE200` | Public constant |
+| 466 | `JME_TIME_TIDAL_DE403` | Public constant |
+| 467 | `JME_TIME_TIDAL_DE404` | Public constant |
+| 468 | `JME_TIME_TIDAL_DE405` | Public constant |
+| 469 | `JME_TIME_TIDAL_DE406` | Public constant |
+| 470 | `JME_TIME_TIDAL_DE421` | Public constant |
+| 471 | `JME_TIME_TIDAL_DE430` | Public constant |
+| 472 | `JME_TIME_TIDAL_DE431` | Public constant |
+| 473 | `JME_TIME_TIDAL_DE441` | Public constant |
+| 474 | `JME_VECTOR_AU_PER_DAY` | Public constant |
+| 475 | `JME_VECTOR_AU_PER_SECOND` | Public constant |
+| 476 | `JME_VECTOR_KM_PER_DAY` | Public constant |
+| 477 | `JME_VECTOR_KM_PER_SECOND` | Public constant |
+| 478 | `JME_VERSION` | Public constant |
+| 479 | `JME_VERSION_ID` | Public constant |
 
 
 ### Reference-epoch sidereal modes

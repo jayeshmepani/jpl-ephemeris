@@ -357,6 +357,7 @@ typedef enum jme_extended_constant {
     JME_MODEL_DELTAT_STEPHENSON_MORRISON_2004 = 348,
     JME_MODEL_DELTAT_ESPENAK_MEEUS_2006 = 349,
     JME_MODEL_DELTAT_STEPHENSON_ETC_2016 = 350,
+    JME_MODEL_DELTAT_STEPHENSON_ETC_2021 = 407,
     /* IAU 2000A nutation with the IAU 2006 (P03) adjustments, IERS Conventions
      * 2010 eq. 5.35 (ERFA eraNut06a): the nutation consistent with IAU 2006 precession. */
     JME_MODEL_NUT_IAU_2006A = 351,
@@ -1112,6 +1113,26 @@ int jme_elp2000_moon_state(double jd_et, double *results);
 int jme_meeus_planet_state(double jd_et, int body, double *results);
 
 int jme_moshier_planet_state(double jd_et, int body, double *results);
+
+/*
+ * IERS Earth orientation: polar motion.
+ *
+ * jme_eop_load_file reads an IERS finals2000A or EOP C04 file and replaces
+ * any loaded series. jme_eop_polar_motion returns xp, yp (arcsec) by 4-point
+ * Lagrange interpolation at an MJD (predicted != 0 when a prediction row
+ * contributed). jme_set_polar_motion(1) makes topocentric observer
+ * positions, horizontal coordinates and eclipse geographic mappings apply
+ * the polar-motion matrix W = eraPom00(xp, yp, s'); with it enabled, those
+ * computations fail with an error when no EOP data cover the date. The
+ * default (0) applies no polar motion. The loaded series is process-global:
+ * load it before using it from several threads.
+ */
+int jme_eop_load_file(const char *path, char *error);
+void jme_eop_clear(void);
+int jme_eop_coverage(double *mjd_first, double *mjd_last, char *error);
+int jme_eop_polar_motion(double mjd, double *xp_arcsec, double *yp_arcsec, int *predicted, char *error);
+void jme_set_polar_motion(int enabled);
+int jme_get_polar_motion(void);
 
 #ifdef __cplusplus
 }

@@ -29,8 +29,9 @@ Notes:
 
 | Model | Coverage | Source |
 |---|---|---|
-| `JME_TIME_DELTAT_AUTOMATIC` (default) | IERS values inside the embedded table; SMHZ 2016/2021 before it; Espenak–Meeus 2006 after the last IERS prediction | see below |
-| `JME_MODEL_DELTAT_STEPHENSON_ETC_2016` | splines for −720 ≤ y < 2019 and the long-term parabola −320 + 32.5((y − 1825)/100)² outside | Stephenson, Morrison & Hohenkerk (2016), Proc. R. Soc. A 472, 20160404, with the 2020 spline revision of Morrison, Stephenson, Hohenkerk & Zawilski (2021), Proc. R. Soc. A 477, 20200776, Table S15 |
+| `JME_TIME_DELTAT_AUTOMATIC` (default) | IERS values inside the embedded table; the SMH 2021 revision before it; Espenak–Meeus 2006 after the last IERS prediction | see below |
+| `JME_MODEL_DELTAT_STEPHENSON_ETC_2016` | Table S15 as published (54 rows, −720.0 … 2016.0), row rule S5.1 K_i ≤ Y < K_i+1 with equality only at Y = 2016.0; outside, the parabola −320 + 32.5((Y − 1825)/100)² (eq. 4.1) | Stephenson, Morrison & Hohenkerk (2016), Proc. R. Soc. A 472, 20160404, official ASCII Table-S15.txt (SHA-256 b972e922…, `tools/data/Table-S15.2016.txt`) and electronic supplement S5 |
+| `JME_MODEL_DELTAT_STEPHENSON_ETC_2021` | 2020 revision of Table S15 (58 rows, −720 … 2019), K_i ≤ Y < K_i+1; same parabola outside | Morrison, Stephenson, Hohenkerk & Zawilski (2021), Proc. R. Soc. A 477, 20200776 (`tools/data/Table-S15.2020.csv`) |
 | `JME_MODEL_DELTAT_ESPENAK_MEEUS_2006` | piecewise polynomials, −1999 … +3000 | NASA TP-2006-214141; https://eclipse.gsfc.nasa.gov/SEhelp/deltatpoly2004.html (all digits) |
 | `JME_MODEL_DELTAT_STEPHENSON_MORRISON_1984`, `_STEPHENSON_1997`, `_STEPHENSON_MORRISON_2004` | **refused with `JME_ERR`** | The defining tables and their interpolation rules have not yet been transcribed from the primary publications and verified, so these models are not substituted with another one. |
 | `jme_set_delta_t_userdef(seconds)` | constant ΔT for every date | overrides the model; a non-finite argument (e.g. `NAN`) clears the override |
@@ -76,8 +77,9 @@ Details:
   returns the selector unchanged.
 * **Historical correction.** When an acceleration (a) is selected
   explicitly, ΔT before 1955 is corrected relative to the model's own
-  baseline (a_0): −26″/cy² for Espenak–Meeus 2006, −25.85″/cy² for
-  SMH-2016/2021. The correction is
+  baseline (a_0): −26″/cy² for Espenak–Meeus 2006 and −25.82″/cy² for
+  SMH 2016/2021 (the DE430 value used to reduce their data, Stephenson et
+  al. 2016 §2(a)). The 2021 revision keeps that reduction. The correction is
   c = −0.91072 (a − a_0) ((y − 1955)/100)² s
   (NASA [secular-acceleration correction](https://eclipse.gsfc.nasa.gov/LEcat5/secular.html)).
   Here y is the model's own decimal year: the calendar year for EM-2006
@@ -122,3 +124,56 @@ extrapolated.
    installed, the generator cross-checks its leap-second list.
 4. Rebuild and run `ctest`. The ΔT fixtures (`tools/gen_deltat_fixtures.py`)
    compare the IERS segment with astropy/ERFA.
+
+## 5. Polar motion (`src/eop.c`, `jme_eop_*`, `jme_set_polar_motion`)
+
+* **Data.** `jme_eop_load_file(path)` loads one of two IERS series and
+  replaces any series already loaded. The format is detected line by line.
+  * finals2000A (`finals2000A.all` / `.data` / `.daily`, from
+    https://datacenter.iers.org/): fixed columns per `readme.finals2000A`.
+    These are MJD (8–15), the polar-motion flag (17, `I` or `P`), and
+    Bulletin A PM-x (19–27) and PM-y (38–46) in arcseconds. Reading stops at
+    the first row without polar-motion values. Prediction rows (`P`) are
+    used and reported through the `predicted` output of
+    `jme_eop_polar_motion`.
+  * EOP 20 C04 (`eopc04.1962-now`) and the earlier 14 C04 layout: '#' or
+    text header lines are skipped. MJD is the first field with a decimal
+    point, followed by x and y.
+* **Interpolation.** 4-point (cubic) Lagrange interpolation in MJD over
+  four consecutive daily rows, two on each side of the requested instant.
+  This is the IERS `interp.f` (LAGINT) scheme. A date without two rows on
+  each side, or with a gap in the series, is an error. The series is never
+  extrapolated.
+* **Time argument.** The UT1 date is used as the MJD argument. The series
+  is tabulated at 0h UTC, and |UT1 − UTC| < 0.9 s changes xp and yp by
+  less than 0.1 µas.
+* **Application.** With `jme_set_polar_motion(1)`, the observer's ITRS
+  (WGS84) vector becomes r_true = R3(−GAST) Wᵀ r_itrs, where
+  W = `eraPom00(xp, yp, s′)` and s′ = `eraSp00(TT)`. This is the
+  equinox-based form of IERS Conventions (2010) eq. 5.1. The same W is used
+  in three places:
+  * every topocentric place (`JME_CALC_TOPOCENTRIC`, `jme_get_topo_pos*`);
+  * the local horizon used by rise/set/transit and eclipse altitudes;
+  * eclipse and occultation geographic mappings. Their shadow geometry is
+    evaluated in the frame R3(−GAST) W R3(GAST), whose z axis is the ITRS
+    pole. Contact times are rotation invariant.
+* **No silent default.** The default is off (`jme_set_polar_motion(0)`).
+  Off means no polar motion, and no s′ either; results are unchanged from
+  earlier releases. When the flag is on and no loaded series covers the
+  date, every affected computation returns an error naming the missing EOP
+  data. Zero polar motion is never assumed.
+* **Certification.** `tests/test_polar_motion_reference.c` checks:
+  * the observer GCRS vector against pyerfa `eraC2t06a` ×
+    `eraGd2gc(WGS84)`, using IERS finals2000A data for 2020, 2022 and 2024
+    (four sites, three times of day, model set `IAU2006A`, ΔT fixed). The
+    maximum difference is 0.006 mm; without polar motion it is 0.31 mm,
+    which is the s′ term. The polar-motion effect is at least 5.6 m.
+  * that interpolation of both file formats matches an independent numpy
+    implementation to 1e-12″;
+  * the error paths;
+  * the horizon path: zero xp/yp reproduces the hour-angle result, and real
+    EOP moves a Delhi sunrise by −0.015 s.
+* **Measured limitation.** The sub-daily ocean-tide and libration
+  corrections to polar motion (IERS Conventions 2010 §5.5.1, Tables
+  5.1a/5.1b) are not added. Their amplitude is below 0.5 mas, which is
+  1.5 cm at the Earth's surface.

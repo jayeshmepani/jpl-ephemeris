@@ -436,10 +436,40 @@ static void internal_current_topo(const jme_context *ctx, double *lon, double *l
 }
 
 /*
- * Observer geocentric position/velocity on the WGS84 ellipsoid, rotated by
- * Greenwich apparent sidereal time (computed from UT1 obtained by inverting
- * the selected Delta-T model) into the true equator and equinox of date.
- * Polar motion is not applied (documented; < 15 m).
+ * Polar-motion matrix W (ITRS <- TIRS), row-major, from IERS EOP xp, yp
+ * interpolated at the UT1 date (as MJD; |UT1 - UTC| < 0.9 s changes xp, yp by
+ * well under 0.1 microarcsecond) and the TIO locator s' (eraSp00, TT).
+ * When polar motion is disabled, W is the identity and *applied = 0.
+ * When it is enabled and no EOP data cover the date, an error is returned:
+ * no zero polar motion is substituted.
+ */
+int internal_polar_motion_matrix(double jd_ut, double jd_tt, double *rpom, int *applied, char *error)
+{
+    double xp, yp, sp, w[3][3];
+    int i, j;
+
+    if (applied != 0) *applied = 0;
+    if (!jme_get_context()->polar_motion_enabled) {
+        for (i = 0; i < 9; i++) rpom[i] = (i % 4 == 0) ? 1.0 : 0.0;
+        return JME_OK;
+    }
+    if (jme_eop_polar_motion((jd_ut - 2400000.5), &xp, &yp, 0, error) != JME_OK) {
+        return JME_ERR;
+    }
+    sp = jme_eraSp00(floor(jd_tt), jd_tt - floor(jd_tt));
+    jme_eraPom00(xp * JME_ARCSEC_TO_RAD, yp * JME_ARCSEC_TO_RAD, sp, w);
+    for (i = 0; i < 3; i++) for (j = 0; j < 3; j++) rpom[3 * i + j] = w[i][j];
+    if (applied != 0) *applied = 1;
+    return JME_OK;
+}
+
+/*
+ * Observer geocentric position/velocity on the WGS84 ellipsoid. The ITRS
+ * vector is taken to the TIRS by W^T when polar motion is enabled
+ * (jme_set_polar_motion), then rotated by Greenwich apparent sidereal time
+ * (UT1 from the selected Delta-T model) into the true equator and equinox
+ * of date: r_true = R3(-GAST) W^T r_itrs, the equinox-based form of the
+ * IERS Conventions (2010) eq. 5.1 chain.
  */
 int internal_topo_state_true_equator(double jd_et, double *pos_au, double *vel_au_per_day, char *error)
 {
@@ -452,6 +482,8 @@ int internal_topo_state_true_equator(double jd_et, double *pos_au, double *vel_a
     /* Earth rotation rate relative to the true equinox, rad per UT1 day. */
     const double omega = ERFA_D2PI * 1.00273781191135448;
     double c, s, rxy, z_km;
+    double rpom[9];
+    int pm_applied = 0;
 
     if (pos_au == 0) {
         jme_set_error(error, "Topocentric position output is required");
@@ -469,6 +501,9 @@ int internal_topo_state_true_equator(double jd_et, double *pos_au, double *vel_a
     if (internal_sidereal_time_rad(jd_ut, jd_et, 1, &gast, error) != JME_OK) {
         return JME_ERR;
     }
+    if (internal_polar_motion_matrix(jd_ut, jd_et, rpom, &pm_applied, error) != JME_OK) {
+        return JME_ERR;
+    }
     lst_rad = gast + topo_lon * JME_DEG_TO_RAD;
 
     cos_phi = cos(topo_lat * JME_DEG_TO_RAD);
@@ -479,9 +514,24 @@ int internal_topo_state_true_equator(double jd_et, double *pos_au, double *vel_a
     rxy = (a * c + topo_alt * 0.001) * cos_phi;
     z_km = (a * s + topo_alt * 0.001) * sin_phi;
 
-    pos_au[0] = rxy * cos(lst_rad) / JME_AU_KM;
-    pos_au[1] = rxy * sin(lst_rad) / JME_AU_KM;
-    pos_au[2] = z_km / JME_AU_KM;
+    if (!pm_applied) {
+        pos_au[0] = rxy * cos(lst_rad) / JME_AU_KM;
+        pos_au[1] = rxy * sin(lst_rad) / JME_AU_KM;
+        pos_au[2] = z_km / JME_AU_KM;
+    } else {
+        double itrs[3], tirs[3];
+        int i;
+        double cg = cos(gast), sg = sin(gast);
+        itrs[0] = rxy * cos(topo_lon * JME_DEG_TO_RAD);
+        itrs[1] = rxy * sin(topo_lon * JME_DEG_TO_RAD);
+        itrs[2] = z_km;
+        for (i = 0; i < 3; i++) {
+            tirs[i] = rpom[i] * itrs[0] + rpom[3 + i] * itrs[1] + rpom[6 + i] * itrs[2];
+        }
+        pos_au[0] = (cg * tirs[0] - sg * tirs[1]) / JME_AU_KM;
+        pos_au[1] = (sg * tirs[0] + cg * tirs[1]) / JME_AU_KM;
+        pos_au[2] = tirs[2] / JME_AU_KM;
+    }
     if (vel_au_per_day != 0) {
         vel_au_per_day[0] = -omega * pos_au[1];
         vel_au_per_day[1] = omega * pos_au[0];

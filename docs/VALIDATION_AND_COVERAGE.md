@@ -6,10 +6,10 @@ Current header-derived inventory:
 
 | Area | Count | Verification command |
 |---|---:|---|
-| Public `jme_*` functions | 219 | `pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1` |
-| Defined public `jme_*` functions | 219 | `pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1` |
-| Directly C-test-referenced public `jme_*` functions | 219 | `pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1` |
-| Public `JME_*` constants | 478 | `pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1` |
+| Public `jme_*` functions | 225 | `pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1` |
+| Defined public `jme_*` functions | 225 | `pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1` |
+| Directly C-test-referenced public `jme_*` functions | 225 | `pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1` |
+| Public `JME_*` constants | 479 | `pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1` |
 
 The generated value-verification matrix in this file is maintained by `tools/generate_value_verification_matrix.py`; that tool updates only the marked generated section.
 

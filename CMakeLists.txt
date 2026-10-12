@@ -44,6 +44,7 @@ add_library(jme SHARED
     src/moshier/moonlr404.c
     src/sidereal.c
     src/time.c
+    src/eop.c
     src/timescale.c
     src/vsop87.c
 )
@@ -150,6 +151,12 @@ if (JME_BUILD_TESTS)
     target_include_directories(test_galcent_reference PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
     target_link_libraries(test_galcent_reference PRIVATE jme)
     add_test(NAME galcent_reference COMMAND test_galcent_reference)
+
+    add_executable(test_polar_motion_reference tests/test_polar_motion_reference.c)
+    target_include_directories(test_polar_motion_reference PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    target_compile_definitions(test_polar_motion_reference PRIVATE JME_TEST_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures")
+    target_link_libraries(test_polar_motion_reference PRIVATE jme)
+    add_test(NAME polar_motion_reference COMMAND test_polar_motion_reference)
 
     add_executable(test_houses_reference tests/test_houses_reference.c)
     target_include_directories(test_houses_reference PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)

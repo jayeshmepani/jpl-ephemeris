@@ -990,9 +990,40 @@ static double get_altitude_internal(double jd_ut, int body, const char *starname
     dec = results[1];
 
     gst = events_gst_hours(jd_ut, flags);
-    hour_angle = jme_degree_normalize(gst * 15.0 + geopos[0] - ra);
-
-    jme_equatorial_to_horizontal(hour_angle, dec, geopos[1], &azimuth, &altitude);
+    if (!jme_get_polar_motion()) {
+        hour_angle = jme_degree_normalize(gst * 15.0 + geopos[0] - ra);
+        jme_equatorial_to_horizontal(hour_angle, dec, geopos[1], &azimuth, &altitude);
+    } else {
+        /*
+         * Local horizon from the ITRS: v_itrs = W R3(GAST) v_true, then the
+         * east/north/up basis of the geodetic (lon, lat). With W = I this is
+         * the hour-angle formula above.
+         */
+        double w[9], v[3], t[3], it[3], cg, sg, cl, sl, cp, sp, e, n, u, jd_tt;
+        int i, applied;
+        if (internal_ut_to_et(jd_ut, &jd_tt, error) != JME_OK
+            || internal_polar_motion_matrix(jd_ut, jd_tt, w, &applied, error) != JME_OK) {
+            return -100.0;
+        }
+        v[0] = cos(dec * JME_EVENTS_DEG_TO_RAD) * cos(ra * JME_EVENTS_DEG_TO_RAD);
+        v[1] = cos(dec * JME_EVENTS_DEG_TO_RAD) * sin(ra * JME_EVENTS_DEG_TO_RAD);
+        v[2] = sin(dec * JME_EVENTS_DEG_TO_RAD);
+        cg = cos(gst * 15.0 * JME_EVENTS_DEG_TO_RAD);
+        sg = sin(gst * 15.0 * JME_EVENTS_DEG_TO_RAD);
+        t[0] = cg * v[0] + sg * v[1];
+        t[1] = -sg * v[0] + cg * v[1];
+        t[2] = v[2];
+        for (i = 0; i < 3; i++) it[i] = w[3 * i] * t[0] + w[3 * i + 1] * t[1] + w[3 * i + 2] * t[2];
+        cl = cos(geopos[0] * JME_EVENTS_DEG_TO_RAD);
+        sl = sin(geopos[0] * JME_EVENTS_DEG_TO_RAD);
+        cp = cos(geopos[1] * JME_EVENTS_DEG_TO_RAD);
+        sp = sin(geopos[1] * JME_EVENTS_DEG_TO_RAD);
+        e = -sl * it[0] + cl * it[1];
+        n = -sp * cl * it[0] - sp * sl * it[1] + cp * it[2];
+        u = cp * cl * it[0] + cp * sl * it[1] + sp * it[2];
+        azimuth = jme_degree_normalize(atan2(e, n) * JME_EVENTS_RAD_TO_DEG);
+        altitude = asin(u > 1.0 ? 1.0 : (u < -1.0 ? -1.0 : u)) * JME_EVENTS_RAD_TO_DEG;
+    }
 
     if (atpress > 0.0) {
         altitude = jme_refract_extended(
@@ -1536,6 +1567,39 @@ static int bessel_at(double jd_ut, const events_target *tg, solar_bessel *b, cha
     } else {
         for (i = 0; i < 3; i++) g[i] = tgt[i];
     }
+    b->gast = events_gst_hours(jd_ut, 0) * 15.0 * JME_EVENTS_DEG_TO_RAD;
+    if (!isfinite(b->gast)) {
+        jme_set_error(error, "Sidereal time unavailable for shadow geometry");
+        return JME_ERR;
+    }
+    if (jme_get_polar_motion()) {
+        /*
+         * Polar motion: express the Moon and the shadow axis in the frame
+         * F = R3(-GAST) W R3(GAST), whose z axis is the ITRS pole, so that the
+         * ellipsoid intersections and the longitude mapping (atan2 - GAST)
+         * refer to the ITRS. Rotation leaves z, l1, l2 and x^2 + y^2 (hence
+         * contact times) unchanged; x, y, d then refer to the ITRS pole.
+         */
+        double w[9], jd_tt, cg = cos(b->gast), sg = sin(b->gast);
+        double *vecs[2];
+        int applied, v;
+        vecs[0] = b->moon;
+        vecs[1] = g;
+        if (internal_ut_to_et(jd_ut, &jd_tt, error) != JME_OK
+            || internal_polar_motion_matrix(jd_ut, jd_tt, w, &applied, error) != JME_OK) {
+            return JME_ERR;
+        }
+        for (v = 0; v < 2; v++) {
+            double t[3], it[3], *q = vecs[v];
+            t[0] = cg * q[0] + sg * q[1];
+            t[1] = -sg * q[0] + cg * q[1];
+            t[2] = q[2];
+            for (i = 0; i < 3; i++) it[i] = w[3 * i] * t[0] + w[3 * i + 1] * t[1] + w[3 * i + 2] * t[2];
+            q[0] = cg * it[0] - sg * it[1];
+            q[1] = sg * it[0] + cg * it[1];
+            q[2] = it[2];
+        }
+    }
     gn = vec_norm(g);
     if (!isfinite(gn) || gn <= 0.0) {
         jme_set_error(error, "Shadow geometry requires a valid Moon-target vector");
@@ -1564,11 +1628,6 @@ static int bessel_at(double jd_ut, const events_target *tg, solar_bessel *b, cha
     kk = JME_EVENTS_MOON_RADIUS_KM / JME_BESSEL_EARTH_A_KM;
     b->l1 = b->z * b->tanf1 + kk / cosf1;
     b->l2 = b->z * b->tanf2 - kk / cosf2;
-    b->gast = events_gst_hours(jd_ut, 0) * 15.0 * JME_EVENTS_DEG_TO_RAD;
-    if (!isfinite(b->gast)) {
-        jme_set_error(error, "Sidereal time unavailable for shadow geometry");
-        return JME_ERR;
-    }
     return JME_OK;
 }
 

@@ -31,6 +31,7 @@ static jme_context g_context = {
     JME_JPL_CENTER_STRICT,
     0.0,
     0,
+    0,
     0
 };
 
