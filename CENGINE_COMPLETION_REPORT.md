@@ -52,9 +52,13 @@ This file is updated after each milestone. Status keys: FIXED / PARTIAL / OPEN.
 | Ayanamsa provenance (Krishnamurti, J.N. Bhasin) | FLAGGED | docs/AYANAMSA_MODELS.md (KP formula zero 291.22 CE; 54.38" above table-fit KP) |
 | Galactic Centre ayanamsa: Sgr A* apparent proper motion (Reid & Brunthaler 2004) | OPEN | -3.151/-5.547 mas/yr; needs the epoch at which the source sits at the paper's nominal J2000 position (<= 0.6"/century) |
 | Delta-T SM1984/S1997/SM2004 | OPEN (explicit error, justified) | SM2004 (JHA 35, 327) publishes Table 1 at 100-yr steps from an unpublished spline (full spline only in SMH 2016, implemented); S1997 (CUP book) and SM1984 (Phil. Trans. A 313, 47) tables not accessible |
-| Tidal acceleration (jme_set_tid_acc) | OPEN | stored but not applied to Delta-T (documented in TIME_SCALES.md) |
+| Tidal acceleration: numeric/DE selectors and historical correction | PARTIAL (CI pending) | 6bc6be6, 8704a6c, 553908b, tests/test_delta_t_reference.c; EM-2006 uses −26″/cy² and SMH-2016/2021 uses −25.85″/cy²; corrections apply before 1955 only |\n| Tidal acceleration AUTOMATIC: infer loaded backend/kernel | OPEN | AUTOMATIC clears the explicit correction; active-kernel-specific acceleration is not yet inferred; see docs/TIME_SCALES.md |
 
 ## Commits (this session, newest first)
+- cf408c4 / 4605344 Tidal acceleration selector coverage and model-baseline regression tests
+- f22334e Docs: tidal acceleration equations, selector provenance, and automatic-selection limitation
+- 553908b / 8704a6c / 6bc6be6 Apply explicit lunar tidal acceleration to historical Delta-T; resolve DE selectors
+- 85518ab / 073dda8 / 541aa77 / 67b6104 Tidal acceleration context state and initialization
 - 3919eba / c281a76 Notices: test-generator dependencies, publications consulted
 - b48050d Docs: VALIDATION certification table, STATUS superseded notice
 - 3cf657e Report milestone
