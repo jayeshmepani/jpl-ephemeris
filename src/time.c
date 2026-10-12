@@ -168,7 +168,28 @@ static double jme_delta_t_espenak_meeus_y(double y)
 
 static double jme_delta_t_espenak_meeus_split(double jd1, double jd2)
 {
-    return jme_delta_t_espenak_meeus_y(jme_calendar_decimal_year_split(jd1, jd2));
+    jme_context *ctx = jme_get_context();
+    double y = jme_calendar_decimal_year_split(jd1, jd2);
+    double dt = jme_delta_t_espenak_meeus_y(y);
+
+    /*
+     * Morrison-Stephenson historical Delta-T values use a lunar secular
+     * acceleration of -26 arcsec/century^2. NASA's Five Millennium Canon
+     * gives the generalized correction for an alternate acceleration a:
+     *
+     *   c = -0.91072 * (a + 26.0) * ((y - 1955.0) / 100.0)^2 seconds.
+     *
+     * Apply it only before 1955. Observational values from 1955 onward are
+     * referred to atomic time and are not adjusted for a lunar ephemeris.
+     * The published IERS and SMH-2016/2021 paths are intentionally separate.
+     */
+    if (ctx->tidal_acceleration_explicit && y < 1955.0) {
+        double centuries = (y - 1955.0) / 100.0;
+        dt += -0.91072 * (ctx->tidal_acceleration_effective + 26.0)
+            * centuries * centuries;
+    }
+
+    return dt;
 }
 
 /*
