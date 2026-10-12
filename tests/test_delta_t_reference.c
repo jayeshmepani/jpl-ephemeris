@@ -136,7 +136,7 @@ int main(void)
     {
         const double jd_year_zero = jme_julian_day(0, 1, 1, 0.0, JME_CALENDAR_GREGORIAN);
         const double jd_year_2000 = 2451545.0;
-        double baseline, adjusted, expected, y;
+        double baseline, adjusted, expected, y, y_smh;
         int year, month, day;
         double hour;
 
@@ -194,7 +194,9 @@ int main(void)
         baseline = jme_delta_t_ex(jd_year_zero, JME_MODEL_DELTAT_STEPHENSON_ETC_2016, error);
         jme_set_tid_acc(-25.858);
         adjusted = jme_delta_t_ex(jd_year_zero, JME_MODEL_DELTAT_STEPHENSON_ETC_2016, error);
-        expected = -0.91072 * (-25.858 + 25.85) * ((y - 1955.0) / 100.0) * ((y - 1955.0) / 100.0);
+        y_smh = 2000.0 + (jd_year_zero - 2451545.0) / 365.2425;
+        expected = -0.91072 * (-25.858 + 25.85)
+            * ((y_smh - 1955.0) / 100.0) * ((y_smh - 1955.0) / 100.0);
         if (!isfinite(adjusted) || fabs((adjusted - baseline) - expected) > 1.0e-8) {
             fprintf(stderr, "SMH-2016 tidal correction mismatch: got %.12f expected delta %.12f\n",
                 adjusted - baseline, expected);
