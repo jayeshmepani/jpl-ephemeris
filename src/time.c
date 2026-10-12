@@ -1,5 +1,6 @@
 #include "jme/jme.h"
 #include "context.h"
+#include "jme_erfa_vendor.h"
 
 #include <math.h>
 
@@ -75,30 +76,33 @@ double jme_delta_t(double jd_ut)
 
 #include "deltat_data.inc"
 
-/* Julian-epoch year: 2000.0 + (JD - J2000) / 365.25 (argument of the S15 spline). */
-static double jme_julian_epoch_year(double jd)
+/* Julian-epoch year evaluated from a two-part JD without first summing the parts. */
+static double jme_julian_epoch_year_split(double jd1, double jd2)
 {
-    return 2000.0 + (jd - 2451545.0) / 365.25;
+    return 2000.0 + ((jd1 - 2451545.0) + jd2) / 365.25;
 }
 
 /*
  * Calendar decimal year used by Espenak & Meeus (NASA TP-2006-214141):
  * year + fraction of that calendar year, with the Julian calendar before
  * 1582-10-15 and the Gregorian calendar from then on (astronomical year
- * numbering). NASA's published prescription y = year + (month - 0.5)/12 is the
- * mid-month value of this continuous argument; using the continuous form
- * removes the month-boundary steps of the mid-month form.
+ * numbering). Keep the date in two parts through calendar decomposition and
+ * compute the year fraction after subtracting the nearby January-1 epoch.
  */
-static double jme_calendar_decimal_year(double jd)
+static double jme_calendar_decimal_year_split(double jd1, double jd2)
 {
-    int calendar = jd < 2299160.5 ? JME_CALENDAR_JULIAN : JME_CALENDAR_GREGORIAN;
+    int calendar = ((jd1 - 2299160.5) + jd2) < 0.0
+        ? JME_CALENDAR_JULIAN : JME_CALENDAR_GREGORIAN;
     int year, month, day;
-    double hour, start, next;
+    double fd, start, next, elapsed;
 
-    jme_reverse_julian_day(jd, calendar, &year, &month, &day, &hour);
+    if (jme_eraJd2cal(jd1, jd2, &year, &month, &day, &fd) != 0) {
+        return NAN;
+    }
     start = jme_julian_day(year, 1, 1, 0.0, calendar);
     next = jme_julian_day(year + 1, 1, 1, 0.0, calendar);
-    return (double)year + (jd - start) / (next - start);
+    elapsed = (jd1 - start) + jd2;
+    return (double)year + elapsed / (next - start);
 }
 
 /*
@@ -162,9 +166,9 @@ static double jme_delta_t_espenak_meeus_y(double y)
     return -20.0 + 32.0 * u * u;
 }
 
-static double jme_delta_t_espenak_meeus(double jd_ut)
+static double jme_delta_t_espenak_meeus_split(double jd1, double jd2)
 {
-    return jme_delta_t_espenak_meeus_y(jme_calendar_decimal_year(jd_ut));
+    return jme_delta_t_espenak_meeus_y(jme_calendar_decimal_year_split(jd1, jd2));
 }
 
 /*
@@ -192,9 +196,10 @@ static int jme_delta_t_s15_spline(double y, double *dt)
     return 1;
 }
 
-static double jme_delta_t_smh2016(double jd_ut)
+static double jme_delta_t_smh2016_split(double jd1, double jd2)
 {
-    double y = jme_julian_epoch_year(jd_ut), dt, u;
+    double y = jme_julian_epoch_year_split(jd1, jd2), dt, u;
+    if (!isfinite(y)) return NAN;
     if (jme_delta_t_s15_spline(y, &dt)) return dt;
     u = (y - 1825.0) / 100.0;
     return -320.0 + 32.5 * u * u;
@@ -209,9 +214,10 @@ static double jme_delta_t_smh2016(double jd_ut)
  * used for it (|UT1-UTC| < 0.9 s changes Delta-T by < 2e-8 s).
  * Returns 1 inside the table, with *predicted = 1 for IERS predictions.
  */
-static int jme_delta_t_iers(double jd_ut, double *dt, int *predicted)
+static int jme_delta_t_iers_split(double jd1, double jd2, double *dt, int *predicted)
 {
-    double x = (jd_ut - 2400000.5) - (double)JME_DELTAT_IERS_FIRST_MJD;
+    /* Subtract the MJD epoch before adding the small part, preserving sub-ULP offsets. */
+    double x = ((jd1 - 2400000.5) - (double)JME_DELTAT_IERS_FIRST_MJD) + jd2;
     int i0, k, m;
     double sum = 0.0;
 
@@ -237,12 +243,13 @@ static int jme_delta_t_iers(double jd_ut, double *dt, int *predicted)
  * Stephenson-Morrison-Hohenkerk 2016/2021 (splines -720..2019, parabola before
  * -720), and Espenak-Meeus 2006 after the end of the IERS predictions.
  */
-static double jme_delta_t_automatic(double jd_ut)
+static double jme_delta_t_automatic_split(double jd1, double jd2)
 {
     double dt;
-    if (jme_delta_t_iers(jd_ut, &dt, 0)) return dt;
-    if (jd_ut < 2400000.5 + (double)JME_DELTAT_IERS_FIRST_MJD) return jme_delta_t_smh2016(jd_ut);
-    return jme_delta_t_espenak_meeus(jd_ut);
+    double from_iers_start = ((jd1 - 2400000.5) - (double)JME_DELTAT_IERS_FIRST_MJD) + jd2;
+    if (jme_delta_t_iers_split(jd1, jd2, &dt, 0)) return dt;
+    if (from_iers_start < 0.0) return jme_delta_t_smh2016_split(jd1, jd2);
+    return jme_delta_t_espenak_meeus_split(jd1, jd2);
 }
 
 int jme_delta_t_iers_table_info(double *jd_first, double *jd_last_observed, double *jd_last, char *error)
@@ -254,32 +261,31 @@ int jme_delta_t_iers_table_info(double *jd_first, double *jd_last_observed, doub
     return JME_OK;
 }
 
-double jme_delta_t_ex(double jd_ut, int model, char *error)
+double internal_delta_t_ex_split(double jd1, double jd2, int model, char *error)
 {
     jme_context *ctx = jme_get_context();
+    double dt;
 
-    if (error != 0) {
-        error[0] = '\0';
-    }
-
-    if (!isfinite(jd_ut)) {
-        jme_set_error(error, "Julian date for Delta-T must be finite");
+    if (error != 0) error[0] = '\0';
+    if (!isfinite(jd1) || !isfinite(jd2)) {
+        jme_set_error(error, "Two-part Julian date for Delta-T must be finite");
         return NAN;
     }
 
-    if (ctx->delta_t_userdef_enabled) {
-        return ctx->delta_t_userdef;
-    }
+    if (ctx->delta_t_userdef_enabled) return ctx->delta_t_userdef;
 
     switch (model) {
     case JME_TIME_DELTAT_AUTOMATIC:
-        return jme_delta_t_automatic(jd_ut);
+        dt = jme_delta_t_automatic_split(jd1, jd2);
+        break;
 
     case JME_MODEL_DELTAT_ESPENAK_MEEUS_2006:
-        return jme_delta_t_espenak_meeus(jd_ut);
+        dt = jme_delta_t_espenak_meeus_split(jd1, jd2);
+        break;
 
     case JME_MODEL_DELTAT_STEPHENSON_ETC_2016:
-        return jme_delta_t_smh2016(jd_ut);
+        dt = jme_delta_t_smh2016_split(jd1, jd2);
+        break;
 
     case JME_MODEL_DELTAT_STEPHENSON_MORRISON_1984:
     case JME_MODEL_DELTAT_STEPHENSON_1997:
@@ -295,6 +301,26 @@ double jme_delta_t_ex(double jd_ut, int model, char *error)
     default:
         jme_set_error(error, "Unsupported Delta-T model");
         return NAN;
+    }
+
+    if (!isfinite(dt)) {
+        if (error == 0 || error[0] == '\0') jme_set_error(error, "Delta-T date conversion failed");
+        return NAN;
+    }
+    return dt;
+}
+
+double jme_delta_t_ex(double jd_ut, int model, char *error)
+{
+    if (error != 0) error[0] = '\0';
+    if (!isfinite(jd_ut)) {
+        jme_set_error(error, "Julian date for Delta-T must be finite");
+        return NAN;
+    }
+    {
+        double jd1 = floor(jd_ut);
+        double jd2 = jd_ut - jd1;
+        return internal_delta_t_ex_split(jd1, jd2, model, error);
     }
 }
 
