@@ -7,6 +7,7 @@
 #include "jme/jme.h"
 #include "jme/jme_extended.h"
 #include "fixtures/deltat_reference.h"
+#include "fixtures/deltat_smh2016_reference.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -44,7 +45,20 @@ int main(void)
     jme_set_delta_t_userdef(NAN);
     failures += check_set("iers_nodes", dt_iers_nodes, N(dt_iers_nodes), JME_TIME_DELTAT_AUTOMATIC, 1.0e-6, 0.0);
     failures += check_set("iers_noon", dt_iers_noon, N(dt_iers_noon), JME_TIME_DELTAT_AUTOMATIC, 2.0e-4, 0.0);
-    failures += check_set("smh2016", dt_smh2016, N(dt_smh2016), JME_MODEL_DELTAT_STEPHENSON_ETC_2016, 1.0e-9, 1.0e-13);
+    /* dt_smh2016 (Skyfield) evaluates the 2020 revision of Table S15. */
+    failures += check_set("smh2021", dt_smh2016, N(dt_smh2016), JME_MODEL_DELTAT_STEPHENSON_ETC_2021, 1.0e-9, 1.0e-13);
+    /* SMH 2016 Table S15 as published, rule S5.1 (independent exact evaluation). */
+    {
+        size_t k;
+        for (k = 0; k < N(dt_smh2016_table); k++) {
+            double v = jme_delta_t_ex(dt_smh2016_table[k].jd, JME_MODEL_DELTAT_STEPHENSON_ETC_2016, error);
+            if (!(fabs(v - dt_smh2016_table[k].dt) <= 1.0e-9 + 1.0e-13 * fabs(dt_smh2016_table[k].dt))) {
+                fprintf(stderr, "SMH-2016 Table S15 mismatch at JD %.6f: %.12f vs %.12f\n",
+                    dt_smh2016_table[k].jd, v, dt_smh2016_table[k].dt);
+                failures++;
+            }
+        }
+    }
     failures += check_set("em2006", dt_em2006, N(dt_em2006), JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, 1.0e-9, 1.0e-13);
 
     /* AUTOMATIC composition: SMH-2016 before the IERS table, EM-2006 after it. */
@@ -54,7 +68,7 @@ int main(void)
         failures++;
     }
     dt = jme_delta_t_ex(first - 0.25, JME_TIME_DELTAT_AUTOMATIC, error);
-    dt2 = jme_delta_t_ex(first - 0.25, JME_MODEL_DELTAT_STEPHENSON_ETC_2016, error);
+    dt2 = jme_delta_t_ex(first - 0.25, JME_MODEL_DELTAT_STEPHENSON_ETC_2021, error);
     if (!(dt == dt2) || fabs(dt - 43.1526) > 0.001) {
         fprintf(stderr, "AUTOMATIC before IERS table: %.9f vs SMH %.9f\n", dt, dt2);
         failures++;
@@ -88,7 +102,7 @@ int main(void)
     }
     /* -3000 .. +3000 sweep: finite and monotone-in-sign sanity for every model. */
     {
-        const int models[] = {JME_TIME_DELTAT_AUTOMATIC, JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, JME_MODEL_DELTAT_STEPHENSON_ETC_2016};
+        const int models[] = {JME_TIME_DELTAT_AUTOMATIC, JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, JME_MODEL_DELTAT_STEPHENSON_ETC_2016, JME_MODEL_DELTAT_STEPHENSON_ETC_2021};
         int m;
         double jd;
         for (m = 0; m < N(models); m++) {
@@ -213,15 +227,15 @@ int main(void)
         }
 
         /*
-         * SMH-2016/2021 uses -25.85 arcsec/century^2 as its own reference
-         * acceleration, so the correction must use that baseline instead.
+         * SMH-2016/2021 values correspond to DE430, -25.82 arcsec/century^2
+         * (Stephenson et al. 2016, sect. 2(a)); the correction uses that baseline.
          */
         jme_set_tid_acc(JME_TIME_TIDAL_AUTOMATIC);
         baseline = jme_delta_t_ex(jd_year_zero, JME_MODEL_DELTAT_STEPHENSON_ETC_2016, error);
         jme_set_tid_acc(-25.858);
         adjusted = jme_delta_t_ex(jd_year_zero, JME_MODEL_DELTAT_STEPHENSON_ETC_2016, error);
         y_smh = 2000.0 + (jd_year_zero - 2451545.0) / 365.25;
-        expected = -0.91072 * (-25.858 + 25.85)
+        expected = -0.91072 * (-25.858 + 25.82)
             * ((y_smh - 1955.0) / 100.0) * ((y_smh - 1955.0) / 100.0);
         if (!isfinite(adjusted) || fabs((adjusted - baseline) - expected) > 1.0e-8) {
             fprintf(stderr, "SMH-2016 tidal correction mismatch: got %.12f expected delta %.12f\n",

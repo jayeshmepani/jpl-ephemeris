@@ -203,53 +203,78 @@ static double jme_delta_t_espenak_meeus_split(double jd1, double jd2)
 }
 
 /*
- * Stephenson, Morrison & Hohenkerk (2016), Proc. R. Soc. A 472: 20160404, with
- * the 2020 spline revision of Morrison, Stephenson, Hohenkerk & Zawilski (2021),
- * Proc. R. Soc. A 477: 20200776 (Table S15): cubic splines for -720 <= y < 2019,
- * and the published long-term parabola -320 + 32.5 ((y - 1825)/100)^2 outside.
- * The parabola does not join the spline (published model; see docs/TIME_SCALES.md).
+ * Stephenson, Morrison & Hohenkerk (2016), Proc. R. Soc. A 472: 20160404.
+ *   JME_MODEL_DELTAT_STEPHENSON_ETC_2016: the published Table S15 (54 rows,
+ *   -720.0 .. 2016.0) with the supplement's rule S5.1: the row with
+ *   K_i <= Y < K_i+1, equality at the upper end only for Y = 2016.0.
+ *   JME_MODEL_DELTAT_STEPHENSON_ETC_2021: the 2020 revision of Table S15
+ *   (Morrison, Stephenson, Hohenkerk & Zawilski 2021, Proc. R. Soc. A 477:
+ *   20200776; 58 rows, -720 .. 2019), K_i <= Y < K_i+1.
+ * Outside the spline range both use the published parabola (eq. 4.1 of the
+ * 2016 paper) -320 + 32.5 ((y - 1825)/100)^2, which does not join the spline
+ * (published model; see docs/TIME_SCALES.md).
  */
-static int jme_delta_t_s15_spline(double y, double *dt)
+static int jme_delta_t_spline(const double (*tab)[6], int n, int upper_inclusive, double y, double *dt)
 {
-    const int n = (int)(sizeof(jme_deltat_s15) / sizeof(jme_deltat_s15[0]));
     int lo = 0, hi = n - 1;
     const double *c;
     double t;
 
-    if (!(y >= jme_deltat_s15[0][0] && y < jme_deltat_s15[n - 1][1])) return 0;
+    if (!(y >= tab[0][0] && (y < tab[n - 1][1] || (upper_inclusive && y == tab[n - 1][1])))) return 0;
     while (lo < hi) {
         int mid = (lo + hi + 1) / 2;
-        if (jme_deltat_s15[mid][0] <= y) lo = mid; else hi = mid - 1;
+        if (tab[mid][0] <= y) lo = mid; else hi = mid - 1;
     }
-    c = jme_deltat_s15[lo];
+    c = tab[lo];
     t = (y - c[0]) / (c[1] - c[0]);
     *dt = c[2] + t * (c[3] + t * (c[4] + t * c[5]));
     return 1;
 }
 
-static double jme_delta_t_smh2016_split(double jd1, double jd2)
+/*
+ * The SMH spline values were reduced with the JPL DE430 lunar ephemeris and
+ * correspond to a lunar tidal acceleration of -25.82 arcsec/century^2
+ * (Stephenson et al. 2016, sect. 2(a): "the value implicit in the JPL
+ * ephemerides DE430 ... is -25.82"). The 2020 revision keeps that data
+ * reduction. An explicitly selected acceleration corrects the pre-1955
+ * domain relative to -25.82.
+ */
+#define JME_SMH_REFERENCE_NDOT (-25.82)
+
+static double jme_delta_t_smh_split(double jd1, double jd2, int revision_2021)
 {
     jme_context *ctx = jme_get_context();
     double y = jme_julian_epoch_year_split(jd1, jd2), dt, u;
+    int ok;
     if (!isfinite(y)) return NAN;
-    if (!jme_delta_t_s15_spline(y, &dt)) {
+    if (revision_2021) {
+        ok = jme_delta_t_spline(jme_deltat_s15, (int)(sizeof(jme_deltat_s15) / sizeof(jme_deltat_s15[0])), 0, y, &dt);
+    } else {
+        ok = jme_delta_t_spline(jme_deltat_s15_2016, (int)(sizeof(jme_deltat_s15_2016) / sizeof(jme_deltat_s15_2016[0])), 1, y, &dt);
+    }
+    if (!ok) {
         u = (y - 1825.0) / 100.0;
         dt = -320.0 + 32.5 * u * u;
     }
 
-    /*
-     * The SMH-2016/2021 curve uses its own reference lunar acceleration,
-     * -25.85 arcsec/century^2 (not the -26.0 baseline of the EM-2006
-     * polynomial). Adjust only the pre-1955 historical domain.
-     */
     if (ctx->tidal_acceleration_unresolved && y < 1955.0) return NAN;
     if (ctx->tidal_acceleration_explicit && y < 1955.0) {
         double centuries = (y - 1955.0) / 100.0;
-        dt += -0.91072 * (ctx->tidal_acceleration_effective + 25.85)
+        dt += -0.91072 * (ctx->tidal_acceleration_effective - JME_SMH_REFERENCE_NDOT)
             * centuries * centuries;
     }
 
     return dt;
+}
+
+static double jme_delta_t_smh2016_split(double jd1, double jd2)
+{
+    return jme_delta_t_smh_split(jd1, jd2, 0);
+}
+
+static double jme_delta_t_smh2021_split(double jd1, double jd2)
+{
+    return jme_delta_t_smh_split(jd1, jd2, 1);
 }
 
 /*
@@ -287,7 +312,7 @@ static int jme_delta_t_iers_split(double jd1, double jd2, double *dt, int *predi
 /*
  * JME_TIME_DELTAT_AUTOMATIC: IERS observed/predicted values where the embedded
  * table covers the date (1973-01-02 .. end of the IERS predictions), otherwise
- * Stephenson-Morrison-Hohenkerk 2016/2021 (splines -720..2019, parabola before
+ * Stephenson-Morrison-Hohenkerk 2021 revision (splines -720..2019, parabola before
  * -720), and Espenak-Meeus 2006 after the end of the IERS predictions.
  */
 static double jme_delta_t_automatic_split(double jd1, double jd2)
@@ -295,7 +320,7 @@ static double jme_delta_t_automatic_split(double jd1, double jd2)
     double dt;
     double from_iers_start = ((jd1 - 2400000.5) - (double)JME_DELTAT_IERS_FIRST_MJD) + jd2;
     if (jme_delta_t_iers_split(jd1, jd2, &dt, 0)) return dt;
-    if (from_iers_start < 0.0) return jme_delta_t_smh2016_split(jd1, jd2);
+    if (from_iers_start < 0.0) return jme_delta_t_smh2021_split(jd1, jd2);
     return jme_delta_t_espenak_meeus_split(jd1, jd2);
 }
 
@@ -334,6 +359,10 @@ double internal_delta_t_ex_split(double jd1, double jd2, int model, char *error)
         dt = jme_delta_t_smh2016_split(jd1, jd2);
         break;
 
+    case JME_MODEL_DELTAT_STEPHENSON_ETC_2021:
+        dt = jme_delta_t_smh2021_split(jd1, jd2);
+        break;
+
     case JME_MODEL_DELTAT_STEPHENSON_MORRISON_1984:
     case JME_MODEL_DELTAT_STEPHENSON_1997:
     case JME_MODEL_DELTAT_STEPHENSON_MORRISON_2004:
@@ -342,7 +371,7 @@ double internal_delta_t_ex_split(double jd1, double jd2, int model, char *error)
          * been transcribed from their primary publications and verified, so they
          * are refused rather than substituted by another model.
          */
-        jme_set_error(error, "Delta-T model unavailable (primary tables not yet transcribed and verified); use AUTOMATIC, ESPENAK_MEEUS_2006 or STEPHENSON_ETC_2016");
+        jme_set_error(error, "Delta-T model unavailable (primary tables not yet transcribed and verified); use AUTOMATIC, ESPENAK_MEEUS_2006, STEPHENSON_ETC_2016 or STEPHENSON_ETC_2021");
         return NAN;
 
     default:
