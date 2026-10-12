@@ -203,6 +203,33 @@ int main(void)
         }
     }
 
+    /*
+     * Split-date Delta-T must preserve a sub-ULP offset when it crosses the
+     * end of the embedded IERS table. The ordinary double JD cannot represent
+     * this offset, so compare with the next representable JD on the EM-2006
+     * branch. The offset is large enough to survive subtraction of the MJD
+     * epoch, but far smaller than one ULP of the full Julian date.
+     */
+    {
+        double first, last_observed, last;
+        double split_dt, reference_dt;
+        error[0] = '\\0';
+        if (jme_delta_t_iers_table_info(&first, &last_observed, &last, error) != JME_OK) {
+            return fail("IERS table metadata unavailable for split-date test", error);
+        }
+        split_dt = internal_delta_t_ex_split(last, 1.0e-11,
+            JME_TIME_DELTAT_AUTOMATIC, error);
+        if (!isfinite(split_dt) || error[0] != '\\0') {
+            return fail("split-date Delta-T failed immediately beyond the IERS table", error);
+        }
+        reference_dt = jme_delta_t_ex(nextafter(last, INFINITY),
+            JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, error);
+        if (!isfinite(reference_dt) || error[0] != '\\0'
+            || fabs(split_dt - reference_dt) > 1.0e-6) {
+            return fail("split-date Delta-T lost a sub-ULP offset at the IERS boundary", error);
+        }
+    }
+
     /* Leap-second table expiry is reported and enforced. */
     {
         double until = 0.0, last = 0.0, o1, o2;
