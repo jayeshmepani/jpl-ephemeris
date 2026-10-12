@@ -219,12 +219,12 @@ int main(void)
         }
         split_dt = internal_delta_t_ex_split(last, 1.0e-11,
             JME_TIME_DELTAT_AUTOMATIC, error);
-        if (!isfinite(split_dt) || error[0] != '\\0') {
+        if (!isfinite(split_dt) || error[0] != '\0') {
             return fail("split-date Delta-T failed immediately beyond the IERS table", error);
         }
         reference_dt = jme_delta_t_ex(nextafter(last, INFINITY),
             JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, error);
-        if (!isfinite(reference_dt) || error[0] != '\\0'
+        if (!isfinite(reference_dt) || error[0] != '\0'
             || fabs(split_dt - reference_dt) > 1.0e-6) {
             return fail("split-date Delta-T lost a sub-ULP offset at the IERS boundary", error);
         }
