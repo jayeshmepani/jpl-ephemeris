@@ -39,6 +39,7 @@ typedef struct jme_context {
     int delta_t_userdef_enabled;
     double delta_t_userdef;
     int jpl_center_policy;
+    int tidal_acceleration_explicit;
 } jme_context;
 
 jme_context *jme_get_context(void);
