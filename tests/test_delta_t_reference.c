@@ -194,7 +194,7 @@ int main(void)
         baseline = jme_delta_t_ex(jd_year_zero, JME_MODEL_DELTAT_STEPHENSON_ETC_2016, error);
         jme_set_tid_acc(-25.858);
         adjusted = jme_delta_t_ex(jd_year_zero, JME_MODEL_DELTAT_STEPHENSON_ETC_2016, error);
-        y_smh = 2000.0 + (jd_year_zero - 2451545.0) / 365.2425;
+        y_smh = 2000.0 + (jd_year_zero - 2451545.0) / 365.25;
         expected = -0.91072 * (-25.858 + 25.85)
             * ((y_smh - 1955.0) / 100.0) * ((y_smh - 1955.0) / 100.0);
         if (!isfinite(adjusted) || fabs((adjusted - baseline) - expected) > 1.0e-8) {
