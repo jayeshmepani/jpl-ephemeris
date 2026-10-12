@@ -1,4 +1,5 @@
 #include "jme/jme.h"
+#include "jme/jme_extended.h"
 
 #include "context.h"
 
@@ -36,7 +37,7 @@ static void set_default_models(jme_context *ctx)
     ctx->model_obl = JME_MODEL_OBL_IAU_1980;
     ctx->model_prec = JME_MODEL_PREC_IAU_1976;
     ctx->model_sidt = JME_MODEL_SIDT_IAU_1976;
-    ctx->model_deltat = JME_MODEL_DELTAT_ESPENAK_MEEUS_2006;
+    ctx->model_deltat = JME_TIME_DELTAT_AUTOMATIC;
 }
 
 static const char *engine_policy_name(int engine_policy)
@@ -62,6 +63,10 @@ static void write_model_summary(jme_context *ctx)
         ctx->model_sidt,
         ctx->model_deltat,
         engine_policy_name(ctx->engine_policy));
+    if (ctx->jpl_center_policy == JME_JPL_CENTER_BARYCENTER) {
+        size_t n = strlen(ctx->astro_models);
+        snprintf(ctx->astro_models + n, sizeof(ctx->astro_models) - n, ";JPL_CENTER=BARYCENTER");
+    }
 }
 
 static void set_engine_policy(jme_context *ctx, int engine_policy)
@@ -92,7 +97,7 @@ static int token_value_matches(const char *token, const char *prefix, const char
     return token_matches(token + i, expected);
 }
 
-static void apply_model_token(jme_context *ctx, const char *token)
+static int apply_model_token(jme_context *ctx, const char *token)
 {
     if (token_matches(token, "DEFAULT") || token_matches(token, "IAU1980") || token_matches(token, "IAU1976")) {
         set_default_models(ctx);
@@ -107,6 +112,25 @@ static void apply_model_token(jme_context *ctx, const char *token)
         ctx->model_obl = JME_MODEL_OBL_IAU_2006;
         ctx->model_prec = JME_MODEL_PREC_IAU_2006;
         ctx->model_sidt = JME_MODEL_SIDT_IAU_2006;
+    } else if (token_matches(token, "IAU2000A")) {
+        ctx->model_bias = JME_MODEL_BIAS_IAU2000;
+        ctx->model_nut = JME_MODEL_NUT_IAU_2000A;
+        ctx->model_obl = JME_MODEL_OBL_IAU_2000;
+        ctx->model_prec = JME_MODEL_PREC_IAU_2000;
+    } else if (token_matches(token, "IAU2006A")) {
+        ctx->model_bias = JME_MODEL_BIAS_IAU2006;
+        ctx->model_nut = JME_MODEL_NUT_IAU_2006A;
+        ctx->model_obl = JME_MODEL_OBL_IAU_2006;
+        ctx->model_prec = JME_MODEL_PREC_IAU_2006;
+        ctx->model_sidt = JME_MODEL_SIDT_IAU_2006;
+    } else if (token_matches(token, "NUT2006A") || token_value_matches(token, "NUT=", "IAU2006A") || token_value_matches(token, "NUT=", "351")) {
+        ctx->model_nut = JME_MODEL_NUT_IAU_2006A;
+    } else if (token_matches(token, "NUT2000A") || token_value_matches(token, "NUT=", "IAU2000A") || token_value_matches(token, "NUT=", "334")) {
+        ctx->model_nut = JME_MODEL_NUT_IAU_2000A;
+    } else if (token_matches(token, "PREC_LASKAR1986") || token_value_matches(token, "PREC=", "LASKAR1986") || token_value_matches(token, "PREC=", "342")) {
+        ctx->model_prec = JME_MODEL_PREC_LASKAR_1986;
+    } else if (token_matches(token, "PREC_VONDRAK2011") || token_value_matches(token, "PREC=", "VONDRAK2011") || token_value_matches(token, "PREC=", "343")) {
+        ctx->model_prec = JME_MODEL_PREC_VONDRAK_2011;
     } else if (token_matches(token, "BIASNONE") || token_value_matches(token, "BIAS=", "NONE") || token_value_matches(token, "BIAS=", "332")) {
         ctx->model_bias = JME_MODEL_BIAS_NONE;
     } else if (token_matches(token, "BIAS2000") || token_value_matches(token, "BIAS=", "IAU2000") || token_value_matches(token, "BIAS=", "330")) {
@@ -141,6 +165,13 @@ static void apply_model_token(jme_context *ctx, const char *token)
         ctx->model_deltat = JME_MODEL_DELTAT_STEPHENSON_MORRISON_2004;
     } else if (token_matches(token, "DELTAT2006") || token_value_matches(token, "DELTAT=", "ESPENAK_MEEUS_2006") || token_value_matches(token, "DELTAT=", "349")) {
         ctx->model_deltat = JME_MODEL_DELTAT_ESPENAK_MEEUS_2006;
+    } else if (token_matches(token, "DELTATAUTO") || token_value_matches(token, "DELTAT=", "AUTOMATIC")
+        || token_value_matches(token, "DELTAT=", "AUTO") || token_value_matches(token, "DELTAT=", "389")) {
+        ctx->model_deltat = JME_TIME_DELTAT_AUTOMATIC;
+    } else if (token_value_matches(token, "DELTAT=", "MS2004_TABLE1_LINEAR") || token_value_matches(token, "DELTAT=", "408")) {
+        ctx->model_deltat = JME_MODEL_DELTAT_MS2004_TABLE1_LINEAR;
+    } else if (token_matches(token, "DELTAT2021") || token_value_matches(token, "DELTAT=", "STEPHENSON_ETC_2021") || token_value_matches(token, "DELTAT=", "407")) {
+        ctx->model_deltat = JME_MODEL_DELTAT_STEPHENSON_ETC_2021;
     } else if (token_matches(token, "DELTAT2016") || token_value_matches(token, "DELTAT=", "STEPHENSON_ETC_2016") || token_value_matches(token, "DELTAT=", "350")) {
         ctx->model_deltat = JME_MODEL_DELTAT_STEPHENSON_ETC_2016;
     } else if (token_matches(token, "ENGINE_AUTO") || token_value_matches(token, "ENGINE=", "AUTO")) {
@@ -154,7 +185,15 @@ static void apply_model_token(jme_context *ctx, const char *token)
         || token_value_matches(token, "ENGINE=", "VSOP_ELP_MEEUS")
         || token_value_matches(token, "ENGINE=", "ANALYTICAL")) {
         set_engine_policy(ctx, JME_ENGINE_VSOP_ELP_MEEUS);
+    } else if (token_value_matches(token, "JPL_CENTER=", "STRICT")) {
+        ctx->jpl_center_policy = JME_JPL_CENTER_STRICT;
+    } else if (token_value_matches(token, "JPL_CENTER=", "BARYCENTER")
+        || token_value_matches(token, "JPL_CENTER=", "BARYCENTRE")) {
+        ctx->jpl_center_policy = JME_JPL_CENTER_BARYCENTER;
+    } else {
+        return 0;
     }
+    return 1;
 }
 
 static int engine_policy_from_env(void)
@@ -279,7 +318,7 @@ void jme_set_astro_models(const char *models, int flags)
         if (c == ',' || c == ';' || c == ' ' || c == '\t' || c == '\n') {
             if (j > 0) {
                 token[j] = '\0';
-                apply_model_token(ctx, token);
+                (void)apply_model_token(ctx, token);
                 j = 0;
             }
         } else if (j + 1 < sizeof(token)) {
@@ -289,10 +328,117 @@ void jme_set_astro_models(const char *models, int flags)
 
     if (j > 0) {
         token[j] = '\0';
-        apply_model_token(ctx, token);
+        (void)apply_model_token(ctx, token);
     }
 
     write_model_summary(ctx);
+}
+
+/* Tokenise and apply models to ctx; returns 0 on success, 1 on the first
+ * unknown or over-long token (reported through bad_index / bad_token). */
+static int parse_models(jme_context *ctx, const char *models, int *bad_index, char *bad_token, size_t bad_size)
+{
+    char token[64];
+    size_t i = 0, j = 0;
+    int index = 0, overflow = 0;
+
+    for (;;) {
+        char c = models[i];
+        if (c == '\0' || c == ',' || c == ';' || c == ' ' || c == '\t' || c == '\n' || c == '\r') {
+            if (j > 0 || overflow) {
+                index++;
+                token[j] = '\0';
+                if (overflow || !apply_model_token(ctx, token)) {
+                    if (bad_index != 0) *bad_index = index;
+                    jme_set_string(bad_token, bad_size, token);
+                    return 1;
+                }
+                j = 0;
+                overflow = 0;
+            }
+            if (c == '\0') break;
+        } else if (j + 1 < sizeof(token)) {
+            token[j++] = c;
+        } else {
+            overflow = 1;
+        }
+        i++;
+    }
+    return 0;
+}
+
+int jme_set_astro_models_checked(const char *models, char *error)
+{
+    jme_context *ctx = jme_get_context();
+    jme_context trial;
+    char bad[64];
+    int bad_index = 0;
+
+    if (models == 0 || models[0] == '\0') {
+        jme_set_astro_models(models, 0);
+        jme_set_error(error, "");
+        return JME_OK;
+    }
+    trial = *ctx;
+    if (parse_models(&trial, models, &bad_index, bad, sizeof(bad)) != 0) {
+        char msg[160];
+        snprintf(msg, sizeof(msg), "Unknown or over-long astro-model token #%d: '%s'", bad_index, bad);
+        jme_set_error(error, msg);
+        return JME_ERR;
+    }
+    *ctx = trial;
+    write_model_summary(ctx);
+    jme_set_error(error, "");
+    return JME_OK;
+}
+
+int jme_set_jpl_center_policy(int policy, char *error)
+{
+    if (policy != JME_JPL_CENTER_STRICT && policy != JME_JPL_CENTER_BARYCENTER) {
+        jme_set_error(error, "Unknown JPL planet-centre policy");
+        return JME_ERR;
+    }
+    jme_get_context()->jpl_center_policy = policy;
+    write_model_summary(jme_get_context());
+    jme_set_error(error, "");
+    return JME_OK;
+}
+
+int jme_get_jpl_center_policy(void)
+{
+    return jme_get_context()->jpl_center_policy;
+}
+
+int jme_set_topo_checked(double lon, double lat, double altitude, char *error)
+{
+    if (!isfinite(lon) || !isfinite(lat) || !isfinite(altitude)) {
+        jme_set_error(error, "Topocentric longitude, latitude and altitude must be finite");
+        return JME_ERR;
+    }
+    if (lat < -90.0 || lat > 90.0) {
+        jme_set_error(error, "Topocentric latitude must be within [-90, 90] degrees");
+        return JME_ERR;
+    }
+    jme_set_topo(lon, lat, altitude);
+    jme_set_error(error, "");
+    return JME_OK;
+}
+
+int jme_set_sidereal_mode_checked(int sidereal_mode, double t0, double ayan_t0, char *error)
+{
+    const char *name;
+    if (!isfinite(t0) || !isfinite(ayan_t0)) {
+        jme_set_error(error, "Sidereal t0 and ayan_t0 must be finite");
+        return JME_ERR;
+    }
+    name = jme_get_ayanamsa_name(sidereal_mode);
+    if (name == 0 || strcmp(name, "Unknown sidereal mode") == 0) {
+        jme_set_error(error, "Unknown sidereal mode");
+        return JME_ERR;
+    }
+    jme_set_sidereal_mode(sidereal_mode, t0, ayan_t0);
+    jme_set_error(error, "");
+    return JME_OK;
 }
 
 int jme_get_astro_models(char *models, int flags)
@@ -321,10 +467,63 @@ double jme_get_tid_acc(void)
     return jme_get_context()->tidal_acceleration;
 }
 
+/*
+ * Resolve the public tidal-acceleration selectors to the lunar mean-longitude
+ * tidal acceleration (arcsec/century^2) of each JPL lunar ephemeris, from
+ * primary publications:
+ *   DE200 -23.8946: ELP 2000-82 / LE200 value (Chapront-Touze & Chapront 1983,
+ *          A&A 124, 50); -23.895 in Chapront, Chapront-Touze & Francou 2002,
+ *          A&A 387, 700, Table 7.
+ *   DE403/DE404 -25.580, DE405/DE406 -25.826: Chapront et al. 2002, Table 7
+ *          (DE404 and DE406 are the long-span companions of DE403 and DE405,
+ *          Standish 1995 IOM 314.10-127; Standish 1998 IOM 312.F-98-048).
+ *   DE421 -25.85: Williams, Boggs & Folkner 2008, JPL IOM
+ *          335-JW,DB,WF-20080314-001.
+ *   DE430 -25.82, DE431 -25.80: Folkner et al. 2014, IPN Progress Report
+ *          42-196, sect. on lunar tidal acceleration.
+ *   DE441: JPL has not published a value; Park et al. 2021 (AJ 161, 105)
+ *          state only that the acceleration is implicit in the tide model.
+ *          The selector is therefore unresolved: historical (pre-1955)
+ *          model Delta-T fails with an explicit error instead of using an
+ *          unpublished number. Supply a numeric value to override.
+ * The configured selector is retained so jme_get_tid_acc() is a round trip.
+ */
+static double jme_tidal_acceleration_value(double t_acc, int *is_explicit, int *is_unresolved)
+{
+    *is_explicit = 1;
+    *is_unresolved = 0;
+
+    if (t_acc == (double)JME_TIME_TIDAL_AUTOMATIC) {
+        *is_explicit = 0;
+        return 0.0;
+    }
+    if (t_acc == (double)JME_TIME_TIDAL_DE200) return -23.8946;
+    if (t_acc == (double)JME_TIME_TIDAL_DE403) return -25.580;
+    if (t_acc == (double)JME_TIME_TIDAL_DE404) return -25.580;
+    if (t_acc == (double)JME_TIME_TIDAL_DE405) return -25.826;
+    if (t_acc == (double)JME_TIME_TIDAL_DE406) return -25.826;
+    if (t_acc == (double)JME_TIME_TIDAL_DE421) return -25.85;
+    if (t_acc == (double)JME_TIME_TIDAL_DE430) return -25.82;
+    if (t_acc == (double)JME_TIME_TIDAL_DE431) return -25.80;
+    if (t_acc == (double)JME_TIME_TIDAL_DE441) {
+        *is_explicit = 0;
+        *is_unresolved = 1;
+        return NAN;
+    }
+
+    /* Any other finite input is a user-supplied acceleration value. */
+    return t_acc;
+}
+
 void jme_set_tid_acc(double t_acc)
 {
     if (isfinite(t_acc)) {
-        jme_get_context()->tidal_acceleration = t_acc;
+        jme_context *ctx = jme_get_context();
+        int is_explicit, is_unresolved;
+        ctx->tidal_acceleration = t_acc;
+        ctx->tidal_acceleration_effective = jme_tidal_acceleration_value(t_acc, &is_explicit, &is_unresolved);
+        ctx->tidal_acceleration_explicit = is_explicit;
+        ctx->tidal_acceleration_unresolved = is_unresolved;
     }
 }
 

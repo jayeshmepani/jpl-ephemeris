@@ -1,3 +1,9 @@
+/*
+ * Portions derived from the work of Stephen L. Moshier, incorporated herein
+ * by permission of the author (plan404 / AA 5.6 material from moshier.net,
+ * distributed under the MIT License by permission given 12 October 2026;
+ * see docs/permissions/MOSHIER_PERMISSION.md and THIRD_PARTY_NOTICES.md).
+ */
 // define "far" if require by your compiler
 #ifdef _MSC_VER
 #define FAR
@@ -19,9 +25,6 @@ struct plantbl {
 double jme_moshier_J2000 = 2451545.0;
 double jme_moshier_STR = 4.8481368110953599359e-6;	/* radians per arc second */
 
-static double DTR = 1.7453292519943295769e-2;
-static double RTD = 5.7295779513082320877e1;
-static double RTS = 2.0626480624709635516e5;	/* arc seconds per radian */
 
 
 /* ear404.c */
@@ -10618,9 +10621,6 @@ struct plantbl plu404 = {
 //double jme_moshier_J2000 = 2451545.0;
 #if 0
 /* Conversion factors between degrees and radians */
-static double DTR = 1.7453292519943295769e-2;
-static double RTD = 5.7295779513082320877e1;
-static double RTS = 2.0626480624709635516e5;	/* arc seconds per radian */
 #endif
 //double jme_moshier_STR = 4.8481368110953599359e-6;	/* radians per arc second */
 
@@ -10653,8 +10653,9 @@ static double phases[] =
   860492.1546,
 };
 
-static double ss[9][24];
-static double cc[9][24];
+#include "jme_tls.h"
+static JME_THREAD_LOCAL double ss[9][24];
+static JME_THREAD_LOCAL double cc[9][24];
 
 static int sscc (int,double,int);
 

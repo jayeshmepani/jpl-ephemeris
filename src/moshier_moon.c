@@ -1,6 +1,13 @@
+/*
+ * Portions derived from the work of Stephen L. Moshier, incorporated herein
+ * by permission of the author (plan404 / AA 5.6 material from moshier.net,
+ * distributed under the MIT License by permission given 12 October 2026;
+ * see docs/permissions/MOSHIER_PERMISSION.md and THIRD_PARTY_NOTICES.md).
+ */
 #include "jme/jme.h"
 #include "moshier/plantbl.h"
 #include <math.h>
+#include "jme_tls.h"
 
 #define JME_MOSHIER_NARGS 18
 #define JME_MOSHIER_MAX_HARMONIC 31
@@ -9,9 +16,9 @@
 extern struct plantbl moonlr;
 extern struct plantbl moonlat;
 
-static double g_args[JME_MOSHIER_NARGS];
-static double g_ss[JME_MOSHIER_NARGS][JME_MOSHIER_MAX_HARMONIC];
-static double g_cc[JME_MOSHIER_NARGS][JME_MOSHIER_MAX_HARMONIC];
+static JME_THREAD_LOCAL double g_args[JME_MOSHIER_NARGS];
+static JME_THREAD_LOCAL double g_ss[JME_MOSHIER_NARGS][JME_MOSHIER_MAX_HARMONIC];
+static JME_THREAD_LOCAL double g_cc[JME_MOSHIER_NARGS][JME_MOSHIER_MAX_HARMONIC];
 
 static void moshier_sscc(int k, double arg, int n)
 {

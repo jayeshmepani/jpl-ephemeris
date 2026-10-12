@@ -766,6 +766,144 @@ static int do_probe(const char *function_name, const char *engine, const char *k
         end_record(out);
         return 0;
     }
+    if (strcmp(function_name, "jme_calc_resolve_engine") == 0) {
+        int v[2] = {0, 0};
+        rc = jme_calc_resolve_engine(jd, JME_BODY_MARS, &v[0], &v[1], errbuf);
+        begin_record(out, function_name, engine, fx->id, "engine_sensitive");
+        fprintf(out, "\"status\":\"%s\",", rc == JME_OK ? "OK" : "ERROR");
+        print_int_obj(out, "return_code", rc, 1);
+        print_string_bytes_obj(out, "error_buffer", errbuf, sizeof(errbuf), 1);
+        print_int_obj(out, "value0", v[0], 1);
+        print_int_obj(out, "value1", v[1], 0);
+        end_record(out);
+        return 0;
+    }
+    if (strcmp(function_name, "jme_set_jpl_center_policy") == 0) {
+        int v[2] = {0, 0};
+        rc = jme_set_jpl_center_policy(JME_JPL_CENTER_BARYCENTER, errbuf); v[0] = jme_get_jpl_center_policy();
+        begin_record(out, function_name, engine, fx->id, "engine_sensitive");
+        fprintf(out, "\"status\":\"%s\",", rc == JME_OK ? "OK" : "ERROR");
+        print_int_obj(out, "return_code", rc, 1);
+        print_string_bytes_obj(out, "error_buffer", errbuf, sizeof(errbuf), 1);
+        print_int_obj(out, "value0", v[0], 1);
+        print_int_obj(out, "value1", v[1], 0);
+        end_record(out);
+        return 0;
+    }
+    if (strcmp(function_name, "jme_get_jpl_center_policy") == 0) {
+        int v[2] = {0, 0};
+        v[0] = jme_get_jpl_center_policy(); rc = JME_OK; errbuf[0] = 0;
+        begin_record(out, function_name, engine, fx->id, "engine_sensitive");
+        fprintf(out, "\"status\":\"%s\",", rc == JME_OK ? "OK" : "ERROR");
+        print_int_obj(out, "return_code", rc, 1);
+        print_string_bytes_obj(out, "error_buffer", errbuf, sizeof(errbuf), 1);
+        print_int_obj(out, "value0", v[0], 1);
+        print_int_obj(out, "value1", v[1], 0);
+        end_record(out);
+        return 0;
+    }
+    if (strcmp(function_name, "jme_set_astro_models_checked") == 0) {
+        int v[2] = {0, 0};
+        rc = jme_set_astro_models_checked("IAU2006A;NOT_A_MODEL", errbuf); v[0] = jme_set_astro_models_checked("IAU2006A", 0);
+        begin_record(out, function_name, engine, fx->id, "engine_sensitive");
+        fprintf(out, "\"status\":\"%s\",", rc == JME_OK ? "OK" : "ERROR");
+        print_int_obj(out, "return_code", rc, 1);
+        print_string_bytes_obj(out, "error_buffer", errbuf, sizeof(errbuf), 1);
+        print_int_obj(out, "value0", v[0], 1);
+        print_int_obj(out, "value1", v[1], 0);
+        end_record(out);
+        return 0;
+    }
+    if (strcmp(function_name, "jme_set_topo_checked") == 0) {
+        int v[2] = {0, 0};
+        rc = jme_set_topo_checked(77.2, 28.6, 216.0, errbuf); v[0] = jme_set_topo_checked(0.0, 91.0, 0.0, 0);
+        begin_record(out, function_name, engine, fx->id, "engine_sensitive");
+        fprintf(out, "\"status\":\"%s\",", rc == JME_OK ? "OK" : "ERROR");
+        print_int_obj(out, "return_code", rc, 1);
+        print_string_bytes_obj(out, "error_buffer", errbuf, sizeof(errbuf), 1);
+        print_int_obj(out, "value0", v[0], 1);
+        print_int_obj(out, "value1", v[1], 0);
+        end_record(out);
+        return 0;
+    }
+    if (strcmp(function_name, "jme_set_sidereal_mode_checked") == 0) {
+        int v[2] = {0, 0};
+        rc = jme_set_sidereal_mode_checked(JME_SIDEREAL_LAHIRI, 0.0, 0.0, errbuf); v[0] = jme_set_sidereal_mode_checked(-12345, 0.0, 0.0, 0);
+        begin_record(out, function_name, engine, fx->id, "engine_sensitive");
+        fprintf(out, "\"status\":\"%s\",", rc == JME_OK ? "OK" : "ERROR");
+        print_int_obj(out, "return_code", rc, 1);
+        print_string_bytes_obj(out, "error_buffer", errbuf, sizeof(errbuf), 1);
+        print_int_obj(out, "value0", v[0], 1);
+        print_int_obj(out, "value1", v[1], 0);
+        end_record(out);
+        return 0;
+    }
+    if (strcmp(function_name, "jme_delta_t_iers_table_info") == 0) {
+        double v[3] = {NAN, NAN, NAN};
+        rc = jme_delta_t_iers_table_info(&v[0], &v[1], &v[2], errbuf);
+        begin_record(out, function_name, engine, fx->id, "engine_invariant");
+        fprintf(out, "\"status\":\"%s\",", rc == JME_OK ? "OK" : "ERROR");
+        print_int_obj(out, "return_code", rc, 1);
+        print_string_bytes_obj(out, "error_buffer", errbuf, sizeof(errbuf), 1);
+        print_double_array_obj(out, "values", v, 3, 0);
+        end_record(out);
+        return 0;
+    }
+    if (strcmp(function_name, "jme_get_ayanamsa_ex2") == 0 || strcmp(function_name, "jme_get_ayanamsa_ex2_ut") == 0) {
+        double v[2] = {NAN, NAN};
+        if (strcmp(function_name, "jme_get_ayanamsa_ex2") == 0) rc = jme_get_ayanamsa_ex2(jd, JME_SIDEREAL_LAHIRI, JME_AYANAMSA_TRUE, &v[0], &v[1], errbuf);
+        else rc = jme_get_ayanamsa_ex2_ut(jd, JME_SIDEREAL_LAHIRI, JME_AYANAMSA_TRUE, &v[0], &v[1], errbuf);
+        begin_record(out, function_name, engine, fx->id, "engine_invariant");
+        fprintf(out, "\"status\":\"%s\",", rc == JME_OK ? "OK" : "ERROR");
+        print_int_obj(out, "return_code", rc, 1);
+        print_string_bytes_obj(out, "error_buffer", errbuf, sizeof(errbuf), 1);
+        print_double_array_obj(out, "values", v, 2, 0);
+        end_record(out);
+        return 0;
+    }
+    if (strcmp(function_name, "jme_time_scale_convert") == 0) {
+        double v[2] = {NAN, NAN};
+        rc = jme_time_scale_convert(jd, 0.0, JME_TIME_SCALE_UTC, JME_TIME_SCALE_TDB, &v[0], &v[1], errbuf);
+        begin_record(out, function_name, engine, fx->id, "engine_invariant");
+        fprintf(out, "\"status\":\"%s\",", rc == JME_OK ? "OK" : "ERROR");
+        print_int_obj(out, "return_code", rc, 1);
+        print_string_bytes_obj(out, "error_buffer", errbuf, sizeof(errbuf), 1);
+        print_double_array_obj(out, "values", v, 2, 0);
+        end_record(out);
+        return 0;
+    }
+    if (strcmp(function_name, "jme_leap_second_table_info") == 0) {
+        double v[2] = {NAN, NAN};
+        rc = jme_leap_second_table_info(&v[0], &v[1], errbuf);
+        begin_record(out, function_name, engine, fx->id, "engine_invariant");
+        fprintf(out, "\"status\":\"%s\",", rc == JME_OK ? "OK" : "ERROR");
+        print_int_obj(out, "return_code", rc, 1);
+        print_string_bytes_obj(out, "error_buffer", errbuf, sizeof(errbuf), 1);
+        print_double_array_obj(out, "values", v, 2, 0);
+        end_record(out);
+        return 0;
+    }
+    if (strcmp(function_name, "jme_sidereal_time_ex") == 0) {
+        double v = NAN;
+        rc = jme_sidereal_time_ex(jd, 1, &v, errbuf);
+        begin_record(out, function_name, engine, fx->id, "engine_invariant");
+        fprintf(out, "\"status\":\"%s\",", rc == JME_OK ? "OK" : "ERROR");
+        print_int_obj(out, "return_code", rc, 1);
+        print_string_bytes_obj(out, "error_buffer", errbuf, sizeof(errbuf), 1);
+        print_double_obj(out, "value", v, 0);
+        end_record(out);
+        return 0;
+    }
+    if (strcmp(function_name, "jme_time_scale_name") == 0) {
+        const char *p = jme_time_scale_name(JME_TIME_SCALE_TDB);
+        begin_record(out, function_name, engine, fx->id, "engine_invariant");
+        fputs("\"status\":\"OK\",", out);
+        emit_common_engine_state(out, 1);
+        fprintf(out, "\"pointer_non_null\":%s,", p != 0 ? "true" : "false");
+        print_string_bytes_obj(out, "pointed_string", p != 0 ? p : "", p != 0 ? strlen(p) + 1 : 1, 0);
+        end_record(out);
+        return 0;
+    }
     if (strcmp(function_name, "jme_get_obliquity") == 0 || strcmp(function_name, "jme_time_equ") == 0 || strcmp(function_name, "jme_get_ayanamsa_ex") == 0 || strcmp(function_name, "jme_get_ayanamsa_ex_ut") == 0) {
         double v = NAN;
         if (strcmp(function_name, "jme_get_obliquity") == 0) rc = jme_get_obliquity(jd, JME_MODEL_OBL_IAU_2006, &v, errbuf);
@@ -989,6 +1127,19 @@ static int do_probe(const char *function_name, const char *engine, const char *k
         print_int_obj(out, "return_code", rc, 1);
         print_string_bytes_obj(out, "error_buffer", errbuf, sizeof(errbuf), 1);
         print_double_array_obj(out, "values", results, 12, 0);
+        end_record(out);
+        return 0;
+    }
+    if (strcmp(function_name, "jme_houses_gauquelin") == 0 || strcmp(function_name, "jme_houses_gauquelin_armc") == 0) {
+        double gq[37];
+        for (i = 0; i < 37; i++) gq[i] = NAN;
+        if (strcmp(function_name, "jme_houses_gauquelin") == 0) rc = jme_houses_gauquelin(jd, 0, fx->lat, fx->lon, gq, results2, errbuf);
+        else rc = jme_houses_gauquelin_armc(0.0, fx->lat, 23.4, gq, results2, errbuf);
+        begin_record(out, function_name, engine, fx->id, "engine_sensitive");
+        fprintf(out, "\"status\":\"%s\",", rc == JME_OK ? "OK" : "ERROR");
+        print_int_obj(out, "return_code", rc, 1);
+        print_string_bytes_obj(out, "error_buffer", errbuf, sizeof(errbuf), 1);
+        print_double_array_obj(out, "values", gq, 37, 0);
         end_record(out);
         return 0;
     }

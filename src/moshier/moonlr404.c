@@ -1,3 +1,9 @@
+/*
+ * Portions derived from the work of Stephen L. Moshier, incorporated herein
+ * by permission of the author (plan404 / AA 5.6 material from moshier.net,
+ * distributed under the MIT License by permission given 12 October 2026;
+ * see docs/permissions/MOSHIER_PERMISSION.md and THIRD_PARTY_NOTICES.md).
+ */
 /* geocentric moon
    polar coordinates re mean equinox and ecliptic of date
 

@@ -30,7 +30,7 @@ static int normalize_house_system(int house_system)
     case JME_HOUSE_CAMPANUS: return 'C';
     case JME_HOUSE_POLICH_PAGE: return 'T';
     case JME_HOUSE_ALCABITIUS: return 'B';
-    case JME_HOUSE_MERIDIAN: return 'M';
+    case JME_HOUSE_MERIDIAN: return 'X';
     case JME_HOUSE_MORINUS: return 'M';
     case JME_HOUSE_AZIMUTHAL: return 'A';
     case JME_HOUSE_HORIZONTAL: return 'A';
@@ -49,7 +49,7 @@ static double clamp_sector(double sector)
     return sector;
 }
 
-static int gauquelin_sector_from_equatorial(double jd_ut, double ra, double dec, double geo_lon, double geo_lat, double *dgsect, char *error)
+static int gauquelin_sector_from_equatorial(double gst_deg, double ra, double dec, double geo_lon, double geo_lat, double *dgsect, char *error)
 {
     double lst;
     double h;
@@ -63,7 +63,7 @@ static int gauquelin_sector_from_equatorial(double jd_ut, double ra, double dec,
         return JME_ERR;
     }
 
-    lst = jme_degree_normalize(jme_sidereal_time(jd_ut) * 15.0 + geo_lon);
+    lst = jme_degree_normalize(gst_deg + geo_lon);
     h = jme_degrees_difference_signed(lst, ra);
     arg = -tan(geo_lat * JME_DEG_TO_RAD) * tan(dec * JME_DEG_TO_RAD);
 
@@ -123,39 +123,48 @@ static double right_ascension_from_ecliptic_longitude(double lon, double eps)
     return jme_degree_normalize(atan2d(sin(l) * cos(e), cos(l)));
 }
 
+/*
+ * Placidus cusp: the ecliptic point whose meridian distance (in RA) is the
+ * given fraction of its diurnal semi-arc, RA = RAMC + fraction * DSA(RA),
+ * with tan(dec) = tan(eps) sin(RA) for ecliptic points. g(x) = x - RAMC -
+ * fraction * DSA(x) changes sign between x = RAMC and x = RAMC + 180 fraction
+ * (either sign of fraction), so the root is always bracketed; bisection to
+ * the binary64 limit. Negative fractions give western points: cusp 8 has
+ * hour angle +2/3 of its own semi-arc and cusp 9 +1/3, so cusps 2 and 3 are
+ * the antipodes of the fraction -2/3 and -1/3 solutions.
+ * Errors where the semi-arc is undefined (circumpolar ecliptic points).
+ */
+static int placidus_dsa(double ra, double tan_lat, double tan_eps, double *dsa)
+{
+    double arg = -sin(ra * JME_DEG_TO_RAD) * tan_lat * tan_eps;
+    if (!(arg >= -1.0 && arg <= 1.0)) return JME_ERR;
+    *dsa = acos(arg) * JME_RAD_TO_DEG;
+    return JME_OK;
+}
+
 static int placidus_cusp(double ramc, double lat, double eps, double fraction, double *longitude)
 {
-    double ra = jme_degree_normalize(ramc + 90.0 * fraction);
     double tan_lat = tan(lat * JME_DEG_TO_RAD);
     double tan_eps = tan(eps * JME_DEG_TO_RAD);
+    double lo = fraction < 0.0 ? 180.0 * fraction : 0.0;
+    double hi = fraction < 0.0 ? 0.0 : 180.0 * fraction;
+    double dsa;
     int i;
 
-    if (longitude == 0 || fraction <= 0.0 || fraction >= 1.0) {
+    if (longitude == 0 || fraction == 0.0 || !(fraction > -1.0 && fraction < 1.0)) {
         return JME_ERR;
     }
-
-    for (i = 0; i < 40; i++) {
-        double arg = -sin(ra * JME_DEG_TO_RAD) * tan_lat * tan_eps;
-        double dsa;
-        double next_ra;
-        double delta;
-
-        if (arg < -1.0 || arg > 1.0) {
-            return JME_ERR;
-        }
-
-        dsa = acos(arg) * JME_RAD_TO_DEG;
-        next_ra = jme_degree_normalize(ramc + dsa * fraction);
-        delta = fabs(jme_degrees_difference_signed(next_ra, ra));
-        ra = next_ra;
-
-        if (delta < 1e-12) {
-            *longitude = ecliptic_longitude_from_ra(ra, eps);
-            return JME_OK;
-        }
+    for (i = 0; i < 200 && hi - lo > 0.0; i++) {
+        double mid = 0.5 * (lo + hi);
+        if (mid == lo || mid == hi) break;
+        if (placidus_dsa(ramc + mid, tan_lat, tan_eps, &dsa) != JME_OK) return JME_ERR;
+        if (mid - fraction * dsa < 0.0) lo = mid; else hi = mid;
     }
-
-    *longitude = ecliptic_longitude_from_ra(ra, eps);
+    if (placidus_dsa(ramc + lo, tan_lat, tan_eps, &dsa) != JME_OK
+        || placidus_dsa(ramc + hi, tan_lat, tan_eps, &dsa) != JME_OK) {
+        return JME_ERR;
+    }
+    *longitude = ecliptic_longitude_from_ra(jme_degree_normalize(ramc + 0.5 * (lo + hi)), eps);
     return JME_OK;
 }
 
@@ -171,10 +180,20 @@ static double regiomontanus_cusp(double ramc, double lat, double eps, double hou
     return jme_degree_normalize(atan2d(numerator, denominator));
 }
 
+/*
+ * Polich-Page (topocentric) cusp: Polich & Page (1964) define the cusp as the
+ * ascendant of the house circle whose oblique ascension is RAMC + offset,
+ * taken at the pole height atan(fraction * tan(lat)). This is the ascendant
+ * formula evaluated for RAMC' = RAMC + offset - 90 at that pole. (The
+ * Regiomontanus formula must not be reused here: it applies its own
+ * sin(offset) pole reduction on top of the Polich-Page pole.)
+ */
+static double ascendant_from_ramc(double ramc, double lat, double eps);
+
 static double topocentric_cusp(double ramc, double lat, double eps, double house_offset, double pole_fraction)
 {
     double pole = atan(tan(lat * JME_DEG_TO_RAD) * pole_fraction) * JME_RAD_TO_DEG;
-    return regiomontanus_cusp(ramc, pole, eps, house_offset);
+    return ascendant_from_ramc(jme_degree_normalize(ramc + house_offset - 90.0), pole, eps);
 }
 
 static double longitude_from_equatorial_vector(const double *v, double eps)
@@ -270,11 +289,19 @@ static int select_cusp_intersection(const double *v, double expected, double eps
     return JME_OK;
 }
 
+/*
+ * Campanus cusp: intersection of the ecliptic with the great circle through
+ * the north and south points of the horizon and the point of the prime
+ * vertical at elevation 90 - house_offset (house_offset 30 = cusp 11, 60 =
+ * cusp 12, 120 = cusp 2, 150 = cusp 3). Of the two intersections the one on
+ * the side of that prime-vertical point is the cusp.
+ */
 static int campanus_cusp(double ramc, double lat, double eps, double house_offset, double expected, double *longitude)
 {
-    double theta = (house_offset - 90.0) * JME_DEG_TO_RAD;
+    double elev = (90.0 - house_offset) * JME_DEG_TO_RAD;
     double r = ramc * JME_DEG_TO_RAD;
     double p = lat * JME_DEG_TO_RAD;
+    double e = eps * JME_DEG_TO_RAD;
     double east[3] = {-sin(r), cos(r), 0.0};
     double zenith[3] = {cos(p) * cos(r), cos(p) * sin(r), sin(p)};
     double north[3] = {
@@ -282,35 +309,24 @@ static int campanus_cusp(double ramc, double lat, double eps, double house_offse
         zenith[2] * east[0] - zenith[0] * east[2],
         zenith[0] * east[1] - zenith[1] * east[0]
     };
-    double pv[3];
-    double house_normal[3];
-    double ecl_normal[3] = {0.0, -sin(eps * JME_DEG_TO_RAD), cos(eps * JME_DEG_TO_RAD)};
-    double inter[3];
-    double norm;
+    double pv[3], n[3], a, b, l, v[3];
     int i;
 
-    for (i = 0; i < 3; i++) {
-        pv[i] = east[i] * cos(theta) + zenith[i] * sin(theta);
-    }
-
-    house_normal[0] = north[1] * pv[2] - north[2] * pv[1];
-    house_normal[1] = north[2] * pv[0] - north[0] * pv[2];
-    house_normal[2] = north[0] * pv[1] - north[1] * pv[0];
-
-    inter[0] = house_normal[1] * ecl_normal[2] - house_normal[2] * ecl_normal[1];
-    inter[1] = house_normal[2] * ecl_normal[0] - house_normal[0] * ecl_normal[2];
-    inter[2] = house_normal[0] * ecl_normal[1] - house_normal[1] * ecl_normal[0];
-    norm = sqrt(inter[0] * inter[0] + inter[1] * inter[1] + inter[2] * inter[2]);
-
-    if (!isfinite(norm) || norm <= 0.0) {
-        return JME_ERR;
-    }
-
-    for (i = 0; i < 3; i++) {
-        inter[i] /= norm;
-    }
-
-    return select_cusp_intersection(inter, expected, eps, longitude);
+    (void)expected;
+    if (longitude == 0) return JME_ERR;
+    for (i = 0; i < 3; i++) pv[i] = east[i] * cos(elev) + zenith[i] * sin(elev);
+    n[0] = north[1] * pv[2] - north[2] * pv[1];
+    n[1] = north[2] * pv[0] - north[0] * pv[2];
+    n[2] = north[0] * pv[1] - north[1] * pv[0];
+    /* ecliptic point (cos l, sin l cos e, sin l sin e) . n = 0 */
+    a = n[0];
+    b = n[1] * cos(e) + n[2] * sin(e);
+    if (!(fabs(a) + fabs(b) > 0.0)) return JME_ERR;
+    l = atan2(-a, b);
+    v[0] = cos(l); v[1] = sin(l) * cos(e); v[2] = sin(l) * sin(e);
+    if (v[0] * pv[0] + v[1] * pv[1] + v[2] * pv[2] < 0.0) l += 3.14159265358979323846264338327950288;
+    *longitude = jme_degree_normalize(l * JME_RAD_TO_DEG);
+    return JME_OK;
 }
 
 static int horizontal_cusp(double ramc, double lat, double eps, double house_offset, double expected, double *longitude)
@@ -354,6 +370,38 @@ static int horizontal_cusp(double ramc, double lat, double eps, double house_off
     }
 
     return select_cusp_intersection(inter, expected, eps, longitude);
+}
+
+/* Ecliptic point on the prime vertical on the eastern side (positive
+ * component along the east point of the horizon). */
+static int horizontal_east_cusp(double ramc, double lat, double eps, double *longitude)
+{
+    double r = ramc * JME_DEG_TO_RAD;
+    double p = lat * JME_DEG_TO_RAD;
+    double e = eps * JME_DEG_TO_RAD;
+    double east[3] = {-sin(r), cos(r), 0.0};
+    double zenith[3] = {cos(p) * cos(r), cos(p) * sin(r), sin(p)};
+    double pv_normal[3];
+    double ecl_normal[3] = {0.0, -sin(e), cos(e)};
+    double inter[3];
+    double norm;
+    int i;
+
+    /* Prime vertical = great circle through zenith and east point. */
+    pv_normal[0] = zenith[1] * east[2] - zenith[2] * east[1];
+    pv_normal[1] = zenith[2] * east[0] - zenith[0] * east[2];
+    pv_normal[2] = zenith[0] * east[1] - zenith[1] * east[0];
+    inter[0] = pv_normal[1] * ecl_normal[2] - pv_normal[2] * ecl_normal[1];
+    inter[1] = pv_normal[2] * ecl_normal[0] - pv_normal[0] * ecl_normal[2];
+    inter[2] = pv_normal[0] * ecl_normal[1] - pv_normal[1] * ecl_normal[0];
+    norm = sqrt(inter[0] * inter[0] + inter[1] * inter[1] + inter[2] * inter[2]);
+    if (!isfinite(norm) || norm <= 0.0 || longitude == 0) {
+        return JME_ERR;
+    }
+    if (inter[0] * east[0] + inter[1] * east[1] + inter[2] * east[2] < 0.0) norm = -norm;
+    for (i = 0; i < 3; i++) inter[i] /= norm;
+    *longitude = longitude_from_equatorial_vector(inter, eps);
+    return JME_OK;
 }
 
 static double ascendant_from_ramc(double ramc, double lat, double eps)
@@ -737,23 +785,33 @@ static int fill_house_cusps_from_angles(double asc, double mc, double ramc, doub
             cusps[12] = jme_degree_normalize(mc + 2.0 * q4);
         }
         return JME_OK;
+    case 'X':
+        /*
+         * Meridian (axial rotation) system: the equator is divided into 12
+         * equal parts from the ARMC and each cusp is the ecliptic point
+         * having that right ascension (projection along hour circles), so
+         * cusp 10 is the MC and cusp 1 generally differs from the Ascendant.
+         * Definition: R. Holden, The Elements of House Division (1977).
+         */
+        for (i = 1; i <= 12; i++) {
+            cusps[i] = ecliptic_longitude_from_ra(ramc + (double)((i + 2) % 12) * 30.0, eps);
+        }
+        cusps[10] = mc;
+        return JME_OK;
     case 'M':
         /*
-         * Morinus divides the celestial equator into equal 30-degree right
-         * ascension arcs and projects those great circles to the ecliptic.
+         * Morinus system: the equator is divided into 12 equal parts from
+         * the ARMC and those equator points (declination 0) are transformed
+         * to ecliptic coordinates (projection along circles of ecliptic
+         * longitude): tan(lambda) = sin(alpha) cos(eps) / cos(alpha).
+         * Cusp 1 differs from the Ascendant and cusp 10 from the MC.
+         * Definition: R. Holden, The Elements of House Division (1977).
          */
-        cusps[1] = ecliptic_longitude_from_ra(ramc + 90.0, eps);
-        cusps[2] = ecliptic_longitude_from_ra(ramc + 120.0, eps);
-        cusps[3] = ecliptic_longitude_from_ra(ramc + 150.0, eps);
-        cusps[4] = ecliptic_longitude_from_ra(ramc + 180.0, eps);
-        cusps[5] = ecliptic_longitude_from_ra(ramc + 210.0, eps);
-        cusps[6] = ecliptic_longitude_from_ra(ramc + 240.0, eps);
-        cusps[7] = ecliptic_longitude_from_ra(ramc + 270.0, eps);
-        cusps[8] = ecliptic_longitude_from_ra(ramc + 300.0, eps);
-        cusps[9] = ecliptic_longitude_from_ra(ramc + 330.0, eps);
-        cusps[10] = mc;
-        cusps[11] = ecliptic_longitude_from_ra(ramc + 30.0, eps);
-        cusps[12] = ecliptic_longitude_from_ra(ramc + 60.0, eps);
+        for (i = 1; i <= 12; i++) {
+            double a = (ramc + (double)((i + 2) % 12) * 30.0) * JME_DEG_TO_RAD;
+            double e = eps * JME_DEG_TO_RAD;
+            cusps[i] = jme_degree_normalize(atan2d(sin(a) * cos(e), cos(a)));
+        }
         return JME_OK;
     case 'P':
         {
@@ -761,11 +819,15 @@ static int fill_house_cusps_from_angles(double asc, double mc, double ramc, doub
 
             if (placidus_cusp(ramc, lat, eps, 1.0 / 3.0, &c11) != JME_OK
                 || placidus_cusp(ramc, lat, eps, 2.0 / 3.0, &c12) != JME_OK
-                || placidus_cusp(ramc + 180.0, -lat, eps, 2.0 / 3.0, &c2) != JME_OK
-                || placidus_cusp(ramc + 180.0, -lat, eps, 1.0 / 3.0, &c3) != JME_OK) {
+                || placidus_cusp(ramc, lat, eps, -2.0 / 3.0, &c2) != JME_OK
+                || placidus_cusp(ramc, lat, eps, -1.0 / 3.0, &c3) != JME_OK) {
                 return JME_ERR;
             }
 
+            /* The fraction -2/3 and -1/3 solutions are cusps 8 and 9;
+             * cusps 2 and 3 are their antipodes. */
+            c2 = jme_degree_normalize(c2 + 180.0);
+            c3 = jme_degree_normalize(c3 + 180.0);
             cusps[1] = asc;
             cusps[2] = c2;
             cusps[3] = c3;
@@ -849,19 +911,29 @@ static int fill_house_cusps_from_angles(double asc, double mc, double ramc, doub
         cusps[12] = topocentric_cusp(ramc, lat, eps, 60.0, 2.0 / 3.0);
         return JME_OK;
     case 'A':
-        cusps[1] = asc;
-        if (horizontal_cusp(ramc, lat, eps, 120.0, jme_degree_normalize(asc + 30.0), &cusps[2]) != JME_OK
-            || horizontal_cusp(ramc, lat, eps, 150.0, jme_degree_normalize(asc + 60.0), &cusps[3]) != JME_OK
-            || horizontal_cusp(ramc, lat, eps, 210.0, jme_degree_normalize(mc + 210.0), &cusps[5]) != JME_OK
-            || horizontal_cusp(ramc, lat, eps, 240.0, jme_degree_normalize(mc + 240.0), &cusps[6]) != JME_OK
-            || horizontal_cusp(ramc, lat, eps, 300.0, jme_degree_normalize(asc + 210.0), &cusps[8]) != JME_OK
-            || horizontal_cusp(ramc, lat, eps, 330.0, jme_degree_normalize(asc + 240.0), &cusps[9]) != JME_OK
-            || horizontal_cusp(ramc, lat, eps, 30.0, jme_degree_normalize(mc + 30.0), &cusps[11]) != JME_OK
-            || horizontal_cusp(ramc, lat, eps, 60.0, jme_degree_normalize(mc + 60.0), &cusps[12]) != JME_OK) {
+        /*
+         * Horizontal (azimuthal) system: the horizon is divided into 12 equal
+         * azimuth arcs from the east point; each cusp is the intersection of
+         * the ecliptic with the vertical circle (through the zenith) at that
+         * azimuth. Cusp 10 lies on the meridian (the MC); cusp 1 lies on the
+         * prime vertical due east and generally differs from the Ascendant.
+         * Definition: R. Holden, The Elements of House Division (1977).
+         */
+        if (horizontal_east_cusp(ramc, lat, eps, &cusps[1]) != JME_OK) {
+            return JME_ERR;
+        }
+        cusps[7] = jme_degree_normalize(cusps[1] + 180.0);
+        if (horizontal_cusp(ramc, lat, eps, 120.0, jme_degree_normalize(cusps[1] + jme_degrees_difference(mc + 180.0, cusps[1]) / 3.0), &cusps[2]) != JME_OK
+            || horizontal_cusp(ramc, lat, eps, 150.0, jme_degree_normalize(cusps[1] + 2.0 * jme_degrees_difference(mc + 180.0, cusps[1]) / 3.0), &cusps[3]) != JME_OK
+            || horizontal_cusp(ramc, lat, eps, 30.0, jme_degree_normalize(mc + jme_degrees_difference(cusps[1], mc) / 3.0), &cusps[11]) != JME_OK
+            || horizontal_cusp(ramc, lat, eps, 60.0, jme_degree_normalize(mc + 2.0 * jme_degrees_difference(cusps[1], mc) / 3.0), &cusps[12]) != JME_OK) {
             return JME_ERR;
         }
         cusps[4] = jme_degree_normalize(mc + 180.0);
-        cusps[7] = jme_degree_normalize(asc + 180.0);
+        cusps[5] = jme_degree_normalize(cusps[11] + 180.0);
+        cusps[6] = jme_degree_normalize(cusps[12] + 180.0);
+        cusps[8] = jme_degree_normalize(cusps[2] + 180.0);
+        cusps[9] = jme_degree_normalize(cusps[3] + 180.0);
         cusps[10] = mc;
         return JME_OK;
     case 'K':
@@ -880,50 +952,105 @@ int jme_houses(double jd_ut, double geo_lat, double geo_lon, int house_system, d
     return jme_houses_ex(jd_ut, 0, geo_lat, geo_lon, house_system, cusps, ascmc);
 }
 
-int jme_houses_ex(double jd_ut, int flags, double geo_lat, double geo_lon, int house_system, double *cusps, double *ascmc)
+/*
+ * Houses at a UT instant. The sidereal angle is the context's Greenwich
+ * apparent sidereal time (consistent with the selected precession and
+ * nutation models; ERFA eraGst06/eraGst00a/eraGst94 family), evaluated with
+ * UT1 for the Earth rotation part and TT for precession/nutation. The
+ * obliquity is the true obliquity of date at TT. With JME_CALC_NO_NUTATION
+ * the mean sidereal time and mean obliquity are used. With
+ * JME_CALC_SIDEREAL the ecliptic results (cusps, Asc, MC, ARMC excluded,
+ * Vertex, equatorial Ascendant, co-Ascendants, polar Ascendant) are
+ * reduced by the context ayanamsa referred to the same equinox
+ * (mean ayanamsa plus nutation in longitude unless NO_NUTATION).
+ */
+/*
+ * Local frame of a house computation at a UT instant: ARMC (deg), obliquity
+ * of date (true unless JME_CALC_NO_NUTATION) and, with JME_CALC_SIDEREAL,
+ * the ayanamsa referred to the same equinox (else 0).
+ */
+static int houses_frame(double jd_ut, int flags, double geo_lat, double geo_lon,
+    double *ramc, double *eps, double *aya, char *error)
 {
-    double eps, dpsi, deps;
-    double gst, ramc;
+    double jd_tt, gst, eps_mean, dpsi, deps;
+    double nm[9];
+    int apparent = !(flags & JME_CALC_NO_NUTATION);
+
+    if (!isfinite(jd_ut) || !isfinite(geo_lat) || !isfinite(geo_lon)) {
+        jme_set_error(error, "House inputs must be finite");
+        return JME_ERR;
+    }
+    if (geo_lat < -90.0 || geo_lat > 90.0) {
+        jme_set_error(error, "Geographic latitude must be within [-90, 90] degrees");
+        return JME_ERR;
+    }
+    if (internal_ut_to_et(jd_ut, &jd_tt, error) != JME_OK) return JME_ERR;
+    if (internal_nutation_matrix(jd_tt, nm, &dpsi, &eps_mean, &deps, error) != JME_OK) return JME_ERR;
+    *eps = apparent ? eps_mean + deps : eps_mean;
+    if (internal_sidereal_time_rad(jd_ut, jd_tt, apparent, &gst, error) != JME_OK) return JME_ERR;
+    *ramc = jme_degree_normalize(gst / JME_DEG_TO_RAD + geo_lon);
+    *aya = 0.0;
+    if (flags & JME_CALC_SIDEREAL) {
+        double rate;
+        if (internal_context_ayanamsa(jd_tt, aya, &rate, error) != JME_OK) return JME_ERR;
+        if (apparent) *aya += dpsi;
+    }
+    return JME_OK;
+}
+
+static int houses_compute(double jd_ut, int flags, double geo_lat, double geo_lon, int house_system, double *cusps, double *ascmc, char *error)
+{
+    double ramc, eps, aya = 0.0;
     double local_ascmc[10];
     int system = normalize_house_system(house_system);
     int i;
 
-    (void)flags;
-
     if (cusps == 0) {
-        jme_set_error(0, "House cusp output is required");
+        jme_set_error(error, "House cusp output is required");
         return JME_ERR;
     }
-
-    /* 1. Need Obliquity and Nutation for RAMC and coordinate transform */
-    jme_get_obliquity(jd_ut, jme_context_obliquity_model(), &eps, 0);
-    jme_get_nutation(jd_ut, jme_context_nutation_model(), &dpsi, &deps, 0);
-    eps += deps; /* True obliquity */
-
-    gst = jme_sidereal_time0(jd_ut, eps - deps, dpsi);
-    ramc = jme_degree_normalize(gst * 15.0 + geo_lon);
+    if (houses_frame(jd_ut, flags, geo_lat, geo_lon, &ramc, &eps, &aya, error) != JME_OK) return JME_ERR;
 
     calc_ascmc(ramc, geo_lat, eps, local_ascmc);
+    if (flags & JME_CALC_SIDEREAL) {
+        /* ascmc[0..5] are ecliptic longitudes; [6] ARMC and [7] obliquity are not. */
+        for (i = 0; i <= 5; i++) {
+            if (isfinite(local_ascmc[i])) local_ascmc[i] = jme_degree_normalize(local_ascmc[i] - aya);
+        }
+    }
     if (ascmc != 0) {
-        for (i = 0; i < 10; i++) { ascmc[i] = local_ascmc[i]; }
+        for (i = 0; i < 10; i++) ascmc[i] = local_ascmc[i];
     }
 
     if (system == 'I') {
         double sun_equ[6];
-        if (jme_calc_ut(jd_ut, JME_BODY_SUN, JME_CALC_EQUATORIAL | JME_CALC_TRUE_POSITION, sun_equ, 0) != JME_OK) {
+        /* Apparent declination of the Sun (true equator of date). */
+        if (jme_calc_ut(jd_ut, JME_BODY_SUN, JME_CALC_EQUATORIAL | (flags & JME_CALC_NO_NUTATION), sun_equ, error) != JME_OK) {
             return JME_ERR;
         }
+        if (ascmc != 0) ascmc[9] = sun_equ[1];
+        /* Tropical angles are needed by the cusp construction. */
+        calc_ascmc(ramc, geo_lat, eps, local_ascmc);
         if (sunshine_cusps(local_ascmc[0], local_ascmc[1], ramc, geo_lat, eps, sun_equ[1], cusps) != JME_OK) {
+            jme_set_error(error, "Sunshine house cusps undefined for these inputs");
             return JME_ERR;
         }
-        return JME_OK;
+    } else {
+        calc_ascmc(ramc, geo_lat, eps, local_ascmc);
+        if (fill_house_cusps_from_angles(local_ascmc[0], local_ascmc[1], ramc, geo_lat, eps, house_system, cusps) != JME_OK) {
+            jme_set_error(error, "House cusps undefined for this system at this latitude");
+            return JME_ERR;
+        }
     }
-
-    if (fill_house_cusps_from_angles(local_ascmc[0], local_ascmc[1], ramc, geo_lat, eps, house_system, cusps) != JME_OK) {
-        return JME_ERR;
+    if (flags & JME_CALC_SIDEREAL) {
+        for (i = 1; i <= 12; i++) cusps[i] = jme_degree_normalize(cusps[i] - aya);
     }
-
     return JME_OK;
+}
+
+int jme_houses_ex(double jd_ut, int flags, double geo_lat, double geo_lon, int house_system, double *cusps, double *ascmc)
+{
+    return houses_compute(jd_ut, flags, geo_lat, geo_lon, house_system, cusps, ascmc, 0);
 }
 
 double jme_house_pos(double armc, double geo_lat, double eps, int house_system, double *xpin, char *error)
@@ -958,42 +1085,56 @@ double jme_house_pos(double armc, double geo_lat, double eps, int house_system, 
 
 int jme_houses_ex2(double jd_ut, int flags, double geo_lat, double geo_lon, int house_system, double *cusps, double *ascmc, double *cusps_speed, double *ascmc_speed)
 {
-    double step = 1.0e-3;
-    double prev_cusps[13];
-    double next_cusps[13];
-    double prev_ascmc[10];
-    double next_ascmc[10];
-    int i;
+    /* Rates in degrees per day by the five-point central stencil
+     * f' = [f(-2h) - 8 f(-h) + 8 f(h) - f(2h)] / (12 h), truncation O(h^4),
+     * h = 1e-3 d. Angle differences are unwrapped relative to the centre. */
+    static const double step = 1.0e-3;
+    static const double offs[4] = { -2.0, -1.0, 1.0, 2.0 };
+    static const double wts[4] = { 1.0, -8.0, 8.0, -1.0 };
+    double sc[4][13];
+    double sa[4][10];
+    double centre_cusps[13];
+    double centre_ascmc[10];
+    int i, k;
     int rc = jme_houses_ex(jd_ut, flags, geo_lat, geo_lon, house_system, cusps, ascmc);
 
     if (rc != JME_OK) {
         return rc;
     }
-
+    if (cusps_speed == 0 && ascmc_speed == 0) return JME_OK;
+    for (i = 0; i < 13; i++) centre_cusps[i] = cusps[i];
+    if (ascmc != 0) {
+        for (i = 0; i < 10; i++) centre_ascmc[i] = ascmc[i];
+    } else if (jme_houses_ex(jd_ut, flags, geo_lat, geo_lon, house_system, centre_cusps, centre_ascmc) != JME_OK) {
+        return JME_ERR;
+    }
+    for (k = 0; k < 4; k++) {
+        if (jme_houses_ex(jd_ut + offs[k] * step, flags, geo_lat, geo_lon, house_system, sc[k], sa[k]) != JME_OK) {
+            /* A neighbouring instant is undefined (e.g. a polar transition):
+             * the rate is not defined; report NaN rather than a false zero. */
+            if (cusps_speed != 0) for (i = 0; i < 13; i++) cusps_speed[i] = NAN;
+            if (ascmc_speed != 0) for (i = 0; i < 10; i++) ascmc_speed[i] = NAN;
+            return JME_OK;
+        }
+    }
     if (cusps_speed != 0) {
-        for (i = 0; i < 13; i++) { cusps_speed[i] = 0.0; }
-        if (jme_houses_ex(jd_ut - step, flags, geo_lat, geo_lon, house_system, prev_cusps, prev_ascmc) == JME_OK
-            && jme_houses_ex(jd_ut + step, flags, geo_lat, geo_lon, house_system, next_cusps, next_ascmc) == JME_OK) {
-            for (i = 1; i <= 12; i++) {
-                cusps_speed[i] = jme_degrees_difference_signed(next_cusps[i], prev_cusps[i]) / (2.0 * step);
-            }
+        cusps_speed[0] = 0.0;
+        for (i = 1; i <= 12; i++) {
+            double acc = 0.0;
+            for (k = 0; k < 4; k++) acc += wts[k] * jme_degrees_difference_signed(sc[k][i], centre_cusps[i]);
+            cusps_speed[i] = acc / (12.0 * step);
         }
     }
-
     if (ascmc_speed != 0) {
-        for (i = 0; i < 10; i++) { ascmc_speed[i] = 0.0; }
-        if (jme_houses_ex(jd_ut - step, flags, geo_lat, geo_lon, house_system, prev_cusps, prev_ascmc) == JME_OK
-            && jme_houses_ex(jd_ut + step, flags, geo_lat, geo_lon, house_system, next_cusps, next_ascmc) == JME_OK) {
-            for (i = 0; i < 10; i++) {
-                if (i == 7) {
-                    ascmc_speed[i] = (next_ascmc[i] - prev_ascmc[i]) / (2.0 * step);
-                } else {
-                    ascmc_speed[i] = jme_degrees_difference_signed(next_ascmc[i], prev_ascmc[i]) / (2.0 * step);
-                }
+        for (i = 0; i < 10; i++) {
+            double acc = 0.0;
+            for (k = 0; k < 4; k++) {
+                if (i == 7 || i == 9) acc += wts[k] * (sa[k][i] - centre_ascmc[i]);
+                else acc += wts[k] * jme_degrees_difference_signed(sa[k][i], centre_ascmc[i]);
             }
+            ascmc_speed[i] = acc / (12.0 * step);
         }
     }
-
     return JME_OK;
 }
 
@@ -1030,38 +1171,51 @@ int jme_houses_armc(double armc, double geo_lat, double eps, int house_system, d
 
 int jme_houses_armc_ex2(double armc, double geo_lat, double eps, int house_system, double *cusps, double *ascmc, double *cusps_speed, double *ascmc_speed)
 {
-    int i;
-    double step = 1.0e-3;
-    double prev_cusps[13];
-    double next_cusps[13];
-    double prev_ascmc[10];
-    double next_ascmc[10];
-    int rc = jme_houses_armc(armc, geo_lat, eps, house_system, cusps, ascmc);
+    /* Derivatives with respect to ARMC (degrees per degree of ARMC) at fixed
+     * latitude and obliquity, by the five-point central stencil with
+     * h = 1e-3 degree (truncation O(h^4)). For the Sunshine system the
+     * caller's solar declination in ascmc[9] is held fixed. */
+    static const double step = 1.0e-3;
+    static const double offs[4] = { -2.0, -1.0, 1.0, 2.0 };
+    static const double wts[4] = { 1.0, -8.0, 8.0, -1.0 };
+    double sc[4][13];
+    double sa[4][10];
+    double centre_ascmc[10];
+    double sun_decl = ascmc != 0 ? ascmc[9] : NAN;
+    int i, k;
+    int rc;
 
+    for (i = 0; i < 10; i++) centre_ascmc[i] = 0.0;
+    centre_ascmc[9] = sun_decl;
+    rc = jme_houses_armc(armc, geo_lat, eps, house_system, cusps, centre_ascmc);
+    if (ascmc != 0) for (i = 0; i < 10; i++) ascmc[i] = centre_ascmc[i];
     if (rc != JME_OK) {
         return rc;
     }
-
+    if (cusps_speed == 0 && ascmc_speed == 0) return JME_OK;
+    for (k = 0; k < 4; k++) {
+        for (i = 0; i < 10; i++) sa[k][i] = 0.0;
+        sa[k][9] = sun_decl;
+        if (jme_houses_armc(armc + offs[k] * step, geo_lat, eps, house_system, sc[k], sa[k]) != JME_OK) {
+            if (cusps_speed != 0) for (i = 0; i < 13; i++) cusps_speed[i] = NAN;
+            if (ascmc_speed != 0) for (i = 0; i < 10; i++) ascmc_speed[i] = NAN;
+            return JME_OK;
+        }
+    }
     if (cusps_speed != 0) {
-        for (i = 0; i < 13; i++) { cusps_speed[i] = 0.0; }
-        if (jme_houses_armc(armc - step, geo_lat, eps, house_system, prev_cusps, prev_ascmc) == JME_OK
-            && jme_houses_armc(armc + step, geo_lat, eps, house_system, next_cusps, next_ascmc) == JME_OK) {
-            for (i = 1; i <= 12; i++) {
-                cusps_speed[i] = jme_degrees_difference_signed(next_cusps[i], prev_cusps[i]) / (2.0 * step);
-            }
+        cusps_speed[0] = 0.0;
+        for (i = 1; i <= 12; i++) {
+            double acc = 0.0;
+            for (k = 0; k < 4; k++) acc += wts[k] * jme_degrees_difference_signed(sc[k][i], cusps[i]);
+            cusps_speed[i] = acc / (12.0 * step);
         }
     }
     if (ascmc_speed != 0) {
-        for (i = 0; i < 10; i++) { ascmc_speed[i] = 0.0; }
-        if (jme_houses_armc(armc - step, geo_lat, eps, house_system, prev_cusps, prev_ascmc) == JME_OK
-            && jme_houses_armc(armc + step, geo_lat, eps, house_system, next_cusps, next_ascmc) == JME_OK) {
-            for (i = 0; i < 10; i++) {
-                if (i == 7) {
-                    ascmc_speed[i] = 0.0;
-                } else {
-                    ascmc_speed[i] = jme_degrees_difference_signed(next_ascmc[i], prev_ascmc[i]) / (2.0 * step);
-                }
-            }
+        for (i = 0; i < 10; i++) {
+            double acc = 0.0;
+            if (i == 7 || i == 8 || i == 9) { ascmc_speed[i] = 0.0; continue; }
+            for (k = 0; k < 4; k++) acc += wts[k] * jme_degrees_difference_signed(sa[k][i], centre_ascmc[i]);
+            ascmc_speed[i] = acc / (12.0 * step);
         }
     }
     return JME_OK;
@@ -1104,30 +1258,36 @@ int jme_gauquelin_sector(double jd_ut, int body, const char *starname, int flags
     }
 
     if (imeth == 0 || imeth == 1) {
+        /* Methods 0/1: semi-arc position from the body's place on the true
+         * equator and equinox of date (apparent unless the caller passes
+         * JME_CALC_TRUE_POSITION), against apparent sidereal time (mean
+         * with JME_CALC_NO_NUTATION). Method 1 drops the ecliptic latitude
+         * before converting with the true obliquity of date at TT. */
         double pos[6];
-        double ra;
-        double dec;
-        double eps;
-        double dpsi;
-        double deps;
+        double ra, dec, eps, eps_mean, dpsi, deps, jd_tt, gst;
+        double nm[9];
+        int apparent = !(flags & JME_CALC_NO_NUTATION);
+        int pflags = flags & (JME_CALC_TRUE_POSITION | JME_CALC_NO_NUTATION);
 
+        if (!isfinite(jd_ut) || !isfinite(geopos[0]) || !isfinite(geopos[1]) || geopos[1] < -90.0 || geopos[1] > 90.0) {
+            jme_set_error(error, "Gauquelin sector inputs are invalid");
+            return JME_ERR;
+        }
         if (starname != 0 && starname[0] != '\0') {
-            if (jme_fixstar_ut(starname, jd_ut, flags | JME_CALC_TRUE_POSITION, pos, error) != JME_OK) {
+            if (jme_fixstar_ut(starname, jd_ut, pflags, pos, error) != JME_OK) {
                 return JME_ERR;
             }
-        } else if (jme_calc_ut(jd_ut, body, flags | JME_CALC_TRUE_POSITION, pos, error) != JME_OK) {
+        } else if (jme_calc_ut(jd_ut, body, pflags, pos, error) != JME_OK) {
             return JME_ERR;
         }
-
-        if (jme_get_obliquity(jd_ut, jme_context_obliquity_model(), &eps, error) != JME_OK
-            || jme_get_nutation(jd_ut, jme_context_nutation_model(), &dpsi, &deps, error) != JME_OK) {
+        if (internal_ut_to_et(jd_ut, &jd_tt, error) != JME_OK
+            || internal_nutation_matrix(jd_tt, nm, &dpsi, &eps_mean, &deps, error) != JME_OK
+            || internal_sidereal_time_rad(jd_ut, jd_tt, apparent, &gst, error) != JME_OK) {
             return JME_ERR;
         }
-        eps += deps;
-        (void)dpsi;
-
+        eps = apparent ? eps_mean + deps : eps_mean;
         jme_ecliptic_to_equatorial(pos[0], imeth == 0 ? pos[1] : 0.0, eps, &ra, &dec);
-        return gauquelin_sector_from_equatorial(jd_ut, ra, dec, geopos[0], geopos[1], dgsect, error);
+        return gauquelin_sector_from_equatorial(gst * JME_RAD_TO_DEG, ra, dec, geopos[0], geopos[1], dgsect, error);
     }
 
     if (imeth == 2) {
@@ -1203,5 +1363,92 @@ int jme_gauquelin_sector(double jd_ut, int body, const char *starname, int flags
 
     *dgsect = clamp_sector(1.0 + sector_offset + fraction * 9.0);
 
+    return JME_OK;
+}
+
+/*
+ * GAUQUELIN 36 SECTORS
+ * ====================
+ * M. Gauquelin's sectors divide the diurnal and the nocturnal semi-arc of
+ * every point into 18 equal parts of time each (a Placidus-type division,
+ * nine sectors per quadrant), numbered in the direction of the diurnal
+ * motion: sector 1 begins at the rising point (Ascendant), sector 10 at the
+ * upper culmination (MC), 19 at setting (Descendant), 28 at the lower
+ * culmination (IC). This is the numbering of jme_gauquelin_sector().
+ *
+ * Cusp k (1..36) is the ecliptic point at the start of sector k. For the
+ * diurnal cusps 2..18 the hour angle H of the point is H = ((k - 10)/9) DSA,
+ * i.e. its meridian distance in right ascension is the Placidus fraction
+ * (10 - k)/9 of its own diurnal semi-arc; it is solved with the same
+ * bracketed Placidus solver as the 12-house system (binary64 limit).
+ * Nocturnal cusps are the antipodes: cusp k + 18 = cusp k + 180 deg (an
+ * ecliptic point and its antipode have complementary semi-arcs).
+ * cusps[0] is set to 0; cusps[1] = Ascendant, cusps[10] = MC.
+ * Errors where a semi-arc is undefined (circumpolar ecliptic points).
+ * Source of the sector definition: M. Gauquelin, L'influence des astres
+ * (1955); identical to the sector numbering of jme_gauquelin_sector().
+ */
+static int gauquelin_cusps(double ramc, double lat, double eps, double *cusps)
+{
+    double angles[10];
+    int k;
+
+    calc_ascmc(ramc, lat, eps, angles);
+    if (!isfinite(angles[0]) || !isfinite(angles[1])) return JME_ERR;
+    cusps[0] = 0.0;
+    cusps[1] = angles[0];
+    cusps[10] = angles[1];
+    for (k = 2; k <= 18; k++) {
+        if (k == 10) continue;
+        if (placidus_cusp(ramc, lat, eps, (double)(10 - k) / 9.0, &cusps[k]) != JME_OK) return JME_ERR;
+    }
+    for (k = 1; k <= 18; k++) cusps[k + 18] = jme_degree_normalize(cusps[k] + 180.0);
+    return JME_OK;
+}
+
+int jme_houses_gauquelin_armc(double armc, double geo_lat, double eps, double *cusps, double *ascmc, char *error)
+{
+    double local_ascmc[10];
+    int i;
+
+    if (cusps == 0) {
+        jme_set_error(error, "Gauquelin cusp output (37 doubles) is required");
+        return JME_ERR;
+    }
+    if (!isfinite(armc) || !isfinite(geo_lat) || !isfinite(eps) || geo_lat < -90.0 || geo_lat > 90.0) {
+        jme_set_error(error, "Gauquelin sector inputs are invalid");
+        return JME_ERR;
+    }
+    armc = jme_degree_normalize(armc);
+    if (gauquelin_cusps(armc, geo_lat, eps, cusps) != JME_OK) {
+        jme_set_error(error, "Gauquelin sectors undefined at this latitude (circumpolar ecliptic points)");
+        return JME_ERR;
+    }
+    if (ascmc != 0) {
+        calc_ascmc(armc, geo_lat, eps, local_ascmc);
+        for (i = 0; i < 10; i++) ascmc[i] = local_ascmc[i];
+    }
+    return JME_OK;
+}
+
+int jme_houses_gauquelin(double jd_ut, int flags, double geo_lat, double geo_lon, double *cusps, double *ascmc, char *error)
+{
+    double ramc, eps, aya;
+    int i;
+
+    if (cusps == 0) {
+        jme_set_error(error, "Gauquelin cusp output (37 doubles) is required");
+        return JME_ERR;
+    }
+    if (houses_frame(jd_ut, flags, geo_lat, geo_lon, &ramc, &eps, &aya, error) != JME_OK) return JME_ERR;
+    if (jme_houses_gauquelin_armc(ramc, geo_lat, eps, cusps, ascmc, error) != JME_OK) return JME_ERR;
+    if (flags & JME_CALC_SIDEREAL) {
+        for (i = 1; i <= 36; i++) cusps[i] = jme_degree_normalize(cusps[i] - aya);
+        if (ascmc != 0) {
+            for (i = 0; i <= 5; i++) {
+                if (isfinite(ascmc[i])) ascmc[i] = jme_degree_normalize(ascmc[i] - aya);
+            }
+        }
+    }
     return JME_OK;
 }

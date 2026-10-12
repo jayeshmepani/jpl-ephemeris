@@ -1,5 +1,6 @@
 #include "context.h"
 #include "jme/jme.h"
+#include "jme/jme_extended.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -19,14 +20,19 @@ static jme_context g_context = {
     JME_MODEL_OBL_IAU_1980,
     JME_MODEL_PREC_IAU_1976,
     JME_MODEL_SIDT_IAU_1976,
-    JME_MODEL_DELTAT_ESPENAK_MEEUS_2006,
+    JME_TIME_DELTAT_AUTOMATIC,
     JME_ENGINE_AUTO,
     0,
     0.0065,
     0,
+    (double)JME_TIME_TIDAL_AUTOMATIC,
+    0,
+    0.0,
+    JME_JPL_CENTER_STRICT,
     0.0,
     0,
-    0.0
+    0,
+    0
 };
 
 jme_context *jme_get_context(void)
@@ -92,6 +98,11 @@ int jme_context_sidereal_time_model(void)
 int jme_context_deltat_model(void)
 {
     return g_context.model_deltat;
+}
+
+int jme_context_jpl_center_policy(void)
+{
+    return g_context.jpl_center_policy;
 }
 
 int jme_context_engine_policy(void)

@@ -115,6 +115,17 @@ int jme_houses_armc(double armc, double geo_lat, double eps, int house_system, d
 int jme_houses_armc_ex2(double armc, double geo_lat, double eps, int house_system, double *cusps, double *ascmc, double *cusps_speed, double *ascmc_speed);
 double jme_house_pos(double armc, double geo_lat, double eps, int house_system, double *xpin, char *error);
 
+/*
+ * Gauquelin 36 sectors as a house system. cusps must hold 37 doubles:
+ * cusps[1..36] are the ecliptic longitudes of the sector starts (cusps[1] =
+ * Ascendant, [10] = MC, [19] = Descendant, [28] = IC; numbering in the
+ * direction of the diurnal motion, as jme_gauquelin_sector()); cusps[0] = 0.
+ * ascmc (optional, 10 doubles) as in jme_houses_ex. flags: JME_CALC_NO_NUTATION,
+ * JME_CALC_SIDEREAL as in jme_houses_ex. Returns JME_ERR where a semi-arc is
+ * undefined (polar latitudes).
+ */
+int jme_houses_gauquelin(double jd_ut, int flags, double geo_lat, double geo_lon, double *cusps, double *ascmc, char *error);
+int jme_houses_gauquelin_armc(double armc, double geo_lat, double eps, double *cusps, double *ascmc, char *error);
 int jme_gauquelin_sector(double jd_ut, int body, const char *starname, int flags, int imeth, double *geopos, double atpress, double attemp, double *dgsect, char *error);
 
 int jme_sol_eclipse_where(double jd_ut, int flags, double *geopos, double *attr, char *error);

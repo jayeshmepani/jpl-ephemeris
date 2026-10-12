@@ -197,12 +197,12 @@ static int test_model_helpers(void)
     }
 
     if (jme_get_nutation(2451545.0, JME_MODEL_NUT_IAU_1980, &value, &value2, error) != JME_OK
-        || !close_enough("IAU 1980 nut dpsi", value, -0.0038698621712391834, 1e-15)
-        || !close_enough("IAU 1980 nut deps", value2, -0.0016041131523510195, 1e-15)
+        || !close_enough("IAU 1980 nut dpsi (ERFA eraNut80 reference)", value, -0.003867606991528501, 1e-15)
+        || !close_enough("IAU 1980 nut deps (ERFA eraNut80 reference)", value2, -0.001603835628823866, 1e-15)
         || jme_get_nutation(2451545.0, JME_MODEL_NUT_IAU_2000B, &value, &value2, error) != JME_OK
         || !close_enough("IAU 2000B nut dpsi", value, -0.0038699066358249398, 1e-15)
         || !close_enough("IAU 2000B nut deps", value2, -0.0016026158548035686, 1e-15)
-        || jme_get_nutation(2451545.0, JME_MODEL_NUT_IAU_2000A, &value, &value2, error) != JME_ERR
+        || jme_get_nutation(2451545.0, JME_MODEL_NUT_IAU_2000A, &value, &value2, error) != JME_OK
         || jme_get_nutation(2451545.0, 999999, &value, &value2, error) != JME_ERR
         || jme_get_nutation(2451545.0, JME_MODEL_NUT_IAU_1980, 0, &value2, error) != JME_ERR) {
         fprintf(stderr, "nutation helper contract failed\n");

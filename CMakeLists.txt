@@ -16,7 +16,10 @@ set(CMAKE_C_EXTENSIONS OFF)
 find_package(calceph CONFIG QUIET)
 find_package(Threads QUIET)
 
+file(GLOB JME_ERFA_VENDOR_SOURCES CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/erfa/vendor/*.c)
+
 add_library(jme SHARED
+    ${JME_ERFA_VENDOR_SOURCES}
     src/api.c
     src/angle.c
     src/astrometry.c
@@ -24,10 +27,10 @@ add_library(jme SHARED
     src/context.c
     src/coordinates.c
     src/elp2000.c
-    src/elp2000/arguments.c
-    src/elp2000/elp2000-82b.c
-    src/elp2000/series.c
+    src/elp82b.c
     src/events.c
+    src/erfa/dtdb.c
+    src/erfa/tdbtcb.c
     src/fixstar.c
     src/houses.c
     src/julian.c
@@ -41,9 +44,9 @@ add_library(jme SHARED
     src/moshier/moonlr404.c
     src/sidereal.c
     src/time.c
+    src/eop.c
+    src/timescale.c
     src/vsop87.c
-    src/vsop87a_full.c
-    src/vsop87d_full.c
 )
 
 set_target_properties(jme PROPERTIES
@@ -56,8 +59,9 @@ target_include_directories(jme
         $<INSTALL_INTERFACE:include>
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/elp2000
         ${CMAKE_CURRENT_SOURCE_DIR}/src/moshier
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/erfa
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/erfa/vendor
 )
 
 if (calceph_FOUND)
@@ -72,18 +76,19 @@ else()
 endif()
 
 if (MSVC)
-    target_compile_options(jme PRIVATE /W4)
+    target_compile_options(jme PRIVATE /W4 /fp:precise)
     set_source_files_properties(
-        src/elp2000/elp2000-82b.c
+        src/elp82b.c
         src/moshier_full.c
         src/moshier/moonlat404.c
         src/moshier/moonlr404.c
-        src/vsop87a_full.c
-        src/vsop87d_full.c
         PROPERTIES COMPILE_FLAGS "/Od"
     )
 else()
     target_compile_options(jme PRIVATE -Wall -Wextra -Wpedantic)
+    # Bit-reproducible results across platforms: forbid fused multiply-add
+    # contraction (clang contracts by default on arm64, GCC does not on x86-64).
+    target_compile_options(jme PRIVATE -ffp-contract=off)
     target_link_libraries(jme PUBLIC m)
 endif()
 
@@ -97,6 +102,78 @@ if (JME_BUILD_TESTS)
     add_executable(test_api_contract tests/test_api_contract.c)
     target_link_libraries(test_api_contract PRIVATE jme)
     add_test(NAME api_contract COMMAND test_api_contract)
+
+    add_executable(test_precision_contract tests/test_precision_contract.c)
+    target_link_libraries(test_precision_contract PRIVATE jme)
+    add_test(NAME precision_contract COMMAND test_precision_contract)
+
+    add_executable(test_time_scale_contract tests/test_time_scale_contract.c)
+    target_include_directories(test_time_scale_contract PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/erfa
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests
+    )
+    target_link_libraries(test_time_scale_contract PRIVATE jme)
+    add_test(NAME time_scale_contract COMMAND test_time_scale_contract)
+
+    add_executable(test_delta_t_reference tests/test_delta_t_reference.c)
+    target_include_directories(test_delta_t_reference PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    target_link_libraries(test_delta_t_reference PRIVATE jme)
+    add_test(NAME delta_t_reference COMMAND test_delta_t_reference)
+
+    add_executable(test_vsop87_reference tests/test_vsop87_reference.c)
+    target_include_directories(test_vsop87_reference PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    target_link_libraries(test_vsop87_reference PRIVATE jme)
+    add_test(NAME vsop87_reference COMMAND test_vsop87_reference)
+
+    add_executable(test_apparent_reference tests/test_apparent_reference.c)
+    target_include_directories(test_apparent_reference PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    target_link_libraries(test_apparent_reference PRIVATE jme)
+    add_test(NAME apparent_reference COMMAND test_apparent_reference)
+    set_tests_properties(apparent_reference PROPERTIES SKIP_RETURN_CODE 77)
+
+    add_executable(test_riseset_reference tests/test_riseset_reference.c)
+    target_include_directories(test_riseset_reference PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    target_link_libraries(test_riseset_reference PRIVATE jme)
+    add_test(NAME riseset_reference COMMAND test_riseset_reference)
+    set_tests_properties(riseset_reference PROPERTIES SKIP_RETURN_CODE 77)
+    add_executable(test_lunar_eclipse_canon tests/test_lunar_eclipse_canon.c)
+    target_include_directories(test_lunar_eclipse_canon PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    target_link_libraries(test_lunar_eclipse_canon PRIVATE jme)
+    add_test(NAME lunar_eclipse_canon COMMAND test_lunar_eclipse_canon)
+    set_tests_properties(lunar_eclipse_canon PROPERTIES SKIP_RETURN_CODE 77)
+
+    add_executable(test_star_reference tests/test_star_reference.c)
+    target_include_directories(test_star_reference PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    target_link_libraries(test_star_reference PRIVATE jme)
+    add_test(NAME star_reference COMMAND test_star_reference)
+    set_tests_properties(star_reference PROPERTIES SKIP_RETURN_CODE 77)
+
+    add_executable(test_occult_reference tests/test_occult_reference.c)
+    target_include_directories(test_occult_reference PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    target_link_libraries(test_occult_reference PRIVATE jme)
+    add_test(NAME occult_reference COMMAND test_occult_reference)
+    set_tests_properties(occult_reference PROPERTIES SKIP_RETURN_CODE 77)
+
+    add_executable(test_laskar1986_reference tests/test_laskar1986_reference.c)
+    target_include_directories(test_laskar1986_reference PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    target_link_libraries(test_laskar1986_reference PRIVATE jme)
+    add_test(NAME laskar1986_reference COMMAND test_laskar1986_reference)
+    add_executable(test_galcent_reference tests/test_galcent_reference.c)
+    target_include_directories(test_galcent_reference PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    target_link_libraries(test_galcent_reference PRIVATE jme)
+    add_test(NAME galcent_reference COMMAND test_galcent_reference)
+
+    add_executable(test_polar_motion_reference tests/test_polar_motion_reference.c)
+    target_include_directories(test_polar_motion_reference PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    target_compile_definitions(test_polar_motion_reference PRIVATE JME_TEST_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures")
+    target_link_libraries(test_polar_motion_reference PRIVATE jme)
+    add_test(NAME polar_motion_reference COMMAND test_polar_motion_reference)
+
+    add_executable(test_houses_reference tests/test_houses_reference.c)
+    target_include_directories(test_houses_reference PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/tests)
+    target_link_libraries(test_houses_reference PRIVATE jme)
+    add_test(NAME houses_reference COMMAND test_houses_reference)
 
     add_executable(test_jpl_runtime tests/test_jpl_runtime.c)
     target_link_libraries(test_jpl_runtime PRIVATE jme)
@@ -135,11 +212,15 @@ if (JME_BUILD_TESTS)
     add_executable(jme_call_probe tests/jme_call_probe.c)
     target_link_libraries(jme_call_probe PRIVATE jme)
 
-    add_test(
-        NAME engine_matrix
-        COMMAND /bin/bash ${CMAKE_CURRENT_SOURCE_DIR}/tools/run_engine_matrix.sh
-                --build-dir ${CMAKE_CURRENT_BINARY_DIR}
-    )
+    find_program(JME_BASH_EXECUTABLE NAMES bash)
+    find_program(JME_PYTHON3_EXECUTABLE NAMES python3)
+    if (JME_BASH_EXECUTABLE AND JME_PYTHON3_EXECUTABLE AND NOT WIN32)
+        add_test(
+            NAME engine_matrix
+            COMMAND ${JME_BASH_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/run_engine_matrix.sh
+                    --build-dir ${CMAKE_CURRENT_BINARY_DIR}
+        )
+    endif()
 
     find_program(PWSH_EXECUTABLE NAMES pwsh powershell)
     if (PWSH_EXECUTABLE)

@@ -357,6 +357,11 @@ typedef enum jme_extended_constant {
     JME_MODEL_DELTAT_STEPHENSON_MORRISON_2004 = 348,
     JME_MODEL_DELTAT_ESPENAK_MEEUS_2006 = 349,
     JME_MODEL_DELTAT_STEPHENSON_ETC_2016 = 350,
+    JME_MODEL_DELTAT_STEPHENSON_ETC_2021 = 407,
+    JME_MODEL_DELTAT_MS2004_TABLE1_LINEAR = 408,
+    /* IAU 2000A nutation with the IAU 2006 (P03) adjustments, IERS Conventions
+     * 2010 eq. 5.35 (ERFA eraNut06a): the nutation consistent with IAU 2006 precession. */
+    JME_MODEL_NUT_IAU_2006A = 351,
     JME_RISE_ANTI_MERIDIAN_TRANSIT = 1 << 3,
     JME_RISE_ASTRONOMICAL_TWILIGHT = 1 << 9,
     JME_RISE_CIVIL_TWILIGHT = 1 << 7,
@@ -411,12 +416,58 @@ typedef enum jme_extended_constant {
     JME_MODEL_REVISED_IAU_2006 = 402,
     JME_MODEL_REVISED_PREC_LASKAR = 403,
     JME_MODEL_REVISED_PREC_VONDRAK = 404,
-    JME_MODEL_REVISED_PREC_LIESKE = 405
+    JME_MODEL_REVISED_PREC_LIESKE = 405,
+    JME_SIDEREAL_LAHIRI_ICRC = 406
 } jme_extended_constant;
+
+/*
+ * Time scales for jme_time_scale_convert(). Values are part of the ABI.
+ * UT1 is realised with the context Delta-T model (no IERS EOP data).
+ */
+typedef enum jme_time_scale {
+    JME_TIME_SCALE_UTC = 0,
+    JME_TIME_SCALE_UT1 = 1,
+    JME_TIME_SCALE_TAI = 2,
+    JME_TIME_SCALE_TT = 3,
+    JME_TIME_SCALE_TDB = 4,
+    JME_TIME_SCALE_TCG = 5,
+    JME_TIME_SCALE_TCB = 6
+} jme_time_scale;
+
+/*
+ * Convert a two-part Julian date (jd1 + jd2, split preserved where possible)
+ * between time scales. UTC uses the ERFA/SOFA quasi-JD convention for
+ * leap-second days and is defined from 1960-01-01 until the leap-second table
+ * expiry (see jme_leap_second_table_info). Returns JME_OK or JME_ERR.
+ */
+int jme_time_scale_convert(double jd1, double jd2, int from_scale, int to_scale,
+    double *out1, double *out2, char *error);
+const char *jme_time_scale_name(int scale);
+
+/*
+ * Embedded leap-second (TAI-UTC) table information. jd_utc_valid_until is the
+ * first UTC Julian date NOT covered by the table (currently 2027-07-01 0h UTC,
+ * from IERS Bulletin C 72); last_tai_minus_utc is the latest TAI-UTC (s).
+ * Either pointer may be NULL (not both).
+ */
+int jme_leap_second_table_info(double *jd_utc_valid_until, double *last_tai_minus_utc, char *error);
+
+/* Flags for jme_get_ayanamsa_ex2(). */
+typedef enum jme_ayanamsa_flags {
+    JME_AYANAMSA_MEAN = 0,
+    JME_AYANAMSA_TRUE = 1
+} jme_ayanamsa_flags;
 
 double jme_delta_t(double jd_ut);
 
 double jme_delta_t_ex(double jd_ut, int model, char *error);
+
+/*
+ * Embedded IERS Delta-T table (finals2000A, used by JME_TIME_DELTAT_AUTOMATIC):
+ * first day, last IERS-observed day and last predicted day (UTC Julian dates).
+ * Update procedure: docs/TIME_SCALES.md.
+ */
+int jme_delta_t_iers_table_info(double *jd_first, double *jd_last_observed, double *jd_last, char *error);
 
 int jme_get_obliquity(double jd_et, int model, double *eps, char *error);
 
@@ -434,6 +485,67 @@ double jme_get_ayanamsa(double jd_et);
 double jme_get_ayanamsa_ut(double jd_ut);
 int jme_get_ayanamsa_ex(double jd_et, int model, double *ayan, char *error);
 int jme_get_ayanamsa_ex_ut(double jd_ut, int model, double *ayan, char *error);
+/*
+ * Ayanamsa with explicit mean/true selection. flags: JME_AYANAMSA_MEAN (mean
+ * equinox of date) or JME_AYANAMSA_TRUE (true equinox of date: mean + nutation
+ * in longitude of the context nutation model). rate (optional, may be NULL)
+ * receives the rate of the MEAN ayanamsa in degrees/day. jme_get_ayanamsa_ex()
+ * returns the mean ayanamsa. See docs/AYANAMSA_MODELS.md.
+ */
+int jme_get_ayanamsa_ex2(double jd_et, int model, int flags, double *ayan, double *rate, char *error);
+int jme_get_ayanamsa_ex2_ut(double jd_ut, int model, int flags, double *ayan, double *rate, char *error);
+
+/*
+ * Planet-centre policy of the JPL engine (jme_calc and related functions).
+ * The JPL DE4xx planetary kernels contain the Mars..Pluto system barycentres
+ * but not the planet centres (those come from satellite kernels such as
+ * mar097.bsp or jup365.bsp, which can be loaded with jme_jpl_open_array).
+ *   JME_JPL_CENTER_STRICT (default): a planet centre that the loaded kernels
+ *     do not provide is an error (ENGINE=JPL) or makes ENGINE=AUTO use the
+ *     analytical engine for that call (see jme_calc_resolve_engine).
+ *   JME_JPL_CENTER_BARYCENTER (opt-in): when the planet centre is missing,
+ *     the planetary-system barycentre is used instead. Centre-barycentre
+ *     offsets: Mars ~0.2 m, Jupiter up to ~230 km, Saturn ~290 km,
+ *     Uranus ~tens of km, Neptune ~75 km, Pluto ~2100 km.
+ * Also settable with jme_set_astro_models("JPL_CENTER=STRICT|BARYCENTER").
+ */
+typedef enum jme_jpl_center_policy {
+    JME_JPL_CENTER_STRICT = 0,
+    JME_JPL_CENTER_BARYCENTER = 1
+} jme_jpl_center_policy;
+
+int jme_set_jpl_center_policy(int policy, char *error);
+int jme_get_jpl_center_policy(void);
+
+/* Engines reported by jme_calc_resolve_engine(). */
+typedef enum jme_engine_id {
+    JME_ENGINE_ID_JPL = 1,
+    JME_ENGINE_ID_MOSHIER = 2,
+    JME_ENGINE_ID_VSOP87_ELP82B = 3
+} jme_engine_id;
+
+/*
+ * Reports which engine jme_calc() uses for body at jd_et (TT) under the
+ * current settings, so that ENGINE=AUTO never substitutes a model silently.
+ * *engine_id receives a jme_engine_id; *jpl_center_substituted (optional)
+ * is 1 when the JPL planet centre was replaced by its system barycentre
+ * under JME_JPL_CENTER_BARYCENTER. Returns JME_OK or JME_ERR.
+ */
+int jme_calc_resolve_engine(double jd_et, int body, int *engine_id, int *jpl_center_substituted, char *error);
+
+/*
+ * Validating setters. Unlike the legacy void setters (kept unchanged), these
+ * reject invalid input with JME_ERR and an error message and leave the
+ * configuration untouched:
+ *   jme_set_astro_models_checked: unknown or over-long tokens are errors;
+ *   jme_set_topo_checked: non-finite values or |lat| > 90 are errors
+ *     (longitude is normalised to [-180, 180));
+ *   jme_set_sidereal_mode_checked: unknown modes or non-finite t0/ayan_t0
+ *     are errors.
+ */
+int jme_set_astro_models_checked(const char *models, char *error);
+int jme_set_topo_checked(double lon, double lat, double altitude, char *error);
+int jme_set_sidereal_mode_checked(int sidereal_mode, double t0, double ayan_t0, char *error);
 
 int jme_time_equ(double jd_ut, double *e, char *error);
 
@@ -539,6 +651,12 @@ double jme_jd_add_seconds(double jd, double seconds);
 
 double jme_jd_difference_seconds(double jd_end, double jd_start);
 
+/*
+ * Low-level JPL numeric APIs take the currently opened kernel's native time
+ * scale (TDB or TCB); split variants preserve that two-part Julian date.
+ * High-level jme_calc/jme_calc_ut accept TT/UT and convert internally.
+ * UTC calendar variants convert UTC -> TAI -> TT -> kernel-native time.
+ */
 int jme_jpl_body_state(
     double jd_time,
     int target_body,
@@ -943,6 +1061,11 @@ double jme_sidereal_time(double jd_ut);
 
 double jme_sidereal_time0(double jd_ut, double eps, double nut);
 
+/* Greenwich sidereal time in hours for UT1 jd_ut (Delta-T model gives TT).
+ * apparent = 0: mean sidereal time; apparent != 0: apparent sidereal time
+ * (adds the equation of the equinoxes for the context nutation model). */
+int jme_sidereal_time_ex(double jd_ut, int apparent, double *hours, char *error);
+
 void jme_split_degree(
     double ddeg,
     int roundflag,
@@ -991,6 +1114,26 @@ int jme_elp2000_moon_state(double jd_et, double *results);
 int jme_meeus_planet_state(double jd_et, int body, double *results);
 
 int jme_moshier_planet_state(double jd_et, int body, double *results);
+
+/*
+ * IERS Earth orientation: polar motion.
+ *
+ * jme_eop_load_file reads an IERS finals2000A or EOP C04 file and replaces
+ * any loaded series. jme_eop_polar_motion returns xp, yp (arcsec) by 4-point
+ * Lagrange interpolation at an MJD (predicted != 0 when a prediction row
+ * contributed). jme_set_polar_motion(1) makes topocentric observer
+ * positions, horizontal coordinates and eclipse geographic mappings apply
+ * the polar-motion matrix W = eraPom00(xp, yp, s'); with it enabled, those
+ * computations fail with an error when no EOP data cover the date. The
+ * default (0) applies no polar motion. The loaded series is process-global:
+ * load it before using it from several threads.
+ */
+int jme_eop_load_file(const char *path, char *error);
+void jme_eop_clear(void);
+int jme_eop_coverage(double *mjd_first, double *mjd_last, char *error);
+int jme_eop_polar_motion(double mjd, double *xp_arcsec, double *yp_arcsec, int *predicted, char *error);
+void jme_set_polar_motion(int enabled);
+int jme_get_polar_motion(void);
 
 #ifdef __cplusplus
 }

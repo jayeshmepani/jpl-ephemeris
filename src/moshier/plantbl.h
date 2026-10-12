@@ -1,3 +1,9 @@
+/*
+ * Portions derived from the work of Stephen L. Moshier, incorporated herein
+ * by permission of the author (plan404 / AA 5.6 material from moshier.net,
+ * distributed under the MIT License by permission given 12 October 2026;
+ * see docs/permissions/MOSHIER_PERMISSION.md and THIRD_PARTY_NOTICES.md).
+ */
 #ifndef JME_MOSHIER_PLANTBL_DEFINED
 #define JME_MOSHIER_PLANTBL_DEFINED
 

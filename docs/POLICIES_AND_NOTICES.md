@@ -88,4 +88,4 @@ JPL `.bsp` kernels are data files supplied separately by NASA/JPL/NAIF or relate
 
 ### Other Third-Party Components
 
-Moshier theories, the ELP2000-82B implementation, VSOP87 code, ERFA-derived nutation, ΔT polynomials, and star catalogue data are listed with their authors and terms in [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md). The MIT License applies to the original code in this repository; third-party components keep their own terms.
+Moshier theories (MIT by permission of the author), the ELP2000-82B series data, VSOP87 data, ERFA-derived nutation, ΔT polynomials, and star catalogue data are listed with their authors and terms in [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md). The MIT License applies to the original code in this repository; third-party components keep their own terms.
