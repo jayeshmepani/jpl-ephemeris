@@ -85,9 +85,9 @@ JME builds on the work of others:
 - **CALCEPH** (CNRS, Observatoire de Paris, Observatoire de la Côte d'Azur), used under CeCILL-B to read JPL kernels.
 - **Stephen L. Moshier**: plan404 and Astronomical Almanac 5.6 analytical theories (Moshier engine). MIT License by permission of the author (12 October 2026; see [docs/permissions/MOSHIER_PERMISSION.md](docs/permissions/MOSHIER_PERMISSION.md)). Portions derived from the work of Stephen L. Moshier, incorporated herein by permission of the author.
 - **ELP2000-82B** lunar theory by M. Chapront-Touzé and J. Chapront (CDS VI/79 series data, attribution); the evaluator (`src/elp82b.c`) is JME's own implementation (MIT). The earlier third-party C implementation was removed.
-- **VSOP87** by P. Bretagnon and G. Francou (CDS VI/81); C code from Greg A. Miller's VSOP87-Multilang (public domain dedication).
+- **VSOP87** by P. Bretagnon and G. Francou (official IMCCE files / CDS VI/81 series data); the VSOP87A evaluator (`src/vsop87.c`) is JME's own implementation (MIT).
 - **Jean Meeus**, *Astronomical Algorithms* (formulas cited).
-- **ERFA** (BSD 3-Clause, NumFOCUS Foundation): IAU 2000B nutation.
+- **ERFA** (BSD 3-Clause, NumFOCUS Foundation): vendored subset for precession, nutation, frame bias, sidereal time, light deflection, aberration, star space motion and time scales.
 - **F. Espenak and J. Meeus** (NASA): ΔT polynomials.
 - **Yale Bright Star Catalogue**, 5th Rev. Ed. (Hoffleit and Warren): fixed stars.
 
