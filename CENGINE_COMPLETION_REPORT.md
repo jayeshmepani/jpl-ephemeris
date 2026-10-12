@@ -148,4 +148,4 @@ PR description draft (in the final report; not posted).
 - (g) Galactic Centre: the defining convention (Sgr A* at 0 deg Sagittarius) is documented with the Reid & Brunthaler 2004 position. Under the clean-room rule no third-party software documentation is cited.
 
 ## Clean room
-No AGPL source consulted. Third-party software documentation references were removed from code, docs and comments (1ef7f86). Residual risk: some public API names and output-array conventions (`tret`, `attr`, `geopos`, `iflag`, `*_tid_acc`) follow the widely used astrology-library calling style. Renaming them would break the API, so it needs a product decision.
+No AGPL source consulted. Third-party software documentation references were removed from code, docs and comments (1ef7f86). Residual risk: some public API names and output-array conventions (`tret`, `attr`, `geopos`, `iflag`, `*_tid_acc`) follow the widely used astrology-library calling style. Decision (user, 12 Oct 2026): the public API names stay unchanged for compatibility.
