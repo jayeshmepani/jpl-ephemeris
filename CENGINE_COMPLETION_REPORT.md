@@ -56,6 +56,11 @@ This file is updated after each milestone. Status keys: FIXED / PARTIAL / OPEN.
 | Tidal acceleration AUTOMATIC: infer loaded backend/kernel | OPEN | AUTOMATIC clears the explicit correction; active-kernel-specific acceleration is not yet inferred; see docs/TIME_SCALES.md |
 
 ## Commits (this session, newest first)
+- 1897ce3 / cf408c4 / 4605344 Tidal acceleration regression tests, all DE selectors, model-reference baselines
+- 11c0bd8 / 0812380 Report and checklist update for partial tidal-acceleration implementation
+- f22334e Docs: tidal acceleration equations, selector provenance, and automatic-selection limitation
+- 553908b / 8704a6c / 6bc6be6 Apply explicit lunar tidal acceleration to historical Delta-T; resolve DE selectors
+- 85518ab / 073dda8 / 541aa77 / 67b6104 Tidal acceleration context state and initialization
 - cf408c4 / 4605344 Tidal acceleration selector coverage and model-baseline regression tests
 - f22334e Docs: tidal acceleration equations, selector provenance, and automatic-selection limitation
 - 553908b / 8704a6c / 6bc6be6 Apply explicit lunar tidal acceleration to historical Delta-T; resolve DE selectors
