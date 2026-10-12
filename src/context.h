@@ -41,6 +41,7 @@ typedef struct jme_context {
     int jpl_center_policy;
     double tidal_acceleration_effective;
     int tidal_acceleration_explicit;
+    int tidal_acceleration_unresolved;
 } jme_context;
 
 jme_context *jme_get_context(void);

@@ -192,6 +192,7 @@ static double jme_delta_t_espenak_meeus_split(double jd1, double jd2)
      * referred to atomic time and are not adjusted for a lunar ephemeris.
      * The published IERS and SMH-2016/2021 paths are intentionally separate.
      */
+    if (ctx->tidal_acceleration_unresolved && y < 1955.0) return NAN;
     if (ctx->tidal_acceleration_explicit && y < 1955.0) {
         double centuries = (y - 1955.0) / 100.0;
         dt += -0.91072 * (ctx->tidal_acceleration_effective + 26.0)
@@ -241,6 +242,7 @@ static double jme_delta_t_smh2016_split(double jd1, double jd2)
      * -25.85 arcsec/century^2 (not the -26.0 baseline of the EM-2006
      * polynomial). Adjust only the pre-1955 historical domain.
      */
+    if (ctx->tidal_acceleration_unresolved && y < 1955.0) return NAN;
     if (ctx->tidal_acceleration_explicit && y < 1955.0) {
         double centuries = (y - 1955.0) / 100.0;
         dt += -0.91072 * (ctx->tidal_acceleration_effective + 25.85)
@@ -349,6 +351,10 @@ double internal_delta_t_ex_split(double jd1, double jd2, int model, char *error)
     }
 
     if (!isfinite(dt)) {
+        if (ctx->tidal_acceleration_unresolved) {
+            jme_set_error(error, "Historical Delta-T needs a lunar tidal acceleration: JPL has published no value for DE441 (Park et al. 2021); set a numeric value with jme_set_tid_acc");
+            return NAN;
+        }
         if (error == 0 || error[0] == '\0') jme_set_error(error, "Delta-T date conversion failed");
         return NAN;
     }

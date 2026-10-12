@@ -157,8 +157,7 @@ int main(void)
                 {JME_TIME_TIDAL_DE406, -25.826},
                 {JME_TIME_TIDAL_DE421, -25.85},
                 {JME_TIME_TIDAL_DE430, -25.82},
-                {JME_TIME_TIDAL_DE431, -25.80},
-                {JME_TIME_TIDAL_DE441, -25.936}
+                {JME_TIME_TIDAL_DE431, -25.80}
             };
             int k;
             jme_set_tid_acc(JME_TIME_TIDAL_AUTOMATIC);
@@ -181,6 +180,28 @@ int main(void)
                 }
             }
         }
+
+        /*
+         * DE441 has no published tidal acceleration: historical model Delta-T
+         * must fail explicitly, while observational dates are unaffected.
+         */
+        jme_set_tid_acc((double)JME_TIME_TIDAL_DE441);
+        if (jme_get_tid_acc() != (double)JME_TIME_TIDAL_DE441
+            || !isnan(jme_delta_t_ex(jd_year_zero, JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, error))
+            || strstr(error, "DE441") == 0
+            || !isnan(jme_delta_t_ex(jd_year_zero, JME_MODEL_DELTAT_STEPHENSON_ETC_2016, error))
+            || !isnan(jme_delta_t_ex(jd_year_zero, JME_TIME_DELTAT_AUTOMATIC, error))
+            || !isfinite(jme_delta_t_ex(2451545.0, JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, error))
+            || !isfinite(jme_delta_t_ex(2451545.0, JME_TIME_DELTAT_AUTOMATIC, error))) {
+            fprintf(stderr, "DE441 unresolved tidal selector contract failed: %s\n", error);
+            failures++;
+        }
+        jme_set_delta_t_userdef(69.0);
+        if (jme_delta_t_ex(jd_year_zero, JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, error) != 69.0) {
+            fprintf(stderr, "user-fixed Delta-T must bypass the tidal correction\n");
+            failures++;
+        }
+        jme_set_delta_t_userdef(NAN);
 
         jme_set_tid_acc(-25.858);
         adjusted = jme_delta_t_ex(jd_year_zero, JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, error);

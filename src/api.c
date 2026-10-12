@@ -462,17 +462,30 @@ double jme_get_tid_acc(void)
 }
 
 /*
- * Resolve the public tidal-acceleration selectors to their documented
- * lunar mean-longitude acceleration (arcsec/century^2).  The configured
- * selector is retained separately so jme_get_tid_acc() remains a round trip.
- *
- * DE441's value is reported as unpublished in the source cited by the
- * Swiss Ephemeris public header; it is provided for compatibility, not as a
- * value independently published by JPL.
+ * Resolve the public tidal-acceleration selectors to the lunar mean-longitude
+ * tidal acceleration (arcsec/century^2) of each JPL lunar ephemeris, from
+ * primary publications:
+ *   DE200 -23.8946: ELP 2000-82 / LE200 value (Chapront-Touze & Chapront 1983,
+ *          A&A 124, 50); -23.895 in Chapront, Chapront-Touze & Francou 2002,
+ *          A&A 387, 700, Table 7.
+ *   DE403/DE404 -25.580, DE405/DE406 -25.826: Chapront et al. 2002, Table 7
+ *          (DE404 and DE406 are the long-span companions of DE403 and DE405,
+ *          Standish 1995 IOM 314.10-127; Standish 1998 IOM 312.F-98-048).
+ *   DE421 -25.85: Williams, Boggs & Folkner 2008, JPL IOM
+ *          335-JW,DB,WF-20080314-001.
+ *   DE430 -25.82, DE431 -25.80: Folkner et al. 2014, IPN Progress Report
+ *          42-196, sect. on lunar tidal acceleration.
+ *   DE441: JPL has not published a value; Park et al. 2021 (AJ 161, 105)
+ *          state only that the acceleration is implicit in the tide model.
+ *          The selector is therefore unresolved: historical (pre-1955)
+ *          model Delta-T fails with an explicit error instead of using an
+ *          unpublished number. Supply a numeric value to override.
+ * The configured selector is retained so jme_get_tid_acc() is a round trip.
  */
-static double jme_tidal_acceleration_value(double t_acc, int *is_explicit)
+static double jme_tidal_acceleration_value(double t_acc, int *is_explicit, int *is_unresolved)
 {
     *is_explicit = 1;
+    *is_unresolved = 0;
 
     if (t_acc == (double)JME_TIME_TIDAL_AUTOMATIC) {
         *is_explicit = 0;
@@ -486,7 +499,11 @@ static double jme_tidal_acceleration_value(double t_acc, int *is_explicit)
     if (t_acc == (double)JME_TIME_TIDAL_DE421) return -25.85;
     if (t_acc == (double)JME_TIME_TIDAL_DE430) return -25.82;
     if (t_acc == (double)JME_TIME_TIDAL_DE431) return -25.80;
-    if (t_acc == (double)JME_TIME_TIDAL_DE441) return -25.936;
+    if (t_acc == (double)JME_TIME_TIDAL_DE441) {
+        *is_explicit = 0;
+        *is_unresolved = 1;
+        return NAN;
+    }
 
     /* Any other finite input is a user-supplied acceleration value. */
     return t_acc;
@@ -496,10 +513,11 @@ void jme_set_tid_acc(double t_acc)
 {
     if (isfinite(t_acc)) {
         jme_context *ctx = jme_get_context();
-        int is_explicit;
+        int is_explicit, is_unresolved;
         ctx->tidal_acceleration = t_acc;
-        ctx->tidal_acceleration_effective = jme_tidal_acceleration_value(t_acc, &is_explicit);
+        ctx->tidal_acceleration_effective = jme_tidal_acceleration_value(t_acc, &is_explicit, &is_unresolved);
         ctx->tidal_acceleration_explicit = is_explicit;
+        ctx->tidal_acceleration_unresolved = is_unresolved;
     }
 }
 

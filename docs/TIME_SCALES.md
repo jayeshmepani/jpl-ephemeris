@@ -53,30 +53,48 @@ Details:
   values to the precision of their tables.
 * **Model joins.** The SMHZ parabola does not join the spline at −720 or at
   2019. These are the published models; the jumps are kept, not smoothed.
-* **Lunar tidal acceleration.** `jme_set_tid_acc()` accepts a finite
-  lunar mean-longitude secular acceleration in arcseconds per century squared,
-  or a named `JME_TIME_TIDAL_*` selector. The DE selectors resolve to:
-  DE200 −23.8946; DE403/DE404 −25.580; DE405/DE406 −25.826; DE421 −25.85;
-  DE430 −25.82; DE431 −25.80; DE441 −25.936. The DE441 figure is an
-  unpublished value attributed to an email from J. Giorgini in the Swiss
-  Ephemeris public header, not a value independently published by JPL.
-* **Historical correction.** For explicitly selected acceleration (a), the
-  Espenak–Meeus 2006 model is corrected before 1955 relative to its published
-  −26″/cy² baseline, and the SMH-2016/2021 model relative to its −25.85″/cy²
-  baseline. The correction is
-  (c=-0.91072(a-a_0)((y-1955)/100)^2) seconds, where (a_0) is the
-  respective model's baseline and (y) is its continuous calendar decimal
-  year. No correction is applied to dates from 1955 onward, to the embedded
-  IERS observational/prediction table, or to a user-defined fixed ΔT.
-* **Automatic selector limitation.** `JME_TIME_TIDAL_AUTOMATIC` clears the
-  explicit correction and restores the base published model values. JME does
-  not yet infer a kernel-specific value from the currently loaded JPL file or
-  automatically select a different acceleration by analytical engine. The
-  configured input/selector is preserved by `jme_get_tid_acc()`; non-finite
-  setter inputs are ignored. Selector values follow the documented
-  DE-specific values in the
-  [Swiss Ephemeris public header](https://sources.debian.org/src/libswe/2.10.03-3.1/swephexp.h/)
-  and the NASA [secular-acceleration correction](https://eclipse.gsfc.nasa.gov/LEcat5/secular.html).
+* **Lunar tidal acceleration.** `jme_set_tid_acc()` accepts either a finite
+  lunar mean-longitude tidal acceleration in ″/cy², or a named
+  `JME_TIME_TIDAL_*` selector. Each DE selector resolves to the value
+  published for that JPL lunar ephemeris:
+
+  | Selector | ″/cy² | Primary source |
+  |---|---|---|
+  | DE200 | −23.8946 | ELP 2000-82 / LE200 (Chapront-Touzé & Chapront 1983, A&A 124, 50); −23.895 in Chapront, Chapront-Touzé & Francou 2002, A&A 387, 700, Table 7 |
+  | DE403, DE404 | −25.580 | Chapront et al. 2002, Table 7 (DE404 is the long-span companion of DE403, Standish et al. 1995, JPL IOM 314.10-127) |
+  | DE405, DE406 | −25.826 | Chapront et al. 2002, Table 7 (DE406 is the long-span companion of DE405, Standish 1998, JPL IOM 312.F-98-048) |
+  | DE421 | −25.85 | Williams, Boggs & Folkner 2008, JPL IOM 335-JW,DB,WF-20080314-001 |
+  | DE430 | −25.82 | Folkner et al. 2014, IPN Progress Report 42-196 |
+  | DE431 | −25.80 | Folkner et al. 2014, IPN Progress Report 42-196 |
+  | DE441 | none published | Park et al. 2021 (AJ 161, 105) say only that the tidal acceleration is implicit in the time-delay tide model |
+
+  The DE441 selector is **unresolved**. Pre-1955 Espenak–Meeus or SMH ΔT
+  (including AUTOMATIC's SMH branch) returns NaN with an explicit error.
+  It does not use an unpublished number. A figure of −25.936 circulates,
+  attributed to private correspondence, but JME does not adopt it. To
+  use it, or any other value, pass it numerically. `jme_get_tid_acc()`
+  returns the selector unchanged.
+* **Historical correction.** When an acceleration (a) is selected
+  explicitly, ΔT before 1955 is corrected relative to the model's own
+  baseline (a_0): −26″/cy² for Espenak–Meeus 2006, −25.85″/cy² for
+  SMH-2016/2021. The correction is
+  c = −0.91072 (a − a_0) ((y − 1955)/100)² s
+  (NASA [secular-acceleration correction](https://eclipse.gsfc.nasa.gov/LEcat5/secular.html)).
+  Here y is the model's own decimal year: the calendar year for EM-2006
+  (Julian calendar before 1582 Oct 15), the Julian epoch year for SMH.
+  Nothing is corrected from 1955 onward, in the embedded IERS
+  observational/prediction table, or when the user has fixed ΔT
+  (`jme_set_delta_t_userdef`). Each exclusion is covered in
+  `tests/test_delta_t_reference.c`.
+* **AUTOMATIC selector.** `JME_TIME_TIDAL_AUTOMATIC` applies no correction:
+  the published base models are used unchanged. Inferring a value from the
+  loaded JPL kernel was evaluated and rejected, for two reasons. First, SPK
+  kernels carry no machine-readable DE identity: CALCEPH reports no file
+  version and no `DENUM` for `de440s.bsp`, so the inference would have to
+  parse free-text comments. Second, the current kernels (DE440/DE441) have
+  no published value (see above). Selecting the matching DE selector, or a
+  number, is the user's explicit choice.
+
 
 ## 3. Leap-second table update
 
