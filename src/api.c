@@ -127,6 +127,8 @@ static int apply_model_token(jme_context *ctx, const char *token)
         ctx->model_nut = JME_MODEL_NUT_IAU_2006A;
     } else if (token_matches(token, "NUT2000A") || token_value_matches(token, "NUT=", "IAU2000A") || token_value_matches(token, "NUT=", "334")) {
         ctx->model_nut = JME_MODEL_NUT_IAU_2000A;
+    } else if (token_matches(token, "PREC_LASKAR1986") || token_value_matches(token, "PREC=", "LASKAR1986") || token_value_matches(token, "PREC=", "342")) {
+        ctx->model_prec = JME_MODEL_PREC_LASKAR_1986;
     } else if (token_matches(token, "PREC_VONDRAK2011") || token_value_matches(token, "PREC=", "VONDRAK2011") || token_value_matches(token, "PREC=", "343")) {
         ctx->model_prec = JME_MODEL_PREC_VONDRAK_2011;
     } else if (token_matches(token, "BIASNONE") || token_value_matches(token, "BIAS=", "NONE") || token_value_matches(token, "BIAS=", "332")) {

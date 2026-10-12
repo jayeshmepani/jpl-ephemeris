@@ -736,8 +736,7 @@ int main(void)
         }
         if (jme_get_precession_matrix(2451545.0, 2451545.0 + 36525.0, JME_MODEL_PREC_IAU_1976, p1976) != JME_OK
             || jme_get_precession_matrix(2451545.0, 2451545.0 + 36525.0, JME_MODEL_PREC_IAU_2006, p2006) != JME_OK
-            /* Laskar 1986 has no complete published equator precession: refused, never substituted. */
-            || jme_get_precession_matrix(2451545.0, 2451545.0 + 36525.0, JME_MODEL_PREC_LASKAR_1986, p_alt) != JME_ERR
+            || jme_get_precession_matrix(2451545.0, 2451545.0 + 36525.0, JME_MODEL_PREC_LASKAR_1986, p_alt) != JME_OK
             || jme_get_precession_matrix(2451545.0, 2451545.0 + 36525.0, JME_MODEL_PREC_VONDRAK_2011, p_alt) != JME_OK) {
             fprintf(stderr, "precession model coverage mismatch\n");
             return 1;

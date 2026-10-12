@@ -187,6 +187,56 @@ int jme_get_obliquity(double jd_et, int model, double *eps, char *error)
 }
 
 /*
+ * Laskar (1986), A&A 157, 59-70: precession from the mean equator and
+ * equinox of J2000.0 to the mean equator and equinox of date. The time unit
+ * is 10 000 Julian years from J2000 (JD 2451545.0 TT). The erratum (A&A 164,
+ * 437) corrects only the Summary and the page order, not the tables.
+ *   Ecliptic of date (Table 5, Earth, mean variables, units 1e-10):
+ *     zeta = q + i p = sin(pi_A / 2) exp(i Pi_A)
+ *   General precession p_A and obliquity eps_A in arcsec (Table 8, NGT),
+ *   eps_A added to eps0 = 23 deg 26' 21.448" (eq. 35).
+ *   P = R1(-eps_A) R3(-(Pi_A + p_A)) R1(pi_A) R3(Pi_A) R1(eps0)
+ * All coefficients were checked against the ADS page scans (pp. 64, 68).
+ * The construction reproduces ERFA eraBp06 to 4e-12 rad over +/-100 yr when
+ * it is given the IAU 2006 angles of eraP06e.
+ */
+static const double laskar_q[11] = { 0.0, -113469002.0, 12372674.0, 12654170.0, -1371808.0,
+    -320334.0, 5072.0, -6941.0, 15095.0, -72.0, -352.0 };
+static const double laskar_p[11] = { 0.0, 10180391.0, 47020439.0, -5417367.0, -2507948.0,
+    463486.0, 56431.0, -50813.0, -2799.0, 8609.0, -67.0 };
+static const double laskar_pa[11] = { 0.0, 502909.66, 11119.71, 77.32, -2353.16, -180.55,
+    174.51, 130.95, 24.24, -47.59, -8.66 };
+static const double laskar_epsa[11] = { 84381.448, -4680.93, -1.55, 1999.25, -51.38, -249.67,
+    -39.05, 7.12, 27.87, 5.79, 2.45 };
+
+static double laskar_poly(const double c[11], double t)
+{
+    double v = c[10];
+    int k;
+    for (k = 9; k >= 0; k--) v = v * t + c[k];
+    return v;
+}
+
+static void laskar1986_precession(double d1, double d2, double r[3][3])
+{
+    double t = ((d1 - 2451545.0) + d2) / 3652500.0;
+    double q = laskar_poly(laskar_q, t) * 1.0e-10;
+    double pp = laskar_poly(laskar_p, t) * 1.0e-10;
+    double pia = 2.0 * asin(sqrt(q * q + pp * pp));
+    double bpia = atan2(pp, q);
+    double pa = laskar_poly(laskar_pa, t) * JME_ARCSEC_TO_RAD;
+    double epsa = laskar_poly(laskar_epsa, t) * JME_ARCSEC_TO_RAD;
+    double eps0 = laskar_epsa[0] * JME_ARCSEC_TO_RAD;
+
+    jme_eraIr(r);
+    jme_eraRx(eps0, r);
+    jme_eraRz(bpia, r);
+    jme_eraRx(pia, r);
+    jme_eraRz(-(bpia + pa), r);
+    jme_eraRx(-epsa, r);
+}
+
+/*
  * Precession matrix from the mean equator and equinox of J2000.0 to the
  * mean equator and equinox of jd (TT), without frame bias.
  */
@@ -205,6 +255,9 @@ static int precession_from_j2000(double jd, int model, double *m)
         break;
     case JME_MODEL_PREC_IAU_2006:
         jme_eraBp06(d1, d2, rb, rp, rbp);
+        break;
+    case JME_MODEL_PREC_LASKAR_1986:
+        laskar1986_precession(d1, d2, rp);
         break;
     case JME_MODEL_PREC_VONDRAK_2011:
         /* Vondrak, Capitaine & Wallace (2011, 2012), A&A 534, A22 and
@@ -307,7 +360,7 @@ int internal_bias_precession_matrix(double jd_et, double *bp, char *error)
         return JME_ERR;
     }
     if (jme_get_precession_matrix(2451545.0, jd_et, jme_context_precession_model(), prec) != JME_OK) {
-        jme_set_error(error, "Laskar 1986 precession is unavailable (its Table 8 polynomials are not yet transcribed and verified); select IAU1976, IAU2000, IAU2006 or VONDRAK2011");
+        jme_set_error(error, "Unsupported precession model");
         return JME_ERR;
     }
     jme_matrix_multiply(prec, bias, bp);

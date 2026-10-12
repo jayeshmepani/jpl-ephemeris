@@ -56,6 +56,36 @@ precession and IAU 1980 nutation without frame bias. They differ from IAU
 2006/2000A by about 0.3″ per century (52 mas in 2023). For modern work,
 select the `IAU2006A` model token (`jme_set_astro_models("IAU2006A", 0)`).
 
+### 2.1 Precession models
+
+| Model | Source | Construction |
+|---|---|---|
+| `IAU_1976` | Lieske et al. 1977 | ERFA `pmat76` |
+| `IAU_2000` | IAU 2000 (Mathews et al. 2002 rate corrections) | ERFA `bp00` |
+| `IAU_2006` | Capitaine et al. 2003 (P03) | ERFA `bp06` |
+| `VONDRAK_2011` | Vondrák, Capitaine & Wallace 2011/2012, valid ±200 000 yr | ERFA `ltp` |
+| `LASKAR_1986` (`PREC=LASKAR1986`) | Laskar 1986, *A&A* 157, 59: Table 5 Earth q + ip (ecliptic), Table 8 p_A and ε_A (NGT), eq. 35 ε0 = 84381.448″; erratum *A&A* 164, 437 affects neither table | P = R1(−ε_A) R3(−(Π_A + p_A)) R1(π_A) R3(Π_A) R1(ε0), with π_A = 2 asin\|ζ\| and Π_A = arg ζ |
+
+Laskar 1986 verification:
+
+* The 40 coefficients were checked one by one against the ADS scans (pp. 64 and 68).
+* The construction, given the IAU 2006 angles of ERFA `p06e`, reproduces
+  ERFA `bp06` to 4e−12 rad over ±100 yr.
+* The C matrix matches an independent Python evaluation
+  (`tools/gen_laskar1986_fixtures.py`) to 2.2e−16 at 12 epochs from −5000
+  to +5000 yr.
+* Measured differences:
+  * IAU 1976, which has the same 5029.0966″/cy rate: 0.0026″ at −100 yr
+    and 0.0020″ at +100 yr.
+  * Vondrák 2011: 2.3″ at −1000 yr, 3.6″ at +1000 yr, 11.0″ at −5000 yr
+    and 14.0″ at +5000 yr.
+* Laskar states a precision of 0.1″ after 1000 yr and a few arcseconds
+  after 10 000 yr. The series is a polynomial, so it is not meant for
+  |t| > 10 000 yr.
+* The mean obliquity used for ecliptic output is still selected by the
+  obliquity model. Select a matching one, since Laskar's ε_A is internal to
+  the matrix.
+
 ## 3. JPL centres
 
 The DE4xx planetary kernels hold system **barycentres** for Mars to Pluto;
