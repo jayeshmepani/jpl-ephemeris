@@ -153,21 +153,37 @@ static int ts_tdb_to_tt(double b1, double b2, double *o1, double *o2, char *erro
 
 static int ts_tt_to_ut1(double t1, double t2, double *o1, double *o2, char *error)
 {
-    double ut;
-    if (internal_tt_to_ut(t1 + t2, &ut, error) != JME_OK) return JME_ERR;
-    {
-        /* Re-evaluate Delta-T at the solution and apply it to the fraction part. */
-        double dts = jme_delta_t_ex(ut, jme_context_deltat_model(), error);
-        if (!isfinite(dts)) return JME_ERR;
-        *o1 = t1;
-        *o2 = t2 - dts / TS_DAYSEC;
+    double dts, next_dts;
+    int i, converged = 0;
+
+    /* Solve TT = UT1 + Delta-T(UT1) on the original two-part date. */
+    dts = internal_delta_t_ex_split(t1, t2, jme_context_deltat_model(), error);
+    if (!isfinite(dts)) return JME_ERR;
+
+    for (i = 0; i < 50; i++) {
+        double ut2 = t2 - dts / TS_DAYSEC;
+        next_dts = internal_delta_t_ex_split(t1, ut2, jme_context_deltat_model(), error);
+        if (!isfinite(next_dts)) return JME_ERR;
+        if (fabs(next_dts - dts) < 1.0e-9) {
+            dts = next_dts;
+            converged = 1;
+            break;
+        }
+        dts = next_dts;
     }
+    if (!converged) {
+        jme_set_error(error, "Two-part TT-to-UT1 inversion of the Delta-T model did not converge");
+        return JME_ERR;
+    }
+
+    *o1 = t1;
+    *o2 = t2 - dts / TS_DAYSEC;
     return JME_OK;
 }
 
 static int ts_ut1_to_tt(double u1, double u2, double *o1, double *o2, char *error)
 {
-    double dts = jme_delta_t_ex(u1 + u2, jme_context_deltat_model(), error);
+    double dts = internal_delta_t_ex_split(u1, u2, jme_context_deltat_model(), error);
     if (!isfinite(dts)) {
         if (error != 0 && error[0] == '\0') jme_set_error(error, "Delta-T calculation failed");
         return JME_ERR;
