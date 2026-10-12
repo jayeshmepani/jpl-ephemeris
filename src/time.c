@@ -96,8 +96,17 @@ static double jme_calendar_decimal_year_split(double jd1, double jd2)
     int year, month, day;
     double fd, start, next, elapsed;
 
-    if (jme_eraJd2cal(jd1, jd2, &year, &month, &day, &fd) != 0) {
-        return NAN;
+    /*
+     * Take the year in the same calendar as the year bounds below (Julian
+     * before 1582 Oct 15), so elapsed/(next-start) stays within [0, 1).
+     */
+    if (calendar == JME_CALENDAR_GREGORIAN) {
+        if (jme_eraJd2cal(jd1, jd2, &year, &month, &day, &fd) != 0) {
+            return NAN;
+        }
+    } else {
+        if (!isfinite(jd1) || !isfinite(jd2)) return NAN;
+        jme_reverse_julian_day(jd1 + jd2, JME_CALENDAR_JULIAN, &year, &month, &day, &fd);
     }
     start = jme_julian_day(year, 1, 1, 0.0, calendar);
     next = jme_julian_day(year + 1, 1, 1, 0.0, calendar);

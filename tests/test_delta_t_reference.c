@@ -139,7 +139,7 @@ int main(void)
      * correction. The setting must not alter observations from 1955 onward.
      */
     {
-        const double jd_year_zero = jme_julian_day(0, 1, 1, 0.0, JME_CALENDAR_GREGORIAN);
+        const double jd_year_zero = jme_julian_day(0, 1, 1, 0.0, JME_CALENDAR_JULIAN); /* EM-2006 years are Julian before 1582 */
         const double jd_year_2000 = 2451545.0;
         double baseline, adjusted, expected, y, y_smh;
         int year, month, day;
@@ -163,7 +163,7 @@ int main(void)
             int k;
             jme_set_tid_acc(JME_TIME_TIDAL_AUTOMATIC);
             baseline = jme_delta_t_ex(jd_year_zero, JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, error);
-            jme_reverse_julian_day(jd_year_zero, JME_CALENDAR_GREGORIAN, &year, &month, &day, &hour);
+            jme_reverse_julian_day(jd_year_zero, JME_CALENDAR_JULIAN, &year, &month, &day, &hour);
             y = (double)year;
             for (k = 0; k < N(cases); k++) {
                 jme_set_tid_acc((double)cases[k].selector);
