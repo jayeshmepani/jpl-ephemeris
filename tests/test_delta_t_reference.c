@@ -140,21 +140,41 @@ int main(void)
         int year, month, day;
         double hour;
 
-        jme_set_tid_acc(JME_TIME_TIDAL_AUTOMATIC);
-        baseline = jme_delta_t_ex(jd_year_zero, JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, error);
-        jme_set_tid_acc(JME_TIME_TIDAL_DE431);
-        if (jme_get_tid_acc() != (double)JME_TIME_TIDAL_DE431) {
-            fprintf(stderr, "tidal selector was not preserved by getter\n");
-            failures++;
-        }
-        adjusted = jme_delta_t_ex(jd_year_zero, JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, error);
-        jme_reverse_julian_day(jd_year_zero, JME_CALENDAR_GREGORIAN, &year, &month, &day, &hour);
-        y = (double)year;
-        expected = -0.91072 * (-25.80 + 26.0) * ((y - 1955.0) / 100.0) * ((y - 1955.0) / 100.0);
-        if (!isfinite(adjusted) || fabs((adjusted - baseline) - expected) > 1.0e-8) {
-            fprintf(stderr, "DE431 tidal correction mismatch: got %.12f expected delta %.12f\n",
-                adjusted - baseline, expected);
-            failures++;
+        {
+            const struct {
+                int selector;
+                double acceleration;
+            } cases[] = {
+                {JME_TIME_TIDAL_DE200, -23.8946},
+                {JME_TIME_TIDAL_DE403, -25.580},
+                {JME_TIME_TIDAL_DE404, -25.580},
+                {JME_TIME_TIDAL_DE405, -25.826},
+                {JME_TIME_TIDAL_DE406, -25.826},
+                {JME_TIME_TIDAL_DE421, -25.85},
+                {JME_TIME_TIDAL_DE430, -25.82},
+                {JME_TIME_TIDAL_DE431, -25.80},
+                {JME_TIME_TIDAL_DE441, -25.936}
+            };
+            int k;
+            jme_set_tid_acc(JME_TIME_TIDAL_AUTOMATIC);
+            baseline = jme_delta_t_ex(jd_year_zero, JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, error);
+            jme_reverse_julian_day(jd_year_zero, JME_CALENDAR_GREGORIAN, &year, &month, &day, &hour);
+            y = (double)year;
+            for (k = 0; k < N(cases); k++) {
+                jme_set_tid_acc((double)cases[k].selector);
+                if (jme_get_tid_acc() != (double)cases[k].selector) {
+                    fprintf(stderr, "tidal selector %d was not preserved by getter\n", cases[k].selector);
+                    failures++;
+                }
+                adjusted = jme_delta_t_ex(jd_year_zero, JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, error);
+                expected = -0.91072 * (cases[k].acceleration + 26.0)
+                    * ((y - 1955.0) / 100.0) * ((y - 1955.0) / 100.0);
+                if (!isfinite(adjusted) || fabs((adjusted - baseline) - expected) > 1.0e-8) {
+                    fprintf(stderr, "tidal selector %d correction mismatch: got %.12f expected delta %.12f\n",
+                        cases[k].selector, adjusted - baseline, expected);
+                    failures++;
+                }
+            }
         }
 
         jme_set_tid_acc(-25.858);
