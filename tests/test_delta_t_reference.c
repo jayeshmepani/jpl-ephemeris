@@ -36,6 +36,11 @@ int main(void)
     double first, last_obs, last, dt, dt2;
     int failures = 0;
 
+    if (jme_get_tid_acc() != (double)JME_TIME_TIDAL_AUTOMATIC) {
+        fprintf(stderr, "default tidal-acceleration selector is not AUTOMATIC\n");
+        failures++;
+    }
+
     jme_set_delta_t_userdef(NAN);
     failures += check_set("iers_nodes", dt_iers_nodes, N(dt_iers_nodes), JME_TIME_DELTAT_AUTOMATIC, 1.0e-6, 0.0);
     failures += check_set("iers_noon", dt_iers_noon, N(dt_iers_noon), JME_TIME_DELTAT_AUTOMATIC, 2.0e-4, 0.0);
