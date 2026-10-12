@@ -53,11 +53,30 @@ Details:
   values to the precision of their tables.
 * **Model joins.** The SMHZ parabola does not join the spline at −720 or at
   2019. These are the published models; the jumps are kept, not smoothed.
-* **Tidal acceleration.** No n-dot (lunar secular acceleration) correction
-  is applied. The Espenak–Meeus polynomials assume ṅ = −26″/cy², and the
-  SMHZ splines are referred to their authors' lunar ephemeris.
-  `jme_set_tid_acc` stores a value for API compatibility but does not change
-  ΔT; see the open items in CENGINE_COMPLETION_REPORT.md.
+* **Lunar tidal acceleration.** `jme_set_tid_acc()` accepts a finite
+  lunar mean-longitude secular acceleration in arcseconds per century squared,
+  or a named `JME_TIME_TIDAL_*` selector. The DE selectors resolve to:
+  DE200 −23.8946; DE403/DE404 −25.580; DE405/DE406 −25.826; DE421 −25.85;
+  DE430 −25.82; DE431 −25.80; DE441 −25.936. The DE441 figure is an
+  unpublished value attributed to an email from J. Giorgini in the Swiss
+  Ephemeris public header, not a value independently published by JPL.
+* **Historical correction.** For explicitly selected acceleration (a), the
+  Espenak–Meeus 2006 model is corrected before 1955 relative to its published
+  −26″/cy² baseline, and the SMH-2016/2021 model relative to its −25.85″/cy²
+  baseline. The correction is
+  (c=-0.91072(a-a_0)((y-1955)/100)^2) seconds, where (a_0) is the
+  respective model's baseline and (y) is its continuous calendar decimal
+  year. No correction is applied to dates from 1955 onward, to the embedded
+  IERS observational/prediction table, or to a user-defined fixed ΔT.
+* **Automatic selector limitation.** `JME_TIME_TIDAL_AUTOMATIC` clears the
+  explicit correction and restores the base published model values. JME does
+  not yet infer a kernel-specific value from the currently loaded JPL file or
+  automatically select a different acceleration by analytical engine. The
+  configured input/selector is preserved by `jme_get_tid_acc()`; non-finite
+  setter inputs are ignored. Selector values follow the documented
+  DE-specific values in the
+  [Swiss Ephemeris public header](https://sources.debian.org/src/libswe/2.10.03-3.1/swephexp.h/)
+  and the NASA [secular-acceleration correction](https://eclipse.gsfc.nasa.gov/LEcat5/secular.html).
 
 ## 3. Leap-second table update
 
