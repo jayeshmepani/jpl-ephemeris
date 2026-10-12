@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-This file lists third-party science, data, and code used by **JPL Moshier Ephemeris (JME)**, the C library in this repository. The MIT License in [`LICENSE`](LICENSE) covers the original JME code written by Jayesh Mepani (Jayesh Patel). The components below are not relicensed by that MIT License; each keeps its own terms.
+This file lists third-party science, data, and code used by **JPL Moshier Ephemeris (JME)**, the C library in this repository. The MIT License in [`LICENSE`](LICENSE) covers the original JME code written by Jayesh Mepani (Jayesh Patel). Unless stated otherwise below (the Moshier material is MIT by permission of its author), the components below are not relicensed by that MIT License; each keeps its own terms.
 
 This file is informational and is not legal advice.
 
@@ -10,8 +10,8 @@ This file is informational and is not legal advice.
 |---|---|---|
 | CALCEPH 4.0.5 | CeCILL-B (CALCEPH is offered under CeCILL-C, CeCILL-B, or CeCILL v2.1; JME uses it under CeCILL-B) | Optional external library for the JPL engine; linked, not vendored in this repository |
 | JPL DE440 / DE440s / DE441 kernels | NAIF rules: redistribution permitted if unmodified | Kernel files published unmodified in the [`jpl-kernels` release](https://github.com/jayeshmepani/jpl-ephemeris/releases/tag/jpl-kernels); not in this repository |
-| Moshier planetary and lunar theories | Copyright Stephen L. Moshier; no explicit license; permission requested | Moshier engine (`src/moshier_full.c`, `src/moshier_moon.c`, `src/moshier/`) |
-| ELP2000-82B implementation | Code by Serhii Tsyba; no license file; permission requested. Theory/data: Chapront-Touzé & Chapront, CDS VI/79 | Moon in the VSOP87 + ELP2000 + Meeus engine (`src/elp2000/`) |
+| Moshier planetary and lunar theories | Copyright Stephen L. Moshier; MIT License by permission of the author (12 October 2026, [record](docs/permissions/MOSHIER_PERMISSION.md)) | Moshier engine (`src/moshier_full.c`, `src/moshier_moon.c`, `src/moshier/`) |
+| ELP2000-82B implementation | Code by Serhii Tsyba; no license file; permission pending (code is removed and replaced by JME's own CDS-based evaluator in [PR #3](https://github.com/jayeshmepani/jpl-ephemeris/pull/3)). Theory/data: Chapront-Touzé & Chapront, CDS VI/79 | Moon in the VSOP87 + ELP2000 + Meeus engine (`src/elp2000/`) |
 | VSOP87 code (VSOP87-Multilang) | Greg A. Miller: public domain dedication. Theory/data: Bretagnon & Francou 1988, CDS VI/81 | Planets in the VSOP87 + ELP2000 + Meeus engine (`src/vsop87a_full.c`, `src/vsop87d_full.c`) |
 | ERFA (IAU 2000B nutation) | BSD 3-Clause, Copyright (C) 2013-2023 NumFOCUS Foundation | Nutation (`src/astrometry.c`) |
 | Meeus, *Astronomical Algorithms* | Formulas cited; no text or programs copied | Low-precision Sun/Moon arguments and mean elements (`src/meeus.c`) |
@@ -44,15 +44,15 @@ The kernel files are downloaded from JPL and republished unmodified (DE441 is sp
 The Moshier engine uses Stephen L. Moshier's analytical planetary theories ("plan404") and lunar theory from his Astronomical Almanac (AA) version 5.6, which are fits to the JPL DE404 ephemeris, together with code adapted from his `gplan.c` evaluation routines.
 
 - Author: Stephen L. Moshier (http://www.moshier.net/).
-- The original plan404 and AA 5.6 files are freely distributed by the author, but they carry **no explicit license**. They are therefore **not** covered by JME's MIT License.
-- Status: written permission to redistribute this material with attribution **has been requested** from the author. Until a reply is received, this notice records the provenance and credit only; it does not claim that permission has been granted.
+- The original plan404 and AA 5.6 files carry no explicit license of their own. On **12 October 2026** Stephen L. Moshier gave permission to distribute "the material posted to the net" under an MIT license. That covers the plan404 tables and GPLAN.C, and the AA 5.6 / cmoon lunar tables and routines used here. The request and the verbatim reply are recorded in [`docs/permissions/MOSHIER_PERMISSION.md`](docs/permissions/MOSHIER_PERMISSION.md).
+- This material is therefore distributed in JME under the MIT License (`LICENSE`), with the credit: *"Portions derived from the work of Stephen L. Moshier, incorporated herein by permission of the author."*
 - The underlying method (periodic series fitted to a numerical JPL integration) is credited to Moshier.
 
 ## ELP2000-82B lunar theory and implementation
 
 - Theory and data: M. Chapront-Touzé and J. Chapront, "The lunar ephemeris ELP 2000", *Astronomy & Astrophysics* 124, 50 (1983), and "ELP 2000-85: a semi-analytical lunar ephemeris adequate for historical times", *A&A* 190, 342 (1988). Series data: CDS catalogue VI/79 (https://cdsarc.cds.unistra.fr/viz-bin/cat/VI/79).
 - C implementation: the files in `src/elp2000/` come from Serhii Tsyba's `elp2000-82b` project (https://github.com/variar/elp2000-82b), "Created by Serhii Tsyba". That project has **no license file**, so this code is **not** covered by JME's MIT License.
-- Status: permission to redistribute this code with attribution **has been requested** from the author. This notice does not claim that permission has been granted.
+- Status: permission to redistribute this code with attribution is **pending** (requested, no reply). This notice does not claim that permission has been granted. The code is removed in [PR #3](https://github.com/jayeshmepani/jpl-ephemeris/pull/3), which replaces it with JME's own ELP 2000-82B evaluator generated from the unmodified CDS VI/79 series.
 
 ## VSOP87
 

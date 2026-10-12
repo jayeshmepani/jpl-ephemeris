@@ -18,6 +18,6 @@ Examples:
 - public standard
 - NASA/JPL/NAIF source
 - CALCEPH source/API documentation
-- Moshier source with confirmed provenance (no explicit license; credit in `THIRD_PARTY_NOTICES.md`)
+- Moshier source with confirmed provenance (MIT by permission of the author; credit in `THIRD_PARTY_NOTICES.md`)
 - independently derived formula
 - black-box behavior test result

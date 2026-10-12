@@ -6,7 +6,7 @@ The public C API is project-owned: public functions use `jme_*`, public constant
 
 This C library is developed and maintained by Jayesh Mepani (Jayesh Patel). It is designed as an independently implemented ephemeris engine with three calculation paths: JPL/CALCEPH, Moshier, and VSOP87+ELP2000+Meeus.
 
-Implementation work is based on independent and public sources such as JPL/NAIF data and documentation, CALCEPH API behavior, Moshier's freely distributed DE404-fit theories (plan404 and Astronomical Almanac 5.6; no explicit license, permission requested from the author), VSOP/ELP/Meeus references, peer-reviewed papers, public standards, and independently derived formulas.
+Implementation work is based on independent and public sources such as JPL/NAIF data and documentation, CALCEPH API behavior, Moshier's DE404-fit theories (plan404 and Astronomical Almanac 5.6; MIT License by permission of the author, 12 October 2026, see [`permissions/MOSHIER_PERMISSION.md`](permissions/MOSHIER_PERMISSION.md)), VSOP/ELP/Meeus references, peer-reviewed papers, public standards, and independently derived formulas.
 
 The design goal is a broad project-owned API for astrology, astronomy, vector/state, metadata, validation, and calendrical workflows. The current surface is 204 public functions and 462 public constants.
 
@@ -35,7 +35,7 @@ Non-trivial algorithms are traced to independent sources. Accepted source catego
 - IAU/IERS/SOFA/ERFA style public standards, subject to their licenses
 - NASA/JPL/NAIF documentation and kernels, subject to their terms
 - CALCEPH documentation and source API behavior, subject to its terms
-- Moshier's freely distributed code and documentation (no explicit license; used with attribution, permission requested from the author)
+- Moshier's code and tables (MIT License by permission of the author, 12 October 2026; credit: "Portions derived from the work of Stephen L. Moshier, incorporated herein by permission of the author.")
 - independently derived formulas and tests
 
 ### Black-Box Verification

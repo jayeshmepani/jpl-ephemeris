@@ -737,7 +737,7 @@ Meeus is not treated as a replacement for JPL precision.
 
 ## What Is Moshier?
 
-Moshier refers to Stephen L. Moshier's freely distributed astronomical code and tables (plan404, Astronomical Almanac 5.6). They carry no explicit license; permission has been requested from the author. See `THIRD_PARTY_NOTICES.md`.
+Moshier refers to Stephen L. Moshier's freely distributed astronomical code and tables (plan404, Astronomical Almanac 5.6). They are distributed in JME under the MIT License by permission of the author (12 October 2026; `docs/permissions/MOSHIER_PERMISSION.md`). Credit: "Portions derived from the work of Stephen L. Moshier, incorporated herein by permission of the author." See `THIRD_PARTY_NOTICES.md`.
 
 In practical terms, Moshier is closer to a compact standalone ephemeris engine than a single formula family. It includes planetary tables and computational routines that can produce useful ephemeris results without JPL kernel files.
 
