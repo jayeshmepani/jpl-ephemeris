@@ -83,8 +83,8 @@ JME builds on the work of others:
 
 - **JPL DE440 / DE441** planetary and lunar ephemerides (NASA/JPL; Park et al. 2021), redistributed unmodified per the NAIF rules.
 - **CALCEPH** (CNRS, Observatoire de Paris, Observatoire de la Côte d'Azur), used under CeCILL-B to read JPL kernels.
-- **Stephen L. Moshier**: plan404 and Astronomical Almanac 5.6 analytical theories (Moshier engine). No explicit license; permission requested.
-- **ELP2000-82B** lunar theory by M. Chapront-Touzé and J. Chapront (CDS VI/79); C implementation by Serhii Tsyba. No license file; permission requested.
+- **Stephen L. Moshier**: plan404 and Astronomical Almanac 5.6 analytical theories (Moshier engine). MIT License by permission of the author (12 October 2026; see [docs/permissions/MOSHIER_PERMISSION.md](docs/permissions/MOSHIER_PERMISSION.md)). Portions derived from the work of Stephen L. Moshier, incorporated herein by permission of the author.
+- **ELP2000-82B** lunar theory by M. Chapront-Touzé and J. Chapront (CDS VI/79 series data, attribution); the evaluator (`src/elp82b.c`) is JME's own implementation (MIT). The earlier third-party C implementation was removed.
 - **VSOP87** by P. Bretagnon and G. Francou (CDS VI/81); C code from Greg A. Miller's VSOP87-Multilang (public domain dedication).
 - **Jean Meeus**, *Astronomical Algorithms* (formulas cited).
 - **ERFA** (BSD 3-Clause, NumFOCUS Foundation): IAU 2000B nutation.
@@ -97,4 +97,4 @@ Full credits, terms, and required notice texts: [THIRD_PARTY_NOTICES.md](THIRD_P
 
 The original code in this repository is licensed under the [MIT License](LICENSE), Copyright (c) 2026 Jayesh Mepani (Jayesh Patel).
 
-**Scope:** MIT applies to the original code in this repository; third-party components keep their own terms, see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). In particular, the Moshier material (`src/moshier_full.c`, `src/moshier_moon.c`, `src/moshier/`) and the ELP2000-82B code in `src/elp2000/` are not covered by the MIT License.
+**Scope:** MIT applies to the original code in this repository; third-party components keep their own terms, see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The Moshier material (`src/moshier_full.c`, `src/moshier_moon.c`, `src/moshier/`) is distributed under the MIT License by permission of Stephen L. Moshier (12 October 2026): Portions derived from the work of Stephen L. Moshier, incorporated herein by permission of the author. The ELP2000-82B evaluator is JME's own code; its series data come from CDS VI/79.

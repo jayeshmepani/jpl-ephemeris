@@ -15,7 +15,7 @@
 | Main calculation pipeline | `src/calc.c` |
 | JPL/CALCEPH kernel API | `src/jpl.c` |
 | Moshier analytical backend | `src/moshier.c`, `src/moshier_full.c`, `src/moshier_moon.c`, `src/moshier/*` |
-| VSOP87, ELP2000, Meeus backends | `src/vsop87.c`, `src/vsop87a_full.c`, `src/vsop87d_full.c`, `src/elp2000.c`, `src/elp2000/*`, `src/meeus.c` |
+| VSOP87, ELP2000, Meeus backends | `src/vsop87.c`, `src/vsop87a_data.inc`, `src/elp2000.c`, `src/elp82b.c`, `src/elp82b_data.inc`, `src/meeus.c` |
 | Eclipse, occultation, rise/set, nodal/apsidal, heliacal events | `src/events.c` |
 | Astrometry, coordinates, sidereal/time, houses, fixed stars, metadata | `src/astrometry.c`, `src/coordinates.c`, `src/sidereal.c`, `src/time.c`, `src/houses.c`, `src/fixstar.c`, `src/metadata.c` |
 | Calendar and angular utility functions | `src/julian.c`, `src/angle.c` |

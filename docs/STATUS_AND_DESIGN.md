@@ -38,7 +38,7 @@ Design motivation: the project exists to provide an independently implemented ep
 | Main calculation pipeline | `src/calc.c` |
 | JPL/CALCEPH kernel bridge | `src/jpl.c` |
 | Moshier analytical backend | `src/moshier.c`, `src/moshier_full.c`, `src/moshier_moon.c`, `src/moshier/*` |
-| VSOP87, ELP2000, Meeus analytical backends | `src/vsop87.c`, `src/vsop87a_full.c`, `src/vsop87d_full.c`, `src/elp2000.c`, `src/elp2000/*`, `src/meeus.c` |
+| VSOP87, ELP2000, Meeus analytical backends | `src/vsop87.c`, `src/vsop87a_data.inc`, `src/elp2000.c`, `src/elp82b.c`, `src/elp82b_data.inc`, `src/meeus.c` |
 | Eclipse, occultation, rise/set, heliacal, nodal/apsidal events | `src/events.c` |
 | Astrometry, coordinates, houses, sidereal/time, fixed stars, metadata | `src/astrometry.c`, `src/coordinates.c`, `src/houses.c`, `src/sidereal.c`, `src/time.c`, `src/fixstar.c`, `src/metadata.c` |
 | Calendar and angle utilities | `src/julian.c`, `src/angle.c` |
@@ -361,20 +361,9 @@ Callable symbol:
 
 | Function | File | Current behavior |
 |---|---|---|
-| `jme_elp2000_moon_state` | `src/elp2000.c` | Calls `geocentric_moon_position_cartesian_of_J2000()`, converts kilometers to AU, and returns position plus central-difference velocity in AU/day. |
+| `jme_elp2000_moon_state` | `src/elp2000.c` | Calls `jme_elp82b_geocentric_state_km()` (complete ELP 2000-82B series), converts kilometers to AU, and returns position plus the analytical velocity in AU/day (J2000 ecliptic). |
 
-Source material currently present:
-
-- `src/elp2000/elp2000-82b.c`
-- `src/elp2000/elp2000-82b.h`
-- `src/elp2000/arguments.h`
-- `src/elp2000/mainprob.h`
-- `src/elp2000/planetary1.h`
-- `src/elp2000/planetary2.h`
-- `src/elp2000/earthfig.h`
-- `src/elp2000/relativistic.h`
-- `src/elp2000/tidal.h`
-- `src/elp2000/moon_nutation.h`
+Source material currently present (PR #3): `src/elp82b.c`, JME's own ELP 2000-82B evaluator, and `src/elp82b_data.inc`, generated from the unmodified CDS VI/79 files by `tools/gen_elp82b.py`. The earlier third-party implementation (`src/elp2000/`) was removed.
 
 Current ELP2000 validation:
 
@@ -759,7 +748,7 @@ Meeus is not treated as a replacement for JPL precision.
 
 ## What Is Moshier?
 
-Moshier refers to Stephen L. Moshier's freely distributed astronomical code and tables (plan404, Astronomical Almanac 5.6). They carry no explicit license; permission has been requested from the author. See `THIRD_PARTY_NOTICES.md`.
+Moshier refers to Stephen L. Moshier's freely distributed astronomical code and tables (plan404, Astronomical Almanac 5.6). They are distributed in JME under the MIT License by permission of the author (12 October 2026; `docs/permissions/MOSHIER_PERMISSION.md`). Credit: "Portions derived from the work of Stephen L. Moshier, incorporated herein by permission of the author." See `THIRD_PARTY_NOTICES.md`.
 
 In practical terms, Moshier is closer to a compact standalone ephemeris engine than a single formula family. It includes planetary tables and computational routines that can produce useful ephemeris results without JPL kernel files.
 
