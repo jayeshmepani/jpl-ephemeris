@@ -228,6 +228,31 @@ int main(void)
             || fabs(split_dt - reference_dt) > 1.0e-6) {
             return fail("split-date Delta-T lost a sub-ULP offset at the IERS boundary", error);
         }
+
+        /*
+         * Exercise the public time-scale converter too: UT1 -> TT -> UT1 must
+         * preserve the sub-ULP part across the same boundary without collapsing
+         * the input pair to one binary64 Julian date.
+         */
+        {
+            double tt0, tt1, back0, back1;
+            double expected_fraction = 1.0e-11 + split_dt / 86400.0;
+
+            if (jme_time_scale_convert(last, 1.0e-11, JME_TIME_SCALE_UT1,
+                    JME_TIME_SCALE_TT, &tt0, &tt1, error) != JME_OK) {
+                return fail("split-date UT1-to-TT conversion failed at IERS boundary", error);
+            }
+            if (tt0 != last || fabs(tt1 - expected_fraction) > 1.0e-12) {
+                return fail("split-date UT1-to-TT conversion lost the fractional date", error);
+            }
+            if (jme_time_scale_convert(tt0, tt1, JME_TIME_SCALE_TT,
+                    JME_TIME_SCALE_UT1, &back0, &back1, error) != JME_OK) {
+                return fail("split-date TT-to-UT1 conversion failed at IERS boundary", error);
+            }
+            if (back0 != last || fabs(back1 - 1.0e-11) * 86400.0 > 1.0e-7) {
+                return fail("split-date UT1/TT round trip did not preserve the input pair", error);
+            }
+        }
     }
 
     /* Leap-second table expiry is reported and enforced. */
