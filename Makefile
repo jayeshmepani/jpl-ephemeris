@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help build test \
+.PHONY: help build test quality \
 	c17-all c17-format c17-format-fix c17-warn c17-tidy \
 	c17-cppcheck c17-fix c17-spatch c17-spatch-apply
 
@@ -8,6 +8,7 @@ help:
 	@printf '%s\n' \
 		'make build            configure and build with CMake (ISO C17 / C18)' \
 		'make test             build with tests enabled, then ctest' \
+		'make quality          format, warnings, tests, Coccinelle dry run, tidy, cppcheck' \
 		'make c17-all          read-only format, warnings, clang-tidy, cppcheck' \
 		'make c17-format       list files that differ from .clang-format' \
 		'make c17-format-fix   apply .clang-format' \
@@ -26,6 +27,15 @@ test:
 	cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DJME_BUILD_TESTS=ON
 	cmake --build build
 	ctest --test-dir build --output-on-failure
+
+# Serial so -j cannot overlap the test build with the analyzers.
+quality:
+	$(MAKE) c17-format
+	$(MAKE) c17-warn
+	$(MAKE) test
+	$(MAKE) c17-spatch
+	$(MAKE) c17-tidy
+	$(MAKE) c17-cppcheck
 
 c17-all:
 	./c17-check.sh all
