@@ -17,6 +17,7 @@
 extern int jme_internal_elp2000_moon_position(double jd_et, double *results);
 extern int jme_internal_moshier_moon_position(double jd_et, double *results);
 extern int jme_internal_moshier_moon_state(double jd_et, double *results);
+extern int jme_internal_moshier_planet_position(double jd_et, int body, double *results);
 
 static unsigned long long g_profile_calc_ut_calls = 0ULL;
 static double g_profile_calc_ut_seconds = 0.0;
@@ -212,7 +213,7 @@ static int lunar_node_spherical_state(double jd_et, int body, double *state)
  * (The approximate Keplerian elements behind jme_meeus_planet_state are no
  * longer used by jme_calc; they remain available as a separate API.)
  */
-static int analytic_body_state(double jd_et, int body, double *state, int engine_policy)
+static int analytic_body_state(double jd_et, int body, double *state, int engine_policy, int with_velocity)
 {
     double pos[6];
     int rc;
@@ -229,8 +230,10 @@ static int analytic_body_state(double jd_et, int body, double *state, int engine
     }
     if (engine_policy == JME_ENGINE_VSOP_ELP_MEEUS && body != JME_BODY_PLUTO) {
         rc = jme_vsop87_planet_state(jd_et, body, pos);
-    } else {
+    } else if (with_velocity) {
         rc = jme_moshier_planet_state(jd_et, body, pos);
+    } else {
+        rc = jme_internal_moshier_planet_position(jd_et, body, pos);
     }
     if (rc != JME_OK) {
         return JME_ERR;
@@ -471,10 +474,10 @@ int jme_pheno(double jd_et, int body, int flags, double *attr, char *error)
         return JME_ERR;
     }
 
-    if (jme_calc(jd_et, body, flags | JME_CALC_XYZ | JME_CALC_TRUE_POSITION, planet_geo, error) != JME_OK) { return JME_ERR; }
-    if (jme_calc(jd_et, JME_BODY_SUN, flags | JME_CALC_XYZ | JME_CALC_TRUE_POSITION, sun_geo, error) != JME_OK) { return JME_ERR; }
-    if (jme_calc(jd_et, body, flags | JME_CALC_EQUATORIAL | JME_CALC_TRUE_POSITION, planet_equ, error) != JME_OK) { return JME_ERR; }
-    if (jme_calc(jd_et, JME_BODY_SUN, flags | JME_CALC_EQUATORIAL | JME_CALC_TRUE_POSITION, sun_equ, error) != JME_OK) { return JME_ERR; }
+    if (internal_calc_positions(jd_et, body, flags | JME_CALC_XYZ | JME_CALC_TRUE_POSITION, planet_geo, error) != JME_OK) { return JME_ERR; }
+    if (internal_calc_positions(jd_et, JME_BODY_SUN, flags | JME_CALC_XYZ | JME_CALC_TRUE_POSITION, sun_geo, error) != JME_OK) { return JME_ERR; }
+    if (internal_calc_positions(jd_et, body, flags | JME_CALC_EQUATORIAL | JME_CALC_TRUE_POSITION, planet_equ, error) != JME_OK) { return JME_ERR; }
+    if (internal_calc_positions(jd_et, JME_BODY_SUN, flags | JME_CALC_EQUATORIAL | JME_CALC_TRUE_POSITION, sun_equ, error) != JME_OK) { return JME_ERR; }
 
     delta = jme_state_distance(planet_geo);
     if (body == JME_BODY_SUN) {
@@ -483,7 +486,7 @@ int jme_pheno(double jd_et, int body, int flags, double *attr, char *error)
         phase = 1.0;
         elongation = 0.0;
     } else {
-        if (jme_calc(jd_et, body, flags | JME_CALC_XYZ | JME_CALC_HELIOCENTRIC | JME_CALC_TRUE_POSITION, planet_helio, error) != JME_OK) { return JME_ERR; }
+        if (internal_calc_positions(jd_et, body, flags | JME_CALC_XYZ | JME_CALC_HELIOCENTRIC | JME_CALC_TRUE_POSITION, planet_helio, error) != JME_OK) { return JME_ERR; }
         r = jme_state_distance(planet_helio);
 
         for (i = 0; i < 3; i++) {
@@ -569,7 +572,7 @@ static int ecliptic_j2000_to_equatorial_j2000(double *state, char *error)
 }
 
 /* Geocentric Moon from the analytical engines, J2000 mean equatorial, AU, AU/day. */
-static int analytic_moon_geocentric_j2000_uncached(double jd_et, int engine_policy, double *state, char *error)
+static int analytic_moon_geocentric_j2000_uncached(double jd_et, int engine_policy, int with_velocity, double *state, char *error)
 {
     double moon[6];
     int i;
@@ -587,7 +590,8 @@ static int analytic_moon_geocentric_j2000_uncached(double jd_et, int engine_poli
          */
         double eps = 0.0, eq_date[6], prec[9], inv[9];
         int r, c;
-        if (jme_internal_moshier_moon_state(jd_et, moon) != JME_OK) {
+        if ((with_velocity ? jme_internal_moshier_moon_state(jd_et, moon)
+                           : jme_internal_moshier_moon_position(jd_et, moon)) != JME_OK) {
             jme_set_error(error, "Moshier engine cannot compute Moon state");
             return JME_ERR;
         }
@@ -604,7 +608,8 @@ static int analytic_moon_geocentric_j2000_uncached(double jd_et, int engine_poli
         return JME_OK;
     }
 
-    if (jme_elp2000_moon_state(jd_et, moon) != JME_OK) {
+    if ((with_velocity ? jme_elp2000_moon_state(jd_et, moon)
+                       : jme_internal_elp2000_moon_position(jd_et, moon)) != JME_OK) {
         jme_set_error(error, "ELP2000-82B cannot compute Moon state");
         return JME_ERR;
     }
@@ -615,8 +620,12 @@ static int analytic_moon_geocentric_j2000_uncached(double jd_et, int engine_poli
 /* Heliocentric J2000 mean-equatorial state from the analytical engines. */
 /*
  * Exact-input memoisation of analytical evaluations (thread-local, lossless:
- * a hit requires bit-identical date, body, engine and frame models). One
- * apparent position evaluates the same bodies at the same instants several
+ * a hit requires bit-identical date, body, engine, frame models, and the
+ * velocity flag). A velocity entry may satisfy a position-only request:
+ * its position components are the position-only result, and the returned
+ * rates are cleared. A position-only entry must not satisfy a velocity
+ * request: aberration and the solar-system barycentre read those components.
+ * One apparent position evaluates the same bodies at the same instants several
  * times (observer, Sun barycentre, deflection, rate stencil).
  */
 #define JME_ANALYTIC_CACHE_SIZE 64
@@ -626,27 +635,35 @@ typedef struct analytic_cache_entry {
     int engine;
     int obl;
     int prec;
+    int vel;
     int valid;
     double state[6];
 } analytic_cache_entry;
 static JME_THREAD_LOCAL analytic_cache_entry g_analytic_cache[JME_ANALYTIC_CACHE_SIZE];
 static JME_THREAD_LOCAL int g_analytic_cache_next;
 
-static int analytic_cache_get(double jd, int body, int engine, double *state)
+static int analytic_cache_get(double jd, int body, int engine, int with_velocity, double *state)
 {
     int i, k, obl = jme_context_obliquity_model(), prec = jme_context_precession_model();
     for (i = 0; i < JME_ANALYTIC_CACHE_SIZE; i++) {
         const analytic_cache_entry *e = &g_analytic_cache[i];
-        if (e->valid && e->body == body && e->engine == engine && e->obl == obl && e->prec == prec
-            && memcmp(&e->jd, &jd, sizeof(double)) == 0) {
-            for (k = 0; k < 6; k++) state[k] = e->state[k];
+        if (e->valid && e->body == body && e->engine == engine
+            && e->obl == obl && e->prec == prec
+            && memcmp(&e->jd, &jd, sizeof(double)) == 0
+            && (e->vel == with_velocity || (e->vel && !with_velocity))) {
+            if (with_velocity || !e->vel) {
+                for (k = 0; k < 6; k++) state[k] = e->state[k];
+            } else {
+                for (k = 0; k < 3; k++) state[k] = e->state[k];
+                state[3] = state[4] = state[5] = 0.0;
+            }
             return 1;
         }
     }
     return 0;
 }
 
-static void analytic_cache_put(double jd, int body, int engine, const double *state)
+static void analytic_cache_put(double jd, int body, int engine, int with_velocity, const double *state)
 {
     analytic_cache_entry *e = &g_analytic_cache[g_analytic_cache_next];
     int k;
@@ -656,31 +673,32 @@ static void analytic_cache_put(double jd, int body, int engine, const double *st
     e->engine = engine;
     e->obl = jme_context_obliquity_model();
     e->prec = jme_context_precession_model();
+    e->vel = with_velocity;
     for (k = 0; k < 6; k++) e->state[k] = state[k];
     e->valid = 1;
 }
 
 #define JME_CACHE_MOON_GEO (-1000)
 
-static int analytic_moon_geocentric_j2000(double jd_et, int engine_policy, double *state, char *error)
+static int analytic_moon_geocentric_j2000(double jd_et, int engine_policy, int with_velocity, double *state, char *error)
 {
-    if (analytic_cache_get(jd_et, JME_CACHE_MOON_GEO, engine_policy, state)) return JME_OK;
-    if (analytic_moon_geocentric_j2000_uncached(jd_et, engine_policy, state, error) != JME_OK) return JME_ERR;
-    analytic_cache_put(jd_et, JME_CACHE_MOON_GEO, engine_policy, state);
+    if (analytic_cache_get(jd_et, JME_CACHE_MOON_GEO, engine_policy, with_velocity, state)) return JME_OK;
+    if (analytic_moon_geocentric_j2000_uncached(jd_et, engine_policy, with_velocity, state, error) != JME_OK) return JME_ERR;
+    analytic_cache_put(jd_et, JME_CACHE_MOON_GEO, engine_policy, with_velocity, state);
     return JME_OK;
 }
 
-static int analytic_heliocentric_state_uncached(double jd_et, int body, int engine_policy, double *state, char *error);
+static int analytic_heliocentric_state_uncached(double jd_et, int body, int engine_policy, int with_velocity, double *state, char *error);
 
-static int analytic_heliocentric_state(double jd_et, int body, int engine_policy, double *state, char *error)
+static int analytic_heliocentric_state(double jd_et, int body, int engine_policy, int with_velocity, double *state, char *error)
 {
-    if (analytic_cache_get(jd_et, body, engine_policy, state)) return JME_OK;
-    if (analytic_heliocentric_state_uncached(jd_et, body, engine_policy, state, error) != JME_OK) return JME_ERR;
-    analytic_cache_put(jd_et, body, engine_policy, state);
+    if (analytic_cache_get(jd_et, body, engine_policy, with_velocity, state)) return JME_OK;
+    if (analytic_heliocentric_state_uncached(jd_et, body, engine_policy, with_velocity, state, error) != JME_OK) return JME_ERR;
+    analytic_cache_put(jd_et, body, engine_policy, with_velocity, state);
     return JME_OK;
 }
 
-static int analytic_heliocentric_state_uncached(double jd_et, int body, int engine_policy, double *state, char *error)
+static int analytic_heliocentric_state_uncached(double jd_et, int body, int engine_policy, int with_velocity, double *state, char *error)
 {
     int i;
 
@@ -690,8 +708,8 @@ static int analytic_heliocentric_state_uncached(double jd_et, int body, int engi
     }
     if (body == JME_BODY_MOON) {
         double earth[6], moon[6];
-        if (analytic_heliocentric_state(jd_et, JME_BODY_EARTH, engine_policy, earth, error) != JME_OK
-            || analytic_moon_geocentric_j2000(jd_et, engine_policy, moon, error) != JME_OK) {
+        if (analytic_heliocentric_state(jd_et, JME_BODY_EARTH, engine_policy, with_velocity, earth, error) != JME_OK
+            || analytic_moon_geocentric_j2000(jd_et, engine_policy, with_velocity, moon, error) != JME_OK) {
             return JME_ERR;
         }
         for (i = 0; i < 6; i++) state[i] = earth[i] + moon[i];
@@ -701,7 +719,7 @@ static int analytic_heliocentric_state_uncached(double jd_et, int body, int engi
         jme_set_error(error, "Selected analytical engine cannot compute requested body");
         return JME_ERR;
     }
-    if (analytic_body_state(jd_et, body, state, engine_policy) != JME_OK) {
+    if (analytic_body_state(jd_et, body, state, engine_policy, with_velocity) != JME_OK) {
         jme_set_error(error, "Selected analytical engine cannot compute requested body");
         return JME_ERR;
     }
@@ -709,7 +727,7 @@ static int analytic_heliocentric_state_uncached(double jd_et, int body, int engi
 }
 
 /* Barycentric (JPL) or heliocentric (analytical) state of body. */
-static int backend_state(int backend, double jd_et, int body, int engine_policy, double *state, char *error)
+static int backend_state(int backend, double jd_et, int body, int engine_policy, int with_velocity, double *state, char *error)
 {
     if (backend == JME_BACKEND_JPL) {
         return internal_jpl_body_state_tt(jd_et, body, JME_BODY_SOLAR_SYSTEM_BARYCENTER,
@@ -727,7 +745,7 @@ static int backend_state(int backend, double jd_et, int body, int engine_policy,
         /* The analytical theories (VSOP87, Moshier/DE404 fits, ELP 2000-82B) use TDB. */
         double jd_tdb;
         if (internal_tt_to_tdb_jd(jd_et, &jd_tdb, error) != JME_OK) return JME_ERR;
-        return analytic_heliocentric_state(jd_tdb, body, engine_policy, state, error);
+        return analytic_heliocentric_state(jd_tdb, body, engine_policy, with_velocity, state, error);
     }
 }
 
@@ -738,13 +756,13 @@ static int backend_state(int backend, double jd_et, int body, int engine_policy,
  * so for them jd_et + offset is rounded to that spacing (<= 20 microseconds,
  * < 1 m for any body: far below the theories' own accuracy).
  */
-static int backend_state_offset(int backend, double jd_et, double offset_days, int body, int engine_policy, double *state, char *error)
+static int backend_state_offset(int backend, double jd_et, double offset_days, int body, int engine_policy, int with_velocity, double *state, char *error)
 {
     if (backend == JME_BACKEND_JPL) {
         return internal_jpl_body_state_tt_offset(jd_et, offset_days, body, JME_BODY_SOLAR_SYSTEM_BARYCENTER,
             JME_VECTOR_AU_PER_DAY, state, error);
     }
-    return backend_state(backend, jd_et + offset_days, body, engine_policy, state, error);
+    return backend_state(backend, jd_et + offset_days, body, engine_policy, with_velocity, state, error);
 }
 
 /* Choose the backend for one calculation; AUTO uses JPL only if it can serve the target. */
@@ -830,7 +848,7 @@ static int analytic_sun_barycentric(double jd_tdb, int engine_policy, double *su
     for (b = 0; b < 9; b++) {
         double st[6];
         double mu = 1.0 / inv_mass[b];
-        if (analytic_heliocentric_state(jd_tdb, bodies[b], engine_policy, st, error) != JME_OK) {
+        if (analytic_heliocentric_state(jd_tdb, bodies[b], engine_policy, 1, st, error) != JME_OK) {
             if (bodies[b] == JME_BODY_PLUTO) {
                 if (error != 0) error[0] = '\0';
                 continue;
@@ -839,7 +857,7 @@ static int analytic_sun_barycentric(double jd_tdb, int engine_policy, double *su
         }
         if (bodies[b] == JME_BODY_EARTH) {
             double moon[6];
-            if (analytic_moon_geocentric_j2000(jd_tdb, engine_policy, moon, error) != JME_OK) return JME_ERR;
+            if (analytic_moon_geocentric_j2000(jd_tdb, engine_policy, 1, moon, error) != JME_OK) return JME_ERR;
             for (i = 0; i < 6; i++) st[i] += moon[i] * moon_earth / (1.0 + moon_earth);
         }
         for (i = 0; i < 6; i++) acc[i] += mu * st[i];
@@ -859,7 +877,7 @@ static int observer_state(int backend, double jd_et, int topocentric, int engine
 {
     int i;
 
-    if (backend_state(backend, jd_et, JME_BODY_EARTH, engine_policy, obs, error) != JME_OK) {
+    if (backend_state(backend, jd_et, JME_BODY_EARTH, engine_policy, vel_bary != 0, obs, error) != JME_OK) {
         return JME_ERR;
     }
     if (vel_bary != 0) {
@@ -984,7 +1002,7 @@ static int apply_light_deflection(int backend, int engine_policy, double jd_et, 
             dbody = backend == JME_BACKEND_JPL ? JME_BODY_SATURN_BARYCENTER : JME_BODY_SATURN;
             if (body == JME_BODY_SATURN || body == JME_BODY_SATURN_BARYCENTER) continue;
         }
-        if (backend_state(backend, jd_et, dbody, engine_policy, d0, error) != JME_OK) return JME_ERR;
+        if (backend_state(backend, jd_et, dbody, engine_policy, 0, d0, error) != JME_OK) return JME_ERR;
         /* Light from the closest-approach point reaches the observer after
          * dt = p.(obs - D)/c, bounded by [0, tau] for a source at finite distance. */
         dt = 0.0;
@@ -993,7 +1011,7 @@ static int apply_light_deflection(int backend, int engine_policy, double jd_et, 
         if (dt < 0.0) dt = 0.0;
         if (src != 0 && dt > tau) dt = tau;
         if (dt > 0.0) {
-            if (backend_state_offset(backend, jd_et, -dt, dbody, engine_policy, d, error) != JME_OK) return JME_ERR;
+            if (backend_state_offset(backend, jd_et, -dt, dbody, engine_policy, 0, d, error) != JME_OK) return JME_ERR;
         } else {
             for (i = 0; i < 6; i++) d[i] = d0[i];
         }
@@ -1067,7 +1085,7 @@ static int observer_relative_state(
             return JME_ERR;
         }
     } else if (center == JME_BODY_SUN) {
-        if (backend_state(backend, jd_et, JME_BODY_SUN, engine_policy, obs, error) != JME_OK) {
+        if (backend_state(backend, jd_et, JME_BODY_SUN, engine_policy, 0, obs, error) != JME_OK) {
             return JME_ERR;
         }
     } else if (center == JME_BODY_SOLAR_SYSTEM_BARYCENTER) {
@@ -1087,7 +1105,7 @@ static int observer_relative_state(
         return JME_OK;
     }
 
-    if (backend_state(backend, jd_et, body, engine_policy, tgt, error) != JME_OK) {
+    if (backend_state(backend, jd_et, body, engine_policy, 0, tgt, error) != JME_OK) {
         return JME_ERR;
     }
     for (i = 0; i < 6; i++) rel[i] = tgt[i] - obs[i];
@@ -1107,7 +1125,7 @@ static int observer_relative_state(
                 break;
             }
             tau = new_tau;
-            if (backend_state_offset(backend, jd_et, -tau, body, engine_policy, tgt, error) != JME_OK) {
+            if (backend_state_offset(backend, jd_et, -tau, body, engine_policy, 0, tgt, error) != JME_OK) {
                 return JME_ERR;
             }
             for (i = 0; i < 6; i++) rel[i] = tgt[i] - obs[i];
@@ -1122,7 +1140,7 @@ static int observer_relative_state(
             double sun_t[6], geo[6];
             double p[3], e[3], em;
 
-            if (backend_state(backend, jd_et, JME_BODY_SUN, engine_policy, sun_t, error) != JME_OK) {
+            if (backend_state(backend, jd_et, JME_BODY_SUN, engine_policy, 0, sun_t, error) != JME_OK) {
                 return JME_ERR;
             }
             dist = vec_norm3(rel);
@@ -1138,7 +1156,7 @@ static int observer_relative_state(
 
             if (!(flags & JME_CALC_NO_LIGHT_DEFLECTION)) {
                 if (topocentric
-                    && backend_state(backend, jd_et, JME_BODY_EARTH, engine_policy, geo, error) != JME_OK) {
+                    && backend_state(backend, jd_et, JME_BODY_EARTH, engine_policy, 0, geo, error) != JME_OK) {
                     return JME_ERR;
                 }
                 if (apply_light_deflection(backend, engine_policy, jd_et, body, obs, tgt, tau,
@@ -1328,9 +1346,8 @@ int internal_finish_output(const double *p0, const double *const *stencil, doubl
  * frame selected by flags, without the rate stencil (positions only are
  * needed by root finders; this is not an approximation of jme_calc).
  */
-int internal_calc_position_ut(double jd_ut, int body, int flags, double *pos, char *error)
+static int calc_position_et(double jd_et, int body, int flags, double *pos, char *error)
 {
-    double jd_et;
     int center = JME_BODY_EARTH;
     int i;
 
@@ -1340,7 +1357,6 @@ int internal_calc_position_ut(double jd_ut, int body, int flags, double *pos, ch
     }
     for (i = 0; i < 3; i++) pos[i] = 0.0;
     if (error != 0) error[0] = '\0';
-    if (internal_ut_to_et(jd_ut, &jd_et, error) != JME_OK) return JME_ERR;
     if (body == JME_BODY_MEAN_NODE || body == JME_BODY_TRUE_NODE) {
         double r[6];
         if (jme_calc(jd_et, body, (flags | JME_CALC_XYZ) & ~(JME_CALC_DISTANCE_KM | JME_CALC_VELOCITY_PER_SECOND), r, error) != JME_OK) return JME_ERR;
@@ -1362,24 +1378,38 @@ int internal_calc_position_ut(double jd_ut, int body, int flags, double *pos, ch
     return JME_OK;
 }
 
+int internal_calc_position_ut(double jd_ut, int body, int flags, double *pos, char *error)
+{
+    double jd_et;
+    int i;
+
+    if (pos == 0) {
+        jme_set_error(error, "Output buffer is required");
+        return JME_ERR;
+    }
+    for (i = 0; i < 3; i++) pos[i] = 0.0;
+    if (internal_ut_to_et(jd_ut, &jd_et, error) != JME_OK) return JME_ERR;
+    return calc_position_et(jd_et, body, flags, pos, error);
+}
+
 /*
  * jme_calc_ut output layout for positions only: results[0..2] are bit-identical
  * to jme_calc_ut (same reduction and conversions); results[3..5] (rates) are
  * NaN because they are not computed. Used by internal event searches.
  */
-int internal_calc_ut_positions(double jd_ut, int body, int flags, double *results, char *error)
+int internal_pack_position_results(const double *rect, int flags, double *results, char *error)
 {
     double st[6], sph[6];
     int i;
 
-    if (results == 0) {
+    if (results == 0 || rect == 0) {
         jme_set_error(error, "Output buffer is required");
         return JME_ERR;
     }
     for (i = 0; i < 6; i++) results[i] = 0.0;
-    if (internal_calc_position_ut(jd_ut, body, flags & ~(JME_CALC_DISTANCE_KM | JME_CALC_VELOCITY_PER_SECOND), st, error) != JME_OK) {
-        return JME_ERR;
-    }
+    st[0] = rect[0];
+    st[1] = rect[1];
+    st[2] = rect[2];
     st[3] = st[4] = st[5] = 0.0;
     if (flags & JME_CALC_XYZ) {
         for (i = 0; i < 3; i++) results[i] = st[i];
@@ -1395,6 +1425,38 @@ int internal_calc_ut_positions(double jd_ut, int body, int flags, double *result
     }
     results[3] = results[4] = results[5] = NAN;
     return JME_OK;
+}
+
+int internal_calc_positions(double jd_et, int body, int flags, double *results, char *error)
+{
+    double st[3];
+
+    if (results == 0) {
+        jme_set_error(error, "Output buffer is required");
+        return JME_ERR;
+    }
+    if (!isfinite(jd_et)) {
+        jme_set_error(error, "Terrestrial-time Julian date must be finite");
+        return JME_ERR;
+    }
+    if (calc_position_et(jd_et, body, flags & ~(JME_CALC_DISTANCE_KM | JME_CALC_VELOCITY_PER_SECOND), st, error) != JME_OK) {
+        return JME_ERR;
+    }
+    return internal_pack_position_results(st, flags, results, error);
+}
+
+int internal_calc_ut_positions(double jd_ut, int body, int flags, double *results, char *error)
+{
+    double jd_et;
+    int i;
+
+    if (results == 0) {
+        jme_set_error(error, "Output buffer is required");
+        return JME_ERR;
+    }
+    for (i = 0; i < 6; i++) results[i] = 0.0;
+    if (internal_ut_to_et(jd_ut, &jd_et, error) != JME_OK) return JME_ERR;
+    return internal_calc_positions(jd_et, body, flags, results, error);
 }
 
 int jme_calc(double jd_et, int body, int flags, double *results, char *error)
@@ -1481,7 +1543,7 @@ int internal_star_observer_vector(double jd_et, int flags, const double *u, doub
             jme_set_error(error, "Heliocentric star positions require the JPL engine (analytical engines have no barycentre)");
             return JME_ERR;
         }
-        if (backend_state(backend, jd_et, JME_BODY_SUN, engine_policy, obs, error) != JME_OK) return JME_ERR;
+        if (backend_state(backend, jd_et, JME_BODY_SUN, engine_policy, 0, obs, error) != JME_OK) return JME_ERR;
     } else if (observer_state(backend, jd_et, topocentric, engine_policy, obs,
                    (!(flags & JME_CALC_TRUE_POSITION) && !(flags & JME_CALC_NO_ABERRATION)) ? vobs : 0, error) != JME_OK) {
         return JME_ERR;
@@ -1511,7 +1573,7 @@ int internal_star_observer_vector(double jd_et, int flags, const double *u, doub
     if (geocentric && !(flags & JME_CALC_TRUE_POSITION)) {
         double p[3], e[3], em, sun[6];
         for (i = 0; i < 3; i++) p[i] = v[i] / dist;
-        if (backend_state(backend, jd_et, JME_BODY_SUN, engine_policy, sun, error) != JME_OK) return JME_ERR;
+        if (backend_state(backend, jd_et, JME_BODY_SUN, engine_policy, 0, sun, error) != JME_OK) return JME_ERR;
         for (i = 0; i < 3; i++) e[i] = obs[i] - (sun[i] + sunoff[i]);
         em = vec_norm3(e);
         if (!(em > 0.0)) {
@@ -1525,7 +1587,7 @@ int internal_star_observer_vector(double jd_et, int flags, const double *u, doub
             double obs_b[3], geo_b[6];
             for (i = 0; i < 3; i++) obs_b[i] = obs[i] - sunoff[i];
             if (topocentric) {
-                if (backend_state(backend, jd_et, JME_BODY_EARTH, engine_policy, geo_b, error) != JME_OK) return JME_ERR;
+                if (backend_state(backend, jd_et, JME_BODY_EARTH, engine_policy, 0, geo_b, error) != JME_OK) return JME_ERR;
             }
             if (apply_light_deflection(backend, engine_policy, jd_et, -1, obs_b, 0, 0.0,
                     topocentric ? geo_b : 0, p, error) != JME_OK) {

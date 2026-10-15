@@ -287,6 +287,26 @@ static int fixstar_output_position(const char *star, double jd_et, int flags, do
     return internal_rotate_to_output(jd_et, flags, 1, v, pos, error);
 }
 
+/* Spherical or rectangular position slots of jme_fixstar_ut, without its rate stencil. */
+int internal_fixstar_ut_positions(const char *star, double jd_ut, int flags, double *results, char *error)
+{
+    double rect[3];
+    double dist = 0.0;
+    int i;
+
+    if (results == 0) {
+        jme_set_error(error, "Fixed-star output is required");
+        return JME_ERR;
+    }
+    for (i = 0; i < 6; i++) results[i] = 0.0;
+    if (internal_fixstar_position_ut(star, jd_ut, flags, rect, &dist, error) != JME_OK) return JME_ERR;
+    if (internal_pack_position_results(rect, flags, results, error) != JME_OK) return JME_ERR;
+    if (!(dist > 0.0) && !(flags & JME_CALC_XYZ)) {
+        results[2] = 0.0;
+    }
+    return JME_OK;
+}
+
 /*
  * Position-only evaluation for internal event searches: the same complete
  * reduction as jme_fixstar_ut (identical position bits), rectangular, in the

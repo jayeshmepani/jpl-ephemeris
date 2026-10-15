@@ -36,6 +36,24 @@ static struct plantbl *moshier_table_for_body(int body)
     }
 }
 
+static int moshier_position(double jd_et, int body, double *position);
+
+#if defined(__GNUC__)
+__attribute__((visibility("hidden")))
+#endif
+int jme_internal_moshier_planet_position(double jd_et, int body, double *results)
+{
+    int i;
+
+    if (results == 0) {
+        return JME_ERR;
+    }
+    for (i = 0; i < 6; i++) {
+        results[i] = 0.0;
+    }
+    return moshier_position(jd_et, body, results);
+}
+
 static int moshier_position(double jd_et, int body, double *position)
 {
     struct plantbl *table = moshier_table_for_body(body);
@@ -64,9 +82,7 @@ int jme_moshier_planet_state(double jd_et, int body, double *results)
         return JME_ERR;
     }
 
-    for (i = 0; i < 6; i++) { results[i] = 0.0; }
-
-    if (moshier_position(jd_et, body, results) != JME_OK) {
+    if (jme_internal_moshier_planet_position(jd_et, body, results) != JME_OK) {
         return JME_ERR;
     }
 

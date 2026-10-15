@@ -1025,7 +1025,7 @@ static int houses_compute(double jd_ut, int flags, double geo_lat, double geo_lo
     if (system == 'I') {
         double sun_equ[6];
         /* Apparent declination of the Sun (true equator of date). */
-        if (jme_calc_ut(jd_ut, JME_BODY_SUN, JME_CALC_EQUATORIAL | (flags & JME_CALC_NO_NUTATION), sun_equ, error) != JME_OK) {
+        if (internal_calc_ut_positions(jd_ut, JME_BODY_SUN, JME_CALC_EQUATORIAL | (flags & JME_CALC_NO_NUTATION), sun_equ, error) != JME_OK) {
             return JME_ERR;
         }
         if (ascmc != 0) ascmc[9] = sun_equ[1];
@@ -1274,10 +1274,10 @@ int jme_gauquelin_sector(double jd_ut, int body, const char *starname, int flags
             return JME_ERR;
         }
         if (starname != 0 && starname[0] != '\0') {
-            if (jme_fixstar_ut(starname, jd_ut, pflags, pos, error) != JME_OK) {
+            if (internal_fixstar_ut_positions(starname, jd_ut, pflags, pos, error) != JME_OK) {
                 return JME_ERR;
             }
-        } else if (jme_calc_ut(jd_ut, body, pflags, pos, error) != JME_OK) {
+        } else if (internal_calc_ut_positions(jd_ut, body, pflags, pos, error) != JME_OK) {
             return JME_ERR;
         }
         if (internal_ut_to_et(jd_ut, &jd_tt, error) != JME_OK

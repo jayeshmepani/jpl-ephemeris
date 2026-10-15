@@ -1102,7 +1102,7 @@ static double events_ha_fn(double t, const void *c, char *error)
     const events_ha_ctx *x = (const events_ha_ctx *)c;
     double results[6];
     if (x->starname != 0 && x->starname[0] != '\0') {
-        if (jme_fixstar_ut(x->starname, t, x->flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) return NAN;
+        if (internal_fixstar_ut_positions(x->starname, t, x->flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) return NAN;
     } else if (internal_calc_ut_positions(t, x->body, x->flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
         return NAN;
     }
@@ -1196,7 +1196,7 @@ static int rise_trans_search(double jd_ut, int body, const char *starname, int f
         double results[6];
         double ra, gst, ha, ha_next;
         if (starname != 0 && starname[0] != '\0') {
-            if (jme_fixstar_ut(starname, t, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
+            if (internal_fixstar_ut_positions(starname, t, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
                 return JME_ERR;
             }
         } else {
@@ -1212,7 +1212,7 @@ static int rise_trans_search(double jd_ut, int body, const char *starname, int f
             t += dt; /* 14.4 mins */
             gst = events_gst_hours(t, flags);
             if (starname != 0 && starname[0] != '\0') {
-                if (jme_fixstar_ut(starname, t, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
+                if (internal_fixstar_ut_positions(starname, t, flags | JME_CALC_EQUATORIAL, results, error) != JME_OK) {
                     return JME_ERR;
                 }
             } else {

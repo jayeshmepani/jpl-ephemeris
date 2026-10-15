@@ -31,7 +31,7 @@ This file is informational and is not legal advice.
 
 CALCEPH is not vendored in this repository. When JME is built with CALCEPH support it links to an external CALCEPH installation.
 
-- Software: CALCEPH. JME's CI and the Android/iOS libraries of the Dart package build against CALCEPH 4.0.5; the desktop prebuilt runtimes shipped with the binding packages (built through vcpkg) bundle CALCEPH 5.0.1.
+- Software: CALCEPH. JME's CI builds against CALCEPH 5.0.1, the current stable release. The Android/iOS libraries of the Dart package build against CALCEPH 4.0.5; the desktop prebuilt runtimes shipped with the binding packages (built through vcpkg) bundle CALCEPH 5.0.1.
 - CALCEPH 4.0.5: Copyright 2008-2025 CNRS, Observatoire de Paris, Observatoire de la Côte d'Azur. Contributed by M. Gastineau, J. Laskar, H. Manche (ASD/IMCCE, Observatoire de Paris) and A. Fienga (Observatoire de la Côte d'Azur).
 - CALCEPH 5.0.1: Copyright 2008-2026 CNRS. Main authors M. Gastineau, H. Manche, A. Fienga and J. Laskar (LTE, Observatoire de Paris, CNRS, PSL Research University, Sorbonne Université).
 - Licence: CALCEPH is triple-licensed (CeCILL-C, CeCILL-B, or CeCILL v2.1). The JME ecosystem uses and redistributes it under the **CeCILL-B** Free Software License Agreement, version 1.0.

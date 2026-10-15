@@ -52,9 +52,15 @@ static const int elp_pla_n[36] = {
 /*
  * Position (km) and its exact time derivative (km/day) of the series, i.e.
  * the analytical derivative of every term and of the frame rotation.
+ * `want` is a compile-time constant at each caller so the derivative
+ * arithmetic is either kept in full or deleted, with no per-term branch.
  */
-int jme_elp82b_geocentric_state_km(double jd_tdb, double *xyz, double *vel)
+#if defined(__GNUC__)
+__attribute__((always_inline))
+#endif
+static inline int elp82b_eval(double jd_tdb, double *xyz, double *vel, int want)
 {
+    (void)vel;
     const double cpi = 3.141592653589793;
     const double cpi2 = 2.0 * cpi;
     const double pis2 = cpi / 2.0;
@@ -160,13 +166,13 @@ int jme_elp82b_geocentric_state_km(double jd_tdb, double *xyz, double *vel)
             for (k = 0; k < 5; k++) {
                 for (i = 0; i < 4; i++) {
                     y += s[n].ilu[i] * del[i][k] * t[k];
-                    yd += s[n].ilu[i] * del[i][k] * dt[k];
+                    if (want) yd += s[n].ilu[i] * del[i][k] * dt[k];
                 }
             }
             if (f == 2) y += pis2;
             y = fmod(y, cpi2);
             r[f] += x * sin(y);
-            rd[f] += x * cos(y) * yd;
+            if (want) rd[f] += x * cos(y) * yd;
         }
     }
 
@@ -177,20 +183,28 @@ int jme_elp82b_geocentric_state_km(double jd_tdb, double *xyz, double *vel)
         int file = f + 1;
         if (s == 0) continue;
         for (n = 0; n < elp_fig_n[f]; n++) {
-            double x = s[n].x, xd = 0.0, y, yd;
+            double x = s[n].x, xd = 0.0, y, yd = 0.0;
             if (x < 0.0) continue;
-            if ((file >= 7 && file <= 9) || (file >= 25 && file <= 27)) { xd = x; x *= t[1]; }
-            if (file >= 34 && file <= 36) { xd = x * 2.0 * t[1]; x *= t[2]; }
+            if ((file >= 7 && file <= 9) || (file >= 25 && file <= 27)) {
+                if (want) xd = x;
+                x *= t[1];
+            }
+            if (file >= 34 && file <= 36) {
+                if (want) xd = x * 2.0 * t[1];
+                x *= t[2];
+            }
             y = s[n].pha * deg;
-            yd = s[n].iz * zeta[1];
-            for (i = 0; i < 4; i++) yd += s[n].ilu[i] * del[i][1];
+            if (want) {
+                yd = s[n].iz * zeta[1];
+                for (i = 0; i < 4; i++) yd += s[n].ilu[i] * del[i][1];
+            }
             for (k = 0; k < 2; k++) {
                 y += s[n].iz * zeta[k] * t[k];
                 for (i = 0; i < 4; i++) y += s[n].ilu[i] * del[i][k] * t[k];
             }
             y = fmod(y, cpi2);
             r[iv] += x * sin(y);
-            rd[iv] += xd * sin(y) + x * cos(y) * yd;
+            if (want) rd[iv] += xd * sin(y) + x * cos(y) * yd;
         }
     }
 
@@ -202,14 +216,17 @@ int jme_elp82b_geocentric_state_km(double jd_tdb, double *xyz, double *vel)
         for (n = 0; n < elp_pla_n[f]; n++) {
             double x = s[n].x, xd = 0.0, y, yd = 0.0;
             if (x < 0.0) continue;
-            if ((file >= 13 && file <= 15) || (file >= 19 && file <= 21)) { xd = x; x *= t[1]; }
+            if ((file >= 13 && file <= 15) || (file >= 19 && file <= 21)) {
+                if (want) xd = x;
+                x *= t[1];
+            }
             y = s[n].pha * deg;
             if (file < 16) {
                 for (k = 0; k < 2; k++) {
                     double term = (s[n].ipla[8] * del[0][k] + s[n].ipla[9] * del[2][k] + s[n].ipla[10] * del[3][k]);
                     for (i = 0; i < 8; i++) term += s[n].ipla[i] * p[i][k];
                     y += term * t[k];
-                    yd += term * dt[k];
+                    if (want) yd += term * dt[k];
                 }
             } else {
                 for (k = 0; k < 2; k++) {
@@ -217,12 +234,12 @@ int jme_elp82b_geocentric_state_km(double jd_tdb, double *xyz, double *vel)
                     for (i = 0; i < 4; i++) term += s[n].ipla[i + 7] * del[i][k];
                     for (i = 0; i < 7; i++) term += s[n].ipla[i] * p[i][k];
                     y += term * t[k];
-                    yd += term * dt[k];
+                    if (want) yd += term * dt[k];
                 }
             }
             y = fmod(y, cpi2);
             r[iv] += x * sin(y);
-            rd[iv] += xd * sin(y) + x * cos(y) * yd;
+            if (want) rd[iv] += xd * sin(y) + x * cos(y) * yd;
         }
     }
 
@@ -280,15 +297,21 @@ int jme_elp82b_geocentric_state_km(double jd_tdb, double *xyz, double *vel)
                 accd += md[a][b] * vin[b] + m[a][b] * vind[b];
             }
             xyz[a] = acc;
-            if (vel != 0) vel[a] = accd / 36525.0;
+            if (want) vel[a] = accd / 36525.0;
         }
     }
     if (!(isfinite(xyz[0]) && isfinite(xyz[1]) && isfinite(xyz[2]))) return JME_ERR;
-    if (vel != 0 && !(isfinite(vel[0]) && isfinite(vel[1]) && isfinite(vel[2]))) return JME_ERR;
+    if (want && !(isfinite(vel[0]) && isfinite(vel[1]) && isfinite(vel[2]))) return JME_ERR;
     return JME_OK;
+}
+
+int jme_elp82b_geocentric_state_km(double jd_tdb, double *xyz, double *vel)
+{
+    if (vel == 0) return elp82b_eval(jd_tdb, xyz, 0, 0);
+    return elp82b_eval(jd_tdb, xyz, vel, 1);
 }
 
 int jme_elp82b_geocentric_km(double jd_tdb, double *xyz)
 {
-    return jme_elp82b_geocentric_state_km(jd_tdb, xyz, 0);
+    return elp82b_eval(jd_tdb, xyz, 0, 0);
 }

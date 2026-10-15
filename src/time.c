@@ -786,7 +786,7 @@ int jme_time_equ(double jd_ut, double *e, char *error)
     t = (jd_et - 2451545.0) / 36525.0;
     l0 = 280.46646 + 36000.76983 * t + 0.0003032 * t * t;
 
-    if (jme_calc_ut(jd_ut, JME_BODY_SUN, JME_CALC_EQUATORIAL, sun_equ, error) != JME_OK) return JME_ERR;
+    if (internal_calc_ut_positions(jd_ut, JME_BODY_SUN, JME_CALC_EQUATORIAL, sun_equ, error) != JME_OK) return JME_ERR;
     if (jme_get_nutation(jd_et, jme_context_nutation_model(), &dpsi, &deps, error) != JME_OK
         || jme_get_obliquity(jd_et, jme_context_obliquity_model(), &eps, error) != JME_OK) {
         return JME_ERR;

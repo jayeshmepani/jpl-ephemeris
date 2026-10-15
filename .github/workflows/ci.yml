@@ -11,8 +11,8 @@ permissions:
   contents: read
 
 env:
-  CALCEPH_VERSION: 4.0.5
-  CALCEPH_SHA256: 3460d8a3e10a86e7fe0228d5d9abcda589713b8ed3ee007ce061ae01f8c2e1ea
+  CALCEPH_VERSION: 5.0.1
+  CALCEPH_SHA256: 923d5db2fca10636b64e5529552edf1de8bd3da1da3cc7ac963ae6c3895a31ae
   DE440S_SHA256: c1c7feeab882263fc493a9d5a5b2ddd71b54826cdf65d8d17a76126b260a49f2
 
 jobs:
@@ -33,12 +33,12 @@ jobs:
       CC: ${{ matrix.cc }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Cache CALCEPH
         if: matrix.calceph
         id: cache-calceph
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ runner.temp }}/calceph-install
           key: calceph-${{ env.CALCEPH_VERSION }}-${{ matrix.os }}-${{ matrix.cc }}-pic-nofortran-v1
@@ -50,13 +50,13 @@ jobs:
           set -euo pipefail
           cd "$RUNNER_TEMP"
           curl -fL --retry 5 --retry-delay 10 -o calceph.tar.gz \
-            "https://www.imcce.fr/content/medias/recherche/equipes/asd/calceph/calceph-${CALCEPH_VERSION}.tar.gz"
+            "https://calceph.imcce.fr/releases/calceph-${CALCEPH_VERSION}.tar.gz"
           echo "${CALCEPH_SHA256}  calceph.tar.gz" | shasum -a 256 -c -
           tar xzf calceph.tar.gz
           cmake -S "calceph-${CALCEPH_VERSION}" -B calceph-build \
             -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF \
             -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DENABLE_FORTRAN=OFF \
-            -DENABLE_PYTHON=OFF -DENABLE_MEX_OCTAVE=OFF -DBUILD_TESTING=OFF \
+            -DENABLE_PYTHON=OFF -DENABLE_MEX_OCTAVE=OFF \
             -DCMAKE_INSTALL_PREFIX="$RUNNER_TEMP/calceph-install"
           cmake --build calceph-build --parallel 3
           cmake --install calceph-build
@@ -64,7 +64,7 @@ jobs:
       - name: Cache DE440s kernel
         if: matrix.calceph
         id: cache-kernel
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ runner.temp }}/kernels
           key: de440s-${{ env.DE440S_SHA256 }}
