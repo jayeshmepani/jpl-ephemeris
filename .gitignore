@@ -43,3 +43,4 @@ data/
 *.bak
 *.user
 !tools/data/
+node_modules

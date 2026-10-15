@@ -4,6 +4,8 @@ Independent C ephemeris engine using JPL kernels through CALCEPH as the primary 
 
 This library is developed and maintained by Jayesh Mepani (Jayesh Patel), who owns the original JME code and the project-owned `jme_*` API. It combines that code with credited third-party theories, data, and code (see [Credits](#credits)) to provide JPL, Moshier, and VSOP+ELP+Meeus engines.
 
+The API reference for this C library and the PHP, Python, and Dart bindings is the single page [docs/index.html](docs/index.html). Published copy: <https://jayeshmepani.github.io/jpl-ephemeris/>.
+
 ## Goal
 
 - Provide an independent ephemeris engine for astrology, astronomy, and calendrical calculations.
