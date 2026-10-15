@@ -6,6 +6,9 @@
 |---|---:|---|
 | Public `jme_*` functions | 225 | `include/jme/jme.h`, `include/jme/jme_extended.h` |
 | Public `JME_*` constants | 478 | `include/jme/jme.h`, `include/jme/jme_extended.h` |
+| Header include guards | 2 | `JME_JME_H`, `JME_EXTENDED_H` |
+
+The two public headers contain 480 `JME_*` names. 478 of those are public constants, listed below. The other 2 are the header include guards `JME_JME_H` and `JME_EXTENDED_H`. They are not public constants.
 
 ## Current Implementation Map
 
@@ -261,6 +264,8 @@ The internal UT-to-TT conversion routine is shared by status-returning UT wrappe
 | 225 | `jme_vsop87_planet_state` | Declared and defined |
 
 ## Current Public Constants
+
+478 public constants. The header include guards `JME_JME_H` and `JME_EXTENDED_H` are not in this list.
 
 | # | Constant | Status |
 |---:|---|---|
