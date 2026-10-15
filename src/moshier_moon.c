@@ -5,13 +5,14 @@
  * see docs/permissions/MOSHIER_PERMISSION.md and THIRD_PARTY_NOTICES.md).
  */
 #include "jme/jme.h"
+#include "context.h"
 #include "moshier/plantbl.h"
 #include <math.h>
 #include "jme_tls.h"
 
-#define JME_MOSHIER_NARGS 18
+#define JME_MOSHIER_NARGS        18
 #define JME_MOSHIER_MAX_HARMONIC 31
-#define JME_MOSHIER_MODS3600(x) ((x) - 1296000.0 * floor((x) / 1296000.0))
+#define JME_MOSHIER_MODS3600(x)  ((x) - 1296000.0 * floor((x) / 1296000.0))
 
 extern struct plantbl moonlr;
 extern struct plantbl moonlat;
@@ -95,23 +96,57 @@ static void moshier_mean_elements(double jd)
     g_args[8] = 0.0;
 
     x = JME_MOSHIER_MODS3600(1.6029616009939659e9 * t + 1.0722612202445078e6);
-    x += (((((-3.207663637426e-13 * t + 2.555243317839e-11) * t + 2.560078201452e-9) * t - 3.702060118571e-5) * t + 6.9492746836058421e-3) * t - 6.7352202374457519) * t2;
+    x += (((((-3.207663637426e-13 * t + 2.555243317839e-11) * t + 2.560078201452e-9) * t -
+            3.702060118571e-5) *
+               t +
+           6.9492746836058421e-3) *
+              t -
+          6.7352202374457519) *
+         t2;
     g_args[9] = STR * x;
 
     x = JME_MOSHIER_MODS3600(1.7395272628437717e9 * t + 3.3577951412884740e5);
-    x += (((((4.474984866301e-13 * t + 4.189032191814e-11) * t - 2.790392351314e-9) * t - 2.165750777942e-6) * t - 7.5311878482337989e-4) * t - 1.3117809789650071e1) * t2;
+    x += (((((4.474984866301e-13 * t + 4.189032191814e-11) * t - 2.790392351314e-9) * t -
+            2.165750777942e-6) *
+               t -
+           7.5311878482337989e-4) *
+              t -
+          1.3117809789650071e1) *
+         t2;
     g_args[10] = STR * x;
 
     x = JME_MOSHIER_MODS3600(1.2959658102304320e8 * t + 1.2871027407441526e6);
-    x += ((((((((1.62e-20 * t - 1.0390e-17) * t - 3.83508e-15) * t + 4.237343e-13) * t + 8.8555011e-11) * t - 4.77258489e-8) * t - 1.1297037031e-5) * t + 8.7473717367324703e-5) * t - 5.5281306421783094e-1) * t2;
+    x += ((((((((1.62e-20 * t - 1.0390e-17) * t - 3.83508e-15) * t + 4.237343e-13) * t +
+              8.8555011e-11) *
+                 t -
+             4.77258489e-8) *
+                t -
+            1.1297037031e-5) *
+               t +
+           8.7473717367324703e-5) *
+              t -
+          5.5281306421783094e-1) *
+         t2;
     g_args[11] = STR * x;
 
     x = JME_MOSHIER_MODS3600(1.7179159228846793e9 * t + 4.8586817465825332e5);
-    x += (((((-1.755312760154e-12 * t + 3.452144225877e-11) * t - 2.506365935364e-8) * t - 2.536291235258e-4) * t + 5.2099641302735818e-2) * t + 3.1501359071894147e1) * t2;
+    x += (((((-1.755312760154e-12 * t + 3.452144225877e-11) * t - 2.506365935364e-8) * t -
+            2.536291235258e-4) *
+               t +
+           5.2099641302735818e-2) *
+              t +
+          3.1501359071894147e1) *
+         t2;
     g_args[12] = STR * x;
 
     x = JME_MOSHIER_MODS3600(1.7325643720442266e9 * t + 7.8593980921052420e5);
-    x += (((((7.200592540556e-14 * t + 2.235210987108e-10) * t - 1.024222633731e-8) * t - 6.073960534117e-5) * t + 6.9017248528380490e-3) * t - 5.6550460027471399) * t2;
+    x += (((((7.200592540556e-14 * t + 2.235210987108e-10) * t - 1.024222633731e-8) * t -
+            6.073960534117e-5) *
+               t +
+           6.9017248528380490e-3) *
+              t -
+          5.6550460027471399) *
+         t2;
     g_args[13] = STR * x;
 
     x = JME_MOSHIER_MODS3600(4.48175409e7 * t + 8.060457e5);
@@ -155,8 +190,8 @@ static double moshier_g1plan(double jd, struct plantbl *plan)
         }
     }
 
-    p = (signed char *) plan->arg_tbl;
-    pl = (long *) plan->lon_tbl;
+    p = (signed char *)plan->arg_tbl;
+    pl = (long *)plan->lon_tbl;
 
     for (;;) {
         np = *p++;
@@ -165,9 +200,9 @@ static double moshier_g1plan(double jd, struct plantbl *plan)
         }
         if (np == 0) {
             nt = *p++;
-            cu = *pl++;
+            cu = (double)*pl++;
             for (ip = 0; ip < nt; ip++) {
-                cu = cu * tt + *pl++;
+                cu = cu * tt + (double)*pl++;
             }
             sl += cu;
             continue;
@@ -202,11 +237,11 @@ static double moshier_g1plan(double jd, struct plantbl *plan)
         }
 
         nt = *p++;
-        cu = *pl++;
-        su = *pl++;
+        cu = (double)*pl++;
+        su = (double)*pl++;
         for (ip = 0; ip < nt; ip++) {
-            cu = cu * tt + *pl++;
-            su = su * tt + *pl++;
+            cu = cu * tt + (double)*pl++;
+            su = su * tt + (double)*pl++;
         }
         sl += cu * cv + su * sv;
     }
@@ -245,9 +280,9 @@ static int moshier_g2plan(double jd, struct plantbl *plan, double *pobj)
         }
     }
 
-    p = (signed char *) plan->arg_tbl;
-    pl = (long *) plan->lon_tbl;
-    pr = (long *) plan->rad_tbl;
+    p = (signed char *)plan->arg_tbl;
+    pl = (long *)plan->lon_tbl;
+    pr = (long *)plan->rad_tbl;
 
     for (;;) {
         np = *p++;
@@ -256,15 +291,15 @@ static int moshier_g2plan(double jd, struct plantbl *plan, double *pobj)
         }
         if (np == 0) {
             nt = *p++;
-            cu = *pl++;
+            cu = (double)*pl++;
             for (ip = 0; ip < nt; ip++) {
-                cu = cu * tt + *pl++;
+                cu = cu * tt + (double)*pl++;
             }
             sl += cu;
 
-            cu = *pr++;
+            cu = (double)*pr++;
             for (ip = 0; ip < nt; ip++) {
-                cu = cu * tt + *pr++;
+                cu = cu * tt + (double)*pr++;
             }
             sr += cu;
             continue;
@@ -299,19 +334,19 @@ static int moshier_g2plan(double jd, struct plantbl *plan, double *pobj)
         }
 
         nt = *p++;
-        cu = *pl++;
-        su = *pl++;
+        cu = (double)*pl++;
+        su = (double)*pl++;
         for (ip = 0; ip < nt; ip++) {
-            cu = cu * tt + *pl++;
-            su = su * tt + *pl++;
+            cu = cu * tt + (double)*pl++;
+            su = su * tt + (double)*pl++;
         }
         sl += cu * cv + su * sv;
 
-        cu = *pr++;
-        su = *pr++;
+        cu = (double)*pr++;
+        su = (double)*pr++;
         for (ip = 0; ip < nt; ip++) {
-            cu = cu * tt + *pr++;
-            su = su * tt + *pr++;
+            cu = cu * tt + (double)*pr++;
+            su = su * tt + (double)*pr++;
         }
         sr += cu * cv + su * sv;
     }
@@ -402,8 +437,8 @@ int jme_internal_moshier_moon_state(double jd_et, double *results)
         return JME_ERR;
     }
 
-    if (moshier_moon_position(jd_et - step, prev) == JME_OK
-        && moshier_moon_position(jd_et + step, next) == JME_OK) {
+    if (moshier_moon_position(jd_et - step, prev) == JME_OK &&
+        moshier_moon_position(jd_et + step, next) == JME_OK) {
         for (i = 0; i < 3; i++) {
             results[i + 3] = (next[i] - prev[i]) / (2.0 * step);
         }

@@ -20,16 +20,26 @@
 static int vsop87_body_index(int body)
 {
     switch (body) {
-    case JME_BODY_MERCURY: return 0;
-    case JME_BODY_VENUS: return 1;
-    case JME_BODY_EARTH: return 2;
-    case JME_BODY_MARS: return 3;
-    case JME_BODY_JUPITER: return 4;
-    case JME_BODY_SATURN: return 5;
-    case JME_BODY_URANUS: return 6;
-    case JME_BODY_NEPTUNE: return 7;
-    case JME_BODY_EARTH_MOON_BARYCENTER: return 8;
-    default: return -1;
+    case JME_BODY_MERCURY:
+        return 0;
+    case JME_BODY_VENUS:
+        return 1;
+    case JME_BODY_EARTH:
+        return 2;
+    case JME_BODY_MARS:
+        return 3;
+    case JME_BODY_JUPITER:
+        return 4;
+    case JME_BODY_SATURN:
+        return 5;
+    case JME_BODY_URANUS:
+        return 6;
+    case JME_BODY_NEPTUNE:
+        return 7;
+    case JME_BODY_EARTH_MOON_BARYCENTER:
+        return 8;
+    default:
+        return -1;
     }
 }
 
@@ -51,8 +61,8 @@ static void vsop87_series(int bi, double t, double *pos, double *vel)
 
     for (coord = 0; coord < 3; coord++) {
         double value = 0.0, value_c = 0.0, deriv = 0.0, deriv_c = 0.0;
-        double tp = 1.0;      /* T^power */
-        double tpm1 = 0.0;    /* T^(power-1), 0 for power 0 */
+        double tp = 1.0;   /* T^power */
+        double tpm1 = 0.0; /* T^(power-1), 0 for power 0 */
         for (power = 0; power < 6; power++) {
             int start = jme_vsop87a_index[bi][coord][power][0];
             int count = jme_vsop87a_index[bi][coord][power][1];
@@ -70,13 +80,17 @@ static void vsop87_series(int bi, double t, double *pos, double *vel)
             if (count > 0) {
                 neumaier_add(&value, &value_c, tp * s);
                 neumaier_add(&deriv, &deriv_c, tp * ds);
-                if (power > 0) neumaier_add(&deriv, &deriv_c, (double)power * tpm1 * s);
+                if (power > 0) {
+                    neumaier_add(&deriv, &deriv_c, (double)power * tpm1 * s);
+                }
             }
             tpm1 = tp;
             tp *= t;
         }
         pos[coord] = value + value_c;
-        if (vel != 0) vel[coord] = deriv + deriv_c;
+        if (vel != 0) {
+            vel[coord] = deriv + deriv_c;
+        }
     }
 }
 
@@ -89,7 +103,9 @@ int jme_vsop87_planet_state(double jd_et, int body, double *results)
     if (results == 0) {
         return JME_ERR;
     }
-    for (i = 0; i < 6; i++) results[i] = 0.0;
+    for (i = 0; i < 6; i++) {
+        results[i] = 0.0;
+    }
     if (!isfinite(jd_et)) {
         return JME_ERR;
     }
@@ -109,13 +125,17 @@ int jme_vsop87_planet_state(double jd_et, int body, double *results)
         }
     } else {
         bi = vsop87_body_index(body);
-        if (bi < 0) return JME_ERR;
+        if (bi < 0) {
+            return JME_ERR;
+        }
         vsop87_series(bi, t, pos, vel);
     }
     for (i = 0; i < 3; i++) {
         results[i] = pos[i];
         results[i + 3] = vel[i] / JME_VSOP87_DAYS_PER_MILLENNIUM;
-        if (!isfinite(results[i]) || !isfinite(results[i + 3])) return JME_ERR;
+        if (!isfinite(results[i]) || !isfinite(results[i + 3])) {
+            return JME_ERR;
+        }
     }
     return JME_OK;
 }

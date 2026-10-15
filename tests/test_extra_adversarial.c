@@ -13,15 +13,15 @@
 #define M_PI 3.141592653589793238462643383279502884
 #endif
 
-#define ASSERT_TRUE(expr) \
-    do { \
-        if (!(expr)) { \
-            fprintf(stderr, "Assertion failed: %s at %s:%d\n", #expr, __FILE__, __LINE__); \
-            return 1; \
-        } \
+#define ASSERT_TRUE(expr)                                                                          \
+    do {                                                                                           \
+        if (!(expr)) {                                                                             \
+            fprintf(stderr, "Assertion failed: %s at %s:%d\n", #expr, __FILE__, __LINE__);         \
+            return 1;                                                                              \
+        }                                                                                          \
     } while (0)
 
-#define ASSERT_OK(expr) ASSERT_TRUE((expr) == JME_OK)
+#define ASSERT_OK(expr)  ASSERT_TRUE((expr) == JME_OK)
 #define ASSERT_ERR(expr) ASSERT_TRUE((expr) == JME_ERR)
 
 static int finite_values(const double *values, int count)
@@ -37,13 +37,13 @@ static int finite_values(const double *values, int count)
 
 static unsigned int lcg_next(unsigned int *state)
 {
-    *state = (*state * 1103515245u) + 12345u;
+    *state = (*state * 1103515245U) + 12345U;
     return *state;
 }
 
 static double random_range(unsigned int *state, double min_value, double max_value)
 {
-    double unit = (double)(lcg_next(state) & 0x00ffffffu) / (double)0x01000000u;
+    double unit = (double)(lcg_next(state) & 0x00ffffffU) / (double)0x01000000U;
     return min_value + unit * (max_value - min_value);
 }
 
@@ -62,7 +62,7 @@ static int test_metadata_and_calendar_fuzz(void)
         int year = (int)random_range(&seed, -4000.0, 5000.0);
         int month = (int)random_range(&seed, -5.0, 18.0);
         int day = (int)random_range(&seed, -5.0, 40.0);
-        int cal = (lcg_next(&seed) & 1u) ? JME_CALENDAR_GREGORIAN : JME_CALENDAR_JULIAN;
+        int cal = (lcg_next(&seed) & 1U) ? JME_CALENDAR_GREGORIAN : JME_CALENDAR_JULIAN;
         int valid = jme_date_is_valid(year, month, day, cal);
 
         if (month >= 1 && month <= 12) {
@@ -132,8 +132,18 @@ static int test_matrix_state_roundtrip_and_stress(void)
         ASSERT_TRUE(isfinite(jme_state_light_time_days(state2, JME_VECTOR_AU_PER_DAY)));
         ASSERT_TRUE(isfinite(jme_state_position_velocity_dot(state2)));
 
-        ASSERT_OK(jme_state_convert_units(state2, JME_VECTOR_AU_PER_DAY, JME_VECTOR_KM_PER_SECOND, state_out));
-        ASSERT_OK(jme_state_convert_units(state_out, JME_VECTOR_KM_PER_SECOND, JME_VECTOR_AU_PER_DAY, rect));
+        ASSERT_OK(jme_state_convert_units(
+            state2,
+            JME_VECTOR_AU_PER_DAY,
+            JME_VECTOR_KM_PER_SECOND,
+            state_out
+        ));
+        ASSERT_OK(jme_state_convert_units(
+            state_out,
+            JME_VECTOR_KM_PER_SECOND,
+            JME_VECTOR_AU_PER_DAY,
+            rect
+        ));
         ASSERT_TRUE(finite_values(rect, 6));
     }
 
@@ -198,9 +208,37 @@ static int test_astrometry_models_and_topo(void)
 static int test_analytical_state_providers(void)
 {
     const double dates[] = {2440587.5, 2451545.0, 2460310.5};
-    const int vsop_bodies[] = {JME_BODY_MERCURY, JME_BODY_VENUS, JME_BODY_EARTH, JME_BODY_MARS, JME_BODY_JUPITER, JME_BODY_SATURN, JME_BODY_URANUS, JME_BODY_NEPTUNE};
-    const int moshier_bodies[] = {JME_BODY_MERCURY, JME_BODY_VENUS, JME_BODY_EARTH, JME_BODY_MARS, JME_BODY_JUPITER, JME_BODY_SATURN, JME_BODY_URANUS, JME_BODY_NEPTUNE, JME_BODY_PLUTO};
-    const int meeus_bodies[] = {JME_BODY_MERCURY, JME_BODY_VENUS, JME_BODY_MARS, JME_BODY_JUPITER, JME_BODY_SATURN, JME_BODY_URANUS, JME_BODY_NEPTUNE, JME_BODY_PLUTO};
+    const int vsop_bodies[] = {
+        JME_BODY_MERCURY,
+        JME_BODY_VENUS,
+        JME_BODY_EARTH,
+        JME_BODY_MARS,
+        JME_BODY_JUPITER,
+        JME_BODY_SATURN,
+        JME_BODY_URANUS,
+        JME_BODY_NEPTUNE
+    };
+    const int moshier_bodies[] = {
+        JME_BODY_MERCURY,
+        JME_BODY_VENUS,
+        JME_BODY_EARTH,
+        JME_BODY_MARS,
+        JME_BODY_JUPITER,
+        JME_BODY_SATURN,
+        JME_BODY_URANUS,
+        JME_BODY_NEPTUNE,
+        JME_BODY_PLUTO
+    };
+    const int meeus_bodies[] = {
+        JME_BODY_MERCURY,
+        JME_BODY_VENUS,
+        JME_BODY_MARS,
+        JME_BODY_JUPITER,
+        JME_BODY_SATURN,
+        JME_BODY_URANUS,
+        JME_BODY_NEPTUNE,
+        JME_BODY_PLUTO
+    };
     int i;
     int j;
 
@@ -267,31 +305,205 @@ static int test_raw_jpl_surface_without_kernel(void)
     ASSERT_ERR(jme_jpl_open_array(2, paths, error));
     ASSERT_TRUE(jme_jpl_is_open() == 0);
 
-    ASSERT_ERR(jme_jpl_body_state(2451545.0, JME_BODY_SUN, JME_BODY_EARTH, JME_VECTOR_AU_PER_DAY, state, error));
-    ASSERT_ERR(jme_jpl_body_state_split(2451545.0, 0.25, JME_BODY_SUN, JME_BODY_EARTH, JME_VECTOR_AU_PER_DAY, state, error));
+    ASSERT_ERR(jme_jpl_body_state(
+        2451545.0,
+        JME_BODY_SUN,
+        JME_BODY_EARTH,
+        JME_VECTOR_AU_PER_DAY,
+        state,
+        error
+    ));
+    ASSERT_ERR(jme_jpl_body_state_split(
+        2451545.0,
+        0.25,
+        JME_BODY_SUN,
+        JME_BODY_EARTH,
+        JME_VECTOR_AU_PER_DAY,
+        state,
+        error
+    ));
     ASSERT_ERR(jme_jpl_body_state_naif(2451545.0, 10, 399, JME_VECTOR_AU_PER_DAY, state, error));
     ASSERT_ERR(jme_jpl_body_state_native(2451545.0, JME_BODY_SUN, JME_BODY_EARTH, state, error));
     ASSERT_ERR(jme_jpl_body_state_native_naif(2451545.0, 10, 399, state, error));
-    ASSERT_ERR(jme_jpl_body_state_native_split(2451545.0, 0.25, JME_BODY_SUN, JME_BODY_EARTH, state, error));
+    ASSERT_ERR(
+        jme_jpl_body_state_native_split(2451545.0, 0.25, JME_BODY_SUN, JME_BODY_EARTH, state, error)
+    );
     ASSERT_ERR(jme_jpl_body_state_native_split_naif(2451545.0, 0.25, 10, 399, state, error));
-    ASSERT_ERR(jme_jpl_body_state_order(2451545.0, 0.25, JME_BODY_SUN, JME_BODY_EARTH, JME_VECTOR_AU_PER_DAY, 1, state, error));
-    ASSERT_ERR(jme_jpl_body_state_order_naif(2451545.0, 0.25, 10, 399, JME_VECTOR_AU_PER_DAY, 1, state, error));
-    ASSERT_ERR(jme_jpl_body_state_utc(2000, 1, 1, 12, 0, 0.0, JME_CALENDAR_GREGORIAN, JME_BODY_SUN, JME_BODY_EARTH, JME_VECTOR_AU_PER_DAY, state, error));
-    ASSERT_ERR(jme_jpl_body_state_utc_naif(2000, 1, 1, 12, 0, 0.0, JME_CALENDAR_GREGORIAN, 10, 399, JME_VECTOR_AU_PER_DAY, state, error));
-    ASSERT_ERR(jme_jpl_ecliptic_state(2451545.0, JME_BODY_SUN, JME_BODY_EARTH, JME_VECTOR_AU_PER_DAY, state, error));
-    ASSERT_ERR(jme_jpl_ecliptic_state_naif(2451545.0, 10, 399, JME_VECTOR_AU_PER_DAY, state, error));
-    ASSERT_ERR(jme_jpl_ecliptic_state_split(2451545.0, 0.25, JME_BODY_SUN, JME_BODY_EARTH, JME_VECTOR_AU_PER_DAY, state, error));
-    ASSERT_ERR(jme_jpl_ecliptic_state_split_naif(2451545.0, 0.25, 10, 399, JME_VECTOR_AU_PER_DAY, state, error));
-    ASSERT_ERR(jme_jpl_ecliptic_state_utc(2000, 1, 1, 12, 0, 0.0, JME_CALENDAR_GREGORIAN, JME_BODY_SUN, JME_BODY_EARTH, JME_VECTOR_AU_PER_DAY, state, error));
-    ASSERT_ERR(jme_jpl_ecliptic_state_utc_naif(2000, 1, 1, 12, 0, 0.0, JME_CALENDAR_GREGORIAN, 10, 399, JME_VECTOR_AU_PER_DAY, state, error));
-    ASSERT_ERR(jme_jpl_orientation_state_naif(2451545.0, 399, JME_ORIENTATION_RAD_PER_DAY, state, error));
-    ASSERT_ERR(jme_jpl_orientation_state_split_naif(2451545.0, 0.25, 399, JME_ORIENTATION_RAD_PER_DAY, state, error));
-    ASSERT_ERR(jme_jpl_orientation_state_order_naif(2451545.0, 0.25, 399, JME_ORIENTATION_RAD_PER_DAY, 1, state, error));
-    ASSERT_ERR(jme_jpl_orientation_state_utc_naif(2000, 1, 1, 12, 0, 0.0, JME_CALENDAR_GREGORIAN, 399, JME_ORIENTATION_RAD_PER_DAY, state, error));
-    ASSERT_ERR(jme_jpl_rotational_angular_momentum_state_naif(2451545.0, 399, JME_ORIENTATION_RAD_PER_DAY, state, error));
-    ASSERT_ERR(jme_jpl_rotational_angular_momentum_state_split_naif(2451545.0, 0.25, 399, JME_ORIENTATION_RAD_PER_DAY, state, error));
-    ASSERT_ERR(jme_jpl_rotational_angular_momentum_state_order_naif(2451545.0, 0.25, 399, JME_ORIENTATION_RAD_PER_DAY, 1, state, error));
-    ASSERT_ERR(jme_jpl_rotational_angular_momentum_state_utc_naif(2000, 1, 1, 12, 0, 0.0, JME_CALENDAR_GREGORIAN, 399, JME_ORIENTATION_RAD_PER_DAY, state, error));
+    ASSERT_ERR(jme_jpl_body_state_order(
+        2451545.0,
+        0.25,
+        JME_BODY_SUN,
+        JME_BODY_EARTH,
+        JME_VECTOR_AU_PER_DAY,
+        1,
+        state,
+        error
+    ));
+    ASSERT_ERR(jme_jpl_body_state_order_naif(
+        2451545.0,
+        0.25,
+        10,
+        399,
+        JME_VECTOR_AU_PER_DAY,
+        1,
+        state,
+        error
+    ));
+    ASSERT_ERR(jme_jpl_body_state_utc(
+        2000,
+        1,
+        1,
+        12,
+        0,
+        0.0,
+        JME_CALENDAR_GREGORIAN,
+        JME_BODY_SUN,
+        JME_BODY_EARTH,
+        JME_VECTOR_AU_PER_DAY,
+        state,
+        error
+    ));
+    ASSERT_ERR(jme_jpl_body_state_utc_naif(
+        2000,
+        1,
+        1,
+        12,
+        0,
+        0.0,
+        JME_CALENDAR_GREGORIAN,
+        10,
+        399,
+        JME_VECTOR_AU_PER_DAY,
+        state,
+        error
+    ));
+    ASSERT_ERR(jme_jpl_ecliptic_state(
+        2451545.0,
+        JME_BODY_SUN,
+        JME_BODY_EARTH,
+        JME_VECTOR_AU_PER_DAY,
+        state,
+        error
+    ));
+    ASSERT_ERR(
+        jme_jpl_ecliptic_state_naif(2451545.0, 10, 399, JME_VECTOR_AU_PER_DAY, state, error)
+    );
+    ASSERT_ERR(jme_jpl_ecliptic_state_split(
+        2451545.0,
+        0.25,
+        JME_BODY_SUN,
+        JME_BODY_EARTH,
+        JME_VECTOR_AU_PER_DAY,
+        state,
+        error
+    ));
+    ASSERT_ERR(jme_jpl_ecliptic_state_split_naif(
+        2451545.0,
+        0.25,
+        10,
+        399,
+        JME_VECTOR_AU_PER_DAY,
+        state,
+        error
+    ));
+    ASSERT_ERR(jme_jpl_ecliptic_state_utc(
+        2000,
+        1,
+        1,
+        12,
+        0,
+        0.0,
+        JME_CALENDAR_GREGORIAN,
+        JME_BODY_SUN,
+        JME_BODY_EARTH,
+        JME_VECTOR_AU_PER_DAY,
+        state,
+        error
+    ));
+    ASSERT_ERR(jme_jpl_ecliptic_state_utc_naif(
+        2000,
+        1,
+        1,
+        12,
+        0,
+        0.0,
+        JME_CALENDAR_GREGORIAN,
+        10,
+        399,
+        JME_VECTOR_AU_PER_DAY,
+        state,
+        error
+    ));
+    ASSERT_ERR(
+        jme_jpl_orientation_state_naif(2451545.0, 399, JME_ORIENTATION_RAD_PER_DAY, state, error)
+    );
+    ASSERT_ERR(jme_jpl_orientation_state_split_naif(
+        2451545.0,
+        0.25,
+        399,
+        JME_ORIENTATION_RAD_PER_DAY,
+        state,
+        error
+    ));
+    ASSERT_ERR(jme_jpl_orientation_state_order_naif(
+        2451545.0,
+        0.25,
+        399,
+        JME_ORIENTATION_RAD_PER_DAY,
+        1,
+        state,
+        error
+    ));
+    ASSERT_ERR(jme_jpl_orientation_state_utc_naif(
+        2000,
+        1,
+        1,
+        12,
+        0,
+        0.0,
+        JME_CALENDAR_GREGORIAN,
+        399,
+        JME_ORIENTATION_RAD_PER_DAY,
+        state,
+        error
+    ));
+    ASSERT_ERR(jme_jpl_rotational_angular_momentum_state_naif(
+        2451545.0,
+        399,
+        JME_ORIENTATION_RAD_PER_DAY,
+        state,
+        error
+    ));
+    ASSERT_ERR(jme_jpl_rotational_angular_momentum_state_split_naif(
+        2451545.0,
+        0.25,
+        399,
+        JME_ORIENTATION_RAD_PER_DAY,
+        state,
+        error
+    ));
+    ASSERT_ERR(jme_jpl_rotational_angular_momentum_state_order_naif(
+        2451545.0,
+        0.25,
+        399,
+        JME_ORIENTATION_RAD_PER_DAY,
+        1,
+        state,
+        error
+    ));
+    ASSERT_ERR(jme_jpl_rotational_angular_momentum_state_utc_naif(
+        2000,
+        1,
+        1,
+        12,
+        0,
+        0.0,
+        JME_CALENDAR_GREGORIAN,
+        399,
+        JME_ORIENTATION_RAD_PER_DAY,
+        state,
+        error
+    ));
 
     ASSERT_ERR(jme_jpl_coverage(&t1, &t2, &continuous, error));
     ASSERT_ERR(jme_jpl_constant("AU", &value, error));
@@ -310,7 +522,9 @@ static int test_raw_jpl_surface_without_kernel(void)
     ASSERT_ERR(jme_jpl_name_by_id(399, name, sizeof(name), error));
     ASSERT_TRUE(jme_jpl_max_supported_order(1) == JME_ERR || jme_jpl_max_supported_order(1) >= 0);
     ASSERT_ERR(jme_jpl_position_record_count(error));
-    ASSERT_ERR(jme_jpl_position_record_index(0, &target, &center, &t1, &t2, &frame, &segment, error));
+    ASSERT_ERR(
+        jme_jpl_position_record_index(0, &target, &center, &t1, &t2, &frame, &segment, error)
+    );
     ASSERT_ERR(jme_jpl_orientation_record_count(error));
     ASSERT_ERR(jme_jpl_orientation_record_index(0, &target, &t1, &t2, &frame, &segment, error));
     ASSERT_TRUE(jme_jpl_timescale() >= 0);
@@ -330,16 +544,20 @@ static void *extra_thread_worker(void *arg)
         double eps = 0.0;
         char error[256];
 
-        if (jme_meeus_planet_state(jd, JME_BODY_MARS, state) != JME_OK || !finite_values(state, 6)) {
+        if (jme_meeus_planet_state(jd, JME_BODY_MARS, state) != JME_OK ||
+            !finite_values(state, 6)) {
             return (void *)1;
         }
-        if (jme_moshier_planet_state(jd, JME_BODY_JUPITER, state) != JME_OK || !finite_values(state, 6)) {
+        if (jme_moshier_planet_state(jd, JME_BODY_JUPITER, state) != JME_OK ||
+            !finite_values(state, 6)) {
             return (void *)1;
         }
-        if (jme_vsop87_planet_state(jd, JME_BODY_VENUS, state) != JME_OK || !finite_values(state, 6)) {
+        if (jme_vsop87_planet_state(jd, JME_BODY_VENUS, state) != JME_OK ||
+            !finite_values(state, 6)) {
             return (void *)1;
         }
-        if (jme_get_obliquity(jd, JME_MODEL_OBL_IAU_2006, &eps, error) != JME_OK || !isfinite(eps)) {
+        if (jme_get_obliquity(jd, JME_MODEL_OBL_IAU_2006, &eps, error) != JME_OK ||
+            !isfinite(eps)) {
             return (void *)1;
         }
     }
@@ -371,12 +589,24 @@ static int test_extra_concurrency(void)
 
 int main(void)
 {
-    if (test_metadata_and_calendar_fuzz() != 0) return 1;
-    if (test_matrix_state_roundtrip_and_stress() != 0) return 1;
-    if (test_astrometry_models_and_topo() != 0) return 1;
-    if (test_analytical_state_providers() != 0) return 1;
-    if (test_raw_jpl_surface_without_kernel() != 0) return 1;
-    if (test_extra_concurrency() != 0) return 1;
+    if (test_metadata_and_calendar_fuzz() != 0) {
+        return 1;
+    }
+    if (test_matrix_state_roundtrip_and_stress() != 0) {
+        return 1;
+    }
+    if (test_astrometry_models_and_topo() != 0) {
+        return 1;
+    }
+    if (test_analytical_state_providers() != 0) {
+        return 1;
+    }
+    if (test_raw_jpl_surface_without_kernel() != 0) {
+        return 1;
+    }
+    if (test_extra_concurrency() != 0) {
+        return 1;
+    }
     printf("Extra adversarial validation passed\n");
     return 0;
 }

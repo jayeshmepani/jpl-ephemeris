@@ -7,20 +7,14 @@
 extern "C" {
 #endif
 
-#define JME_VERSION "1.1.1"
-#define JME_AU_KM 149597870.700
+#define JME_VERSION                   "1.1.1"
+#define JME_AU_KM                     149597870.700
 #define JME_SPEED_OF_LIGHT_KM_PER_SEC 299792.458
-#define JME_SECONDS_PER_DAY 86400.0
+#define JME_SECONDS_PER_DAY           86400.0
 
-typedef enum jme_status {
-    JME_OK = 0,
-    JME_ERR = -1
-} jme_status;
+typedef enum jme_status { JME_OK = 0, JME_ERR = -1 } jme_status;
 
-typedef enum jme_calendar {
-    JME_CALENDAR_JULIAN = 0,
-    JME_CALENDAR_GREGORIAN = 1
-} jme_calendar;
+typedef enum jme_calendar { JME_CALENDAR_JULIAN = 0, JME_CALENDAR_GREGORIAN = 1 } jme_calendar;
 
 typedef enum jme_body {
     JME_BODY_SUN = 0,
@@ -108,12 +102,54 @@ int jme_fixstar2(const char *star, double jd_et, int flags, double *results, cha
 int jme_fixstar2_ut(const char *star, double jd_ut, int flags, double *results, char *error);
 int jme_fixstar2_mag(const char *star, double *mag, char *error);
 
-int jme_houses(double jd_ut, double geo_lat, double geo_lon, int house_system, double *cusps, double *ascmc);
-int jme_houses_ex(double jd_ut, int flags, double geo_lat, double geo_lon, int house_system, double *cusps, double *ascmc);
-int jme_houses_ex2(double jd_ut, int flags, double geo_lat, double geo_lon, int house_system, double *cusps, double *ascmc, double *cusps_speed, double *ascmc_speed);
-int jme_houses_armc(double armc, double geo_lat, double eps, int house_system, double *cusps, double *ascmc);
-int jme_houses_armc_ex2(double armc, double geo_lat, double eps, int house_system, double *cusps, double *ascmc, double *cusps_speed, double *ascmc_speed);
-double jme_house_pos(double armc, double geo_lat, double eps, int house_system, double *xpin, char *error);
+int jme_houses(
+    double jd_ut,
+    double geo_lat,
+    double geo_lon,
+    int house_system,
+    double *cusps,
+    double *ascmc
+);
+int jme_houses_ex(
+    double jd_ut,
+    int flags,
+    double geo_lat,
+    double geo_lon,
+    int house_system,
+    double *cusps,
+    double *ascmc
+);
+int jme_houses_ex2(
+    double jd_ut,
+    int flags,
+    double geo_lat,
+    double geo_lon,
+    int house_system,
+    double *cusps,
+    double *ascmc,
+    double *cusps_speed,
+    double *ascmc_speed
+);
+int jme_houses_armc(
+    double armc,
+    double geo_lat,
+    double eps,
+    int house_system,
+    double *cusps,
+    double *ascmc
+);
+int jme_houses_armc_ex2(
+    double armc,
+    double geo_lat,
+    double eps,
+    int house_system,
+    double *cusps,
+    double *ascmc,
+    double *cusps_speed,
+    double *ascmc_speed
+);
+double
+jme_house_pos(double armc, double geo_lat, double eps, int house_system, double *xpin, char *error);
 
 /*
  * Gauquelin 36 sectors as a house system. cusps must hold 37 doubles:
@@ -124,23 +160,129 @@ double jme_house_pos(double armc, double geo_lat, double eps, int house_system, 
  * JME_CALC_SIDEREAL as in jme_houses_ex. Returns JME_ERR where a semi-arc is
  * undefined (polar latitudes).
  */
-int jme_houses_gauquelin(double jd_ut, int flags, double geo_lat, double geo_lon, double *cusps, double *ascmc, char *error);
-int jme_houses_gauquelin_armc(double armc, double geo_lat, double eps, double *cusps, double *ascmc, char *error);
-int jme_gauquelin_sector(double jd_ut, int body, const char *starname, int flags, int imeth, double *geopos, double atpress, double attemp, double *dgsect, char *error);
+int jme_houses_gauquelin(
+    double jd_ut,
+    int flags,
+    double geo_lat,
+    double geo_lon,
+    double *cusps,
+    double *ascmc,
+    char *error
+);
+int jme_houses_gauquelin_armc(
+    double armc,
+    double geo_lat,
+    double eps,
+    double *cusps,
+    double *ascmc,
+    char *error
+);
+int jme_gauquelin_sector(
+    double jd_ut,
+    int body,
+    const char *starname,
+    int flags,
+    int imeth,
+    double *geopos,
+    double atpress,
+    double attemp,
+    double *dgsect,
+    char *error
+);
 
 int jme_sol_eclipse_where(double jd_ut, int flags, double *geopos, double *attr, char *error);
 int jme_sol_eclipse_how(double jd_ut, int flags, double *geopos, double *attr, char *error);
-int jme_sol_eclipse_when_loc(double jd_start, int flags, double *geopos, double *tret, double *attr, int backward, char *error);
-int jme_sol_eclipse_when_glob(double jd_start, int flags, int epheflag, double *tret, int backward, char *error);
+int jme_sol_eclipse_when_loc(
+    double jd_start,
+    int flags,
+    double *geopos,
+    double *tret,
+    double *attr,
+    int backward,
+    char *error
+);
+int jme_sol_eclipse_when_glob(
+    double jd_start,
+    int flags,
+    int epheflag,
+    double *tret,
+    int backward,
+    char *error
+);
 int jme_lun_eclipse_how(double jd_ut, int flags, double *geopos, double *attr, char *error);
-int jme_lun_eclipse_when_loc(double jd_start, int flags, double *geopos, double *tret, double *attr, int backward, char *error);
-int jme_lun_eclipse_when(double jd_start, int flags, int iflag, double *tret, int backward, char *error);
-int jme_lun_occult_where(double jd_ut, int body, const char *starname, int flags, double *geopos, double *attr, char *error);
-int jme_lun_occult_when_loc(double jd_start, int body, const char *starname, int flags, double *geopos, double *tret, double *attr, int backward, char *error);
-int jme_lun_occult_when_glob(double jd_start, int body, const char *starname, int flags, int iflag, double *tret, int backward, char *error);
+int jme_lun_eclipse_when_loc(
+    double jd_start,
+    int flags,
+    double *geopos,
+    double *tret,
+    double *attr,
+    int backward,
+    char *error
+);
+int jme_lun_eclipse_when(
+    double jd_start,
+    int flags,
+    int iflag,
+    double *tret,
+    int backward,
+    char *error
+);
+int jme_lun_occult_where(
+    double jd_ut,
+    int body,
+    const char *starname,
+    int flags,
+    double *geopos,
+    double *attr,
+    char *error
+);
+int jme_lun_occult_when_loc(
+    double jd_start,
+    int body,
+    const char *starname,
+    int flags,
+    double *geopos,
+    double *tret,
+    double *attr,
+    int backward,
+    char *error
+);
+int jme_lun_occult_when_glob(
+    double jd_start,
+    int body,
+    const char *starname,
+    int flags,
+    int iflag,
+    double *tret,
+    int backward,
+    char *error
+);
 
-int jme_rise_trans(double jd_ut, int body, const char *starname, int flags, int rsmi, double *geopos, double atpress, double attemp, double *tret, char *error);
-int jme_rise_trans_true_hor(double jd_ut, int body, const char *starname, int flags, int rsmi, double *geopos, double atpress, double attemp, double horhgt, double *tret, char *error);
+int jme_rise_trans(
+    double jd_ut,
+    int body,
+    const char *starname,
+    int flags,
+    int rsmi,
+    double *geopos,
+    double atpress,
+    double attemp,
+    double *tret,
+    char *error
+);
+int jme_rise_trans_true_hor(
+    double jd_ut,
+    int body,
+    const char *starname,
+    int flags,
+    int rsmi,
+    double *geopos,
+    double atpress,
+    double attemp,
+    double horhgt,
+    double *tret,
+    char *error
+);
 
 int jme_solcross(double x2cross, double jd_ut, int flags, double *tret, char *error);
 int jme_solcross_ut(double x2cross, double jd_ut, int flags, double *tret, char *error);
@@ -149,12 +291,28 @@ int jme_mooncross_ut(double x2cross, double jd_ut, int flags, double *tret, char
 int jme_mooncross_node(double jd_ut, int flags, double *tret, char *error);
 int jme_mooncross_node_ut(double jd_ut, int flags, double *tret, char *error);
 int jme_helio_cross(int body, double x2cross, double jd_ut, int flags, double *tret, char *error);
-int jme_helio_cross_ut(int body, double x2cross, double jd_ut, int flags, double *tret, char *error);
+int jme_helio_cross_ut(
+    int body,
+    double x2cross,
+    double jd_ut,
+    int flags,
+    double *tret,
+    char *error
+);
 
 int jme_nod_aps(double jd_et, int body, int flags, int method, double *tret, char *error);
 int jme_nod_aps_ut(double jd_ut, int body, int flags, int method, double *tret, char *error);
 int jme_get_orbital_elements(double jd_et, int body, int flags, double *elem, char *error);
-int jme_orbit_max_min_true_distance(double jd_et, int body, int flags, double *tmax, double *tmin, double *dmax, double *dmin, char *error);
+int jme_orbit_max_min_true_distance(
+    double jd_et,
+    int body,
+    int flags,
+    double *tmax,
+    double *tmin,
+    double *dmax,
+    double *dmin,
+    char *error
+);
 
 int jme_heliacal_ut(double jd_ut, double *geopos, double *dat_hel, char *error);
 int jme_heliacal_pheno_ut(double jd_ut, double *geopos, double *dat_hel, char *error);
@@ -185,14 +343,7 @@ int jme_days_in_month(int year, int month, int calendar);
 int jme_day_of_year(int year, int month, int day, int calendar);
 double jme_decimal_hour(int hour, int minute, double second);
 int jme_day_of_week(double jd);
-void jme_reverse_julian_day(
-    double jd,
-    int calendar,
-    int *year,
-    int *month,
-    int *day,
-    double *hour
-);
+void jme_reverse_julian_day(double jd, int calendar, int *year, int *month, int *day, double *hour);
 
 #include "jme/jme_extended.h"
 

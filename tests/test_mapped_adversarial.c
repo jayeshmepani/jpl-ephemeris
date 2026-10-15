@@ -14,15 +14,15 @@
 #define JME_HAS_PTHREAD 1
 #endif
 
-#define ASSERT_TRUE(expr) \
-    do { \
-        if (!(expr)) { \
-            fprintf(stderr, "Assertion failed: %s at %s:%d\n", #expr, __FILE__, __LINE__); \
-            return 1; \
-        } \
+#define ASSERT_TRUE(expr)                                                                          \
+    do {                                                                                           \
+        if (!(expr)) {                                                                             \
+            fprintf(stderr, "Assertion failed: %s at %s:%d\n", #expr, __FILE__, __LINE__);         \
+            return 1;                                                                              \
+        }                                                                                          \
     } while (0)
 
-#define ASSERT_OK(expr) ASSERT_TRUE((expr) == JME_OK)
+#define ASSERT_OK(expr)  ASSERT_TRUE((expr) == JME_OK)
 #define ASSERT_ERR(expr) ASSERT_TRUE((expr) == JME_ERR)
 
 static int finite_array(const double *values, size_t count)
@@ -38,19 +38,19 @@ static int finite_array(const double *values, size_t count)
 
 static unsigned int lcg_next(unsigned int *state)
 {
-    *state = (*state * 1664525u) + 1013904223u;
+    *state = (*state * 1664525U) + 1013904223U;
     return *state;
 }
 
 static double random_range(unsigned int *state, double min_value, double max_value)
 {
-    double unit = (double)(lcg_next(state) & 0x00ffffffu) / (double)0x01000000u;
+    double unit = (double)(lcg_next(state) & 0x00ffffffU) / (double)0x01000000U;
     return min_value + (max_value - min_value) * unit;
 }
 
 static int test_angle_time_coordinate_fuzz(void)
 {
-    unsigned int seed = 0x5eed1234u;
+    unsigned int seed = 0x5eed1234U;
     int i;
 
     for (i = 0; i < 20000; i++) {
@@ -63,7 +63,7 @@ static int test_angle_time_coordinate_fuzz(void)
         double dec = 0.0;
         double lon2 = 0.0;
         double lat2 = 0.0;
-        int cs = (int)(lcg_next(&seed) % 1000000000u) - 500000000;
+        int cs = (int)(lcg_next(&seed) % 1000000000U) - 500000000;
         int norm_cs = jme_centiseconds_normalize(cs);
         double norm_deg = jme_degree_normalize(a);
         double norm_rad = jme_radian_normalize(a);
@@ -137,7 +137,18 @@ static int test_malformed_inputs_and_null_contracts(void)
     ASSERT_ERR(jme_houses(2451545.0, 0.0, 0.0, 'P', 0, ascmc));
     ASSERT_OK(jme_houses_ex2(2451545.0, 0, 0.0, 0.0, 'P', cusps, ascmc, 0, 0));
     ASSERT_TRUE(isnan(jme_house_pos(0.0, 0.0, 0.4, 'P', 0, error)));
-    ASSERT_ERR(jme_gauquelin_sector(2451545.0, JME_BODY_SUN, 0, 0, 99, geopos, 1013.25, 15.0, values, error));
+    ASSERT_ERR(jme_gauquelin_sector(
+        2451545.0,
+        JME_BODY_SUN,
+        0,
+        0,
+        99,
+        geopos,
+        1013.25,
+        15.0,
+        values,
+        error
+    ));
     ASSERT_ERR(jme_sol_eclipse_where(2451545.0, 0, 0, attr, error));
     ASSERT_ERR(jme_sol_eclipse_how(2451545.0, 0, geopos, 0, error));
     ASSERT_ERR(jme_sol_eclipse_when_loc(2451545.0, 0, geopos, 0, attr, 0, error));
@@ -154,15 +165,47 @@ static int test_malformed_inputs_and_null_contracts(void)
      * occultation to the next Mars occultation */
     ASSERT_OK(jme_lun_occult_when_glob(2451545.0, JME_BODY_MARS, 0, 0, 0, tret, 0, error));
     ASSERT_TRUE(tret[0] > 2451545.0 && tret[2] < tret[0] && tret[0] < tret[3]);
-    ASSERT_ERR(jme_rise_trans(2451545.0, JME_BODY_SUN, 0, 0, JME_RISE_RISE, 0, 1013.25, 15.0, values, error));
-    ASSERT_ERR(jme_rise_trans_true_hor(2451545.0, JME_BODY_SUN, 0, 0, JME_RISE_RISE, geopos, 1013.25, 15.0, 0.0, 0, error));
+    ASSERT_ERR(jme_rise_trans(
+        2451545.0,
+        JME_BODY_SUN,
+        0,
+        0,
+        JME_RISE_RISE,
+        0,
+        1013.25,
+        15.0,
+        values,
+        error
+    ));
+    ASSERT_ERR(jme_rise_trans_true_hor(
+        2451545.0,
+        JME_BODY_SUN,
+        0,
+        0,
+        JME_RISE_RISE,
+        geopos,
+        1013.25,
+        15.0,
+        0.0,
+        0,
+        error
+    ));
     ASSERT_ERR(jme_solcross(0.0, 2451545.0, 0, 0, error));
     ASSERT_ERR(jme_mooncross(0.0, 2451545.0, 0, 0, error));
     ASSERT_ERR(jme_mooncross_node(2451545.0, 0, 0, error));
     ASSERT_ERR(jme_helio_cross(999999, 0.0, 2451545.0, 0, values, error));
     ASSERT_ERR(jme_nod_aps(2451545.0, 999999, 0, 0, values, error));
     ASSERT_ERR(jme_get_orbital_elements(2451545.0, 999999, 0, values, error));
-    ASSERT_ERR(jme_orbit_max_min_true_distance(2451545.0, 999999, 0, &values[0], &values[1], &values[2], &values[3], error));
+    ASSERT_ERR(jme_orbit_max_min_true_distance(
+        2451545.0,
+        999999,
+        0,
+        &values[0],
+        &values[1],
+        &values[2],
+        &values[3],
+        error
+    ));
     ASSERT_ERR(jme_heliacal_ut(2451545.0, 0, attr, error));
     ASSERT_ERR(jme_heliacal_pheno_ut(2451545.0, geopos, 0, error));
     ASSERT_ERR(jme_vis_limit_mag(2451545.0, geopos, 0, error));
@@ -181,14 +224,25 @@ static int test_malformed_inputs_and_null_contracts(void)
 static int test_production_like_workflows(void)
 {
     const double dates[] = {1674484.0, 1903396.789532, 2415020.5, 2451545.0, 2460310.5, 2816787.5};
-    const int bodies[] = {JME_BODY_SUN, JME_BODY_MOON, JME_BODY_MERCURY, JME_BODY_VENUS, JME_BODY_MARS, JME_BODY_JUPITER, JME_BODY_SATURN, JME_BODY_URANUS, JME_BODY_NEPTUNE, JME_BODY_PLUTO};
+    const int bodies[] = {
+        JME_BODY_SUN,
+        JME_BODY_MOON,
+        JME_BODY_MERCURY,
+        JME_BODY_VENUS,
+        JME_BODY_MARS,
+        JME_BODY_JUPITER,
+        JME_BODY_SATURN,
+        JME_BODY_URANUS,
+        JME_BODY_NEPTUNE,
+        JME_BODY_PLUTO
+    };
     const double locations[][3] = {
-        {0.0, 0.0, 0.0},
-        {-74.0060, 40.7128, 10.0},
-        {77.2090, 28.6139, 216.0},
-        {139.6917, 35.6895, 40.0},
-        {0.0, 89.0, 0.0},
-        {0.0, -89.0, 0.0}
+        {0.0,      0.0,     0.0  },
+        {-74.0060, 40.7128, 10.0 },
+        {77.2090,  28.6139, 216.0},
+        {139.6917, 35.6895, 40.0 },
+        {0.0,      89.0,    0.0  },
+        {0.0,      -89.0,   0.0  }
     };
     char error[256];
     double res1[32];
@@ -206,7 +260,9 @@ static int test_production_like_workflows(void)
             ASSERT_OK(jme_calc(dates[i], bodies[j], JME_CALC_SPEED, res2, error));
             ASSERT_TRUE(finite_array(res1, 6));
             ASSERT_TRUE(memcmp(res1, res2, sizeof(double) * 6) == 0);
-            ASSERT_OK(jme_calc_ut(dates[i], bodies[j], JME_CALC_SPEED | JME_CALC_RADIANS, res1, error));
+            ASSERT_OK(
+                jme_calc_ut(dates[i], bodies[j], JME_CALC_SPEED | JME_CALC_RADIANS, res1, error)
+            );
             ASSERT_TRUE(finite_array(res1, 6));
             ASSERT_OK(jme_pheno(dates[i], bodies[j], 0, attr, error));
             ASSERT_TRUE(finite_array(attr, 10));
@@ -219,9 +275,30 @@ static int test_production_like_workflows(void)
     }
 
     for (i = 0; i < sizeof(locations) / sizeof(locations[0]); i++) {
-        ASSERT_OK(jme_houses(2451545.0, locations[i][1], locations[i][0], fabs(locations[i][1]) > 80.0 ? 'E' : 'P', cusps, ascmc));
+        ASSERT_OK(jme_houses(
+            2451545.0,
+            locations[i][1],
+            locations[i][0],
+            fabs(locations[i][1]) > 80.0 ? 'E' : 'P',
+            cusps,
+            ascmc
+        ));
         ASSERT_TRUE(finite_array(cusps + 1, 12));
-        ASSERT_OK(jme_rise_trans(2451545.0, JME_BODY_SUN, 0, 0, JME_RISE_MERIDIAN_TRANSIT, (double *)locations[i], 1013.25, 15.0, res1, error));
+        {
+            double rise_geopos[3] = {locations[i][0], locations[i][1], locations[i][2]};
+            ASSERT_OK(jme_rise_trans(
+                2451545.0,
+                JME_BODY_SUN,
+                0,
+                0,
+                JME_RISE_MERIDIAN_TRANSIT,
+                rise_geopos,
+                1013.25,
+                15.0,
+                res1,
+                error
+            ));
+        }
         ASSERT_TRUE(isfinite(res1[0]));
     }
     jme_set_astro_models(0, 0);
@@ -246,7 +323,11 @@ static int test_serialized_state_and_model_roundtrip(void)
     jme_get_sidereal_mode(&mode, &t0, &ayan);
     ASSERT_TRUE(mode == JME_SIDEREAL_USER && t0 == 2451545.0 && ayan == 12.25);
 
-    jme_set_astro_models("ENGINE=VSOP_ELP_MEEUS;BIAS=NONE;NUT=IAU2000B;OBL=IAU2006;PREC=IAU2006;SIDT=IAU2006;DELTAT=ESPENAK_MEEUS_2006", 0);
+    jme_set_astro_models(
+        "ENGINE=VSOP_ELP_MEEUS;BIAS=NONE;NUT=IAU2000B;OBL=IAU2006;PREC=IAU2006;"
+        "SIDT=IAU2006;DELTAT=ESPENAK_MEEUS_2006",
+        0
+    );
     ASSERT_OK(jme_get_astro_models(models, 0));
     ASSERT_TRUE(strstr(models, "ENGINE=VSOP_ELP_MEEUS") != 0);
     ASSERT_TRUE(strstr(models, "NUT=335") != 0);
@@ -271,10 +352,12 @@ static void *thread_worker(void *arg)
 
     for (i = 0; i < 250; i++) {
         double jd = 2451545.0 + (double)((index * 250) + i);
-        if (jme_calc(jd, JME_BODY_MARS, JME_CALC_SPEED, out, error) != JME_OK || !finite_array(out, 6)) {
+        if (jme_calc(jd, JME_BODY_MARS, JME_CALC_SPEED, out, error) != JME_OK ||
+            !finite_array(out, 6)) {
             return (void *)1;
         }
-        if (jme_get_ayanamsa_ex(jd, JME_SIDEREAL_LAHIRI, out, error) != JME_OK || !isfinite(out[0])) {
+        if (jme_get_ayanamsa_ex(jd, JME_SIDEREAL_LAHIRI, out, error) != JME_OK ||
+            !isfinite(out[0])) {
             return (void *)1;
         }
         if (jme_fixstar("Sirius", jd, 0, out, error) != JME_OK || !finite_array(out, 3)) {

@@ -4,7 +4,8 @@
 #include <assert.h>
 #include <math.h>
 
-int main(void) {
+int main(void)
+{
     /* Reference all constants to ensure they exist and are spelled correctly */
     (void)JME_AU_KM;
     (void)JME_BODY_EARTH;

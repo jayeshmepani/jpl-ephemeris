@@ -5,20 +5,21 @@
 #include <math.h>
 #include <jme/jme.h>
 
-#define TEST_ASSERT(cond) \
-    do { \
-        if (!(cond)) { \
-            fprintf(stderr, "Assertion failed: %s at %s:%d\n", #cond, __FILE__, __LINE__); \
-            exit(1); \
-        } \
+#define TEST_ASSERT(cond)                                                                          \
+    do {                                                                                           \
+        if (!(cond)) {                                                                             \
+            fprintf(stderr, "Assertion failed: %s at %s:%d\n", #cond, __FILE__, __LINE__);         \
+            exit(1);                                                                               \
+        }                                                                                          \
     } while (0)
 
-void test_metadata_and_paths() {
+static void test_metadata_and_paths(void)
+{
     printf("Testing metadata and paths...\n");
     char buf[256];
     TEST_ASSERT(jme_version(buf, sizeof(buf)) != NULL);
     jme_close();
-    
+
     // Invalid file inputs must return JME_ERR.
     TEST_ASSERT(jme_jpl_open("/non/existent/path", buf) == JME_ERR);
     const char *paths[] = {"/invalid1", "/invalid2"};
@@ -28,62 +29,67 @@ void test_metadata_and_paths() {
     jme_ephemeris_path();
     jme_jpl_file();
     jme_library_path();
-    
+
     // Setters
     jme_set_ephemeris_path("./data");
     jme_set_jpl_file("./data/jpl/de440s.bsp");
 }
 
-void test_utility_math() {
+static void test_utility_math(void)
+{
     printf("Testing utility math functions...\n");
     // Normalization
     TEST_ASSERT(jme_degree_normalize(370.0) == 10.0);
     TEST_ASSERT(jme_degree_normalize(-10.0) == 350.0);
-    TEST_ASSERT(jme_radian_normalize(6.283185307179586 * 1.5) > 3.0 && jme_radian_normalize(6.283185307179586 * 1.5) < 3.2);
+    TEST_ASSERT(
+        jme_radian_normalize(6.283185307179586 * 1.5) > 3.0 &&
+        jme_radian_normalize(6.283185307179586 * 1.5) < 3.2
+    );
     TEST_ASSERT(jme_hours_normalize(25.0) == 1.0);
-    
+
     // Conversion
     TEST_ASSERT(jme_degrees_to_radians(180.0) > 3.14 && jme_degrees_to_radians(180.0) < 3.15);
     TEST_ASSERT(jme_radians_to_degrees(3.141592653589793) == 180.0);
     TEST_ASSERT(jme_degrees_to_hours(15.0) == 1.0);
     TEST_ASSERT(jme_hours_to_degrees(1.0) == 15.0);
-    
+
     // Difference
     TEST_ASSERT(jme_degrees_difference(370.0, 10.0) == 0.0);
     TEST_ASSERT(jme_degrees_difference_signed(10.0, 350.0) == 20.0);
     double rad_diff = jme_radians_difference_signed(0.1, 6.2);
     TEST_ASSERT(rad_diff > 0.1 && rad_diff < 0.2);
-    
+
     // Midpoint
     TEST_ASSERT(jme_degree_midpoint(10.0, 350.0) == 0.0);
     double rad_mid = jme_radian_midpoint(0.1, 6.2);
     TEST_ASSERT(rad_mid > 6.2 || rad_mid < 0.1);
-    
+
     // Other
     TEST_ASSERT(jme_double_to_long(123.45) == 123);
-    
+
     // Spherical
     TEST_ASSERT(jme_spherical_angular_separation(0, 0, 90, 0) == 90.0);
     TEST_ASSERT(jme_spherical_position_angle(0, 0, 0, 10) == 0.0);
-    
+
     double rect[6] = {1, 0, 0, 0, 1, 0};
     double sph[6];
     jme_spherical_to_rectangular_state(rect, rect); // Just call it
     jme_rectangular_to_spherical_state(rect, sph);
-    
+
     // Centiseconds
     TEST_ASSERT(jme_centiseconds_normalize(129600000 + 100) == 100);
     TEST_ASSERT(jme_centiseconds_difference(200, 100) == 100);
     TEST_ASSERT(jme_centiseconds_difference_signed(100, 200) == -100);
     TEST_ASSERT(jme_centiseconds_round_second(150) == 200);
-    
+
     char buf[64];
     jme_centiseconds_to_time_string(12345, buf);
     jme_centiseconds_to_lonlat_string(12345, buf);
     jme_centiseconds_to_degree_string(12345, buf);
 }
 
-void test_time_and_calendar() {
+static void test_time_and_calendar(void)
+{
     printf("Testing time and calendar functions...\n");
     TEST_ASSERT(jme_julian_day(2000, 1, 1, 12.0, JME_CALENDAR_GREGORIAN) == 2451545.0);
     TEST_ASSERT(jme_calendar_is_leap_year(2000, JME_CALENDAR_GREGORIAN) == 1);
@@ -93,48 +99,50 @@ void test_time_and_calendar() {
     TEST_ASSERT(jme_day_of_year(2000, 12, 31, JME_CALENDAR_GREGORIAN) == 366);
     TEST_ASSERT(jme_decimal_hour(12, 30, 0) == 12.5);
     TEST_ASSERT(jme_day_of_week(2451545.0) == 6); // 2000-01-01 was Saturday
-    
+
     int y, m, d, h, min;
     double sec;
     jme_reverse_julian_day(2451545.0, JME_CALENDAR_GREGORIAN, &y, &m, &d, &sec);
     jme_jd_to_utc(2451545.0, JME_CALENDAR_GREGORIAN, &y, &m, &d, &h, &min, &sec);
-    
+
     TEST_ASSERT(jme_jd_add_seconds(2451545.0, 86400.0) == 2451546.0);
     TEST_ASSERT(jme_jd_difference_seconds(2451546.0, 2451545.0) == 86400.0);
-    
+
     jme_utc_time_zone(2000, 1, 1, 12, 0, 0, 5.5, &y, &m, &d, &h, &min, &sec);
     double jd;
     jme_utc_to_jd(2000, 1, 1, 12, 0, 0, JME_CALENDAR_GREGORIAN, &jd);
-    
+
     jme_delta_t(2451545.0);
     char err[256];
     jme_delta_t_ex(2451545.0, JME_MODEL_DELTAT_ESPENAK_MEEUS_2006, err);
 }
 
-void test_coordinate_transforms() {
+static void test_coordinate_transforms(void)
+{
     printf("Testing coordinate transformations...\n");
     double ra, dec, lon, lat, eps = 23.4392911 * 3.141592653589793 / 180.0;
     jme_ecliptic_to_equatorial(0, 0, eps, &ra, &dec);
     jme_equatorial_to_ecliptic(ra, dec, eps, &lon, &lat);
-    
+
     double ecl[6] = {1, 0, 0, 0, 0, 0}, equ[6];
     jme_ecliptic_to_equatorial_rectangular_state(ecl, eps, equ);
     jme_equatorial_to_ecliptic_rectangular_state(equ, eps, ecl);
-    
+
     double az, alt, ha;
     jme_equatorial_to_horizontal(0, 0, 45, &az, &alt);
     jme_horizontal_to_equatorial(az, alt, 45, &ha, &dec);
-    
+
     jme_refract(10.0, 1013.25, 15.0, 0);
     double out_ref[4];
     jme_refract_extended(10.0, 0, 1013.25, 15.0, 0.0065, 0, out_ref);
-    
+
     int ideg, imin, isec, isgn;
     double dsecfr;
     jme_split_degree(12.3456, 0, &ideg, &imin, &isec, &dsecfr, &isgn);
 }
 
-void test_matrix_ops() {
+static void test_matrix_ops(void)
+{
     printf("Testing matrix operations...\n");
     double m1[9], m2[9], m3[9];
     jme_matrix_identity(m1);
@@ -142,14 +150,15 @@ void test_matrix_ops() {
     jme_matrix_rotate_y(0.2, m2);
     jme_matrix_rotate_z(0.3, m2);
     jme_matrix_multiply(m1, m2, m3);
-    
+
     double state_in[6] = {1, 2, 3, 4, 5, 6}, state_out[6];
     jme_matrix_transform_state(m3, state_in, state_out);
-    
+
     jme_get_nutation_matrix(0.01, 0.02, 0.4, m1);
 }
 
-void test_body_info() {
+static void test_body_info(void)
+{
     printf("Testing body info functions...\n");
     TEST_ASSERT(jme_body_id_from_name("Sun") == JME_BODY_SUN);
     TEST_ASSERT(strcmp(jme_body_name(JME_BODY_SUN), "Sun") == 0);
@@ -158,13 +167,14 @@ void test_body_info() {
     TEST_ASSERT(jme_body_naif_id(JME_BODY_SUN) == 10);
 }
 
-void test_state_ops() {
+static void test_state_ops(void)
+{
     printf("Testing state operations...\n");
     double s1[6] = {3, 4, 0, 0, 0, 0};
     TEST_ASSERT(jme_state_distance(s1) == 5.0);
     double s2[6] = {0, 0, 0, 6, 8, 0};
     TEST_ASSERT(jme_state_speed(s2) == 10.0);
-    
+
     double out[6];
     jme_state_add(s1, s2, out);
     jme_state_subtract(s1, s2, out);
@@ -174,13 +184,14 @@ void test_state_ops() {
     jme_state_position_velocity_dot(s1);
 }
 
-void test_ayanamsa_and_sidereal() {
+static void test_ayanamsa_and_sidereal(void)
+{
     printf("Testing ayanamsa and sidereal functions...\n");
     jme_set_sidereal_mode(JME_SIDEREAL_LAHIRI, 0, 0);
     int mode;
     double t0, ayan_t0;
     jme_get_sidereal_mode(&mode, &t0, &ayan_t0);
-    
+
     jme_get_ayanamsa(2451545.0);
     jme_get_ayanamsa_ut(2451545.0);
     double ayan;
@@ -188,19 +199,20 @@ void test_ayanamsa_and_sidereal() {
     jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_LAHIRI, &ayan, err);
     jme_get_ayanamsa_ex_ut(2451545.0, JME_SIDEREAL_LAHIRI, &ayan, err);
     jme_get_ayanamsa_name(JME_SIDEREAL_LAHIRI);
-    
+
     jme_sidereal_time(2451545.0);
     jme_sidereal_time0(2451545.0, 0.4, 0.001);
 }
 
-void test_astro_models_and_params() {
+static void test_astro_models_and_params(void)
+{
     printf("Testing astro models and parameters...\n");
     char models[256];
     jme_set_astro_models("IAU2006", 0);
     TEST_ASSERT(jme_get_astro_models(models, 0) == JME_OK);
     TEST_ASSERT(strstr(models, "OBL=338") != NULL);
     TEST_ASSERT(strstr(models, "PREC=341") != NULL);
-    
+
     jme_set_lapse_rate(0.0065);
     jme_set_interpolate_nut(1);
     jme_set_tid_acc(-25.8);
@@ -210,60 +222,66 @@ void test_astro_models_and_params() {
     jme_set_topo(0, 0, 0);
 }
 
-void test_ephemeris_calls() {
+static void test_ephemeris_calls(void)
+{
     printf("Testing ephemeris and catalog functions...\n");
     double res[20];
     char err[256];
     jme_calc(2451545.0, JME_BODY_SUN, JME_CALC_EQUATORIAL, res, err);
     jme_calc_ut(2451545.0, JME_BODY_SUN, JME_CALC_EQUATORIAL, res, err);
-    TEST_ASSERT(jme_calc_pctr(2451545.0, JME_BODY_MARS, JME_BODY_SUN, JME_CALC_XYZ, res, err) == JME_OK);
+    TEST_ASSERT(
+        jme_calc_pctr(2451545.0, JME_BODY_MARS, JME_BODY_SUN, JME_CALC_XYZ, res, err) == JME_OK
+    );
     jme_pheno(2451545.0, JME_BODY_SUN, 0, res, err);
     jme_pheno_ut(2451545.0, JME_BODY_SUN, 0, res, err);
-    
+
     jme_fixstar("Sirius", 2451545.0, 0, res, err);
     jme_fixstar_ut("Sirius", 2451545.0, 0, res, err);
     jme_fixstar_mag("Sirius", res, err);
     jme_fixstar2("Sirius", 2451545.0, 0, res, err);
     jme_fixstar2_ut("Sirius", 2451545.0, 0, res, err);
     jme_fixstar2_mag("Sirius", res, err);
-    
+
     double cusps[13], ascmc[10];
     jme_houses(2451545.0, 0, 0, 'P', cusps, ascmc);
     jme_houses_ex(2451545.0, 0, 0, 0, 'P', cusps, ascmc);
     double cusps_speed[13], ascmc_speed[10];
     jme_houses_ex2(2451545.0, 0, 0, 0, 'P', cusps, ascmc, cusps_speed, ascmc_speed);
     TEST_ASSERT(jme_houses_armc(0, 0, 0.4, 'E', cusps, ascmc) == JME_OK);
-    TEST_ASSERT(jme_houses_armc_ex2(0, 0, 0.4, 'E', cusps, ascmc, cusps_speed, ascmc_speed) == JME_OK);
+    TEST_ASSERT(
+        jme_houses_armc_ex2(0, 0, 0.4, 'E', cusps, ascmc, cusps_speed, ascmc_speed) == JME_OK
+    );
     res[0] = cusps[1];
     res[1] = 0.0;
     TEST_ASSERT(jme_house_pos(0, 0, 0.4, 'E', res, err) >= 1.0);
     jme_house_system_name('P');
-    
+
     double geopos[3] = {0, 0, 0};
     jme_gauquelin_sector(2451545.0, JME_BODY_SUN, NULL, 0, 0, geopos, 1013, 15, res, err);
 }
 
-void test_eclipses_and_phenomena() {
+static void test_eclipses_and_phenomena(void)
+{
     printf("Testing event function contracts...\n");
     double geopos[3] = {0, 0, 0}, attr[20], tret[20];
     char err[256];
-    
+
     jme_sol_eclipse_where(2451545.0, 0, geopos, attr, err);
     jme_sol_eclipse_how(2451545.0, 0, geopos, attr, err);
     jme_sol_eclipse_when_loc(2451545.0, 0, 0, tret, attr, 0, err);
     jme_sol_eclipse_when_glob(2451545.0, 0, 0, tret, 0, err);
-    
+
     jme_lun_eclipse_how(2451545.0, 0, geopos, attr, err);
     jme_lun_eclipse_when_loc(2451545.0, 0, 0, tret, attr, 0, err);
     jme_lun_eclipse_when(2451545.0, 0, 0, tret, 0, err);
-    
+
     jme_lun_occult_where(2451545.0, JME_BODY_SUN, NULL, 0, geopos, attr, err);
     jme_lun_occult_when_loc(2451545.0, JME_BODY_SUN, NULL, 0, 0, tret, attr, 0, err);
     jme_lun_occult_when_glob(2451545.0, JME_BODY_SUN, NULL, 0, 0, tret, 0, err);
-    
+
     jme_rise_trans(2451545.0, JME_BODY_SUN, NULL, 0, 0, 0, 1013, 15, tret, err);
     jme_rise_trans_true_hor(2451545.0, JME_BODY_SUN, NULL, 0, 0, 0, 1013, 15, 0, tret, err);
-    
+
     jme_solcross(0, 2451545.0, 0, 0, err);
     jme_solcross_ut(0, 2451545.0, 0, 0, err);
     jme_mooncross(0, 2451545.0, 0, 0, err);
@@ -272,13 +290,13 @@ void test_eclipses_and_phenomena() {
     jme_mooncross_node_ut(2451545.0, 0, 0, err);
     jme_helio_cross(JME_BODY_MARS, 0, 2451545.0, 0, 0, err);
     jme_helio_cross_ut(JME_BODY_MARS, 0, 2451545.0, 0, 0, err);
-    
+
     jme_nod_aps(2451545.0, JME_BODY_SUN, 0, 0, tret, err);
     jme_nod_aps_ut(2451545.0, JME_BODY_SUN, 0, 0, tret, err);
     jme_get_orbital_elements(2451545.0, JME_BODY_SUN, 0, attr, err);
     double tmax, tmin, dmax, dmin;
     jme_orbit_max_min_true_distance(2451545.0, JME_BODY_SUN, 0, &tmax, &tmin, &dmax, &dmin, err);
-    
+
     jme_heliacal_ut(2451545.0, geopos, attr, err);
     jme_heliacal_pheno_ut(2451545.0, geopos, attr, err);
     jme_vis_limit_mag(2451545.0, geopos, attr, err);
@@ -286,14 +304,37 @@ void test_eclipses_and_phenomena() {
     jme_topo_arcus_visionis(2451545.0, geopos, attr, err);
 }
 
-void test_jpl_calls() {
+static void test_jpl_calls(void)
+{
     printf("Testing jpl_* functions (may return JME_ERR)...\n");
     double state[12];
     char err[256];
-    
-    jme_jpl_body_state(2451545.0, JME_BODY_SUN, JME_BODY_EARTH, JME_VECTOR_KM_PER_SECOND, state, err);
-    jme_jpl_body_state_split(2451545.0, 0, JME_BODY_SUN, JME_BODY_EARTH, JME_VECTOR_KM_PER_SECOND, state, err);
-    jme_jpl_ecliptic_state(2451545.0, JME_BODY_SUN, JME_BODY_EARTH, JME_VECTOR_KM_PER_SECOND, state, err);
+
+    jme_jpl_body_state(
+        2451545.0,
+        JME_BODY_SUN,
+        JME_BODY_EARTH,
+        JME_VECTOR_KM_PER_SECOND,
+        state,
+        err
+    );
+    jme_jpl_body_state_split(
+        2451545.0,
+        0,
+        JME_BODY_SUN,
+        JME_BODY_EARTH,
+        JME_VECTOR_KM_PER_SECOND,
+        state,
+        err
+    );
+    jme_jpl_ecliptic_state(
+        2451545.0,
+        JME_BODY_SUN,
+        JME_BODY_EARTH,
+        JME_VECTOR_KM_PER_SECOND,
+        state,
+        err
+    );
     jme_jpl_body_state_naif(2451545.0, 10, 399, JME_VECTOR_KM_PER_SECOND, state, err);
     jme_jpl_body_state_split_naif(2451545.0, 0, 10, 399, JME_VECTOR_KM_PER_SECOND, state, err);
     jme_jpl_body_state_native_naif(2451545.0, 10, 399, state, err);
@@ -301,15 +342,84 @@ void test_jpl_calls() {
     jme_jpl_body_state_native_split_naif(2451545.0, 0, 10, 399, state, err);
     jme_jpl_body_state_native_split(2451545.0, 0, JME_BODY_SUN, JME_BODY_EARTH, state, err);
     jme_jpl_body_state_order_naif(2451545.0, 0, 10, 399, JME_VECTOR_KM_PER_SECOND, 1, state, err);
-    jme_jpl_body_state_order(2451545.0, 0, JME_BODY_SUN, JME_BODY_EARTH, JME_VECTOR_KM_PER_SECOND, 1, state, err);
-    jme_jpl_body_state_utc_naif(2000, 1, 1, 12, 0, 0, 1, 10, 399, JME_VECTOR_KM_PER_SECOND, state, err);
-    jme_jpl_body_state_utc(2000, 1, 1, 12, 0, 0, 1, JME_BODY_SUN, JME_BODY_EARTH, JME_VECTOR_KM_PER_SECOND, state, err);
+    jme_jpl_body_state_order(
+        2451545.0,
+        0,
+        JME_BODY_SUN,
+        JME_BODY_EARTH,
+        JME_VECTOR_KM_PER_SECOND,
+        1,
+        state,
+        err
+    );
+    jme_jpl_body_state_utc_naif(
+        2000,
+        1,
+        1,
+        12,
+        0,
+        0,
+        1,
+        10,
+        399,
+        JME_VECTOR_KM_PER_SECOND,
+        state,
+        err
+    );
+    jme_jpl_body_state_utc(
+        2000,
+        1,
+        1,
+        12,
+        0,
+        0,
+        1,
+        JME_BODY_SUN,
+        JME_BODY_EARTH,
+        JME_VECTOR_KM_PER_SECOND,
+        state,
+        err
+    );
     jme_jpl_ecliptic_state_naif(2451545.0, 10, 399, JME_VECTOR_KM_PER_SECOND, state, err);
-    jme_jpl_ecliptic_state_split(2451545.0, 0, JME_BODY_SUN, JME_BODY_EARTH, JME_VECTOR_KM_PER_SECOND, state, err);
+    jme_jpl_ecliptic_state_split(
+        2451545.0,
+        0,
+        JME_BODY_SUN,
+        JME_BODY_EARTH,
+        JME_VECTOR_KM_PER_SECOND,
+        state,
+        err
+    );
     jme_jpl_ecliptic_state_split_naif(2451545.0, 0, 10, 399, JME_VECTOR_KM_PER_SECOND, state, err);
-    jme_jpl_ecliptic_state_utc_naif(2000, 1, 1, 12, 0, 0, 1, 10, 399, JME_VECTOR_KM_PER_SECOND, state, err);
-    jme_jpl_ecliptic_state_utc(2000, 1, 1, 12, 0, 0, 1, JME_BODY_SUN, JME_BODY_EARTH, JME_VECTOR_KM_PER_SECOND, state, err);
-    
+    jme_jpl_ecliptic_state_utc_naif(
+        2000,
+        1,
+        1,
+        12,
+        0,
+        0,
+        1,
+        10,
+        399,
+        JME_VECTOR_KM_PER_SECOND,
+        state,
+        err
+    );
+    jme_jpl_ecliptic_state_utc(
+        2000,
+        1,
+        1,
+        12,
+        0,
+        0,
+        1,
+        JME_BODY_SUN,
+        JME_BODY_EARTH,
+        JME_VECTOR_KM_PER_SECOND,
+        state,
+        err
+    );
+
     double t1, t2;
     int cont;
     jme_jpl_coverage(&t1, &t2, &cont, err);
@@ -320,43 +430,104 @@ void test_jpl_calls() {
     jme_jpl_constant_vector("GROUP", state, 3, err);
     jme_jpl_constant_string("NAME", name, sizeof(name), err);
     jme_jpl_constant_string_vector("NAMES", name, sizeof(name), 1, err);
-    
+
     jme_jpl_engine_version(name, sizeof(name));
     jme_jpl_file_version(name, sizeof(name), err);
     jme_jpl_current_file_data(name, sizeof(name), &t1, &t2, &cont, err);
-    
+
     jme_jpl_is_available();
     jme_jpl_is_open();
     jme_jpl_prefetch(err);
     jme_jpl_is_thread_safe(err);
-    
+
     int id;
     jme_jpl_id_by_name("EARTH", &id, err);
     jme_jpl_name_by_id(399, name, sizeof(name), err);
     jme_jpl_max_supported_order(1);
-    
+
     jme_jpl_position_record_count(err);
     int target, center, frame, seg;
     jme_jpl_position_record_index(0, &target, &center, &t1, &t2, &frame, &seg, err);
-    
+
     jme_jpl_orientation_state_naif(2451545.0, 399, JME_ORIENTATION_RAD_PER_SECOND, state, err);
-    jme_jpl_orientation_state_split_naif(2451545.0, 0, 399, JME_ORIENTATION_RAD_PER_SECOND, state, err);
-    jme_jpl_orientation_state_order_naif(2451545.0, 0, 399, JME_ORIENTATION_RAD_PER_SECOND, 1, state, err);
-    jme_jpl_orientation_state_utc_naif(2000, 1, 1, 12, 0, 0, 1, 399, JME_ORIENTATION_RAD_PER_SECOND, state, err);
-    
-    jme_jpl_rotational_angular_momentum_state_naif(2451545.0, 399, JME_ORIENTATION_RAD_PER_SECOND, state, err);
-    jme_jpl_rotational_angular_momentum_state_utc_naif(2000, 1, 1, 12, 0, 0, 1, 399, JME_ORIENTATION_RAD_PER_SECOND, state, err);
-    jme_jpl_rotational_angular_momentum_state_split_naif(2451545.0, 0, 399, JME_ORIENTATION_RAD_PER_SECOND, state, err);
-    jme_jpl_rotational_angular_momentum_state_order_naif(2451545.0, 0, 399, JME_ORIENTATION_RAD_PER_SECOND, 1, state, err);
-    
+    jme_jpl_orientation_state_split_naif(
+        2451545.0,
+        0,
+        399,
+        JME_ORIENTATION_RAD_PER_SECOND,
+        state,
+        err
+    );
+    jme_jpl_orientation_state_order_naif(
+        2451545.0,
+        0,
+        399,
+        JME_ORIENTATION_RAD_PER_SECOND,
+        1,
+        state,
+        err
+    );
+    jme_jpl_orientation_state_utc_naif(
+        2000,
+        1,
+        1,
+        12,
+        0,
+        0,
+        1,
+        399,
+        JME_ORIENTATION_RAD_PER_SECOND,
+        state,
+        err
+    );
+
+    jme_jpl_rotational_angular_momentum_state_naif(
+        2451545.0,
+        399,
+        JME_ORIENTATION_RAD_PER_SECOND,
+        state,
+        err
+    );
+    jme_jpl_rotational_angular_momentum_state_utc_naif(
+        2000,
+        1,
+        1,
+        12,
+        0,
+        0,
+        1,
+        399,
+        JME_ORIENTATION_RAD_PER_SECOND,
+        state,
+        err
+    );
+    jme_jpl_rotational_angular_momentum_state_split_naif(
+        2451545.0,
+        0,
+        399,
+        JME_ORIENTATION_RAD_PER_SECOND,
+        state,
+        err
+    );
+    jme_jpl_rotational_angular_momentum_state_order_naif(
+        2451545.0,
+        0,
+        399,
+        JME_ORIENTATION_RAD_PER_SECOND,
+        1,
+        state,
+        err
+    );
+
     jme_jpl_orientation_record_count(err);
     jme_jpl_orientation_record_index(0, &target, &t1, &t2, &frame, &seg, err);
     jme_jpl_timescale();
-    
+
     jme_jpl_close();
 }
 
-void test_extended_functions() {
+static void test_extended_functions(void)
+{
     printf("Testing extended functions...\n");
     double d1, d2;
     char err[256];
@@ -367,33 +538,55 @@ void test_extended_functions() {
     double pos[3];
     jme_get_topo_pos(2451545.0, pos, err);
     jme_time_equ(2451545.0, &d1, err);
-    
+
     jme_lmt_to_lat(2451545.0, 0, &d1, err);
     jme_lat_to_lmt(2451545.0, 0, &d1, err);
 }
 
-static int all_finite(const double *v, int n) {
+static int all_finite(const double *v, int n)
+{
     int i;
-    for (i = 0; i < n; i++) if (!isfinite(v[i])) return 0;
+    for (i = 0; i < n; i++) {
+        if (!isfinite(v[i])) {
+            return 0;
+        }
+    }
     return 1;
 }
 
-void test_surface_1_1() {
+static void test_surface_1_1(void)
+{
     printf("Testing functions added in 1.1...\n");
     char err[256];
     double st[6], m[9], a, b, c, cusps[40], ascmc[10];
     int i1, i2;
     double o1, o2;
 
-    TEST_ASSERT(jme_moshier_planet_state(2451545.0, JME_BODY_MARS, st) == JME_OK && all_finite(st, 6));
-    TEST_ASSERT(jme_vsop87_planet_state(2451545.0, JME_BODY_MARS, st) == JME_OK && all_finite(st, 6));
-    TEST_ASSERT(jme_meeus_planet_state(2451545.0, JME_BODY_MARS, st) == JME_OK && all_finite(st, 6));
+    TEST_ASSERT(
+        jme_moshier_planet_state(2451545.0, JME_BODY_MARS, st) == JME_OK && all_finite(st, 6)
+    );
+    TEST_ASSERT(
+        jme_vsop87_planet_state(2451545.0, JME_BODY_MARS, st) == JME_OK && all_finite(st, 6)
+    );
+    TEST_ASSERT(
+        jme_meeus_planet_state(2451545.0, JME_BODY_MARS, st) == JME_OK && all_finite(st, 6)
+    );
     TEST_ASSERT(jme_meeus_sun_state(2451545.0, st) == JME_OK && all_finite(st, 6));
     TEST_ASSERT(jme_meeus_moon_state(2451545.0, st) == JME_OK && all_finite(st, 6));
     TEST_ASSERT(jme_elp2000_moon_state(2451545.0, st) == JME_OK && all_finite(st, 6));
     TEST_ASSERT(jme_get_frame_bias_matrix(JME_MODEL_BIAS_IAU2006, m) == JME_OK && all_finite(m, 9));
 
-    TEST_ASSERT(jme_time_scale_convert(2451545.0, 0.0, JME_TIME_SCALE_TT, JME_TIME_SCALE_TAI, &o1, &o2, err) == JME_OK);
+    TEST_ASSERT(
+        jme_time_scale_convert(
+            2451545.0,
+            0.0,
+            JME_TIME_SCALE_TT,
+            JME_TIME_SCALE_TAI,
+            &o1,
+            &o2,
+            err
+        ) == JME_OK
+    );
     TEST_ASSERT(fabs(((2451545.0 - o1) - o2) * 86400.0 - 32.184) < 1e-6);
     TEST_ASSERT(strcmp(jme_time_scale_name(JME_TIME_SCALE_UTC), "UTC") == 0);
     TEST_ASSERT(jme_time_scale_name(JME_TIME_SCALE_TCB) != NULL);
@@ -410,23 +603,39 @@ void test_surface_1_1() {
     jme_set_polar_motion(0);
     TEST_ASSERT(jme_get_polar_motion() == 0);
 
-    TEST_ASSERT(jme_houses_gauquelin(2451545.0, 0, 28.6, 77.2, cusps, ascmc, err) == JME_OK && all_finite(cusps + 1, 36));
-    TEST_ASSERT(jme_houses_gauquelin_armc(100.0, 28.6, 23.4392911, cusps, ascmc, err) == JME_OK && all_finite(cusps + 1, 36));
+    TEST_ASSERT(
+        jme_houses_gauquelin(2451545.0, 0, 28.6, 77.2, cusps, ascmc, err) == JME_OK &&
+        all_finite(cusps + 1, 36)
+    );
+    TEST_ASSERT(
+        jme_houses_gauquelin_armc(100.0, 28.6, 23.4392911, cusps, ascmc, err) == JME_OK &&
+        all_finite(cusps + 1, 36)
+    );
 
     TEST_ASSERT(jme_set_astro_models_checked("ENGINE=MOSHIER", err) == JME_OK);
     TEST_ASSERT(jme_set_astro_models_checked("ENGINE=NO_SUCH_ENGINE", err) == JME_ERR);
-    TEST_ASSERT(jme_calc_resolve_engine(2451545.0, JME_BODY_MARS, &i1, &i2, err) == JME_OK && i1 == JME_ENGINE_ID_MOSHIER);
+    TEST_ASSERT(
+        jme_calc_resolve_engine(2451545.0, JME_BODY_MARS, &i1, &i2, err) == JME_OK &&
+        i1 == JME_ENGINE_ID_MOSHIER
+    );
     TEST_ASSERT(jme_get_jpl_center_policy() == JME_JPL_CENTER_STRICT);
     TEST_ASSERT(jme_set_jpl_center_policy(JME_JPL_CENTER_BARYCENTER, err) == JME_OK);
     TEST_ASSERT(jme_set_jpl_center_policy(JME_JPL_CENTER_STRICT, err) == JME_OK);
     TEST_ASSERT(jme_set_topo_checked(77.2, 28.6, 216.0, err) == JME_OK);
     TEST_ASSERT(jme_set_sidereal_mode_checked(JME_SIDEREAL_LAHIRI, 0.0, 0.0, err) == JME_OK);
     TEST_ASSERT(jme_sidereal_time_ex(2451545.0, 1, &a, err) == JME_OK && a >= 0.0 && a < 24.0);
-    TEST_ASSERT(jme_get_ayanamsa_ex2(2451545.0, JME_SIDEREAL_LAHIRI, JME_AYANAMSA_MEAN, &a, &b, err) == JME_OK);
-    TEST_ASSERT(jme_get_ayanamsa_ex2_ut(2451545.0, JME_SIDEREAL_LAHIRI, JME_AYANAMSA_TRUE, &a, NULL, err) == JME_OK);
+    TEST_ASSERT(
+        jme_get_ayanamsa_ex2(2451545.0, JME_SIDEREAL_LAHIRI, JME_AYANAMSA_MEAN, &a, &b, err) ==
+        JME_OK
+    );
+    TEST_ASSERT(
+        jme_get_ayanamsa_ex2_ut(2451545.0, JME_SIDEREAL_LAHIRI, JME_AYANAMSA_TRUE, &a, NULL, err) ==
+        JME_OK
+    );
 }
 
-int main() {
+int main(void)
+{
     setbuf(stdout, NULL);
     test_metadata_and_paths();
     test_utility_math();
@@ -442,7 +651,7 @@ int main() {
     test_jpl_calls();
     test_extended_functions();
     test_surface_1_1();
-    
+
     printf("\nAll functions tested successfully!\n");
     return 0;
 }

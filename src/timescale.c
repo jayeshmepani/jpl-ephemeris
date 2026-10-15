@@ -35,7 +35,12 @@
  * iterations, deflector states, rate stencils).
  */
 #define JME_DTDB_MEMO 16
-typedef struct { double d1, d2, v; int used; } jme_dtdb_memo_entry;
+
+typedef struct {
+    double d1, d2, v;
+    int used;
+} jme_dtdb_memo_entry;
+
 static JME_THREAD_LOCAL jme_dtdb_memo_entry g_dtdb_memo[JME_DTDB_MEMO];
 static JME_THREAD_LOCAL int g_dtdb_memo_next;
 
@@ -44,7 +49,9 @@ double internal_dtdb(double d1, double d2)
     int i;
     double v;
     for (i = 0; i < JME_DTDB_MEMO; i++) {
-        if (g_dtdb_memo[i].used && g_dtdb_memo[i].d1 == d1 && g_dtdb_memo[i].d2 == d2) return g_dtdb_memo[i].v;
+        if (g_dtdb_memo[i].used && g_dtdb_memo[i].d1 == d1 && g_dtdb_memo[i].d2 == d2) {
+            return g_dtdb_memo[i].v;
+        }
     }
     v = jme_erfa_dtdb(d1, d2, 0.0, 0.0, 0.0, 0.0);
     g_dtdb_memo[g_dtdb_memo_next].d1 = d1;
@@ -69,8 +76,8 @@ static int ts_utc_to_tai(double u1, double u2, double *t1, double *t2, char *err
         jme_set_error(error, "UTC date is outside the supported calendar range");
         return JME_ERR;
     }
-    if (internal_tai_minus_utc(iy, im, id, 0.0, &dat0, error) != JME_OK
-        || internal_tai_minus_utc(iy, im, id, 0.5, &dat12, error) != JME_OK) {
+    if (internal_tai_minus_utc(iy, im, id, 0.0, &dat0, error) != JME_OK ||
+        internal_tai_minus_utc(iy, im, id, 0.5, &dat12, error) != JME_OK) {
         return JME_ERR;
     }
     if (jme_eraJd2cal(v1 + 1.5, v2 - fd, &iyt, &imt, &idt, &w) != 0) {
@@ -79,7 +86,11 @@ static int ts_utc_to_tai(double u1, double u2, double *t1, double *t2, char *err
     }
     if (internal_tai_minus_utc(iyt, imt, idt, 0.0, &dat24, error) != JME_OK) {
         /* Last day covered by the table: a leap second at its end is not yet known. */
-        jme_set_error(error, "UTC day length is unknown: TAI-UTC for the following day is beyond the leap-second table");
+        jme_set_error(
+            error,
+            "UTC day length is unknown: TAI-UTC for the following day is beyond "
+            "the leap-second table"
+        );
         return JME_ERR;
     }
     dlod = 2.0 * (dat12 - dat0);
@@ -93,7 +104,13 @@ static int ts_utc_to_tai(double u1, double u2, double *t1, double *t2, char *err
     a2 = z1 - v1;
     a2 += z2;
     a2 += fd + dat0 / TS_DAYSEC;
-    if (big1) { *t1 = v1; *t2 = a2; } else { *t1 = a2; *t2 = v1; }
+    if (big1) {
+        *t1 = v1;
+        *t2 = a2;
+    } else {
+        *t1 = a2;
+        *t2 = v1;
+    }
     return JME_OK;
 }
 
@@ -104,11 +121,19 @@ static int ts_tai_to_utc(double a1, double a2, double *u1o, double *u2o, char *e
     double u1 = b1, u2 = b2, g1, g2;
     int i;
     for (i = 0; i < 3; i++) {
-        if (ts_utc_to_tai(u1, u2, &g1, &g2, error) != JME_OK) return JME_ERR;
+        if (ts_utc_to_tai(u1, u2, &g1, &g2, error) != JME_OK) {
+            return JME_ERR;
+        }
         u2 += b1 - g1;
         u2 += b2 - g2;
     }
-    if (big1) { *u1o = u1; *u2o = u2; } else { *u1o = u2; *u2o = u1; }
+    if (big1) {
+        *u1o = u1;
+        *u2o = u2;
+    } else {
+        *u1o = u2;
+        *u2o = u1;
+    }
     return JME_OK;
 }
 
@@ -119,9 +144,17 @@ static int ts_tt_to_tdb(double t1, double t2, double *o1, double *o2, char *erro
     double frac = (t1 - day) + t2;
     double d0, f0;
     /* Normalise the split without losing the fraction's precision. */
-    while (frac < 0.0) { frac += 1.0; day -= 1.0; }
-    while (frac >= 1.0) { frac -= 1.0; day += 1.0; }
-    if (internal_tt_to_tdb_split(day, frac, &d0, &f0, error) != JME_OK) return JME_ERR;
+    while (frac < 0.0) {
+        frac += 1.0;
+        day -= 1.0;
+    }
+    while (frac >= 1.0) {
+        frac -= 1.0;
+        day += 1.0;
+    }
+    if (internal_tt_to_tdb_split(day, frac, &d0, &f0, error) != JME_OK) {
+        return JME_ERR;
+    }
     *o1 = d0;
     *o2 = f0;
     return JME_OK;
@@ -138,7 +171,9 @@ static int ts_tdb_to_tt(double b1, double b2, double *o1, double *o2, char *erro
             jme_set_error(error, "ERFA TDB-TT offset is not finite");
             return JME_ERR;
         }
-        if (dtr == prev) break;
+        if (dtr == prev) {
+            break;
+        }
         prev = dtr;
         tt2 = b2 - dtr / TS_DAYSEC;
     }
@@ -158,12 +193,16 @@ static int ts_tt_to_ut1(double t1, double t2, double *o1, double *o2, char *erro
 
     /* Solve TT = UT1 + Delta-T(UT1) on the original two-part date. */
     dts = internal_delta_t_ex_split(t1, t2, jme_context_deltat_model(), error);
-    if (!isfinite(dts)) return JME_ERR;
+    if (!isfinite(dts)) {
+        return JME_ERR;
+    }
 
     for (i = 0; i < 50; i++) {
         double ut2 = t2 - dts / TS_DAYSEC;
         next_dts = internal_delta_t_ex_split(t1, ut2, jme_context_deltat_model(), error);
-        if (!isfinite(next_dts)) return JME_ERR;
+        if (!isfinite(next_dts)) {
+            return JME_ERR;
+        }
         if (fabs(next_dts - dts) < 1.0e-9) {
             dts = next_dts;
             converged = 1;
@@ -185,7 +224,9 @@ static int ts_ut1_to_tt(double u1, double u2, double *o1, double *o2, char *erro
 {
     double dts = internal_delta_t_ex_split(u1, u2, jme_context_deltat_model(), error);
     if (!isfinite(dts)) {
-        if (error != 0 && error[0] == '\0') jme_set_error(error, "Delta-T calculation failed");
+        if (error != 0 && error[0] == '\0') {
+            jme_set_error(error, "Delta-T calculation failed");
+        }
         return JME_ERR;
     }
     *o1 = u1;
@@ -198,18 +239,36 @@ static int ts_to_tt(int from, double a, double b, double *o1, double *o2, char *
 {
     double x1, x2;
     switch (from) {
-    case JME_TIME_SCALE_TT: *o1 = a; *o2 = b; return JME_OK;
-    case JME_TIME_SCALE_TAI: *o1 = a; *o2 = b + 32.184 / TS_DAYSEC; return JME_OK;
+    case JME_TIME_SCALE_TT:
+        *o1 = a;
+        *o2 = b;
+        return JME_OK;
+    case JME_TIME_SCALE_TAI:
+        *o1 = a;
+        *o2 = b + 32.184 / TS_DAYSEC;
+        return JME_OK;
     case JME_TIME_SCALE_UTC:
-        if (ts_utc_to_tai(a, b, &x1, &x2, error) != JME_OK) return JME_ERR;
-        *o1 = x1; *o2 = x2 + 32.184 / TS_DAYSEC; return JME_OK;
-    case JME_TIME_SCALE_UT1: return ts_ut1_to_tt(a, b, o1, o2, error);
-    case JME_TIME_SCALE_TDB: return ts_tdb_to_tt(a, b, o1, o2, error);
+        if (ts_utc_to_tai(a, b, &x1, &x2, error) != JME_OK) {
+            return JME_ERR;
+        }
+        *o1 = x1;
+        *o2 = x2 + 32.184 / TS_DAYSEC;
+        return JME_OK;
+    case JME_TIME_SCALE_UT1:
+        return ts_ut1_to_tt(a, b, o1, o2, error);
+    case JME_TIME_SCALE_TDB:
+        return ts_tdb_to_tt(a, b, o1, o2, error);
     case JME_TIME_SCALE_TCB:
-        if (jme_eraTcbtdb(a, b, &x1, &x2) != 0) { jme_set_error(error, "TCB-to-TDB conversion failed"); return JME_ERR; }
+        if (jme_eraTcbtdb(a, b, &x1, &x2) != 0) {
+            jme_set_error(error, "TCB-to-TDB conversion failed");
+            return JME_ERR;
+        }
         return ts_tdb_to_tt(x1, x2, o1, o2, error);
     case JME_TIME_SCALE_TCG:
-        if (jme_eraTcgtt(a, b, o1, o2) != 0) { jme_set_error(error, "TCG-to-TT conversion failed"); return JME_ERR; }
+        if (jme_eraTcgtt(a, b, o1, o2) != 0) {
+            jme_set_error(error, "TCG-to-TT conversion failed");
+            return JME_ERR;
+        }
         return JME_OK;
     default:
         jme_set_error(error, "Unsupported source time scale");
@@ -221,17 +280,34 @@ static int ts_from_tt(int to, double a, double b, double *o1, double *o2, char *
 {
     double x1, x2;
     switch (to) {
-    case JME_TIME_SCALE_TT: *o1 = a; *o2 = b; return JME_OK;
-    case JME_TIME_SCALE_TAI: *o1 = a; *o2 = b - 32.184 / TS_DAYSEC; return JME_OK;
-    case JME_TIME_SCALE_UTC: return ts_tai_to_utc(a, b - 32.184 / TS_DAYSEC, o1, o2, error);
-    case JME_TIME_SCALE_UT1: return ts_tt_to_ut1(a, b, o1, o2, error);
-    case JME_TIME_SCALE_TDB: return ts_tt_to_tdb(a, b, o1, o2, error);
+    case JME_TIME_SCALE_TT:
+        *o1 = a;
+        *o2 = b;
+        return JME_OK;
+    case JME_TIME_SCALE_TAI:
+        *o1 = a;
+        *o2 = b - 32.184 / TS_DAYSEC;
+        return JME_OK;
+    case JME_TIME_SCALE_UTC:
+        return ts_tai_to_utc(a, b - 32.184 / TS_DAYSEC, o1, o2, error);
+    case JME_TIME_SCALE_UT1:
+        return ts_tt_to_ut1(a, b, o1, o2, error);
+    case JME_TIME_SCALE_TDB:
+        return ts_tt_to_tdb(a, b, o1, o2, error);
     case JME_TIME_SCALE_TCB:
-        if (ts_tt_to_tdb(a, b, &x1, &x2, error) != JME_OK) return JME_ERR;
-        if (jme_erfa_tdbtcb(x1, x2, o1, o2) != 0) { jme_set_error(error, "TDB-to-TCB conversion failed"); return JME_ERR; }
+        if (ts_tt_to_tdb(a, b, &x1, &x2, error) != JME_OK) {
+            return JME_ERR;
+        }
+        if (jme_erfa_tdbtcb(x1, x2, o1, o2) != 0) {
+            jme_set_error(error, "TDB-to-TCB conversion failed");
+            return JME_ERR;
+        }
         return JME_OK;
     case JME_TIME_SCALE_TCG:
-        if (jme_eraTttcg(a, b, o1, o2) != 0) { jme_set_error(error, "TT-to-TCG conversion failed"); return JME_ERR; }
+        if (jme_eraTttcg(a, b, o1, o2) != 0) {
+            jme_set_error(error, "TT-to-TCG conversion failed");
+            return JME_ERR;
+        }
         return JME_OK;
     default:
         jme_set_error(error, "Unsupported target time scale");
@@ -239,11 +315,20 @@ static int ts_from_tt(int to, double a, double b, double *o1, double *o2, char *
     }
 }
 
-int jme_time_scale_convert(double jd1, double jd2, int from_scale, int to_scale,
-    double *out1, double *out2, char *error)
+int jme_time_scale_convert(
+    double jd1,
+    double jd2,
+    int from_scale,
+    int to_scale,
+    double *out1,
+    double *out2,
+    char *error
+)
 {
     double t1, t2, r1, r2;
-    if (error != 0) error[0] = '\0';
+    if (error != 0) {
+        error[0] = '\0';
+    }
     if (out1 == 0 || out2 == 0) {
         jme_set_error(error, "Two-part Julian date outputs are required");
         return JME_ERR;
@@ -263,28 +348,42 @@ int jme_time_scale_convert(double jd1, double jd2, int from_scale, int to_scale,
         *out2 = jd2;
         return JME_OK;
     }
-    if (ts_to_tt(from_scale, jd1, jd2, &t1, &t2, error) != JME_OK) return JME_ERR;
-    if (ts_from_tt(to_scale, t1, t2, &r1, &r2, error) != JME_OK) return JME_ERR;
+    if (ts_to_tt(from_scale, jd1, jd2, &t1, &t2, error) != JME_OK) {
+        return JME_ERR;
+    }
+    if (ts_from_tt(to_scale, t1, t2, &r1, &r2, error) != JME_OK) {
+        return JME_ERR;
+    }
     if (!isfinite(r1) || !isfinite(r2)) {
         jme_set_error(error, "Time-scale conversion produced a non-finite result");
         return JME_ERR;
     }
     *out1 = r1;
     *out2 = r2;
-    if (error != 0) error[0] = '\0';
+    if (error != 0) {
+        error[0] = '\0';
+    }
     return JME_OK;
 }
 
 const char *jme_time_scale_name(int scale)
 {
     switch (scale) {
-    case JME_TIME_SCALE_UTC: return "UTC";
-    case JME_TIME_SCALE_UT1: return "UT1";
-    case JME_TIME_SCALE_TAI: return "TAI";
-    case JME_TIME_SCALE_TT: return "TT";
-    case JME_TIME_SCALE_TDB: return "TDB";
-    case JME_TIME_SCALE_TCG: return "TCG";
-    case JME_TIME_SCALE_TCB: return "TCB";
-    default: return "Unknown time scale";
+    case JME_TIME_SCALE_UTC:
+        return "UTC";
+    case JME_TIME_SCALE_UT1:
+        return "UT1";
+    case JME_TIME_SCALE_TAI:
+        return "TAI";
+    case JME_TIME_SCALE_TT:
+        return "TT";
+    case JME_TIME_SCALE_TDB:
+        return "TDB";
+    case JME_TIME_SCALE_TCG:
+        return "TCG";
+    case JME_TIME_SCALE_TCB:
+        return "TCB";
+    default:
+        return "Unknown time scale";
     }
 }

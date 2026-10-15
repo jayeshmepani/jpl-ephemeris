@@ -25,15 +25,33 @@ int main(void)
         for (i = 0; i < 3; i++) {
             double dp = fabs(s[i] - r->pos[i]);
             double dv = fabs(s[i + 3] - r->vel[i]);
-            if (dp > worst_p) worst_p = dp;
-            if (dv > worst_v) worst_v = dv;
+            if (dp > worst_p) {
+                worst_p = dp;
+            }
+            if (dv > worst_v) {
+                worst_v = dv;
+            }
             /* printed values are rounded to 10 decimals: |error| <= 5e-11 + FP */
             if (dp > 5.0e-11 + 1e-15 || dv > 5.0e-11 + 1e-15) {
-                fprintf(stderr, "row %zu body %d jd %.1f coord %d: dp %.3e dv %.3e\n", k, r->body, r->jd, i, dp, dv);
+                fprintf(
+                    stderr,
+                    "row %zu body %d jd %.1f coord %d: dp %.3e dv %.3e\n",
+                    k,
+                    r->body,
+                    r->jd,
+                    i,
+                    dp,
+                    dv
+                );
                 failures++;
             }
         }
     }
-    printf("VSOP87A check: %zu epochs, worst position %.3e au, worst velocity %.3e au/d\n", n, worst_p, worst_v);
+    printf(
+        "VSOP87A check: %zu epochs, worst position %.3e au, worst velocity %.3e au/d\n",
+        n,
+        worst_p,
+        worst_v
+    );
     return failures == 0 ? 0 : 1;
 }

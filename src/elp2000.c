@@ -1,5 +1,5 @@
 #include "jme/jme.h"
-int jme_elp82b_geocentric_km(double jd_tdb, double *xyz);
+#include "context.h"
 #include <math.h>
 
 /* jd is TDB (callers convert from TT). */
@@ -25,7 +25,9 @@ int jme_internal_elp2000_moon_position(double jd_et, double *results)
     int i;
 
     if (results != 0) {
-        for (i = 0; i < 6; i++) { results[i] = 0.0; }
+        for (i = 0; i < 6; i++) {
+            results[i] = 0.0;
+        }
     }
 
     if (results == 0) {
@@ -34,8 +36,6 @@ int jme_internal_elp2000_moon_position(double jd_et, double *results)
 
     return elp2000_position(jd_et, results);
 }
-
-int jme_elp82b_geocentric_state_km(double jd_tdb, double *xyz, double *vel);
 
 /*
  * Geocentric Moon from the complete ELP 2000-82B series: position (AU) and
@@ -49,7 +49,9 @@ int jme_elp2000_moon_state(double jd_et, double *results)
     if (results == 0) {
         return JME_ERR;
     }
-    for (i = 0; i < 6; i++) { results[i] = 0.0; }
+    for (i = 0; i < 6; i++) {
+        results[i] = 0.0;
+    }
     if (jme_elp82b_geocentric_state_km(jd_et, km, kmd) != JME_OK) {
         return JME_ERR;
     }

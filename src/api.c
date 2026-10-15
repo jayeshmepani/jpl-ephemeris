@@ -19,8 +19,12 @@ static int token_matches(const char *token, const char *expected)
     while (token[i] != '\0' && expected[i] != '\0') {
         char a = token[i];
         char b = expected[i];
-        if (a >= 'a' && a <= 'z') { a = (char)(a - 'a' + 'A'); }
-        if (b >= 'a' && b <= 'z') { b = (char)(b - 'a' + 'A'); }
+        if (a >= 'a' && a <= 'z') {
+            a = (char)(a - 'a' + 'A');
+        }
+        if (b >= 'a' && b <= 'z') {
+            b = (char)(b - 'a' + 'A');
+        }
         if (a != b) {
             return 0;
         }
@@ -43,9 +47,12 @@ static void set_default_models(jme_context *ctx)
 static const char *engine_policy_name(int engine_policy)
 {
     switch (engine_policy) {
-    case JME_ENGINE_JPL: return "JPL";
-    case JME_ENGINE_MOSHIER: return "MOSHIER";
-    case JME_ENGINE_VSOP_ELP_MEEUS: return "VSOP_ELP_MEEUS";
+    case JME_ENGINE_JPL:
+        return "JPL";
+    case JME_ENGINE_MOSHIER:
+        return "MOSHIER";
+    case JME_ENGINE_VSOP_ELP_MEEUS:
+        return "VSOP_ELP_MEEUS";
     case JME_ENGINE_AUTO:
     default:
         return "AUTO";
@@ -54,7 +61,9 @@ static const char *engine_policy_name(int engine_policy)
 
 static void write_model_summary(jme_context *ctx)
 {
-    snprintf(ctx->astro_models, sizeof(ctx->astro_models),
+    snprintf(
+        ctx->astro_models,
+        sizeof(ctx->astro_models),
         "BIAS=%d;NUT=%d;OBL=%d;PREC=%d;SIDT=%d;DELTAT=%d;ENGINE=%s",
         ctx->model_bias,
         ctx->model_nut,
@@ -62,7 +71,8 @@ static void write_model_summary(jme_context *ctx)
         ctx->model_prec,
         ctx->model_sidt,
         ctx->model_deltat,
-        engine_policy_name(ctx->engine_policy));
+        engine_policy_name(ctx->engine_policy)
+    );
     if (ctx->jpl_center_policy == JME_JPL_CENTER_BARYCENTER) {
         size_t n = strlen(ctx->astro_models);
         snprintf(ctx->astro_models + n, sizeof(ctx->astro_models) - n, ";JPL_CENTER=BARYCENTER");
@@ -86,8 +96,12 @@ static int token_value_matches(const char *token, const char *prefix, const char
     while (prefix[i] != '\0') {
         char a = token[i];
         char b = prefix[i];
-        if (a >= 'a' && a <= 'z') { a = (char)(a - 'a' + 'A'); }
-        if (b >= 'a' && b <= 'z') { b = (char)(b - 'a' + 'A'); }
+        if (a >= 'a' && a <= 'z') {
+            a = (char)(a - 'a' + 'A');
+        }
+        if (b >= 'a' && b <= 'z') {
+            b = (char)(b - 'a' + 'A');
+        }
         if (a != b) {
             return 0;
         }
@@ -99,7 +113,8 @@ static int token_value_matches(const char *token, const char *prefix, const char
 
 static int apply_model_token(jme_context *ctx, const char *token)
 {
-    if (token_matches(token, "DEFAULT") || token_matches(token, "IAU1980") || token_matches(token, "IAU1976")) {
+    if (token_matches(token, "DEFAULT") || token_matches(token, "IAU1980") ||
+        token_matches(token, "IAU1976")) {
         set_default_models(ctx);
     } else if (token_matches(token, "IAU2000")) {
         ctx->model_bias = JME_MODEL_BIAS_IAU2000;
@@ -123,72 +138,163 @@ static int apply_model_token(jme_context *ctx, const char *token)
         ctx->model_obl = JME_MODEL_OBL_IAU_2006;
         ctx->model_prec = JME_MODEL_PREC_IAU_2006;
         ctx->model_sidt = JME_MODEL_SIDT_IAU_2006;
-    } else if (token_matches(token, "NUT2006A") || token_value_matches(token, "NUT=", "IAU2006A") || token_value_matches(token, "NUT=", "351")) {
+    } else if (
+        token_matches(token, "NUT2006A") || token_value_matches(token, "NUT=", "IAU2006A") ||
+        token_value_matches(token, "NUT=", "351")
+    ) {
         ctx->model_nut = JME_MODEL_NUT_IAU_2006A;
-    } else if (token_matches(token, "NUT2000A") || token_value_matches(token, "NUT=", "IAU2000A") || token_value_matches(token, "NUT=", "334")) {
+    } else if (
+        token_matches(token, "NUT2000A") || token_value_matches(token, "NUT=", "IAU2000A") ||
+        token_value_matches(token, "NUT=", "334")
+    ) {
         ctx->model_nut = JME_MODEL_NUT_IAU_2000A;
-    } else if (token_matches(token, "PREC_LASKAR1986") || token_value_matches(token, "PREC=", "LASKAR1986") || token_value_matches(token, "PREC=", "342")) {
+    } else if (
+        token_matches(token, "PREC_LASKAR1986") ||
+        token_value_matches(token, "PREC=", "LASKAR1986") ||
+        token_value_matches(token, "PREC=", "342")
+    ) {
         ctx->model_prec = JME_MODEL_PREC_LASKAR_1986;
-    } else if (token_matches(token, "PREC_VONDRAK2011") || token_value_matches(token, "PREC=", "VONDRAK2011") || token_value_matches(token, "PREC=", "343")) {
+    } else if (
+        token_matches(token, "PREC_VONDRAK2011") ||
+        token_value_matches(token, "PREC=", "VONDRAK2011") ||
+        token_value_matches(token, "PREC=", "343")
+    ) {
         ctx->model_prec = JME_MODEL_PREC_VONDRAK_2011;
-    } else if (token_matches(token, "BIASNONE") || token_value_matches(token, "BIAS=", "NONE") || token_value_matches(token, "BIAS=", "332")) {
+    } else if (
+        token_matches(token, "BIASNONE") || token_value_matches(token, "BIAS=", "NONE") ||
+        token_value_matches(token, "BIAS=", "332")
+    ) {
         ctx->model_bias = JME_MODEL_BIAS_NONE;
-    } else if (token_matches(token, "BIAS2000") || token_value_matches(token, "BIAS=", "IAU2000") || token_value_matches(token, "BIAS=", "330")) {
+    } else if (
+        token_matches(token, "BIAS2000") || token_value_matches(token, "BIAS=", "IAU2000") ||
+        token_value_matches(token, "BIAS=", "330")
+    ) {
         ctx->model_bias = JME_MODEL_BIAS_IAU2000;
-    } else if (token_matches(token, "BIAS2006") || token_value_matches(token, "BIAS=", "IAU2006") || token_value_matches(token, "BIAS=", "331")) {
+    } else if (
+        token_matches(token, "BIAS2006") || token_value_matches(token, "BIAS=", "IAU2006") ||
+        token_value_matches(token, "BIAS=", "331")
+    ) {
         ctx->model_bias = JME_MODEL_BIAS_IAU2006;
-    } else if (token_matches(token, "NUT1980") || token_value_matches(token, "NUT=", "IAU1980") || token_value_matches(token, "NUT=", "333")) {
+    } else if (
+        token_matches(token, "NUT1980") || token_value_matches(token, "NUT=", "IAU1980") ||
+        token_value_matches(token, "NUT=", "333")
+    ) {
         ctx->model_nut = JME_MODEL_NUT_IAU_1980;
-    } else if (token_matches(token, "NUT2000B") || token_value_matches(token, "NUT=", "IAU2000B") || token_value_matches(token, "NUT=", "335")) {
+    } else if (
+        token_matches(token, "NUT2000B") || token_value_matches(token, "NUT=", "IAU2000B") ||
+        token_value_matches(token, "NUT=", "335")
+    ) {
         ctx->model_nut = JME_MODEL_NUT_IAU_2000B;
-    } else if (token_matches(token, "OBL1980") || token_value_matches(token, "OBL=", "IAU1980") || token_value_matches(token, "OBL=", "336")) {
+    } else if (
+        token_matches(token, "OBL1980") || token_value_matches(token, "OBL=", "IAU1980") ||
+        token_value_matches(token, "OBL=", "336")
+    ) {
         ctx->model_obl = JME_MODEL_OBL_IAU_1980;
-    } else if (token_matches(token, "OBL2000") || token_value_matches(token, "OBL=", "IAU2000") || token_value_matches(token, "OBL=", "337")) {
+    } else if (
+        token_matches(token, "OBL2000") || token_value_matches(token, "OBL=", "IAU2000") ||
+        token_value_matches(token, "OBL=", "337")
+    ) {
         ctx->model_obl = JME_MODEL_OBL_IAU_2000;
-    } else if (token_matches(token, "OBL2006") || token_value_matches(token, "OBL=", "IAU2006") || token_value_matches(token, "OBL=", "338")) {
+    } else if (
+        token_matches(token, "OBL2006") || token_value_matches(token, "OBL=", "IAU2006") ||
+        token_value_matches(token, "OBL=", "338")
+    ) {
         ctx->model_obl = JME_MODEL_OBL_IAU_2006;
-    } else if (token_matches(token, "PREC1976") || token_value_matches(token, "PREC=", "IAU1976") || token_value_matches(token, "PREC=", "339")) {
+    } else if (
+        token_matches(token, "PREC1976") || token_value_matches(token, "PREC=", "IAU1976") ||
+        token_value_matches(token, "PREC=", "339")
+    ) {
         ctx->model_prec = JME_MODEL_PREC_IAU_1976;
-    } else if (token_matches(token, "PREC2000") || token_value_matches(token, "PREC=", "IAU2000") || token_value_matches(token, "PREC=", "340")) {
+    } else if (
+        token_matches(token, "PREC2000") || token_value_matches(token, "PREC=", "IAU2000") ||
+        token_value_matches(token, "PREC=", "340")
+    ) {
         ctx->model_prec = JME_MODEL_PREC_IAU_2000;
-    } else if (token_matches(token, "PREC2006") || token_value_matches(token, "PREC=", "IAU2006") || token_value_matches(token, "PREC=", "341")) {
+    } else if (
+        token_matches(token, "PREC2006") || token_value_matches(token, "PREC=", "IAU2006") ||
+        token_value_matches(token, "PREC=", "341")
+    ) {
         ctx->model_prec = JME_MODEL_PREC_IAU_2006;
-    } else if (token_matches(token, "SIDT1976") || token_value_matches(token, "SIDT=", "IAU1976") || token_value_matches(token, "SIDT=", "344")) {
+    } else if (
+        token_matches(token, "SIDT1976") || token_value_matches(token, "SIDT=", "IAU1976") ||
+        token_value_matches(token, "SIDT=", "344")
+    ) {
         ctx->model_sidt = JME_MODEL_SIDT_IAU_1976;
-    } else if (token_matches(token, "SIDT2006") || token_value_matches(token, "SIDT=", "IAU2006") || token_value_matches(token, "SIDT=", "345")) {
+    } else if (
+        token_matches(token, "SIDT2006") || token_value_matches(token, "SIDT=", "IAU2006") ||
+        token_value_matches(token, "SIDT=", "345")
+    ) {
         ctx->model_sidt = JME_MODEL_SIDT_IAU_2006;
-    } else if (token_matches(token, "DELTAT1984") || token_value_matches(token, "DELTAT=", "STEPHENSON_MORRISON_1984") || token_value_matches(token, "DELTAT=", "346")) {
+    } else if (
+        token_matches(token, "DELTAT1984") ||
+        token_value_matches(token, "DELTAT=", "STEPHENSON_MORRISON_1984") ||
+        token_value_matches(token, "DELTAT=", "346")
+    ) {
         ctx->model_deltat = JME_MODEL_DELTAT_STEPHENSON_MORRISON_1984;
-    } else if (token_matches(token, "DELTAT1997") || token_value_matches(token, "DELTAT=", "STEPHENSON_1997") || token_value_matches(token, "DELTAT=", "347")) {
+    } else if (
+        token_matches(token, "DELTAT1997") ||
+        token_value_matches(token, "DELTAT=", "STEPHENSON_1997") ||
+        token_value_matches(token, "DELTAT=", "347")
+    ) {
         ctx->model_deltat = JME_MODEL_DELTAT_STEPHENSON_1997;
-    } else if (token_matches(token, "DELTAT2004") || token_value_matches(token, "DELTAT=", "STEPHENSON_MORRISON_2004") || token_value_matches(token, "DELTAT=", "348")) {
+    } else if (
+        token_matches(token, "DELTAT2004") ||
+        token_value_matches(token, "DELTAT=", "STEPHENSON_MORRISON_2004") ||
+        token_value_matches(token, "DELTAT=", "348")
+    ) {
         ctx->model_deltat = JME_MODEL_DELTAT_STEPHENSON_MORRISON_2004;
-    } else if (token_matches(token, "DELTAT2006") || token_value_matches(token, "DELTAT=", "ESPENAK_MEEUS_2006") || token_value_matches(token, "DELTAT=", "349")) {
+    } else if (
+        token_matches(token, "DELTAT2006") ||
+        token_value_matches(token, "DELTAT=", "ESPENAK_MEEUS_2006") ||
+        token_value_matches(token, "DELTAT=", "349")
+    ) {
         ctx->model_deltat = JME_MODEL_DELTAT_ESPENAK_MEEUS_2006;
-    } else if (token_matches(token, "DELTATAUTO") || token_value_matches(token, "DELTAT=", "AUTOMATIC")
-        || token_value_matches(token, "DELTAT=", "AUTO") || token_value_matches(token, "DELTAT=", "389")) {
+    } else if (
+        token_matches(token, "DELTATAUTO") || token_value_matches(token, "DELTAT=", "AUTOMATIC") ||
+        token_value_matches(token, "DELTAT=", "AUTO") ||
+        token_value_matches(token, "DELTAT=", "389")
+    ) {
         ctx->model_deltat = JME_TIME_DELTAT_AUTOMATIC;
-    } else if (token_value_matches(token, "DELTAT=", "MS2004_TABLE1_LINEAR") || token_value_matches(token, "DELTAT=", "408")) {
+    } else if (
+        token_value_matches(token, "DELTAT=", "MS2004_TABLE1_LINEAR") ||
+        token_value_matches(token, "DELTAT=", "408")
+    ) {
         ctx->model_deltat = JME_MODEL_DELTAT_MS2004_TABLE1_LINEAR;
-    } else if (token_matches(token, "DELTAT2021") || token_value_matches(token, "DELTAT=", "STEPHENSON_ETC_2021") || token_value_matches(token, "DELTAT=", "407")) {
+    } else if (
+        token_matches(token, "DELTAT2021") ||
+        token_value_matches(token, "DELTAT=", "STEPHENSON_ETC_2021") ||
+        token_value_matches(token, "DELTAT=", "407")
+    ) {
         ctx->model_deltat = JME_MODEL_DELTAT_STEPHENSON_ETC_2021;
-    } else if (token_matches(token, "DELTAT2016") || token_value_matches(token, "DELTAT=", "STEPHENSON_ETC_2016") || token_value_matches(token, "DELTAT=", "350")) {
+    } else if (
+        token_matches(token, "DELTAT2016") ||
+        token_value_matches(token, "DELTAT=", "STEPHENSON_ETC_2016") ||
+        token_value_matches(token, "DELTAT=", "350")
+    ) {
         ctx->model_deltat = JME_MODEL_DELTAT_STEPHENSON_ETC_2016;
-    } else if (token_matches(token, "ENGINE_AUTO") || token_value_matches(token, "ENGINE=", "AUTO")) {
+    } else if (
+        token_matches(token, "ENGINE_AUTO") || token_value_matches(token, "ENGINE=", "AUTO")
+    ) {
         set_engine_policy(ctx, JME_ENGINE_AUTO);
     } else if (token_matches(token, "ENGINE_JPL") || token_value_matches(token, "ENGINE=", "JPL")) {
         set_engine_policy(ctx, JME_ENGINE_JPL);
-    } else if (token_matches(token, "ENGINE_MOSHIER") || token_value_matches(token, "ENGINE=", "MOSHIER")) {
+    } else if (
+        token_matches(token, "ENGINE_MOSHIER") || token_value_matches(token, "ENGINE=", "MOSHIER")
+    ) {
         set_engine_policy(ctx, JME_ENGINE_MOSHIER);
-    } else if (token_matches(token, "ENGINE_VSOP_ELP_MEEUS")
-        || token_matches(token, "ENGINE_ANALYTICAL")
-        || token_value_matches(token, "ENGINE=", "VSOP_ELP_MEEUS")
-        || token_value_matches(token, "ENGINE=", "ANALYTICAL")) {
+    } else if (
+        token_matches(token, "ENGINE_VSOP_ELP_MEEUS") ||
+        token_matches(token, "ENGINE_ANALYTICAL") ||
+        token_value_matches(token, "ENGINE=", "VSOP_ELP_MEEUS") ||
+        token_value_matches(token, "ENGINE=", "ANALYTICAL")
+    ) {
         set_engine_policy(ctx, JME_ENGINE_VSOP_ELP_MEEUS);
     } else if (token_value_matches(token, "JPL_CENTER=", "STRICT")) {
         ctx->jpl_center_policy = JME_JPL_CENTER_STRICT;
-    } else if (token_value_matches(token, "JPL_CENTER=", "BARYCENTER")
-        || token_value_matches(token, "JPL_CENTER=", "BARYCENTRE")) {
+    } else if (
+        token_value_matches(token, "JPL_CENTER=", "BARYCENTER") ||
+        token_value_matches(token, "JPL_CENTER=", "BARYCENTRE")
+    ) {
         ctx->jpl_center_policy = JME_JPL_CENTER_BARYCENTER;
     } else {
         return 0;
@@ -286,13 +392,23 @@ void jme_get_sidereal_mode(int *sidereal_mode, double *t0, double *ayan_t0)
 void jme_set_topo(double lon, double lat, double altitude)
 {
     jme_context *ctx = jme_get_context();
-    if (!isfinite(lon)) { lon = 0.0; }
-    if (!isfinite(lat)) { lat = 0.0; }
-    if (!isfinite(altitude)) { altitude = 0.0; }
+    if (!isfinite(lon)) {
+        lon = 0.0;
+    }
+    if (!isfinite(lat)) {
+        lat = 0.0;
+    }
+    if (!isfinite(altitude)) {
+        altitude = 0.0;
+    }
 
     ctx->topo_lon = jme_degrees_difference_signed(lon, 0.0);
-    if (lat > 90.0) { lat = 90.0; }
-    if (lat < -90.0) { lat = -90.0; }
+    if (lat > 90.0) {
+        lat = 90.0;
+    }
+    if (lat < -90.0) {
+        lat = -90.0;
+    }
     ctx->topo_lat = lat;
     ctx->topo_alt = altitude;
 }
@@ -336,7 +452,8 @@ void jme_set_astro_models(const char *models, int flags)
 
 /* Tokenise and apply models to ctx; returns 0 on success, 1 on the first
  * unknown or over-long token (reported through bad_index / bad_token). */
-static int parse_models(jme_context *ctx, const char *models, int *bad_index, char *bad_token, size_t bad_size)
+static int
+parse_models(jme_context *ctx, const char *models, int *bad_index, char *bad_token, size_t bad_size)
 {
     char token[64];
     size_t i = 0, j = 0;
@@ -349,14 +466,18 @@ static int parse_models(jme_context *ctx, const char *models, int *bad_index, ch
                 index++;
                 token[j] = '\0';
                 if (overflow || !apply_model_token(ctx, token)) {
-                    if (bad_index != 0) *bad_index = index;
+                    if (bad_index != 0) {
+                        *bad_index = index;
+                    }
                     jme_set_string(bad_token, bad_size, token);
                     return 1;
                 }
                 j = 0;
                 overflow = 0;
             }
-            if (c == '\0') break;
+            if (c == '\0') {
+                break;
+            }
         } else if (j + 1 < sizeof(token)) {
             token[j++] = c;
         } else {
@@ -382,7 +503,13 @@ int jme_set_astro_models_checked(const char *models, char *error)
     trial = *ctx;
     if (parse_models(&trial, models, &bad_index, bad, sizeof(bad)) != 0) {
         char msg[160];
-        snprintf(msg, sizeof(msg), "Unknown or over-long astro-model token #%d: '%s'", bad_index, bad);
+        snprintf(
+            msg,
+            sizeof(msg),
+            "Unknown or over-long astro-model token #%d: '%s'",
+            bad_index,
+            bad
+        );
         jme_set_error(error, msg);
         return JME_ERR;
     }
@@ -497,14 +624,30 @@ static double jme_tidal_acceleration_value(double t_acc, int *is_explicit, int *
         *is_explicit = 0;
         return 0.0;
     }
-    if (t_acc == (double)JME_TIME_TIDAL_DE200) return -23.8946;
-    if (t_acc == (double)JME_TIME_TIDAL_DE403) return -25.580;
-    if (t_acc == (double)JME_TIME_TIDAL_DE404) return -25.580;
-    if (t_acc == (double)JME_TIME_TIDAL_DE405) return -25.826;
-    if (t_acc == (double)JME_TIME_TIDAL_DE406) return -25.826;
-    if (t_acc == (double)JME_TIME_TIDAL_DE421) return -25.85;
-    if (t_acc == (double)JME_TIME_TIDAL_DE430) return -25.82;
-    if (t_acc == (double)JME_TIME_TIDAL_DE431) return -25.80;
+    if (t_acc == (double)JME_TIME_TIDAL_DE200) {
+        return -23.8946;
+    }
+    if (t_acc == (double)JME_TIME_TIDAL_DE403) {
+        return -25.580;
+    }
+    if (t_acc == (double)JME_TIME_TIDAL_DE404) {
+        return -25.580;
+    }
+    if (t_acc == (double)JME_TIME_TIDAL_DE405) {
+        return -25.826;
+    }
+    if (t_acc == (double)JME_TIME_TIDAL_DE406) {
+        return -25.826;
+    }
+    if (t_acc == (double)JME_TIME_TIDAL_DE421) {
+        return -25.85;
+    }
+    if (t_acc == (double)JME_TIME_TIDAL_DE430) {
+        return -25.82;
+    }
+    if (t_acc == (double)JME_TIME_TIDAL_DE431) {
+        return -25.80;
+    }
     if (t_acc == (double)JME_TIME_TIDAL_DE441) {
         *is_explicit = 0;
         *is_unresolved = 1;
@@ -521,7 +664,8 @@ void jme_set_tid_acc(double t_acc)
         jme_context *ctx = jme_get_context();
         int is_explicit, is_unresolved;
         ctx->tidal_acceleration = t_acc;
-        ctx->tidal_acceleration_effective = jme_tidal_acceleration_value(t_acc, &is_explicit, &is_unresolved);
+        ctx->tidal_acceleration_effective =
+            jme_tidal_acceleration_value(t_acc, &is_explicit, &is_unresolved);
         ctx->tidal_acceleration_explicit = is_explicit;
         ctx->tidal_acceleration_unresolved = is_unresolved;
     }

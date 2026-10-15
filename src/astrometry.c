@@ -19,8 +19,8 @@
 #include <string.h>
 
 #define JME_ARCSEC_TO_RAD 4.848136811095359935899141023221522846734e-6
-#define JME_DEG_TO_RAD 0.017453292519943295769236907684886127134428718885417
-#define JME_RAD_TO_DEG 57.295779513082320876798154814105170332405472466564
+#define JME_DEG_TO_RAD    0.017453292519943295769236907684886127134428718885417
+#define JME_RAD_TO_DEG    57.295779513082320876798154814105170332405472466564
 
 /* IAU 2000 precession-rate corrections (Mathews, Herring & Buffett 2002;
  * IERS Conventions 2003, eq. 5.?; as used by ERFA eraPr00), arcsec/century. */
@@ -35,7 +35,11 @@ static void matrix_transpose(const double *a, double *out)
 {
     double t[9];
     int i, j;
-    for (i = 0; i < 3; i++) for (j = 0; j < 3; j++) t[i * 3 + j] = a[j * 3 + i];
+    for (i = 0; i < 3; i++) {
+        for (j = 0; j < 3; j++) {
+            t[i * 3 + j] = a[j * 3 + i];
+        }
+    }
     memcpy(out, t, sizeof(t));
 }
 
@@ -72,7 +76,14 @@ static int nutation_series(double jd_et, int model, double *dpsi_rad, double *de
  * and event searches.
  */
 #define JME_NUT_MEMO 8
-typedef struct { double jd; int model; int used; double dpsi, deps; } jme_nut_memo_entry;
+
+typedef struct {
+    double jd;
+    int model;
+    int used;
+    double dpsi, deps;
+} jme_nut_memo_entry;
+
 static JME_THREAD_LOCAL jme_nut_memo_entry g_nut_memo[JME_NUT_MEMO];
 static JME_THREAD_LOCAL int g_nut_memo_next;
 
@@ -86,7 +97,9 @@ static int nutation_raw(double jd_et, int model, double *dpsi_rad, double *deps_
             return JME_OK;
         }
     }
-    if (nutation_series(jd_et, model, dpsi_rad, deps_rad, error) != JME_OK) return JME_ERR;
+    if (nutation_series(jd_et, model, dpsi_rad, deps_rad, error) != JME_OK) {
+        return JME_ERR;
+    }
     g_nut_memo[g_nut_memo_next].jd = jd_et;
     g_nut_memo[g_nut_memo_next].model = model;
     g_nut_memo[g_nut_memo_next].dpsi = *dpsi_rad;
@@ -96,7 +109,14 @@ static int nutation_raw(double jd_et, int model, double *dpsi_rad, double *deps_
     return JME_OK;
 }
 
-int internal_get_nutation_rad(double jd_et, int model, int interpolate, double *dpsi, double *deps, char *error)
+int internal_get_nutation_rad(
+    double jd_et,
+    int model,
+    int interpolate,
+    double *dpsi,
+    double *deps,
+    char *error
+)
 {
     if (dpsi == 0 || deps == 0) {
         jme_set_error(error, "Nutation output pointers are required");
@@ -119,8 +139,8 @@ int internal_get_nutation_rad(double jd_et, int model, int interpolate, double *
         double lower_jd = floor(jd_et);
         double weight = jd_et - lower_jd;
         double dp0, de0, dp1, de1;
-        if (nutation_raw(lower_jd, model, &dp0, &de0, error) != JME_OK
-            || nutation_raw(lower_jd + 1.0, model, &dp1, &de1, error) != JME_OK) {
+        if (nutation_raw(lower_jd, model, &dp0, &de0, error) != JME_OK ||
+            nutation_raw(lower_jd + 1.0, model, &dp1, &de1, error) != JME_OK) {
             return JME_ERR;
         }
         *dpsi = dp0 + (dp1 - dp0) * weight;
@@ -135,13 +155,18 @@ int jme_get_nutation(double jd_et, int model, double *dpsi, double *deps, char *
 {
     double dp, de;
 
-    if (dpsi != 0) { *dpsi = NAN; }
-    if (deps != 0) { *deps = NAN; }
+    if (dpsi != 0) {
+        *dpsi = NAN;
+    }
+    if (deps != 0) {
+        *deps = NAN;
+    }
     if (dpsi == 0 || deps == 0) {
         jme_set_error(error, "Nutation output pointers are required");
         return JME_ERR;
     }
-    if (internal_get_nutation_rad(jd_et, model, jme_context_interpolate_nut(), &dp, &de, error) != JME_OK) {
+    if (internal_get_nutation_rad(jd_et, model, jme_context_interpolate_nut(), &dp, &de, error) !=
+        JME_OK) {
         return JME_ERR;
     }
     *dpsi = dp * JME_RAD_TO_DEG;
@@ -153,7 +178,9 @@ int jme_get_obliquity(double jd_et, int model, double *eps, char *error)
 {
     double d1, d2, t;
 
-    if (eps != 0) { *eps = NAN; }
+    if (eps != 0) {
+        *eps = NAN;
+    }
     if (eps == 0) {
         jme_set_error(error, "Obliquity output is required");
         return JME_ERR;
@@ -200,20 +227,44 @@ int jme_get_obliquity(double jd_et, int model, double *eps, char *error)
  * The construction reproduces ERFA eraBp06 to 4e-12 rad over +/-100 yr when
  * it is given the IAU 2006 angles of eraP06e.
  */
-static const double laskar_q[11] = { 0.0, -113469002.0, 12372674.0, 12654170.0, -1371808.0,
-    -320334.0, 5072.0, -6941.0, 15095.0, -72.0, -352.0 };
-static const double laskar_p[11] = { 0.0, 10180391.0, 47020439.0, -5417367.0, -2507948.0,
-    463486.0, 56431.0, -50813.0, -2799.0, 8609.0, -67.0 };
-static const double laskar_pa[11] = { 0.0, 502909.66, 11119.71, 77.32, -2353.16, -180.55,
-    174.51, 130.95, 24.24, -47.59, -8.66 };
-static const double laskar_epsa[11] = { 84381.448, -4680.93, -1.55, 1999.25, -51.38, -249.67,
-    -39.05, 7.12, 27.87, 5.79, 2.45 };
+static const double laskar_q[11] = {
+    0.0,
+    -113469002.0,
+    12372674.0,
+    12654170.0,
+    -1371808.0,
+    -320334.0,
+    5072.0,
+    -6941.0,
+    15095.0,
+    -72.0,
+    -352.0
+};
+static const double laskar_p[11] = {
+    0.0,
+    10180391.0,
+    47020439.0,
+    -5417367.0,
+    -2507948.0,
+    463486.0,
+    56431.0,
+    -50813.0,
+    -2799.0,
+    8609.0,
+    -67.0
+};
+static const double laskar_pa[11] =
+    {0.0, 502909.66, 11119.71, 77.32, -2353.16, -180.55, 174.51, 130.95, 24.24, -47.59, -8.66};
+static const double laskar_epsa[11] =
+    {84381.448, -4680.93, -1.55, 1999.25, -51.38, -249.67, -39.05, 7.12, 27.87, 5.79, 2.45};
 
 static double laskar_poly(const double c[11], double t)
 {
     double v = c[10];
     int k;
-    for (k = 9; k >= 0; k--) v = v * t + c[k];
+    for (k = 9; k >= 0; k--) {
+        v = v * t + c[k];
+    }
     return v;
 }
 
@@ -300,8 +351,8 @@ int jme_get_precession_matrix(double jd_start, double jd_end, int model, double 
         return JME_OK;
     }
 
-    if (precession_from_j2000(jd_start, model, p_start) != JME_OK
-        || precession_from_j2000(jd_end, model, p_end) != JME_OK) {
+    if (precession_from_j2000(jd_start, model, p_start) != JME_OK ||
+        precession_from_j2000(jd_end, model, p_end) != JME_OK) {
         jme_matrix_identity(m);
         return JME_ERR;
     }
@@ -359,7 +410,8 @@ int internal_bias_precession_matrix(double jd_et, double *bp, char *error)
         jme_set_error(error, "Unsupported frame-bias model");
         return JME_ERR;
     }
-    if (jme_get_precession_matrix(2451545.0, jd_et, jme_context_precession_model(), prec) != JME_OK) {
+    if (jme_get_precession_matrix(2451545.0, jd_et, jme_context_precession_model(), prec) !=
+        JME_OK) {
         jme_set_error(error, "Unsupported precession model");
         return JME_ERR;
     }
@@ -367,20 +419,38 @@ int internal_bias_precession_matrix(double jd_et, double *bp, char *error)
     return JME_OK;
 }
 
-int internal_nutation_matrix(double jd_et, double *nm, double *dpsi_deg, double *eps_mean_deg, double *deps_deg, char *error)
+int internal_nutation_matrix(
+    double jd_et,
+    double *nm,
+    double *dpsi_deg,
+    double *eps_mean_deg,
+    double *deps_deg,
+    char *error
+)
 {
     double dpsi, deps, eps;
 
-    if (jme_get_obliquity(jd_et, jme_context_obliquity_model(), &eps, error) != JME_OK
-        || jme_get_nutation(jd_et, jme_context_nutation_model(), &dpsi, &deps, error) != JME_OK) {
+    if (jme_get_obliquity(jd_et, jme_context_obliquity_model(), &eps, error) != JME_OK ||
+        jme_get_nutation(jd_et, jme_context_nutation_model(), &dpsi, &deps, error) != JME_OK) {
         return JME_ERR;
     }
     if (nm != 0) {
-        jme_get_nutation_matrix(dpsi * JME_DEG_TO_RAD, deps * JME_DEG_TO_RAD, eps * JME_DEG_TO_RAD, nm);
+        jme_get_nutation_matrix(
+            dpsi * JME_DEG_TO_RAD,
+            deps * JME_DEG_TO_RAD,
+            eps * JME_DEG_TO_RAD,
+            nm
+        );
     }
-    if (dpsi_deg != 0) *dpsi_deg = dpsi;
-    if (deps_deg != 0) *deps_deg = deps;
-    if (eps_mean_deg != 0) *eps_mean_deg = eps;
+    if (dpsi_deg != 0) {
+        *dpsi_deg = dpsi;
+    }
+    if (deps_deg != 0) {
+        *deps_deg = deps;
+    }
+    if (eps_mean_deg != 0) {
+        *eps_mean_deg = eps;
+    }
     return JME_OK;
 }
 
@@ -408,8 +478,10 @@ int internal_sidereal_time_rad(double jd_ut, double jd_tt, int apparent, double 
         jme_set_error(error, "Sidereal time requires finite UT1 and TT dates");
         return JME_ERR;
     }
-    u1 = floor(jd_ut); u2 = jd_ut - u1;
-    t1 = floor(jd_tt); t2 = jd_tt - t1;
+    u1 = floor(jd_ut);
+    u2 = jd_ut - u1;
+    t1 = floor(jd_tt);
+    t2 = jd_tt - t1;
 
     switch (jme_context_sidereal_time_model()) {
     case JME_MODEL_SIDT_IAU_1976:
@@ -425,14 +497,16 @@ int internal_sidereal_time_rad(double jd_ut, double jd_tt, int apparent, double 
 
     if (apparent) {
         double dpsi, deps, eps, om, ct;
-        if (jme_get_obliquity(jd_tt, jme_context_obliquity_model(), &eps, error) != JME_OK
-            || jme_get_nutation(jd_tt, jme_context_nutation_model(), &dpsi, &deps, error) != JME_OK) {
+        if (jme_get_obliquity(jd_tt, jme_context_obliquity_model(), &eps, error) != JME_OK ||
+            jme_get_nutation(jd_tt, jme_context_nutation_model(), &dpsi, &deps, error) != JME_OK) {
             return JME_ERR;
         }
         if (jme_context_sidereal_time_model() == JME_MODEL_SIDT_IAU_1976) {
             double t = ((t1 - 2451545.0) + t2) / 36525.0;
-            om = jme_eraAnpm((450160.280 + (-482890.539 + (7.455 + 0.008 * t) * t) * t) * JME_ARCSEC_TO_RAD
-                + fmod(-5.0 * t, 1.0) * ERFA_D2PI);
+            om = jme_eraAnpm(
+                (450160.280 + (-482890.539 + (7.455 + 0.008 * t) * t) * t) * JME_ARCSEC_TO_RAD +
+                fmod(-5.0 * t, 1.0) * ERFA_D2PI
+            );
             ct = (0.00264 * sin(om) + 0.000063 * sin(om + om)) * JME_ARCSEC_TO_RAD;
         } else {
             ct = jme_eraEect00(t1, t2);
@@ -496,14 +570,24 @@ static void internal_current_topo(const jme_context *ctx, double *lon, double *l
  * When it is enabled and no EOP data cover the date, an error is returned:
  * no zero polar motion is substituted.
  */
-int internal_polar_motion_matrix(double jd_ut, double jd_tt, double *rpom, int *applied, char *error)
+int internal_polar_motion_matrix(
+    double jd_ut,
+    double jd_tt,
+    double *rpom,
+    int *applied,
+    char *error
+)
 {
     double xp, yp, sp, w[3][3];
     int i, j;
 
-    if (applied != 0) *applied = 0;
+    if (applied != 0) {
+        *applied = 0;
+    }
     if (!jme_get_context()->polar_motion_enabled) {
-        for (i = 0; i < 9; i++) rpom[i] = (i % 4 == 0) ? 1.0 : 0.0;
+        for (i = 0; i < 9; i++) {
+            rpom[i] = (i % 4 == 0) ? 1.0 : 0.0;
+        }
         return JME_OK;
     }
     if (jme_eop_polar_motion((jd_ut - 2400000.5), &xp, &yp, 0, error) != JME_OK) {
@@ -511,8 +595,14 @@ int internal_polar_motion_matrix(double jd_ut, double jd_tt, double *rpom, int *
     }
     sp = jme_eraSp00(floor(jd_tt), jd_tt - floor(jd_tt));
     jme_eraPom00(xp * JME_ARCSEC_TO_RAD, yp * JME_ARCSEC_TO_RAD, sp, w);
-    for (i = 0; i < 3; i++) for (j = 0; j < 3; j++) rpom[3 * i + j] = w[i][j];
-    if (applied != 0) *applied = 1;
+    for (i = 0; i < 3; i++) {
+        for (j = 0; j < 3; j++) {
+            rpom[3 * i + j] = w[i][j];
+        }
+    }
+    if (applied != 0) {
+        *applied = 1;
+    }
     return JME_OK;
 }
 
@@ -524,13 +614,18 @@ int internal_polar_motion_matrix(double jd_ut, double jd_tt, double *rpom, int *
  * of date: r_true = R3(-GAST) W^T r_itrs, the equinox-based form of the
  * IERS Conventions (2010) eq. 5.1 chain.
  */
-int internal_topo_state_true_equator(double jd_et, double *pos_au, double *vel_au_per_day, char *error)
+int internal_topo_state_true_equator(
+    double jd_et,
+    double *pos_au,
+    double *vel_au_per_day,
+    char *error
+)
 {
     jme_context *ctx = jme_get_context();
     double jd_ut, gast, lst_rad;
     double topo_lon, topo_lat, topo_alt;
     double cos_phi, sin_phi;
-    const double a = 6378.137; /* WGS84 semi-major axis in km */
+    const double a = 6378.137;            /* WGS84 semi-major axis in km */
     const double f = 1.0 / 298.257223563; /* WGS84 flattening */
     /* Earth rotation rate relative to the true equinox, rad per UT1 day. */
     const double omega = ERFA_D2PI * 1.00273781191135448;
@@ -543,8 +638,8 @@ int internal_topo_state_true_equator(double jd_et, double *pos_au, double *vel_a
         return JME_ERR;
     }
     internal_current_topo(ctx, &topo_lon, &topo_lat, &topo_alt);
-    if (!isfinite(topo_lon) || !isfinite(topo_lat) || !isfinite(topo_alt)
-        || topo_lat < -90.0 || topo_lat > 90.0) {
+    if (!isfinite(topo_lon) || !isfinite(topo_lat) || !isfinite(topo_alt) || topo_lat < -90.0 ||
+        topo_lat > 90.0) {
         jme_set_error(error, "Topocentric observer location is invalid");
         return JME_ERR;
     }
@@ -598,7 +693,8 @@ int jme_get_topo_pos_true_equator(double jd_et, double *pos_au, char *error)
     return internal_topo_state_true_equator(jd_et, pos_au, 0, error);
 }
 
-/* Observer offset from the geocentre in the J2000 mean frame (bias removed when a bias model is selected). */
+/* Observer offset from the geocentre in the J2000 mean frame (bias removed when a bias model is
+ * selected). */
 int internal_topo_state_j2000(double jd_et, double *state_au, char *error)
 {
     double pos[3], vel[3];
@@ -610,15 +706,20 @@ int internal_topo_state_j2000(double jd_et, double *state_au, char *error)
         jme_set_error(error, "Topocentric state output is required");
         return JME_ERR;
     }
-    for (i = 0; i < 6; i++) state_au[i] = NAN;
-    if (internal_topo_state_true_equator(jd_et, pos, vel, error) != JME_OK
-        || internal_bias_precession_matrix(jd_et, bp, error) != JME_OK
-        || internal_nutation_matrix(jd_et, nm, 0, 0, 0, error) != JME_OK) {
+    for (i = 0; i < 6; i++) {
+        state_au[i] = NAN;
+    }
+    if (internal_topo_state_true_equator(jd_et, pos, vel, error) != JME_OK ||
+        internal_bias_precession_matrix(jd_et, bp, error) != JME_OK ||
+        internal_nutation_matrix(jd_et, nm, 0, 0, 0, error) != JME_OK) {
         return JME_ERR;
     }
     jme_matrix_multiply(nm, bp, full);
     matrix_transpose(full, inv);
-    for (i = 0; i < 3; i++) { st[i] = pos[i]; st[i + 3] = vel[i]; }
+    for (i = 0; i < 3; i++) {
+        st[i] = pos[i];
+        st[i + 3] = vel[i];
+    }
     jme_matrix_transform_state(inv, st, state_au);
     return JME_OK;
 }

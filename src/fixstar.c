@@ -13,9 +13,9 @@ typedef struct jme_star_entry {
     int hd;
     int sao;
     const char *name;
-    double ra; /* J2000 degrees */
-    double dec; /* J2000 degrees */
-    double pm_ra; /* arcsec/year */
+    double ra;     /* J2000 degrees */
+    double dec;    /* J2000 degrees */
+    double pm_ra;  /* arcsec/year */
     double pm_dec; /* arcsec/year */
     double mag;
 } jme_star_entry;
@@ -27,30 +27,30 @@ typedef struct jme_star_alias {
 
 /* Common-name aliases point into the generated Bright Star catalog. */
 static const jme_star_alias star_aliases[] = {
-    {"Achernar", 472},
-    {"Aldebaran", 1457},
-    {"Altair", 7557},
-    {"Antares", 6134},
-    {"Arcturus", 5340},
-    {"Betelgeuse", 2061},
-    {"Canopus", 2326},
-    {"Capella", 1708},
-    {"Deneb", 7924},
-    {"Delta Cancri", 3461},
-    {"Fomalhaut", 8728},
-    {"Pollux", 2990},
-    {"Procyon", 2943},
-    {"Regulus", 3982},
-    {"Revati", 361},
-    {"Rigel", 1713},
-    {"Shaula", 6527},
-    {"Sirius", 2491},
-    {"Spica", 5056},
-    {"Vega", 7001},
+    {"Achernar",          472 },
+    {"Aldebaran",         1457},
+    {"Altair",            7557},
+    {"Antares",           6134},
+    {"Arcturus",          5340},
+    {"Betelgeuse",        2061},
+    {"Canopus",           2326},
+    {"Capella",           1708},
+    {"Deneb",             7924},
+    {"Delta Cancri",      3461},
+    {"Fomalhaut",         8728},
+    {"Pollux",            2990},
+    {"Procyon",           2943},
+    {"Regulus",           3982},
+    {"Revati",            361 },
+    {"Rigel",             1713},
+    {"Shaula",            6527},
+    {"Sirius",            2491},
+    {"Spica",             5056},
+    {"Vega",              7001},
     {"Asellus Australis", 3461},
-    {"Lambda Scorpii", 6527},
-    {"Eta Psc", 437},
-    {"Zeta Psc", 361}
+    {"Lambda Scorpii",    6527},
+    {"Eta Psc",           437 },
+    {"Zeta Psc",          361 }
 };
 
 #include "fixstar_catalog.inc"
@@ -168,12 +168,12 @@ static const jme_star_entry *find_star(const char *name)
 typedef struct jme_star_hip_entry {
     int hr;
     int hip;
-    double ra;      /* ICRS degrees, epoch J1991.25 */
-    double dec;     /* ICRS degrees, epoch J1991.25 */
-    double pm_ra;   /* mu_alpha * cos(delta), mas/yr */
-    double pm_dec;  /* mas/yr */
-    double plx;     /* mas; <= 0 means unknown/not significant */
-    double rv;      /* km/s */
+    double ra;     /* ICRS degrees, epoch J1991.25 */
+    double dec;    /* ICRS degrees, epoch J1991.25 */
+    double pm_ra;  /* mu_alpha * cos(delta), mas/yr */
+    double pm_dec; /* mas/yr */
+    double plx;    /* mas; <= 0 means unknown/not significant */
+    double rv;     /* km/s */
     int has_rv;
 } jme_star_hip_entry;
 
@@ -184,13 +184,19 @@ static const jme_star_hip_entry *find_hipparcos(int hr)
     size_t lo = 0, hi = sizeof(star_hipparcos) / sizeof(star_hipparcos[0]);
     while (lo < hi) {
         size_t mid = (lo + hi) / 2;
-        if (star_hipparcos[mid].hr == hr) return &star_hipparcos[mid];
-        if (star_hipparcos[mid].hr < hr) lo = mid + 1; else hi = mid;
+        if (star_hipparcos[mid].hr == hr) {
+            return &star_hipparcos[mid];
+        }
+        if (star_hipparcos[mid].hr < hr) {
+            lo = mid + 1;
+        } else {
+            hi = mid;
+        }
     }
     return 0;
 }
 
-#define JME_MAS_TO_RAD (JME_FIXSTAR_DEG_TO_RAD / 3600000.0)
+#define JME_MAS_TO_RAD    (JME_FIXSTAR_DEG_TO_RAD / 3600000.0)
 #define JME_AU_PER_PARSEC 206264.80624709635515647
 
 /*
@@ -203,7 +209,13 @@ static const jme_star_hip_entry *find_hipparcos(int hr)
  *   - otherwise the BSC5 J2000 (FK5) position and proper motion, with no
  *     parallax; distance is reported as unknown (0).
  */
-int internal_fixstar_barycentric(const char *star, double jd_et, double *u, double *dist_au, char *error)
+int internal_fixstar_barycentric(
+    const char *star,
+    double jd_et,
+    double *u,
+    double *dist_au,
+    char *error
+)
 {
     const jme_star_entry *entry = find_star(star);
     const jme_star_hip_entry *hip;
@@ -233,18 +245,40 @@ int internal_fixstar_barycentric(const char *star, double jd_et, double *u, doub
         double dr5 = entry->pm_ra / 3600.0 * JME_FIXSTAR_DEG_TO_RAD / cos(d5);
         double dd5 = entry->pm_dec / 3600.0 * JME_FIXSTAR_DEG_TO_RAD;
         double pxh, rvh;
-        if (!isfinite(dr5)) dr5 = 0.0; /* exactly at a pole */
+        if (!isfinite(dr5)) {
+            dr5 = 0.0; /* exactly at a pole */
+        }
         jme_eraFk52h(r5, d5, dr5, dd5, 0.0, 0.0, &ra1, &dec1, &pmr, &pmd, &pxh, &rvh);
         px = 0.0;
         rv = 0.0;
         ep1 = 2451545.0;
     }
-    if (!isfinite(pmr)) pmr = 0.0; /* exactly at a pole */
+    if (!isfinite(pmr)) {
+        pmr = 0.0; /* exactly at a pole */
+    }
     {
         double jd_tdb;
-        if (internal_tt_to_tdb_jd(jd_et, &jd_tdb, error) != JME_OK) return JME_ERR;
-        status = jme_eraStarpm(ra1, dec1, pmr, pmd, px, rv, ep1, 0.0, jd_tdb, 0.0,
-            &ra2, &dec2, &pmr2, &pmd2, &px2, &rv2);
+        if (internal_tt_to_tdb_jd(jd_et, &jd_tdb, error) != JME_OK) {
+            return JME_ERR;
+        }
+        status = jme_eraStarpm(
+            ra1,
+            dec1,
+            pmr,
+            pmd,
+            px,
+            rv,
+            ep1,
+            0.0,
+            jd_tdb,
+            0.0,
+            &ra2,
+            &dec2,
+            &pmr2,
+            &pmd2,
+            &px2,
+            &rv2
+        );
     }
     /*
      * eraStarpm status: 1 = distance overridden (expected when the parallax is
@@ -267,28 +301,56 @@ int internal_fixstar_mean_ecliptic_of_date(const char *star, double jd_et, doubl
 {
     double u[3], dist, pos[3], sph[6], st[6];
     int i;
-    if (internal_fixstar_barycentric(star, jd_et, u, &dist, error) != JME_OK) return JME_ERR;
-    if (internal_rotate_to_output(jd_et, JME_CALC_NO_NUTATION, 1, u, pos, error) != JME_OK) return JME_ERR;
-    for (i = 0; i < 3; i++) { st[i] = pos[i]; st[i + 3] = 0.0; }
+    if (internal_fixstar_barycentric(star, jd_et, u, &dist, error) != JME_OK) {
+        return JME_ERR;
+    }
+    if (internal_rotate_to_output(jd_et, JME_CALC_NO_NUTATION, 1, u, pos, error) != JME_OK) {
+        return JME_ERR;
+    }
+    for (i = 0; i < 3; i++) {
+        st[i] = pos[i];
+        st[i + 3] = 0.0;
+    }
     if (jme_rectangular_to_spherical_state(st, sph) != JME_OK) {
         jme_set_error(error, "Invalid star vector");
         return JME_ERR;
     }
-    for (i = 0; i < 6; i++) ecl[i] = sph[i];
+    for (i = 0; i < 6; i++) {
+        ecl[i] = sph[i];
+    }
     return JME_OK;
 }
 
-static int fixstar_output_position(const char *star, double jd_et, int flags, double *pos, double *dist_out, char *error)
+static int fixstar_output_position(
+    const char *star,
+    double jd_et,
+    int flags,
+    double *pos,
+    double *dist_out,
+    char *error
+)
 {
     double u[3], dist, v[3];
-    if (internal_fixstar_barycentric(star, jd_et, u, &dist, error) != JME_OK) return JME_ERR;
-    if (internal_star_observer_vector(jd_et, flags, u, dist, v, error) != JME_OK) return JME_ERR;
-    if (dist_out != 0) *dist_out = dist;
+    if (internal_fixstar_barycentric(star, jd_et, u, &dist, error) != JME_OK) {
+        return JME_ERR;
+    }
+    if (internal_star_observer_vector(jd_et, flags, u, dist, v, error) != JME_OK) {
+        return JME_ERR;
+    }
+    if (dist_out != 0) {
+        *dist_out = dist;
+    }
     return internal_rotate_to_output(jd_et, flags, 1, v, pos, error);
 }
 
 /* Spherical or rectangular position slots of jme_fixstar_ut, without its rate stencil. */
-int internal_fixstar_ut_positions(const char *star, double jd_ut, int flags, double *results, char *error)
+int internal_fixstar_ut_positions(
+    const char *star,
+    double jd_ut,
+    int flags,
+    double *results,
+    char *error
+)
 {
     double rect[3];
     double dist = 0.0;
@@ -298,9 +360,15 @@ int internal_fixstar_ut_positions(const char *star, double jd_ut, int flags, dou
         jme_set_error(error, "Fixed-star output is required");
         return JME_ERR;
     }
-    for (i = 0; i < 6; i++) results[i] = 0.0;
-    if (internal_fixstar_position_ut(star, jd_ut, flags, rect, &dist, error) != JME_OK) return JME_ERR;
-    if (internal_pack_position_results(rect, flags, results, error) != JME_OK) return JME_ERR;
+    for (i = 0; i < 6; i++) {
+        results[i] = 0.0;
+    }
+    if (internal_fixstar_position_ut(star, jd_ut, flags, rect, &dist, error) != JME_OK) {
+        return JME_ERR;
+    }
+    if (internal_pack_position_results(rect, flags, results, error) != JME_OK) {
+        return JME_ERR;
+    }
     if (!(dist > 0.0) && !(flags & JME_CALC_XYZ)) {
         results[2] = 0.0;
     }
@@ -314,7 +382,14 @@ int internal_fixstar_ut_positions(const char *star, double jd_ut, int flags, dou
  * catalogue distance (0 when the parallax is unknown; pos is then a unit
  * vector).
  */
-int internal_fixstar_position_ut(const char *star, double jd_ut, int flags, double *pos, double *dist_au, char *error)
+int internal_fixstar_position_ut(
+    const char *star,
+    double jd_ut,
+    int flags,
+    double *pos,
+    double *dist_au,
+    char *error
+)
 {
     double jd_et, dist = 0.0;
     if (pos == 0) {
@@ -325,9 +400,15 @@ int internal_fixstar_position_ut(const char *star, double jd_ut, int flags, doub
         jme_set_error(error, "Star not found in catalog");
         return JME_ERR;
     }
-    if (internal_ut_to_et(jd_ut, &jd_et, error) != JME_OK) return JME_ERR;
-    if (fixstar_output_position(star, jd_et, flags, pos, &dist, error) != JME_OK) return JME_ERR;
-    if (dist_au != 0) *dist_au = dist;
+    if (internal_ut_to_et(jd_ut, &jd_et, error) != JME_OK) {
+        return JME_ERR;
+    }
+    if (fixstar_output_position(star, jd_et, flags, pos, &dist, error) != JME_OK) {
+        return JME_ERR;
+    }
+    if (dist_au != 0) {
+        *dist_au = dist;
+    }
     return JME_OK;
 }
 
@@ -339,8 +420,12 @@ int jme_fixstar_ut(const char *star, double jd_ut, int flags, double *results, c
         jme_set_error(error, "Fixed-star output is required");
         return JME_ERR;
     }
-    for (i=0;i<6;i++) results[i]=0.0;
-    if (internal_ut_to_et(jd_ut, &jd_et, error) != JME_OK) return JME_ERR;
+    for (i = 0; i < 6; i++) {
+        results[i] = 0.0;
+    }
+    if (internal_ut_to_et(jd_ut, &jd_et, error) != JME_OK) {
+        return JME_ERR;
+    }
     return jme_fixstar(star, jd_et, flags, results, error);
 }
 
@@ -362,8 +447,12 @@ int jme_fixstar(const char *star, double jd_et, int flags, double *results, char
         jme_set_error(error, "Fixed-star output is required");
         return JME_ERR;
     }
-    for (i = 0; i < 6; i++) { results[i] = 0.0; }
-    if (error != 0) error[0] = '\0';
+    for (i = 0; i < 6; i++) {
+        results[i] = 0.0;
+    }
+    if (error != 0) {
+        error[0] = '\0';
+    }
     if (!isfinite(jd_et)) {
         jme_set_error(error, "Terrestrial-time Julian date must be finite");
         return JME_ERR;
@@ -377,7 +466,9 @@ int jme_fixstar(const char *star, double jd_et, int flags, double *results, char
     }
     for (i = 0; i < 4; i++) {
         if (fixstar_output_position(star, jd_et + offs[i] * h, flags, q[i], 0, error) != JME_OK) {
-            for (i = 0; i < 6; i++) results[i] = 0.0;
+            for (i = 0; i < 6; i++) {
+                results[i] = 0.0;
+            }
             return JME_ERR;
         }
         stencil[i] = q[i];
@@ -389,7 +480,9 @@ int jme_fixstar(const char *star, double jd_et, int flags, double *results, char
         results[2] = 0.0;
         results[5] = 0.0;
     }
-    if (error != 0) error[0] = '\0';
+    if (error != 0) {
+        error[0] = '\0';
+    }
     return JME_OK;
 }
 

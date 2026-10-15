@@ -35,8 +35,8 @@ static int check_gauquelin(double *worst_sector, int *count)
         for (b = 0; b < 13; b++) {
             double armc = a * 5.0 + 0.37, lat = -60.0 + b * 10.0, eps = 23.4392911;
             double g[37], p[13], ascmc[10];
-            if (jme_houses_gauquelin_armc(armc, lat, eps, g, ascmc, error) != JME_OK
-                || jme_houses_armc(armc, lat, eps, JME_HOUSE_PLACIDUS, p, 0) != JME_OK) {
+            if (jme_houses_gauquelin_armc(armc, lat, eps, g, ascmc, error) != JME_OK ||
+                jme_houses_armc(armc, lat, eps, JME_HOUSE_PLACIDUS, p, 0) != JME_OK) {
                 fprintf(stderr, "gauquelin failed armc %.2f lat %.1f: %s\n", armc, lat, error);
                 failures++;
                 continue;
@@ -57,19 +57,37 @@ static int check_gauquelin(double *worst_sector, int *count)
                     sector = 28.0 + 9.0 * (h + 180.0) / (180.0 - h0);
                 }
                 err = fabs(sector - k);
-                if (err > *worst_sector) *worst_sector = err;
+                if (err > *worst_sector) {
+                    *worst_sector = err;
+                }
                 if (err > 1e-9) {
-                    fprintf(stderr, "gauquelin armc %.2f lat %.1f cusp %d at sector %.12f\n", armc, lat, k, sector);
+                    fprintf(
+                        stderr,
+                        "gauquelin armc %.2f lat %.1f cusp %d at sector %.12f\n",
+                        armc,
+                        lat,
+                        k,
+                        sector
+                    );
                     failures++;
                 }
             }
             for (k = 0; k < 8; k++) {
                 if (adiff(g[gq[k]], p[pl[k]]) > 1e-11) {
-                    fprintf(stderr, "gauquelin cusp %d %.12f != placidus %d %.12f\n", gq[k], g[gq[k]], pl[k], p[pl[k]]);
+                    fprintf(
+                        stderr,
+                        "gauquelin cusp %d %.12f != placidus %d %.12f\n",
+                        gq[k],
+                        g[gq[k]],
+                        pl[k],
+                        p[pl[k]]
+                    );
                     failures++;
                 }
             }
-            if (adiff(g[1], ascmc[0]) > 0.0 || adiff(g[10], ascmc[1]) > 0.0) failures++;
+            if (adiff(g[1], ascmc[0]) > 0.0 || adiff(g[10], ascmc[1]) > 0.0) {
+                failures++;
+            }
         }
     }
     {
@@ -78,8 +96,12 @@ static int check_gauquelin(double *worst_sector, int *count)
             fprintf(stderr, "gauquelin at latitude 80 must fail (circumpolar ecliptic points)\n");
             failures++;
         }
-        if (jme_houses_gauquelin_armc(10.0, 40.0, 23.44, 0, 0, error) == JME_OK) failures++;
-        if (jme_houses(2460000.5, 40.0, 10.0, JME_HOUSE_PLACIDUS, g, 0) != JME_OK) failures++;
+        if (jme_houses_gauquelin_armc(10.0, 40.0, 23.44, 0, 0, error) == JME_OK) {
+            failures++;
+        }
+        if (jme_houses(2460000.5, 40.0, 10.0, JME_HOUSE_PLACIDUS, g, 0) != JME_OK) {
+            failures++;
+        }
         if (jme_houses_gauquelin(2460000.5, 0, 40.0, 10.0, g, 0, error) != JME_OK) {
             fprintf(stderr, "gauquelin jd: %s\n", error);
             failures++;
@@ -98,7 +120,14 @@ int main(void)
         const jme_house_fixture *f = &house_fixtures[i];
         double cusps[13], ascmc[10];
         if (jme_houses_armc(f->armc, f->lat, f->eps, f->hsys, cusps, ascmc) != JME_OK) {
-            fprintf(stderr, "houses_armc failed hsys %d armc %.9f lat %.9f eps %.7f\n", f->hsys, f->armc, f->lat, f->eps);
+            fprintf(
+                stderr,
+                "houses_armc failed hsys %d armc %.9f lat %.9f eps %.7f\n",
+                f->hsys,
+                f->armc,
+                f->lat,
+                f->eps
+            );
             failures++;
             continue;
         }
@@ -112,15 +141,28 @@ int main(void)
             double b = fmod(ascmc[0], 30.0);
             if (b < 1e-9 || 30.0 - b < 1e-9) {
                 double s = jme_degrees_difference_signed(cusps[1], f->cusp[0]);
-                if (fabs(fabs(s) - 30.0) < 1e-9) ws_shift = s;
+                if (fabs(fabs(s) - 30.0) < 1e-9) {
+                    ws_shift = s;
+                }
             }
         }
         for (k = 0; k < 12; k++) {
             double d = adiff(cusps[k + 1] - ws_shift, f->cusp[k]);
-            if (d > worst) worst = d;
+            if (d > worst) {
+                worst = d;
+            }
             if (!(d <= 1.0e-9)) {
-                fprintf(stderr, "hsys %d armc %.9f lat %.9f eps %.7f cusp %d: JME %.12f ref %.12f\n",
-                    f->hsys, f->armc, f->lat, f->eps, k + 1, cusps[k + 1], f->cusp[k]);
+                fprintf(
+                    stderr,
+                    "hsys %d armc %.9f lat %.9f eps %.7f cusp %d: JME %.12f ref %.12f\n",
+                    f->hsys,
+                    f->armc,
+                    f->lat,
+                    f->eps,
+                    k + 1,
+                    cusps[k + 1],
+                    f->cusp[k]
+                );
                 failures++;
                 break;
             }
@@ -141,14 +183,32 @@ int main(void)
             continue;
         }
         d = adiff(ascmc[6], f->armc);
-        if (fabs(ascmc[7] - f->eps) > d) d = fabs(ascmc[7] - f->eps);
-        if (adiff(ascmc[0], f->asc) > d) d = adiff(ascmc[0], f->asc);
-        if (adiff(ascmc[1], f->mc) > d) d = adiff(ascmc[1], f->mc);
-        if (d > worst_t) worst_t = d;
+        if (fabs(ascmc[7] - f->eps) > d) {
+            d = fabs(ascmc[7] - f->eps);
+        }
+        if (adiff(ascmc[0], f->asc) > d) {
+            d = adiff(ascmc[0], f->asc);
+        }
+        if (adiff(ascmc[1], f->mc) > d) {
+            d = adiff(ascmc[1], f->mc);
+        }
+        if (d > worst_t) {
+            worst_t = d;
+        }
         /* 1e-8 deg = 36 microarcsec: equinox-based GAST (gmst06 + ee) vs ERFA gst06a (CIO-based) */
         if (!(d <= 1.0e-8)) {
-            fprintf(stderr, "time chain JD %.6f lon %.4f: ramc %.12f/%.12f asc %.12f/%.12f mc %.12f/%.12f\n",
-                f->jd_ut, f->lon, ascmc[6], f->armc, ascmc[0], f->asc, ascmc[1], f->mc);
+            fprintf(
+                stderr,
+                "time chain JD %.6f lon %.4f: ramc %.12f/%.12f asc %.12f/%.12f mc %.12f/%.12f\n",
+                f->jd_ut,
+                f->lon,
+                ascmc[6],
+                f->armc,
+                ascmc[0],
+                f->asc,
+                ascmc[1],
+                f->mc
+            );
             failures++;
         }
     }
@@ -159,7 +219,12 @@ int main(void)
         failures += check_gauquelin(&worst_g, &count_g);
         printf("gauquelin: %d sector sets, worst sector residual %.3g\n", count_g, worst_g);
     }
-    printf("houses_reference: %d cusp sets (worst %.3g deg), %d time-chain cases (worst %.3g deg)\n",
-        N(house_fixtures), worst, N(house_time_fixtures), worst_t);
+    printf(
+        "houses_reference: %d cusp sets (worst %.3g deg), %d time-chain cases (worst %.3g deg)\n",
+        N(house_fixtures),
+        worst,
+        N(house_time_fixtures),
+        worst_t
+    );
     return failures == 0 ? 0 : 1;
 }

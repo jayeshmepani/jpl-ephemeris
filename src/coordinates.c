@@ -41,13 +41,7 @@ static double clamp_unit(double x)
     return x;
 }
 
-void jme_ecliptic_to_equatorial(
-    double lon,
-    double lat,
-    double eps,
-    double *ra,
-    double *dec
-)
+void jme_ecliptic_to_equatorial(double lon, double lat, double eps, double *ra, double *dec)
 {
     double sin_lon = sind(lon);
     double cos_lon = cosd(lon);
@@ -67,13 +61,7 @@ void jme_ecliptic_to_equatorial(
     }
 }
 
-void jme_equatorial_to_ecliptic(
-    double ra,
-    double dec,
-    double eps,
-    double *lon,
-    double *lat
-)
+void jme_equatorial_to_ecliptic(double ra, double dec, double eps, double *lon, double *lat)
 {
     double sin_ra = sind(ra);
     double cos_ra = cosd(ra);
@@ -372,12 +360,10 @@ int jme_spherical_to_rectangular_state(const double *spherical, double *rectangu
     rectangular[0] = radius * cos_lat * cos_lon;
     rectangular[1] = radius * cos_lat * sin_lon;
     rectangular[2] = radius * sin_lat;
-    rectangular[3] = (radius_rate * cos_lat * cos_lon)
-        - (radius * sin_lat * lat_rate * cos_lon)
-        - (radius * cos_lat * sin_lon * lon_rate);
-    rectangular[4] = (radius_rate * cos_lat * sin_lon)
-        - (radius * sin_lat * lat_rate * sin_lon)
-        + (radius * cos_lat * cos_lon * lon_rate);
+    rectangular[3] = (radius_rate * cos_lat * cos_lon) - (radius * sin_lat * lat_rate * cos_lon) -
+                     (radius * cos_lat * sin_lon * lon_rate);
+    rectangular[4] = (radius_rate * cos_lat * sin_lon) - (radius * sin_lat * lat_rate * sin_lon) +
+                     (radius * cos_lat * cos_lon * lon_rate);
     rectangular[5] = (radius_rate * sin_lat) + (radius * cos_lat * lat_rate);
 
     return JME_OK;
@@ -404,10 +390,8 @@ static int jme_unit_velocity_is_per_second(int unit)
 
 static int jme_unit_is_valid(int unit)
 {
-    return unit == JME_VECTOR_AU_PER_DAY ||
-        unit == JME_VECTOR_KM_PER_DAY ||
-        unit == JME_VECTOR_AU_PER_SECOND ||
-        unit == JME_VECTOR_KM_PER_SECOND;
+    return unit == JME_VECTOR_AU_PER_DAY || unit == JME_VECTOR_KM_PER_DAY ||
+           unit == JME_VECTOR_AU_PER_SECOND || unit == JME_VECTOR_KM_PER_SECOND;
 }
 
 int jme_state_convert_units(const double *input, int input_unit, int output_unit, double *output)
@@ -416,7 +400,8 @@ int jme_state_convert_units(const double *input, int input_unit, int output_unit
     double position_factor = 1.0;
     double velocity_factor = 1.0;
 
-    if (input == 0 || output == 0 || !jme_unit_is_valid(input_unit) || !jme_unit_is_valid(output_unit)) {
+    if (input == 0 || output == 0 || !jme_unit_is_valid(input_unit) ||
+        !jme_unit_is_valid(output_unit)) {
         return JME_ERR;
     }
 
@@ -427,9 +412,12 @@ int jme_state_convert_units(const double *input, int input_unit, int output_unit
     }
 
     velocity_factor = position_factor;
-    if (jme_unit_velocity_is_per_second(input_unit) && !jme_unit_velocity_is_per_second(output_unit)) {
+    if (jme_unit_velocity_is_per_second(input_unit) &&
+        !jme_unit_velocity_is_per_second(output_unit)) {
         velocity_factor *= JME_SECONDS_PER_DAY;
-    } else if (!jme_unit_velocity_is_per_second(input_unit) && jme_unit_velocity_is_per_second(output_unit)) {
+    } else if (
+        !jme_unit_velocity_is_per_second(input_unit) && jme_unit_velocity_is_per_second(output_unit)
+    ) {
         velocity_factor /= JME_SECONDS_PER_DAY;
     }
 

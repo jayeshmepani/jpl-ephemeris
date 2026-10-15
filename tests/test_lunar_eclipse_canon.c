@@ -18,9 +18,9 @@
 #include "jme/jme_extended.h"
 #include "fixtures/lunar_eclipse_canon.h"
 
-#define N(a) ((int)(sizeof(a) / sizeof((a)[0])))
+#define N(a)       ((int)(sizeof(a) / sizeof((a)[0])))
 #define TOL_TIME_S 3.0
-#define TOL_MAG 0.0015
+#define TOL_MAG    0.0015
 
 int main(void)
 {
@@ -33,19 +33,25 @@ int main(void)
         printf("skipped: needs CALCEPH and JME_TEST_JPL_KERNEL\n");
         return 77;
     }
-    if (jme_jpl_open(kernel, error) != JME_OK
-        || jme_set_astro_models_checked("IAU2006A;ENGINE=JPL", error) != JME_OK) {
+    if (jme_jpl_open(kernel, error) != JME_OK ||
+        jme_set_astro_models_checked("IAU2006A;ENGINE=JPL", error) != JME_OK) {
         fprintf(stderr, "setup failed: %s\n", error);
         return 1;
     }
     for (i = 0; i < N(lunar_canon_fixtures); i++) {
         const jme_lunar_canon_fixture *f = &lunar_canon_fixtures[i];
-        double td = jme_julian_day(f->y, f->mo, f->d, f->h + f->mi / 60.0 + f->s / 3600.0, JME_CALENDAR_GREGORIAN);
-        double tret[10] = { 0 }, attr[20] = { 0 }, geopos[3] = { 0, 0, 0 };
+        double td = jme_julian_day(
+            f->y,
+            f->mo,
+            f->d,
+            f->h + f->mi / 60.0 + f->s / 3600.0,
+            JME_CALENDAR_GREGORIAN
+        );
+        double tret[10] = {0}, attr[20] = {0}, geopos[3] = {0, 0, 0};
         double dt_s, du, dp;
 
-        if (jme_lun_eclipse_when(td - 2.0, 0, 0, tret, 0, error) < 0
-            || jme_lun_eclipse_how(tret[0], 0, geopos, attr, error) < 0) {
+        if (jme_lun_eclipse_when(td - 2.0, 0, 0, tret, 0, error) < 0 ||
+            jme_lun_eclipse_how(tret[0], 0, geopos, attr, error) < 0) {
             fprintf(stderr, "%d-%02d-%02d: %s\n", f->y, f->mo, f->d, error);
             failures++;
             continue;
@@ -53,15 +59,37 @@ int main(void)
         dt_s = (tret[0] - td) * 86400.0 + jme_delta_t(tret[0]);
         du = attr[0] - f->umb_mag;
         dp = attr[1] - f->pen_mag;
-        if (fabs(dt_s) > wt) wt = fabs(dt_s);
-        if (fabs(du) > wu) wu = fabs(du);
-        if (fabs(dp) > wp) wp = fabs(dp);
+        if (fabs(dt_s) > wt) {
+            wt = fabs(dt_s);
+        }
+        if (fabs(du) > wu) {
+            wu = fabs(du);
+        }
+        if (fabs(dp) > wp) {
+            wp = fabs(dp);
+        }
         if (!(fabs(dt_s) <= TOL_TIME_S && fabs(du) <= TOL_MAG && fabs(dp) <= TOL_MAG)) {
-            fprintf(stderr, "%d-%02d-%02d %c: dt=%+.2f s dU=%+.5f dP=%+.5f\n", f->y, f->mo, f->d, f->type, dt_s, du, dp);
+            fprintf(
+                stderr,
+                "%d-%02d-%02d %c: dt=%+.2f s dU=%+.5f dP=%+.5f\n",
+                f->y,
+                f->mo,
+                f->d,
+                f->type,
+                dt_s,
+                du,
+                dp
+            );
             failures++;
         }
     }
-    printf("lunar canon: %d eclipses, worst |dt| %.2f s, |dU| %.5f, |dP| %.5f, failures %d\n",
-           N(lunar_canon_fixtures), wt, wu, wp, failures);
+    printf(
+        "lunar canon: %d eclipses, worst |dt| %.2f s, |dU| %.5f, |dP| %.5f, failures %d\n",
+        N(lunar_canon_fixtures),
+        wt,
+        wu,
+        wp,
+        failures
+    );
     return failures == 0 ? 0 : 1;
 }

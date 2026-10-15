@@ -121,10 +121,8 @@ int jme_context_engine_policy(void)
         if (strcmp(engine, "MOSHIER") == 0 || strcmp(engine, "moshier") == 0) {
             return JME_ENGINE_MOSHIER;
         }
-        if (strcmp(engine, "VSOP_ELP_MEEUS") == 0
-            || strcmp(engine, "vsop_elp_meeus") == 0
-            || strcmp(engine, "ANALYTICAL") == 0
-            || strcmp(engine, "analytical") == 0) {
+        if (strcmp(engine, "VSOP_ELP_MEEUS") == 0 || strcmp(engine, "vsop_elp_meeus") == 0 ||
+            strcmp(engine, "ANALYTICAL") == 0 || strcmp(engine, "analytical") == 0) {
             return JME_ENGINE_VSOP_ELP_MEEUS;
         }
     }

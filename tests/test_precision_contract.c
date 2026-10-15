@@ -47,28 +47,28 @@ int main(void)
         double attrs[20];
         double tret[4];
         error[0] = '\0';
-        if (jme_calc(NAN, JME_BODY_SUN, JME_CALC_EQUATORIAL, values, error) != JME_ERR
-            || strstr(error, "finite") == 0) {
+        if (jme_calc(NAN, JME_BODY_SUN, JME_CALC_EQUATORIAL, values, error) != JME_ERR ||
+            strstr(error, "finite") == 0) {
             return fail("calc accepted a non-finite TT date", error);
         }
         error[0] = '\0';
-        if (jme_calc(INFINITY, JME_BODY_SUN, JME_CALC_EQUATORIAL, values, error) != JME_ERR
-            || strstr(error, "finite") == 0) {
+        if (jme_calc(INFINITY, JME_BODY_SUN, JME_CALC_EQUATORIAL, values, error) != JME_ERR ||
+            strstr(error, "finite") == 0) {
             return fail("calc accepted an infinite TT date", error);
         }
         error[0] = '\0';
-        if (jme_pheno(NAN, JME_BODY_MARS, 0, attrs, error) != JME_ERR
-            || strstr(error, "finite") == 0) {
+        if (jme_pheno(NAN, JME_BODY_MARS, 0, attrs, error) != JME_ERR ||
+            strstr(error, "finite") == 0) {
             return fail("pheno accepted a non-finite TT date", error);
         }
         error[0] = '\0';
-        if (jme_fixstar("Sirius", NAN, 0, values, error) != JME_ERR
-            || strstr(error, "finite") == 0) {
+        if (jme_fixstar("Sirius", NAN, 0, values, error) != JME_ERR ||
+            strstr(error, "finite") == 0) {
             return fail("fixed-star API accepted a non-finite TT date", error);
         }
         error[0] = '\0';
-        if (jme_nod_aps(NAN, JME_BODY_MOON, JME_CALC_TRUE_POSITION, 1, tret, error) != JME_ERR
-            || strstr(error, "finite") == 0) {
+        if (jme_nod_aps(NAN, JME_BODY_MOON, JME_CALC_TRUE_POSITION, 1, tret, error) != JME_ERR ||
+            strstr(error, "finite") == 0) {
             return fail("nodal/apsidal API accepted a non-finite TT date", error);
         }
     }
@@ -99,27 +99,40 @@ int main(void)
      * rather than forward a non-finite TT Julian date to calculation routines.
      */
     jme_set_astro_models("DELTAT2004 ENGINE=MOSHIER", 0);
-    error[0]='\0';
-    if (jme_calc_ut(2451545.0,JME_BODY_SUN,JME_CALC_EQUATORIAL,apparent,error)!=JME_ERR
-        || strstr(error,"Delta-T model unavailable")==0) return fail("calc_ut did not propagate Delta-T failure",error);
-    error[0]='\0';
+    error[0] = '\0';
+    if (jme_calc_ut(2451545.0, JME_BODY_SUN, JME_CALC_EQUATORIAL, apparent, error) != JME_ERR ||
+        strstr(error, "Delta-T model unavailable") == 0) {
+        return fail("calc_ut did not propagate Delta-T failure", error);
+    }
+    error[0] = '\0';
     {
         double attributes[20];
-        if (jme_pheno_ut(2451545.0,JME_BODY_MARS,0,attributes,error)!=JME_ERR
-            || strstr(error,"Delta-T model unavailable")==0) return fail("pheno_ut did not propagate Delta-T failure",error);
+        if (jme_pheno_ut(2451545.0, JME_BODY_MARS, 0, attributes, error) != JME_ERR ||
+            strstr(error, "Delta-T model unavailable") == 0) {
+            return fail("pheno_ut did not propagate Delta-T failure", error);
+        }
     }
-    error[0]='\0';
-    if (jme_fixstar_ut("Sirius",2451545.0,JME_CALC_EQUATORIAL,apparent,error)!=JME_ERR
-        || strstr(error,"Delta-T model unavailable")==0) return fail("fixstar_ut did not propagate Delta-T failure",error);
-    error[0]='\0';
-    if (jme_get_ayanamsa_ex_ut(2451545.0,JME_SIDEREAL_LAHIRI,&dt,error)!=JME_ERR
-        || strstr(error,"Delta-T model unavailable")==0) return fail("ayanamsa_ex_ut did not propagate Delta-T failure",error);
-    error[0]='\0';
-    if (jme_time_equ(2451545.0,&dt,error)!=JME_ERR
-        || strstr(error,"Delta-T model unavailable")==0) return fail("time_equ did not propagate Delta-T failure",error);
-    error[0]='\0';
-    if (jme_nod_aps_ut(2451545.0,JME_BODY_MERCURY,JME_CALC_TRUE_POSITION,1,&dt,error)!=JME_ERR
-        || strstr(error,"Delta-T model unavailable")==0) return fail("nod_aps_ut did not propagate Delta-T failure",error);
+    error[0] = '\0';
+    if (jme_fixstar_ut("Sirius", 2451545.0, JME_CALC_EQUATORIAL, apparent, error) != JME_ERR ||
+        strstr(error, "Delta-T model unavailable") == 0) {
+        return fail("fixstar_ut did not propagate Delta-T failure", error);
+    }
+    error[0] = '\0';
+    if (jme_get_ayanamsa_ex_ut(2451545.0, JME_SIDEREAL_LAHIRI, &dt, error) != JME_ERR ||
+        strstr(error, "Delta-T model unavailable") == 0) {
+        return fail("ayanamsa_ex_ut did not propagate Delta-T failure", error);
+    }
+    error[0] = '\0';
+    if (jme_time_equ(2451545.0, &dt, error) != JME_ERR ||
+        strstr(error, "Delta-T model unavailable") == 0) {
+        return fail("time_equ did not propagate Delta-T failure", error);
+    }
+    error[0] = '\0';
+    if (jme_nod_aps_ut(2451545.0, JME_BODY_MERCURY, JME_CALC_TRUE_POSITION, 1, &dt, error) !=
+            JME_ERR ||
+        strstr(error, "Delta-T model unavailable") == 0) {
+        return fail("nod_aps_ut did not propagate Delta-T failure", error);
+    }
 
     jme_set_astro_models("DELTAT2006 ENGINE=MOSHIER", 0);
 
@@ -154,9 +167,13 @@ int main(void)
     }
 
     error[0] = '\0';
-    rc = jme_fixstar("Sirius", 2451545.0,
+    rc = jme_fixstar(
+        "Sirius",
+        2451545.0,
         JME_CALC_EQUATORIAL | JME_CALC_NO_ABERRATION,
-        without_aberration, error);
+        without_aberration,
+        error
+    );
     if (rc != JME_OK || !all_finite(without_aberration, 6)) {
         return fail("fixed-star no-aberration calculation failed", error);
     }

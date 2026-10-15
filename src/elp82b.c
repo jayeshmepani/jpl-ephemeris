@@ -9,44 +9,108 @@
  * Thread-safe: all tables are const, no static mutable state.
  */
 #include "jme/jme.h"
+#include "context.h"
 #include <math.h>
 
-typedef struct jme_elp_main_term { int ilu[4]; double coef[7]; } jme_elp_main_term;
-typedef struct jme_elp_figure_term { int iz; int ilu[4]; double pha; double x; } jme_elp_figure_term;
-typedef struct jme_elp_planet_term { int ipla[11]; double pha; double x; } jme_elp_planet_term;
+typedef struct jme_elp_main_term {
+    int ilu[4];
+    double coef[7];
+} jme_elp_main_term;
+
+typedef struct jme_elp_figure_term {
+    int iz;
+    int ilu[4];
+    double pha;
+    double x;
+} jme_elp_figure_term;
+
+typedef struct jme_elp_planet_term {
+    int ipla[11];
+    double pha;
+    double x;
+} jme_elp_planet_term;
 
 #include "elp82b_data.inc"
 
 #define ELP_COUNT(a) ((int)(sizeof(a) / sizeof((a)[0])))
 
-static const jme_elp_main_term *const elp_main[3] = { elp_file_1, elp_file_2, elp_file_3 };
-static const int elp_main_n[3] = { ELP_COUNT(elp_file_1), ELP_COUNT(elp_file_2), ELP_COUNT(elp_file_3) };
+static const jme_elp_main_term *const elp_main[3] = {elp_file_1, elp_file_2, elp_file_3};
+static const int elp_main_n[3] =
+    {ELP_COUNT(elp_file_1), ELP_COUNT(elp_file_2), ELP_COUNT(elp_file_3)};
 
 static const jme_elp_figure_term *const elp_fig[36] = {
-    0, 0, 0, elp_file_4, elp_file_5, elp_file_6, elp_file_7, elp_file_8, elp_file_9,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    elp_file_22, elp_file_23, elp_file_24, elp_file_25, elp_file_26, elp_file_27, elp_file_28,
-    elp_file_29, elp_file_30, elp_file_31, elp_file_32, elp_file_33, elp_file_34, elp_file_35, elp_file_36
+    0,           0,           0,           elp_file_4,  elp_file_5,  elp_file_6,
+    elp_file_7,  elp_file_8,  elp_file_9,  0,           0,           0,
+    0,           0,           0,           0,           0,           0,
+    0,           0,           0,           elp_file_22, elp_file_23, elp_file_24,
+    elp_file_25, elp_file_26, elp_file_27, elp_file_28, elp_file_29, elp_file_30,
+    elp_file_31, elp_file_32, elp_file_33, elp_file_34, elp_file_35, elp_file_36
 };
 static const int elp_fig_n[36] = {
-    0, 0, 0, ELP_COUNT(elp_file_4), ELP_COUNT(elp_file_5), ELP_COUNT(elp_file_6), ELP_COUNT(elp_file_7),
-    ELP_COUNT(elp_file_8), ELP_COUNT(elp_file_9),
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    ELP_COUNT(elp_file_22), ELP_COUNT(elp_file_23), ELP_COUNT(elp_file_24), ELP_COUNT(elp_file_25),
-    ELP_COUNT(elp_file_26), ELP_COUNT(elp_file_27), ELP_COUNT(elp_file_28), ELP_COUNT(elp_file_29),
-    ELP_COUNT(elp_file_30), ELP_COUNT(elp_file_31), ELP_COUNT(elp_file_32), ELP_COUNT(elp_file_33),
-    ELP_COUNT(elp_file_34), ELP_COUNT(elp_file_35), ELP_COUNT(elp_file_36)
+    0,
+    0,
+    0,
+    ELP_COUNT(elp_file_4),
+    ELP_COUNT(elp_file_5),
+    ELP_COUNT(elp_file_6),
+    ELP_COUNT(elp_file_7),
+    ELP_COUNT(elp_file_8),
+    ELP_COUNT(elp_file_9),
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    ELP_COUNT(elp_file_22),
+    ELP_COUNT(elp_file_23),
+    ELP_COUNT(elp_file_24),
+    ELP_COUNT(elp_file_25),
+    ELP_COUNT(elp_file_26),
+    ELP_COUNT(elp_file_27),
+    ELP_COUNT(elp_file_28),
+    ELP_COUNT(elp_file_29),
+    ELP_COUNT(elp_file_30),
+    ELP_COUNT(elp_file_31),
+    ELP_COUNT(elp_file_32),
+    ELP_COUNT(elp_file_33),
+    ELP_COUNT(elp_file_34),
+    ELP_COUNT(elp_file_35),
+    ELP_COUNT(elp_file_36)
 };
 static const jme_elp_planet_term *const elp_pla[36] = {
-    0, 0, 0, 0, 0, 0, 0, 0, 0,
-    elp_file_10, elp_file_11, elp_file_12, elp_file_13, elp_file_14, elp_file_15,
-    elp_file_16, elp_file_17, elp_file_18, elp_file_19, elp_file_20, elp_file_21
+    0,           0,           0,           0,           0,           0,           0,
+    0,           0,           elp_file_10, elp_file_11, elp_file_12, elp_file_13, elp_file_14,
+    elp_file_15, elp_file_16, elp_file_17, elp_file_18, elp_file_19, elp_file_20, elp_file_21
 };
 static const int elp_pla_n[36] = {
-    0, 0, 0, 0, 0, 0, 0, 0, 0,
-    ELP_COUNT(elp_file_10), ELP_COUNT(elp_file_11), ELP_COUNT(elp_file_12), ELP_COUNT(elp_file_13),
-    ELP_COUNT(elp_file_14), ELP_COUNT(elp_file_15), ELP_COUNT(elp_file_16), ELP_COUNT(elp_file_17),
-    ELP_COUNT(elp_file_18), ELP_COUNT(elp_file_19), ELP_COUNT(elp_file_20), ELP_COUNT(elp_file_21)
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    ELP_COUNT(elp_file_10),
+    ELP_COUNT(elp_file_11),
+    ELP_COUNT(elp_file_12),
+    ELP_COUNT(elp_file_13),
+    ELP_COUNT(elp_file_14),
+    ELP_COUNT(elp_file_15),
+    ELP_COUNT(elp_file_16),
+    ELP_COUNT(elp_file_17),
+    ELP_COUNT(elp_file_18),
+    ELP_COUNT(elp_file_19),
+    ELP_COUNT(elp_file_20),
+    ELP_COUNT(elp_file_21)
 };
 
 /*
@@ -77,7 +141,9 @@ static inline int elp82b_eval(double jd_tdb, double *xyz, double *vel, int want)
     double preces, delnu, dele, delg, delnp, delep;
     int f, n, i, k;
 
-    if (xyz == 0 || !isfinite(jd_tdb)) return JME_ERR;
+    if (xyz == 0 || !isfinite(jd_tdb)) {
+        return JME_ERR;
+    }
 
     w[0][0] = (218 + 18 / c1 + 59.95571 / c2) * deg;
     w[1][0] = (83 + 21 / c1 + 11.67475 / c2) * deg;
@@ -160,19 +226,27 @@ static inline int elp82b_eval(double jd_tdb, double *xyz, double *vel, int want)
         for (n = 0; n < elp_main_n[f]; n++) {
             double c0 = s[n].coef[0], x, y = 0.0, yd = 0.0, tgv;
             tgv = s[n].coef[1] + dtasm * s[n].coef[5];
-            if (f == 2) c0 = c0 - 2.0 * c0 * delnu / 3.0;
-            x = c0 + tgv * (delnp - am * delnu) + s[n].coef[2] * delg + s[n].coef[3] * dele
-                + s[n].coef[4] * delep;
+            if (f == 2) {
+                c0 = c0 - 2.0 * c0 * delnu / 3.0;
+            }
+            x = c0 + tgv * (delnp - am * delnu) + s[n].coef[2] * delg + s[n].coef[3] * dele +
+                s[n].coef[4] * delep;
             for (k = 0; k < 5; k++) {
                 for (i = 0; i < 4; i++) {
                     y += s[n].ilu[i] * del[i][k] * t[k];
-                    if (want) yd += s[n].ilu[i] * del[i][k] * dt[k];
+                    if (want) {
+                        yd += s[n].ilu[i] * del[i][k] * dt[k];
+                    }
                 }
             }
-            if (f == 2) y += pis2;
+            if (f == 2) {
+                y += pis2;
+            }
             y = fmod(y, cpi2);
             r[f] += x * sin(y);
-            if (want) rd[f] += x * cos(y) * yd;
+            if (want) {
+                rd[f] += x * cos(y) * yd;
+            }
         }
     }
 
@@ -181,30 +255,44 @@ static inline int elp82b_eval(double jd_tdb, double *xyz, double *vel, int want)
         const jme_elp_figure_term *s = elp_fig[f];
         int iv = f % 3;
         int file = f + 1;
-        if (s == 0) continue;
+        if (s == 0) {
+            continue;
+        }
         for (n = 0; n < elp_fig_n[f]; n++) {
             double x = s[n].x, xd = 0.0, y, yd = 0.0;
-            if (x < 0.0) continue;
+            if (x < 0.0) {
+                continue;
+            }
             if ((file >= 7 && file <= 9) || (file >= 25 && file <= 27)) {
-                if (want) xd = x;
+                if (want) {
+                    xd = x;
+                }
                 x *= t[1];
             }
             if (file >= 34 && file <= 36) {
-                if (want) xd = x * 2.0 * t[1];
+                if (want) {
+                    xd = x * 2.0 * t[1];
+                }
                 x *= t[2];
             }
             y = s[n].pha * deg;
             if (want) {
                 yd = s[n].iz * zeta[1];
-                for (i = 0; i < 4; i++) yd += s[n].ilu[i] * del[i][1];
+                for (i = 0; i < 4; i++) {
+                    yd += s[n].ilu[i] * del[i][1];
+                }
             }
             for (k = 0; k < 2; k++) {
                 y += s[n].iz * zeta[k] * t[k];
-                for (i = 0; i < 4; i++) y += s[n].ilu[i] * del[i][k] * t[k];
+                for (i = 0; i < 4; i++) {
+                    y += s[n].ilu[i] * del[i][k] * t[k];
+                }
             }
             y = fmod(y, cpi2);
             r[iv] += x * sin(y);
-            if (want) rd[iv] += xd * sin(y) + x * cos(y) * yd;
+            if (want) {
+                rd[iv] += xd * sin(y) + x * cos(y) * yd;
+            }
         }
     }
 
@@ -215,31 +303,49 @@ static inline int elp82b_eval(double jd_tdb, double *xyz, double *vel, int want)
         int file = f + 1;
         for (n = 0; n < elp_pla_n[f]; n++) {
             double x = s[n].x, xd = 0.0, y, yd = 0.0;
-            if (x < 0.0) continue;
+            if (x < 0.0) {
+                continue;
+            }
             if ((file >= 13 && file <= 15) || (file >= 19 && file <= 21)) {
-                if (want) xd = x;
+                if (want) {
+                    xd = x;
+                }
                 x *= t[1];
             }
             y = s[n].pha * deg;
             if (file < 16) {
                 for (k = 0; k < 2; k++) {
-                    double term = (s[n].ipla[8] * del[0][k] + s[n].ipla[9] * del[2][k] + s[n].ipla[10] * del[3][k]);
-                    for (i = 0; i < 8; i++) term += s[n].ipla[i] * p[i][k];
+                    double term =
+                        (s[n].ipla[8] * del[0][k] + s[n].ipla[9] * del[2][k] +
+                         s[n].ipla[10] * del[3][k]);
+                    for (i = 0; i < 8; i++) {
+                        term += s[n].ipla[i] * p[i][k];
+                    }
                     y += term * t[k];
-                    if (want) yd += term * dt[k];
+                    if (want) {
+                        yd += term * dt[k];
+                    }
                 }
             } else {
                 for (k = 0; k < 2; k++) {
                     double term = 0.0;
-                    for (i = 0; i < 4; i++) term += s[n].ipla[i + 7] * del[i][k];
-                    for (i = 0; i < 7; i++) term += s[n].ipla[i] * p[i][k];
+                    for (i = 0; i < 4; i++) {
+                        term += s[n].ipla[i + 7] * del[i][k];
+                    }
+                    for (i = 0; i < 7; i++) {
+                        term += s[n].ipla[i] * p[i][k];
+                    }
                     y += term * t[k];
-                    if (want) yd += term * dt[k];
+                    if (want) {
+                        yd += term * dt[k];
+                    }
                 }
             }
             y = fmod(y, cpi2);
             r[iv] += x * sin(y);
-            if (want) rd[iv] += xd * sin(y) + x * cos(y) * yd;
+            if (want) {
+                rd[iv] += xd * sin(y) + x * cos(y) * yd;
+            }
         }
     }
 
@@ -252,13 +358,18 @@ static inline int elp82b_eval(double jd_tdb, double *xyz, double *vel, int want)
         double scale = a0 / ath;
         int a, b;
 
-        L = r[0] / rad + w[0][0] + w[0][1] * t[1] + w[0][2] * t[2] + w[0][3] * t[3] + w[0][4] * t[4];
-        Ld = rd[0] / rad + w[0][1] + 2.0 * w[0][2] * t[1] + 3.0 * w[0][3] * t[2] + 4.0 * w[0][4] * t[3];
+        L = r[0] / rad + w[0][0] + w[0][1] * t[1] + w[0][2] * t[2] + w[0][3] * t[3] +
+            w[0][4] * t[4];
+        Ld = rd[0] / rad + w[0][1] + 2.0 * w[0][2] * t[1] + 3.0 * w[0][3] * t[2] +
+             4.0 * w[0][4] * t[3];
         B = r[1] / rad;
         Bd = rd[1] / rad;
         R = r[2] * scale;
         Rd = rd[2] * scale;
-        cl = cos(L); sl = sin(L); cb = cos(B); sb = sin(B);
+        cl = cos(L);
+        sl = sin(L);
+        cb = cos(B);
+        sb = sin(B);
         v1 = R * cb * cl;
         v2 = R * cb * sl;
         v3 = R * sb;
@@ -266,26 +377,37 @@ static inline int elp82b_eval(double jd_tdb, double *xyz, double *vel, int want)
         v2d = Rd * cb * sl - R * sb * Bd * sl + R * cb * cl * Ld;
         v3d = Rd * sb + R * cb * Bd;
 
-        P = (0.10180391e-4 + 0.47020439e-6 * t[1] - 0.5417367e-9 * t[2] - 0.2507948e-11 * t[3]
-            + 0.463486e-14 * t[4]) * t[1];
-        Q = (-0.113469002e-3 + 0.12372674e-6 * t[1] + 0.1265417e-8 * t[2] - 0.1371808e-11 * t[3]
-            - 0.320334e-14 * t[4]) * t[1];
-        Pd = 0.10180391e-4 + 2.0 * 0.47020439e-6 * t[1] - 3.0 * 0.5417367e-9 * t[2]
-            - 4.0 * 0.2507948e-11 * t[3] + 5.0 * 0.463486e-14 * t[4];
-        Qd = -0.113469002e-3 + 2.0 * 0.12372674e-6 * t[1] + 3.0 * 0.1265417e-8 * t[2]
-            - 4.0 * 0.1371808e-11 * t[3] - 5.0 * 0.320334e-14 * t[4];
+        P = (0.10180391e-4 + 0.47020439e-6 * t[1] - 0.5417367e-9 * t[2] - 0.2507948e-11 * t[3] +
+             0.463486e-14 * t[4]) *
+            t[1];
+        Q = (-0.113469002e-3 + 0.12372674e-6 * t[1] + 0.1265417e-8 * t[2] - 0.1371808e-11 * t[3] -
+             0.320334e-14 * t[4]) *
+            t[1];
+        Pd = 0.10180391e-4 + 2.0 * 0.47020439e-6 * t[1] - 3.0 * 0.5417367e-9 * t[2] -
+             4.0 * 0.2507948e-11 * t[3] + 5.0 * 0.463486e-14 * t[4];
+        Qd = -0.113469002e-3 + 2.0 * 0.12372674e-6 * t[1] + 3.0 * 0.1265417e-8 * t[2] -
+             4.0 * 0.1371808e-11 * t[3] - 5.0 * 0.320334e-14 * t[4];
         rq = 2.0 * sqrt(1.0 - P * P - Q * Q);
         rqd = -2.0 * (P * Pd + Q * Qd) / sqrt(1.0 - P * P - Q * Q);
 
-        /* Matrix of elp82b.f: rows (pw2, pwqw, pw*ra), (pwqw, qw2, -qw*ra), (-pw*ra, qw*ra, pw2+qw2-1). */
-        m[0][0] = 1.0 - 2.0 * P * P;  md[0][0] = -4.0 * P * Pd;
-        m[0][1] = 2.0 * P * Q;        md[0][1] = 2.0 * (Pd * Q + P * Qd);
-        m[0][2] = P * rq;             md[0][2] = Pd * rq + P * rqd;
-        m[1][0] = 2.0 * P * Q;        md[1][0] = md[0][1];
-        m[1][1] = 1.0 - 2.0 * Q * Q;  md[1][1] = -4.0 * Q * Qd;
-        m[1][2] = -Q * rq;            md[1][2] = -(Qd * rq + Q * rqd);
-        m[2][0] = -P * rq;            md[2][0] = -md[0][2];
-        m[2][1] = Q * rq;             md[2][1] = -md[1][2];
+        /* Matrix of elp82b.f: rows (pw2, pwqw, pw*ra), (pwqw, qw2, -qw*ra), (-pw*ra, qw*ra,
+         * pw2+qw2-1). */
+        m[0][0] = 1.0 - 2.0 * P * P;
+        md[0][0] = -4.0 * P * Pd;
+        m[0][1] = 2.0 * P * Q;
+        md[0][1] = 2.0 * (Pd * Q + P * Qd);
+        m[0][2] = P * rq;
+        md[0][2] = Pd * rq + P * rqd;
+        m[1][0] = 2.0 * P * Q;
+        md[1][0] = md[0][1];
+        m[1][1] = 1.0 - 2.0 * Q * Q;
+        md[1][1] = -4.0 * Q * Qd;
+        m[1][2] = -Q * rq;
+        md[1][2] = -(Qd * rq + Q * rqd);
+        m[2][0] = -P * rq;
+        md[2][0] = -md[0][2];
+        m[2][1] = Q * rq;
+        md[2][1] = -md[1][2];
         m[2][2] = (1.0 - 2.0 * P * P) + (1.0 - 2.0 * Q * Q) - 1.0;
         md[2][2] = md[0][0] + md[1][1];
 
@@ -297,17 +419,25 @@ static inline int elp82b_eval(double jd_tdb, double *xyz, double *vel, int want)
                 accd += md[a][b] * vin[b] + m[a][b] * vind[b];
             }
             xyz[a] = acc;
-            if (want) vel[a] = accd / 36525.0;
+            if (want) {
+                vel[a] = accd / 36525.0;
+            }
         }
     }
-    if (!(isfinite(xyz[0]) && isfinite(xyz[1]) && isfinite(xyz[2]))) return JME_ERR;
-    if (want && !(isfinite(vel[0]) && isfinite(vel[1]) && isfinite(vel[2]))) return JME_ERR;
+    if (!(isfinite(xyz[0]) && isfinite(xyz[1]) && isfinite(xyz[2]))) {
+        return JME_ERR;
+    }
+    if (want && !(isfinite(vel[0]) && isfinite(vel[1]) && isfinite(vel[2]))) {
+        return JME_ERR;
+    }
     return JME_OK;
 }
 
 int jme_elp82b_geocentric_state_km(double jd_tdb, double *xyz, double *vel)
 {
-    if (vel == 0) return elp82b_eval(jd_tdb, xyz, 0, 0);
+    if (vel == 0) {
+        return elp82b_eval(jd_tdb, xyz, 0, 0);
+    }
     return elp82b_eval(jd_tdb, xyz, vel, 1);
 }
 

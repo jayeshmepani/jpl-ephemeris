@@ -9,7 +9,7 @@
 #include <math.h>
 
 #define JME_J2000_MEAN_OBLIQUITY_DEG 23.439291111111111111111111111111111111111111111111
-#define JME_DEG_TO_RAD 0.017453292519943295769236907684886127134428718885417
+#define JME_DEG_TO_RAD               0.017453292519943295769236907684886127134428718885417
 
 #ifdef JME_HAVE_CALCEPH
 #include <calceph.h>
@@ -39,13 +39,16 @@ static void jme_calceph_clear_message(void)
 
 static void jme_calceph_fail(char *error, const char *what)
 {
-    if (error == 0) return;
+    if (error == 0)
+        return;
     if (g_calceph_message[0] != '\0') {
         char buf[256];
         size_t n = strlen(what), i = 0, k;
         const char *m = g_calceph_message;
-        while (*m == ' ' || *m == '\n') m++;
-        if (n > 120) n = 120;
+        while (*m == ' ' || *m == '\n')
+            m++;
+        if (n > 120)
+            n = 120;
         memcpy(buf, what, n);
         i = n;
         buf[i++] = ':';
@@ -53,7 +56,8 @@ static void jme_calceph_fail(char *error, const char *what)
         for (k = 0; m[k] != '\0' && i + 1 < sizeof(buf) && i < 255; k++) {
             buf[i++] = (m[k] == '\n') ? ' ' : m[k];
         }
-        while (i > 0 && buf[i - 1] == ' ') i--;
+        while (i > 0 && buf[i - 1] == ' ')
+            i--;
         buf[i] = '\0';
         jme_set_error(error, buf);
     } else {
@@ -432,9 +436,15 @@ int jme_jpl_current_file_data(
     if (path != 0 && path_size > 0U) {
         path[0] = '\0';
     }
-    if (first_time != 0) { *first_time = 0.0; }
-    if (last_time != 0) { *last_time = 0.0; }
-    if (continuous != 0) { *continuous = 0; }
+    if (first_time != 0) {
+        *first_time = 0.0;
+    }
+    if (last_time != 0) {
+        *last_time = 0.0;
+    }
+    if (continuous != 0) {
+        *continuous = 0;
+    }
 
     if (g_kernel == 0) {
         jme_set_error(error, "JPL kernel is closed");
@@ -463,9 +473,15 @@ int jme_jpl_current_file_data(
     if (path != 0 && path_size > 0U) {
         path[0] = '\0';
     }
-    if (first_time != 0) { *first_time = 0.0; }
-    if (last_time != 0) { *last_time = 0.0; }
-    if (continuous != 0) { *continuous = 0; }
+    if (first_time != 0) {
+        *first_time = 0.0;
+    }
+    if (last_time != 0) {
+        *last_time = 0.0;
+    }
+    if (continuous != 0) {
+        *continuous = 0;
+    }
     jme_set_error(error, "CALCEPH support is unavailable in this build");
     return JME_ERR;
 #endif
@@ -527,7 +543,13 @@ int jme_jpl_constant_count(char *error)
 #endif
 }
 
-int jme_jpl_constant_index(int index, char *name, unsigned int name_size, double *value, char *error)
+int jme_jpl_constant_index(
+    int index,
+    char *name,
+    unsigned int name_size,
+    double *value,
+    char *error
+)
 {
 #ifdef JME_HAVE_CALCEPH
     char local_name[CALCEPH_MAX_CONSTANTNAME];
@@ -672,7 +694,8 @@ int jme_jpl_constant_string_vector(
         return JME_ERR;
     }
 
-    if (name == 0 || values == 0 || single_value_size == 0U || value_count <= 0 || value_count > 16) {
+    if (name == 0 || values == 0 || single_value_size == 0U || value_count <= 0 ||
+        value_count > 16) {
         jme_set_error(error, "JPL kernel constant-string-vector query argument is invalid");
         return JME_ERR;
     }
@@ -736,26 +759,32 @@ int jme_jpl_position_record_index(
 )
 {
 #ifdef JME_HAVE_CALCEPH
-    if (target != 0) { *target = 0; }
-    if (center != 0) { *center = 0; }
-    if (first_time != 0) { *first_time = 0.0; }
-    if (last_time != 0) { *last_time = 0.0; }
-    if (frame != 0) { *frame = 0; }
-    if (segment_type != 0) { *segment_type = 0; }
+    if (target != 0) {
+        *target = 0;
+    }
+    if (center != 0) {
+        *center = 0;
+    }
+    if (first_time != 0) {
+        *first_time = 0.0;
+    }
+    if (last_time != 0) {
+        *last_time = 0.0;
+    }
+    if (frame != 0) {
+        *frame = 0;
+    }
+    if (segment_type != 0) {
+        *segment_type = 0;
+    }
 
     if (g_kernel == 0) {
         jme_set_error(error, "JPL kernel is closed");
         return JME_ERR;
     }
 
-    if (
-        target == 0 ||
-        center == 0 ||
-        first_time == 0 ||
-        last_time == 0 ||
-        frame == 0 ||
-        segment_type == 0
-    ) {
+    if (target == 0 || center == 0 || first_time == 0 || last_time == 0 || frame == 0 ||
+        segment_type == 0) {
         jme_set_error(error, "JPL kernel position-record output is null");
         return JME_ERR;
     }
@@ -777,12 +806,24 @@ int jme_jpl_position_record_index(
     return JME_OK;
 #else
     (void)index;
-    if (target != 0) { *target = 0; }
-    if (center != 0) { *center = 0; }
-    if (first_time != 0) { *first_time = 0.0; }
-    if (last_time != 0) { *last_time = 0.0; }
-    if (frame != 0) { *frame = 0; }
-    if (segment_type != 0) { *segment_type = 0; }
+    if (target != 0) {
+        *target = 0;
+    }
+    if (center != 0) {
+        *center = 0;
+    }
+    if (first_time != 0) {
+        *first_time = 0.0;
+    }
+    if (last_time != 0) {
+        *last_time = 0.0;
+    }
+    if (frame != 0) {
+        *frame = 0;
+    }
+    if (segment_type != 0) {
+        *segment_type = 0;
+    }
     jme_set_error(error, "CALCEPH support is unavailable in this build");
     return JME_ERR;
 #endif
@@ -822,11 +863,21 @@ int jme_jpl_orientation_record_index(
 )
 {
 #ifdef JME_HAVE_CALCEPH
-    if (target != 0) { *target = 0; }
-    if (first_time != 0) { *first_time = 0.0; }
-    if (last_time != 0) { *last_time = 0.0; }
-    if (frame != 0) { *frame = 0; }
-    if (segment_type != 0) { *segment_type = 0; }
+    if (target != 0) {
+        *target = 0;
+    }
+    if (first_time != 0) {
+        *first_time = 0.0;
+    }
+    if (last_time != 0) {
+        *last_time = 0.0;
+    }
+    if (frame != 0) {
+        *frame = 0;
+    }
+    if (segment_type != 0) {
+        *segment_type = 0;
+    }
 
     if (g_kernel == 0) {
         jme_set_error(error, "JPL kernel is closed");
@@ -838,7 +889,15 @@ int jme_jpl_orientation_record_index(
         return JME_ERR;
     }
 
-    if (calceph_getorientrecordindex2(g_kernel, index, target, first_time, last_time, frame, segment_type) == 0) {
+    if (calceph_getorientrecordindex2(
+            g_kernel,
+            index,
+            target,
+            first_time,
+            last_time,
+            frame,
+            segment_type
+        ) == 0) {
         jme_set_error(error, "JPL kernel orientation-record query failed");
         return JME_ERR;
     }
@@ -846,11 +905,21 @@ int jme_jpl_orientation_record_index(
     return JME_OK;
 #else
     (void)index;
-    if (target != 0) { *target = 0; }
-    if (first_time != 0) { *first_time = 0.0; }
-    if (last_time != 0) { *last_time = 0.0; }
-    if (frame != 0) { *frame = 0; }
-    if (segment_type != 0) { *segment_type = 0; }
+    if (target != 0) {
+        *target = 0;
+    }
+    if (first_time != 0) {
+        *first_time = 0.0;
+    }
+    if (last_time != 0) {
+        *last_time = 0.0;
+    }
+    if (frame != 0) {
+        *frame = 0;
+    }
+    if (segment_type != 0) {
+        *segment_type = 0;
+    }
     jme_set_error(error, "CALCEPH support is unavailable in this build");
     return JME_ERR;
 #endif
@@ -861,11 +930,16 @@ static int jme_calceph_unit(int unit)
 {
 #ifdef JME_HAVE_CALCEPH
     switch (unit) {
-    case JME_VECTOR_AU_PER_DAY: return CALCEPH_USE_NAIFID | CALCEPH_UNIT_KM | CALCEPH_UNIT_DAY;
-    case JME_VECTOR_KM_PER_DAY: return CALCEPH_USE_NAIFID | CALCEPH_UNIT_KM | CALCEPH_UNIT_DAY;
-    case JME_VECTOR_AU_PER_SECOND: return CALCEPH_USE_NAIFID | CALCEPH_UNIT_KM | CALCEPH_UNIT_SEC;
-    case JME_VECTOR_KM_PER_SECOND: return CALCEPH_USE_NAIFID | CALCEPH_UNIT_KM | CALCEPH_UNIT_SEC;
-    default: return 0;
+    case JME_VECTOR_AU_PER_DAY:
+        return CALCEPH_USE_NAIFID | CALCEPH_UNIT_KM | CALCEPH_UNIT_DAY;
+    case JME_VECTOR_KM_PER_DAY:
+        return CALCEPH_USE_NAIFID | CALCEPH_UNIT_KM | CALCEPH_UNIT_DAY;
+    case JME_VECTOR_AU_PER_SECOND:
+        return CALCEPH_USE_NAIFID | CALCEPH_UNIT_KM | CALCEPH_UNIT_SEC;
+    case JME_VECTOR_KM_PER_SECOND:
+        return CALCEPH_USE_NAIFID | CALCEPH_UNIT_KM | CALCEPH_UNIT_SEC;
+    default:
+        return 0;
     }
 #else
     (void)unit;
@@ -877,9 +951,12 @@ static int jme_calceph_orientation_unit(int unit)
 {
 #ifdef JME_HAVE_CALCEPH
     switch (unit) {
-    case JME_ORIENTATION_RAD_PER_DAY: return CALCEPH_USE_NAIFID | CALCEPH_UNIT_RAD | CALCEPH_UNIT_DAY;
-    case JME_ORIENTATION_RAD_PER_SECOND: return CALCEPH_USE_NAIFID | CALCEPH_UNIT_RAD | CALCEPH_UNIT_SEC;
-    default: return 0;
+    case JME_ORIENTATION_RAD_PER_DAY:
+        return CALCEPH_USE_NAIFID | CALCEPH_UNIT_RAD | CALCEPH_UNIT_DAY;
+    case JME_ORIENTATION_RAD_PER_SECOND:
+        return CALCEPH_USE_NAIFID | CALCEPH_UNIT_RAD | CALCEPH_UNIT_SEC;
+    default:
+        return 0;
     }
 #else
     (void)unit;
@@ -914,15 +991,17 @@ int internal_tt_to_tdb_split(
     int iteration;
     int converged = 0;
 
-    if (error != 0) error[0] = '\0';
+    if (error != 0) {
+        error[0] = '\0';
+    }
     if (jd0_tdb == 0 || fraction_tdb == 0) {
         jme_set_error(error, "TDB two-part Julian-date outputs are required");
         return JME_ERR;
     }
     *jd0_tdb = NAN;
     *fraction_tdb = NAN;
-    if (!isfinite(jd0_tt) || !isfinite(fraction_tt)
-        || floor(jd0_tt) != jd0_tt || fraction_tt < 0.0 || fraction_tt >= 1.0) {
+    if (!isfinite(jd0_tt) || !isfinite(fraction_tt) || floor(jd0_tt) != jd0_tt ||
+        fraction_tt < 0.0 || fraction_tt >= 1.0) {
         jme_set_error(error, "TT input must be a normalized two-part Julian date");
         return JME_ERR;
     }
@@ -961,8 +1040,8 @@ int internal_tt_to_tdb_split(
     carry = floor(trial_fraction);
     *jd0_tdb = jd0_tt + carry;
     *fraction_tdb = trial_fraction - carry;
-    if (!isfinite(*jd0_tdb) || !isfinite(*fraction_tdb)
-        || floor(*jd0_tdb) != *jd0_tdb || *fraction_tdb < 0.0 || *fraction_tdb >= 1.0) {
+    if (!isfinite(*jd0_tdb) || !isfinite(*fraction_tdb) || floor(*jd0_tdb) != *jd0_tdb ||
+        *fraction_tdb < 0.0 || *fraction_tdb >= 1.0) {
         *jd0_tdb = NAN;
         *fraction_tdb = NAN;
         jme_set_error(error, "TT-to-TDB conversion did not produce a normalized date");
@@ -987,12 +1066,13 @@ int internal_tt_to_tdb_jd(double jd_tt, double *jd_tdb, char *error)
     }
     {
         double day = floor(jd_tt);
-        if (internal_tt_to_tdb_split(day, jd_tt - day, &d0, &f0, error) != JME_OK) return JME_ERR;
+        if (internal_tt_to_tdb_split(day, jd_tt - day, &d0, &f0, error) != JME_OK) {
+            return JME_ERR;
+        }
     }
     *jd_tdb = d0 + f0;
     return JME_OK;
 }
-
 
 /* IAU 2006 time-scale relation, delegated to the ERFA implementation. */
 int internal_tdb_to_tcb_split(
@@ -1005,7 +1085,9 @@ int internal_tdb_to_tcb_split(
 {
     double carry;
 
-    if (error != 0) error[0] = '\0';
+    if (error != 0) {
+        error[0] = '\0';
+    }
     if (jd0_tcb == 0 || fraction_tcb == 0) {
         jme_set_error(error, "TCB two-part Julian-date outputs are required");
         return JME_ERR;
@@ -1013,13 +1095,13 @@ int internal_tdb_to_tcb_split(
     *jd0_tcb = NAN;
     *fraction_tcb = NAN;
 
-    if (!isfinite(jd0_tdb) || !isfinite(fraction_tdb)
-        || floor(jd0_tdb) != jd0_tdb || fraction_tdb < 0.0 || fraction_tdb >= 1.0) {
+    if (!isfinite(jd0_tdb) || !isfinite(fraction_tdb) || floor(jd0_tdb) != jd0_tdb ||
+        fraction_tdb < 0.0 || fraction_tdb >= 1.0) {
         jme_set_error(error, "TDB input must be a normalized two-part Julian date");
         return JME_ERR;
     }
-    if (jme_erfa_tdbtcb(jd0_tdb, fraction_tdb, jd0_tcb, fraction_tcb) != 0
-        || !isfinite(*jd0_tcb) || !isfinite(*fraction_tcb)) {
+    if (jme_erfa_tdbtcb(jd0_tdb, fraction_tdb, jd0_tcb, fraction_tcb) != 0 || !isfinite(*jd0_tcb) ||
+        !isfinite(*fraction_tcb)) {
         *jd0_tcb = NAN;
         *fraction_tcb = NAN;
         jme_set_error(error, "ERFA TDB-to-TCB conversion failed");
@@ -1050,7 +1132,9 @@ int internal_tt_split_to_jpl_time_split(
     double jd0_tdb;
     double fraction_tdb;
 
-    if (error != 0) error[0] = '\0';
+    if (error != 0) {
+        error[0] = '\0';
+    }
     if (jd0_native == 0 || fraction_native == 0) {
         jme_set_error(error, "Native time-scale output pair is required");
         return JME_ERR;
@@ -1064,8 +1148,7 @@ int internal_tt_split_to_jpl_time_split(
         return JME_ERR;
     }
 
-    if (internal_tt_to_tdb_split(
-            jd0_tt, fraction_tt, &jd0_tdb, &fraction_tdb, error) != JME_OK) {
+    if (internal_tt_to_tdb_split(jd0_tt, fraction_tt, &jd0_tdb, &fraction_tdb, error) != JME_OK) {
         return JME_ERR;
     }
     if (native_scale == JME_JPL_TIMESCALE_TDB) {
@@ -1074,9 +1157,7 @@ int internal_tt_split_to_jpl_time_split(
         return JME_OK;
     }
 
-    return internal_tdb_to_tcb_split(
-        jd0_tdb, fraction_tdb, jd0_native, fraction_native, error
-    );
+    return internal_tdb_to_tcb_split(jd0_tdb, fraction_tdb, jd0_native, fraction_native, error);
 }
 
 int internal_tt_to_jpl_time_split(
@@ -1090,8 +1171,12 @@ int internal_tt_to_jpl_time_split(
     double fraction_tt;
 
     if (!isfinite(jd_tt)) {
-        if (jd0_native != 0) *jd0_native = NAN;
-        if (fraction_native != 0) *fraction_native = NAN;
+        if (jd0_native != 0) {
+            *jd0_native = NAN;
+        }
+        if (fraction_native != 0) {
+            *fraction_native = NAN;
+        }
         jme_set_error(error, "TT Julian date must be finite");
         return JME_ERR;
     }
@@ -1099,7 +1184,11 @@ int internal_tt_to_jpl_time_split(
     jd0_tt = floor(jd_tt);
     fraction_tt = jd_tt - jd0_tt;
     return internal_tt_split_to_jpl_time_split(
-        jd0_tt, fraction_tt, jd0_native, fraction_native, error
+        jd0_tt,
+        fraction_tt,
+        jd0_native,
+        fraction_native,
+        error
     );
 }
 
@@ -1113,15 +1202,24 @@ int internal_jpl_last_center_substituted(void)
 static int jme_planet_system_barycenter(int body)
 {
     switch (body) {
-    case JME_BODY_MERCURY: return JME_BODY_MERCURY_BARYCENTER;
-    case JME_BODY_VENUS: return JME_BODY_VENUS_BARYCENTER;
-    case JME_BODY_MARS: return JME_BODY_MARS_BARYCENTER;
-    case JME_BODY_JUPITER: return JME_BODY_JUPITER_BARYCENTER;
-    case JME_BODY_SATURN: return JME_BODY_SATURN_BARYCENTER;
-    case JME_BODY_URANUS: return JME_BODY_URANUS_BARYCENTER;
-    case JME_BODY_NEPTUNE: return JME_BODY_NEPTUNE_BARYCENTER;
-    case JME_BODY_PLUTO: return JME_BODY_PLUTO_BARYCENTER;
-    default: return -1;
+    case JME_BODY_MERCURY:
+        return JME_BODY_MERCURY_BARYCENTER;
+    case JME_BODY_VENUS:
+        return JME_BODY_VENUS_BARYCENTER;
+    case JME_BODY_MARS:
+        return JME_BODY_MARS_BARYCENTER;
+    case JME_BODY_JUPITER:
+        return JME_BODY_JUPITER_BARYCENTER;
+    case JME_BODY_SATURN:
+        return JME_BODY_SATURN_BARYCENTER;
+    case JME_BODY_URANUS:
+        return JME_BODY_URANUS_BARYCENTER;
+    case JME_BODY_NEPTUNE:
+        return JME_BODY_NEPTUNE_BARYCENTER;
+    case JME_BODY_PLUTO:
+        return JME_BODY_PLUTO_BARYCENTER;
+    default:
+        return -1;
     }
 }
 
@@ -1134,7 +1232,15 @@ int internal_jpl_body_state_tt(
     char *error
 )
 {
-    return internal_jpl_body_state_tt_offset(jd_tt, 0.0, target_body, center_body, unit, state, error);
+    return internal_jpl_body_state_tt_offset(
+        jd_tt,
+        0.0,
+        target_body,
+        center_body,
+        unit,
+        state,
+        error
+    );
 }
 
 /*
@@ -1179,20 +1285,39 @@ int internal_jpl_body_state_tt_offset(
     }
 
     if (internal_tt_split_to_jpl_time_split(
-            jd0_tt, fraction_tt, &jd0_native, &fraction_native, error) != JME_OK) {
+            jd0_tt,
+            fraction_tt,
+            &jd0_native,
+            &fraction_native,
+            error
+        ) != JME_OK) {
         return JME_ERR;
     }
 
     if (jme_jpl_body_state_split(
-            jd0_native, fraction_native, target_body, center_body, unit, state, error) == JME_OK) {
+            jd0_native,
+            fraction_native,
+            target_body,
+            center_body,
+            unit,
+            state,
+            error
+        ) == JME_OK) {
         return JME_OK;
     }
     /* Opt-in planet-centre -> system-barycentre substitution (never silent: see
      * jme_calc_resolve_engine and docs/ACCURACY.md). */
     bary = jme_planet_system_barycenter(target_body);
-    if (jme_context_jpl_center_policy() == JME_JPL_CENTER_BARYCENTER && bary >= 0
-        && jme_jpl_body_state_split(
-            jd0_native, fraction_native, bary, center_body, unit, state, error) == JME_OK) {
+    if (jme_context_jpl_center_policy() == JME_JPL_CENTER_BARYCENTER && bary >= 0 &&
+        jme_jpl_body_state_split(
+            jd0_native,
+            fraction_native,
+            bary,
+            center_body,
+            unit,
+            state,
+            error
+        ) == JME_OK) {
         g_jpl_center_substituted = 1;
         jme_set_error(error, "");
         return JME_OK;
@@ -1224,13 +1349,26 @@ static int jme_utc_to_jpl_jd_split(
     *fraction_native = NAN;
 
     if (internal_utc_to_tt_split(
-            year, month, day, hour, minute, second, calendar,
-            &jd0_tt, &fraction_tt, error) != JME_OK) {
+            year,
+            month,
+            day,
+            hour,
+            minute,
+            second,
+            calendar,
+            &jd0_tt,
+            &fraction_tt,
+            error
+        ) != JME_OK) {
         return JME_ERR;
     }
 
     return internal_tt_split_to_jpl_time_split(
-        jd0_tt, fraction_tt, jd0_native, fraction_native, error
+        jd0_tt,
+        fraction_tt,
+        jd0_native,
+        fraction_native,
+        error
     );
 }
 
@@ -1358,7 +1496,8 @@ int jme_jpl_orientation_state_order_naif(
         return JME_ERR;
     }
     jme_calceph_clear_message();
-    if (calceph_orient_order(g_kernel, jd0, time_offset, target_naif, calceph_unit, order, state) == 0) {
+    if (calceph_orient_order(g_kernel, jd0, time_offset, target_naif, calceph_unit, order, state) ==
+        0) {
         jme_zero_order_state(state, order);
         jme_calceph_fail(error, "JPL orientation order state computation failed");
         return JME_ERR;
@@ -1396,14 +1535,28 @@ int jme_jpl_orientation_state_utc_naif(
     double fraction_native = 0.0;
 
     if (jme_utc_to_jpl_jd_split(
-            year, month, day, hour, minute, second, calendar,
-            &jd0_native, &fraction_native, error) != JME_OK) {
+            year,
+            month,
+            day,
+            hour,
+            minute,
+            second,
+            calendar,
+            &jd0_native,
+            &fraction_native,
+            error
+        ) != JME_OK) {
         jme_zero_state(state);
         return JME_ERR;
     }
 
     return jme_jpl_orientation_state_split_naif(
-        jd0_native, fraction_native, target_naif, unit, state, error
+        jd0_native,
+        fraction_native,
+        target_naif,
+        unit,
+        state,
+        error
     );
 }
 
@@ -1418,7 +1571,14 @@ int jme_jpl_rotational_angular_momentum_state_naif(
     double jd0 = jme_jpl_day_floor(jd_time);
     double fraction = jd_time - jd0;
 
-    return jme_jpl_rotational_angular_momentum_state_split_naif(jd0, fraction, target_naif, unit, state, error);
+    return jme_jpl_rotational_angular_momentum_state_split_naif(
+        jd0,
+        fraction,
+        target_naif,
+        unit,
+        state,
+        error
+    );
 }
 
 int jme_jpl_rotational_angular_momentum_state_utc_naif(
@@ -1439,14 +1599,28 @@ int jme_jpl_rotational_angular_momentum_state_utc_naif(
     double fraction_native = 0.0;
 
     if (jme_utc_to_jpl_jd_split(
-            year, month, day, hour, minute, second, calendar,
-            &jd0_native, &fraction_native, error) != JME_OK) {
+            year,
+            month,
+            day,
+            hour,
+            minute,
+            second,
+            calendar,
+            &jd0_native,
+            &fraction_native,
+            error
+        ) != JME_OK) {
         jme_zero_state(state);
         return JME_ERR;
     }
 
     return jme_jpl_rotational_angular_momentum_state_split_naif(
-        jd0_native, fraction_native, target_naif, unit, state, error
+        jd0_native,
+        fraction_native,
+        target_naif,
+        unit,
+        state,
+        error
     );
 }
 
@@ -1544,7 +1718,15 @@ int jme_jpl_rotational_angular_momentum_state_order_naif(
         return JME_ERR;
     }
     jme_calceph_clear_message();
-    if (calceph_rotangmom_order(g_kernel, jd0, time_offset, target_naif, calceph_unit, order, state) == 0) {
+    if (calceph_rotangmom_order(
+            g_kernel,
+            jd0,
+            time_offset,
+            target_naif,
+            calceph_unit,
+            order,
+            state
+        ) == 0) {
         jme_zero_order_state(state, order);
         jme_calceph_fail(error, "JPL rotational angular momentum order state computation failed");
         return JME_ERR;
@@ -1576,7 +1758,15 @@ int jme_jpl_body_state_naif(
     double jd0 = jme_jpl_day_floor(jd_time);
     double fraction = jd_time - jd0;
 
-    return jme_jpl_body_state_split_naif(jd0, fraction, target_naif, center_naif, unit, state, error);
+    return jme_jpl_body_state_split_naif(
+        jd0,
+        fraction,
+        target_naif,
+        center_naif,
+        unit,
+        state,
+        error
+    );
 }
 
 int jme_jpl_body_state_split_naif(
@@ -1612,16 +1802,24 @@ int jme_jpl_body_state_split_naif(
         return JME_ERR;
     }
 
-    raw_unit = unit == JME_VECTOR_AU_PER_DAY ? JME_VECTOR_KM_PER_DAY :
-        unit == JME_VECTOR_AU_PER_SECOND ? JME_VECTOR_KM_PER_SECOND :
-        unit;
+    raw_unit = unit == JME_VECTOR_AU_PER_DAY      ? JME_VECTOR_KM_PER_DAY
+               : unit == JME_VECTOR_AU_PER_SECOND ? JME_VECTOR_KM_PER_SECOND
+                                                  : unit;
 
     if (!isfinite(jd0) || !isfinite(time_offset)) {
         jme_set_error(error, "JPL time argument is not finite");
         return JME_ERR;
     }
     jme_calceph_clear_message();
-    if (calceph_compute_unit(g_kernel, jd0, time_offset, target_naif, center_naif, calceph_unit, raw_state) == 0) {
+    if (calceph_compute_unit(
+            g_kernel,
+            jd0,
+            time_offset,
+            target_naif,
+            center_naif,
+            calceph_unit,
+            raw_state
+        ) == 0) {
         jme_zero_state(state);
         jme_calceph_fail(error, "JPL body state computation failed");
         return JME_ERR;
@@ -1657,7 +1855,14 @@ int jme_jpl_body_state_native_naif(
     double jd0 = jme_jpl_day_floor(jd_time);
     double fraction = jd_time - jd0;
 
-    return jme_jpl_body_state_native_split_naif(jd0, fraction, target_naif, center_naif, state, error);
+    return jme_jpl_body_state_native_split_naif(
+        jd0,
+        fraction,
+        target_naif,
+        center_naif,
+        state,
+        error
+    );
 }
 
 int jme_jpl_body_state_native(
@@ -1718,7 +1923,14 @@ int jme_jpl_body_state_native_split(
         return JME_ERR;
     }
 
-    return jme_jpl_body_state_native_split_naif(jd0, time_offset, target_naif, center_naif, state, error);
+    return jme_jpl_body_state_native_split_naif(
+        jd0,
+        time_offset,
+        target_naif,
+        center_naif,
+        state,
+        error
+    );
 }
 
 int jme_jpl_body_state_order_naif(
@@ -1763,7 +1975,16 @@ int jme_jpl_body_state_order_naif(
         return JME_ERR;
     }
     jme_calceph_clear_message();
-    if (calceph_compute_order(g_kernel, jd0, time_offset, target_naif, center_naif, calceph_unit, order, state) == 0) {
+    if (calceph_compute_order(
+            g_kernel,
+            jd0,
+            time_offset,
+            target_naif,
+            center_naif,
+            calceph_unit,
+            order,
+            state
+        ) == 0) {
         jme_zero_order_state(state, order);
         jme_calceph_fail(error, "JPL body order state computation failed");
         return JME_ERR;
@@ -1807,7 +2028,16 @@ int jme_jpl_body_state_order(
         return JME_ERR;
     }
 
-    return jme_jpl_body_state_order_naif(jd0, time_offset, target_naif, center_naif, unit, order, state, error);
+    return jme_jpl_body_state_order_naif(
+        jd0,
+        time_offset,
+        target_naif,
+        center_naif,
+        unit,
+        order,
+        state,
+        error
+    );
 }
 
 int jme_jpl_body_state_utc_naif(
@@ -1829,14 +2059,29 @@ int jme_jpl_body_state_utc_naif(
     double fraction_native = 0.0;
 
     if (jme_utc_to_jpl_jd_split(
-            year, month, day, hour, minute, second, calendar,
-            &jd0_native, &fraction_native, error) != JME_OK) {
+            year,
+            month,
+            day,
+            hour,
+            minute,
+            second,
+            calendar,
+            &jd0_native,
+            &fraction_native,
+            error
+        ) != JME_OK) {
         jme_zero_state(state);
         return JME_ERR;
     }
 
     return jme_jpl_body_state_split_naif(
-        jd0_native, fraction_native, target_naif, center_naif, unit, state, error
+        jd0_native,
+        fraction_native,
+        target_naif,
+        center_naif,
+        unit,
+        state,
+        error
     );
 }
 
@@ -1920,7 +2165,15 @@ int jme_jpl_body_state_split(
         return JME_ERR;
     }
 
-    return jme_jpl_body_state_split_naif(jd0, time_offset, target_naif, center_naif, unit, state, error);
+    return jme_jpl_body_state_split_naif(
+        jd0,
+        time_offset,
+        target_naif,
+        center_naif,
+        unit,
+        state,
+        error
+    );
 }
 
 int jme_jpl_ecliptic_state_naif(
@@ -1935,7 +2188,15 @@ int jme_jpl_ecliptic_state_naif(
     double jd0 = jme_jpl_day_floor(jd_time);
     double fraction = jd_time - jd0;
 
-    return jme_jpl_ecliptic_state_split_naif(jd0, fraction, target_naif, center_naif, unit, state, error);
+    return jme_jpl_ecliptic_state_split_naif(
+        jd0,
+        fraction,
+        target_naif,
+        center_naif,
+        unit,
+        state,
+        error
+    );
 }
 
 int jme_jpl_ecliptic_state_split_naif(
@@ -1958,7 +2219,15 @@ int jme_jpl_ecliptic_state_split_naif(
         return JME_ERR;
     }
 
-    if (jme_jpl_body_state_split_naif(jd0, time_offset, target_naif, center_naif, unit, rectangular, error) != JME_OK) {
+    if (jme_jpl_body_state_split_naif(
+            jd0,
+            time_offset,
+            target_naif,
+            center_naif,
+            unit,
+            rectangular,
+            error
+        ) != JME_OK) {
         return JME_ERR;
     }
 
@@ -1991,14 +2260,29 @@ int jme_jpl_ecliptic_state_utc_naif(
     double fraction_native = 0.0;
 
     if (jme_utc_to_jpl_jd_split(
-            year, month, day, hour, minute, second, calendar,
-            &jd0_native, &fraction_native, error) != JME_OK) {
+            year,
+            month,
+            day,
+            hour,
+            minute,
+            second,
+            calendar,
+            &jd0_native,
+            &fraction_native,
+            error
+        ) != JME_OK) {
         jme_zero_state(state);
         return JME_ERR;
     }
 
     return jme_jpl_ecliptic_state_split_naif(
-        jd0_native, fraction_native, target_naif, center_naif, unit, state, error
+        jd0_native,
+        fraction_native,
+        target_naif,
+        center_naif,
+        unit,
+        state,
+        error
     );
 }
 
@@ -2082,5 +2366,13 @@ int jme_jpl_ecliptic_state_split(
         return JME_ERR;
     }
 
-    return jme_jpl_ecliptic_state_split_naif(jd0, time_offset, target_naif, center_naif, unit, state, error);
+    return jme_jpl_ecliptic_state_split_naif(
+        jd0,
+        time_offset,
+        target_naif,
+        center_naif,
+        unit,
+        state,
+        error
+    );
 }

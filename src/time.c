@@ -92,8 +92,7 @@ static double jme_julian_epoch_year_split(double jd1, double jd2)
  */
 static double jme_calendar_decimal_year_split(double jd1, double jd2)
 {
-    int calendar = ((jd1 - 2299160.5) + jd2) < 0.0
-        ? JME_CALENDAR_JULIAN : JME_CALENDAR_GREGORIAN;
+    int calendar = ((jd1 - 2299160.5) + jd2) < 0.0 ? JME_CALENDAR_JULIAN : JME_CALENDAR_GREGORIAN;
     int year, month, day;
     double fd, start, next, elapsed;
 
@@ -106,7 +105,9 @@ static double jme_calendar_decimal_year_split(double jd1, double jd2)
             return NAN;
         }
     } else {
-        if (!isfinite(jd1) || !isfinite(jd2)) return NAN;
+        if (!isfinite(jd1) || !isfinite(jd2)) {
+            return NAN;
+        }
         jme_reverse_julian_day(jd1 + jd2, JME_CALENDAR_JULIAN, &year, &month, &day, &fd);
     }
     start = jme_julian_day(year, 1, 1, 0.0, calendar);
@@ -128,47 +129,70 @@ static double jme_delta_t_espenak_meeus_y(double y)
     if (y < -500.0) {
         u = (y - 1820.0) / 100.0;
         return -20.0 + 32.0 * u * u;
-    } else if (y < 500.0) {
+    }
+    if (y < 500.0) {
         u = y / 100.0;
-        return 10583.6 + u * (-1014.41 + u * (33.78311 + u * (-5.952053
-            + u * (-0.1798452 + u * (0.022174192 + u * 0.0090316521)))));
-    } else if (y < 1600.0) {
+        return 10583.6 +
+               u * (-1014.41 +
+                    u * (33.78311 + u * (-5.952053 +
+                                         u * (-0.1798452 + u * (0.022174192 + u * 0.0090316521)))));
+    }
+    if (y < 1600.0) {
         u = (y - 1000.0) / 100.0;
-        return 1574.2 + u * (-556.01 + u * (71.23472 + u * (0.319781
-            + u * (-0.8503463 + u * (-0.005050998 + u * 0.0083572073)))));
-    } else if (y < 1700.0) {
+        return 1574.2 +
+               u * (-556.01 +
+                    u * (71.23472 + u * (0.319781 + u * (-0.8503463 +
+                                                         u * (-0.005050998 + u * 0.0083572073)))));
+    }
+    if (y < 1700.0) {
         t = y - 1600.0;
         return 120.0 - 0.9808 * t - 0.01532 * t * t + t * t * t / 7129.0;
-    } else if (y < 1800.0) {
+    }
+    if (y < 1800.0) {
         t = y - 1700.0;
-        return 8.83 + 0.1603 * t - 0.0059285 * t * t + 0.00013336 * t * t * t - t * t * t * t / 1174000.0;
-    } else if (y < 1860.0) {
+        return 8.83 + 0.1603 * t - 0.0059285 * t * t + 0.00013336 * t * t * t -
+               t * t * t * t / 1174000.0;
+    }
+    if (y < 1860.0) {
         t = y - 1800.0;
-        return 13.72 + t * (-0.332447 + t * (0.0068612 + t * (0.0041116 + t * (-0.00037436
-            + t * (0.0000121272 + t * (-0.0000001699 + t * 0.000000000875))))));
-    } else if (y < 1900.0) {
+        return 13.72 +
+               t * (-0.332447 +
+                    t * (0.0068612 +
+                         t * (0.0041116 +
+                              t * (-0.00037436 + t * (0.0000121272 +
+                                                      t * (-0.0000001699 + t * 0.000000000875))))));
+    }
+    if (y < 1900.0) {
         t = y - 1860.0;
-        return 7.62 + t * (0.5737 + t * (-0.251754 + t * (0.01680668 + t * (-0.0004473624))))
-            + t * t * t * t * t / 233174.0;
-    } else if (y < 1920.0) {
+        return 7.62 + t * (0.5737 + t * (-0.251754 + t * (0.01680668 + t * (-0.0004473624)))) +
+               t * t * t * t * t / 233174.0;
+    }
+    if (y < 1920.0) {
         t = y - 1900.0;
         return -2.79 + t * (1.494119 + t * (-0.0598939 + t * (0.0061966 + t * (-0.000197))));
-    } else if (y < 1941.0) {
+    }
+    if (y < 1941.0) {
         t = y - 1920.0;
         return 21.20 + 0.84493 * t - 0.076100 * t * t + 0.0020936 * t * t * t;
-    } else if (y < 1961.0) {
+    }
+    if (y < 1961.0) {
         t = y - 1950.0;
         return 29.07 + 0.407 * t - t * t / 233.0 + t * t * t / 2547.0;
-    } else if (y < 1986.0) {
+    }
+    if (y < 1986.0) {
         t = y - 1975.0;
         return 45.45 + 1.067 * t - t * t / 260.0 - t * t * t / 718.0;
-    } else if (y < 2005.0) {
+    }
+    if (y < 2005.0) {
         t = y - 2000.0;
-        return 63.86 + t * (0.3345 + t * (-0.060374 + t * (0.0017275 + t * (0.000651814 + t * 0.00002373599))));
-    } else if (y < 2050.0) {
+        return 63.86 + t * (0.3345 + t * (-0.060374 +
+                                          t * (0.0017275 + t * (0.000651814 + t * 0.00002373599))));
+    }
+    if (y < 2050.0) {
         t = y - 2000.0;
         return 62.92 + 0.32217 * t + 0.005589 * t * t;
-    } else if (y < 2150.0) {
+    }
+    if (y < 2150.0) {
         u = (y - 1820.0) / 100.0;
         return -20.0 + 32.0 * u * u - 0.5628 * (2150.0 - y);
     }
@@ -193,11 +217,12 @@ static double jme_delta_t_espenak_meeus_split(double jd1, double jd2)
      * referred to atomic time and are not adjusted for a lunar ephemeris.
      * The published IERS and SMH-2016/2021 paths are intentionally separate.
      */
-    if (ctx->tidal_acceleration_unresolved && y < 1955.0) return NAN;
+    if (ctx->tidal_acceleration_unresolved && y < 1955.0) {
+        return NAN;
+    }
     if (ctx->tidal_acceleration_explicit && y < 1955.0) {
         double centuries = (y - 1955.0) / 100.0;
-        dt += -0.91072 * (ctx->tidal_acceleration_effective + 26.0)
-            * centuries * centuries;
+        dt += -0.91072 * (ctx->tidal_acceleration_effective + 26.0) * centuries * centuries;
     }
 
     return dt;
@@ -215,16 +240,23 @@ static double jme_delta_t_espenak_meeus_split(double jd1, double jd2)
  * 2016 paper) -320 + 32.5 ((y - 1825)/100)^2, which does not join the spline
  * (published model; see docs/TIME_SCALES.md).
  */
-static int jme_delta_t_spline(const double (*tab)[6], int n, int upper_inclusive, double y, double *dt)
+static int
+jme_delta_t_spline(const double (*tab)[6], int n, int upper_inclusive, double y, double *dt)
 {
     int lo = 0, hi = n - 1;
     const double *c;
     double t;
 
-    if (!(y >= tab[0][0] && (y < tab[n - 1][1] || (upper_inclusive && y == tab[n - 1][1])))) return 0;
+    if (!(y >= tab[0][0] && (y < tab[n - 1][1] || (upper_inclusive && y == tab[n - 1][1])))) {
+        return 0;
+    }
     while (lo < hi) {
         int mid = (lo + hi + 1) / 2;
-        if (tab[mid][0] <= y) lo = mid; else hi = mid - 1;
+        if (tab[mid][0] <= y) {
+            lo = mid;
+        } else {
+            hi = mid - 1;
+        }
     }
     c = tab[lo];
     t = (y - c[0]) / (c[1] - c[0]);
@@ -247,22 +279,38 @@ static double jme_delta_t_smh_split(double jd1, double jd2, int revision_2021)
     jme_context *ctx = jme_get_context();
     double y = jme_julian_epoch_year_split(jd1, jd2), dt, u;
     int ok;
-    if (!isfinite(y)) return NAN;
+    if (!isfinite(y)) {
+        return NAN;
+    }
     if (revision_2021) {
-        ok = jme_delta_t_spline(jme_deltat_s15, (int)(sizeof(jme_deltat_s15) / sizeof(jme_deltat_s15[0])), 0, y, &dt);
+        ok = jme_delta_t_spline(
+            jme_deltat_s15,
+            (int)(sizeof(jme_deltat_s15) / sizeof(jme_deltat_s15[0])),
+            0,
+            y,
+            &dt
+        );
     } else {
-        ok = jme_delta_t_spline(jme_deltat_s15_2016, (int)(sizeof(jme_deltat_s15_2016) / sizeof(jme_deltat_s15_2016[0])), 1, y, &dt);
+        ok = jme_delta_t_spline(
+            jme_deltat_s15_2016,
+            (int)(sizeof(jme_deltat_s15_2016) / sizeof(jme_deltat_s15_2016[0])),
+            1,
+            y,
+            &dt
+        );
     }
     if (!ok) {
         u = (y - 1825.0) / 100.0;
         dt = -320.0 + 32.5 * u * u;
     }
 
-    if (ctx->tidal_acceleration_unresolved && y < 1955.0) return NAN;
+    if (ctx->tidal_acceleration_unresolved && y < 1955.0) {
+        return NAN;
+    }
     if (ctx->tidal_acceleration_explicit && y < 1955.0) {
         double centuries = (y - 1955.0) / 100.0;
-        dt += -0.91072 * (ctx->tidal_acceleration_effective - JME_SMH_REFERENCE_NDOT)
-            * centuries * centuries;
+        dt += -0.91072 * (ctx->tidal_acceleration_effective - JME_SMH_REFERENCE_NDOT) * centuries *
+              centuries;
     }
 
     return dt;
@@ -297,22 +345,30 @@ static double jme_delta_t_ms2004_table1_split(double jd1, double jd2)
     const int n = (int)(sizeof(jme_deltat_ms2004_table1) / sizeof(jme_deltat_ms2004_table1[0]));
     double y = jme_calendar_decimal_year_split(jd1, jd2), dt;
 
-    if (!isfinite(y)) return NAN;
+    if (!isfinite(y)) {
+        return NAN;
+    }
     if (y >= jme_deltat_ms2004_table1[0][0] && y <= jme_deltat_ms2004_table1[n - 1][0]) {
         int lo = 0, hi = n - 1;
         while (hi - lo > 1) {
             int mid = (lo + hi) / 2;
-            if (jme_deltat_ms2004_table1[mid][0] <= y) lo = mid; else hi = mid;
+            if (jme_deltat_ms2004_table1[mid][0] <= y) {
+                lo = mid;
+            } else {
+                hi = mid;
+            }
         }
-        dt = jme_deltat_ms2004_table1[lo][1]
-            + (y - jme_deltat_ms2004_table1[lo][0])
-            * (jme_deltat_ms2004_table1[hi][1] - jme_deltat_ms2004_table1[lo][1])
-            / (jme_deltat_ms2004_table1[hi][0] - jme_deltat_ms2004_table1[lo][0]);
+        dt = jme_deltat_ms2004_table1[lo][1] +
+             (y - jme_deltat_ms2004_table1[lo][0]) *
+                 (jme_deltat_ms2004_table1[hi][1] - jme_deltat_ms2004_table1[lo][1]) /
+                 (jme_deltat_ms2004_table1[hi][0] - jme_deltat_ms2004_table1[lo][0]);
     } else {
         double t = (y - 1820.0) / 100.0;
         dt = -20.0 + 32.0 * t * t;
     }
-    if (ctx->tidal_acceleration_unresolved && y < 1955.0) return NAN;
+    if (ctx->tidal_acceleration_unresolved && y < 1955.0) {
+        return NAN;
+    }
     if (ctx->tidal_acceleration_explicit && y < 1955.0) {
         double centuries = (y - 1955.0) / 100.0;
         dt += -0.91072 * (ctx->tidal_acceleration_effective + 26.0) * centuries * centuries;
@@ -336,19 +392,29 @@ static int jme_delta_t_iers_split(double jd1, double jd2, double *dt, int *predi
     int i0, k, m;
     double sum = 0.0;
 
-    if (!(x >= 0.0 && x <= (double)(JME_DELTAT_IERS_COUNT - 1))) return 0;
+    if (!(x >= 0.0 && x <= (double)(JME_DELTAT_IERS_COUNT - 1))) {
+        return 0;
+    }
     i0 = (int)floor(x) - 1;
-    if (i0 < 0) i0 = 0;
-    if (i0 > JME_DELTAT_IERS_COUNT - 4) i0 = JME_DELTAT_IERS_COUNT - 4;
+    if (i0 < 0) {
+        i0 = 0;
+    }
+    if (i0 > JME_DELTAT_IERS_COUNT - 4) {
+        i0 = JME_DELTAT_IERS_COUNT - 4;
+    }
     for (k = 0; k < 4; k++) {
         double w = 1.0;
         for (m = 0; m < 4; m++) {
-            if (m != k) w *= (x - (double)(i0 + m)) / (double)(k - m);
+            if (m != k) {
+                w *= (x - (double)(i0 + m)) / (double)(k - m);
+            }
         }
         sum += w * jme_deltat_iers_ut1_tai[i0 + k];
     }
     *dt = 32.184 - sum;
-    if (predicted != 0) *predicted = x > (double)JME_DELTAT_IERS_LAST_OBSERVED_INDEX;
+    if (predicted != 0) {
+        *predicted = x > (double)JME_DELTAT_IERS_LAST_OBSERVED_INDEX;
+    }
     return 1;
 }
 
@@ -362,16 +428,32 @@ static double jme_delta_t_automatic_split(double jd1, double jd2)
 {
     double dt;
     double from_iers_start = ((jd1 - 2400000.5) - (double)JME_DELTAT_IERS_FIRST_MJD) + jd2;
-    if (jme_delta_t_iers_split(jd1, jd2, &dt, 0)) return dt;
-    if (from_iers_start < 0.0) return jme_delta_t_smh2021_split(jd1, jd2);
+    if (jme_delta_t_iers_split(jd1, jd2, &dt, 0)) {
+        return dt;
+    }
+    if (from_iers_start < 0.0) {
+        return jme_delta_t_smh2021_split(jd1, jd2);
+    }
     return jme_delta_t_espenak_meeus_split(jd1, jd2);
 }
 
-int jme_delta_t_iers_table_info(double *jd_first, double *jd_last_observed, double *jd_last, char *error)
+int jme_delta_t_iers_table_info(
+    double *jd_first,
+    double *jd_last_observed,
+    double *jd_last,
+    char *error
+)
 {
-    if (jd_first != 0) *jd_first = 2400000.5 + (double)JME_DELTAT_IERS_FIRST_MJD;
-    if (jd_last_observed != 0) *jd_last_observed = 2400000.5 + (double)(JME_DELTAT_IERS_FIRST_MJD + JME_DELTAT_IERS_LAST_OBSERVED_INDEX);
-    if (jd_last != 0) *jd_last = 2400000.5 + (double)(JME_DELTAT_IERS_FIRST_MJD + JME_DELTAT_IERS_COUNT - 1);
+    if (jd_first != 0) {
+        *jd_first = 2400000.5 + (double)JME_DELTAT_IERS_FIRST_MJD;
+    }
+    if (jd_last_observed != 0) {
+        *jd_last_observed =
+            2400000.5 + (double)(JME_DELTAT_IERS_FIRST_MJD + JME_DELTAT_IERS_LAST_OBSERVED_INDEX);
+    }
+    if (jd_last != 0) {
+        *jd_last = 2400000.5 + (double)(JME_DELTAT_IERS_FIRST_MJD + JME_DELTAT_IERS_COUNT - 1);
+    }
     jme_set_error(error, "");
     return JME_OK;
 }
@@ -381,13 +463,17 @@ double internal_delta_t_ex_split(double jd1, double jd2, int model, char *error)
     jme_context *ctx = jme_get_context();
     double dt;
 
-    if (error != 0) error[0] = '\0';
+    if (error != 0) {
+        error[0] = '\0';
+    }
     if (!isfinite(jd1) || !isfinite(jd2)) {
         jme_set_error(error, "Two-part Julian date for Delta-T must be finite");
         return NAN;
     }
 
-    if (ctx->delta_t_userdef_enabled) return ctx->delta_t_userdef;
+    if (ctx->delta_t_userdef_enabled) {
+        return ctx->delta_t_userdef;
+    }
 
     switch (model) {
     case JME_TIME_DELTAT_AUTOMATIC:
@@ -418,7 +504,11 @@ double internal_delta_t_ex_split(double jd1, double jd2, int model, char *error)
          * been transcribed from their primary publications and verified, so they
          * are refused rather than substituted by another model.
          */
-        jme_set_error(error, "Delta-T model unavailable (primary tables not yet transcribed and verified); use AUTOMATIC, ESPENAK_MEEUS_2006, STEPHENSON_ETC_2016 or STEPHENSON_ETC_2021");
+        jme_set_error(
+            error,
+            "Delta-T model unavailable (primary tables not yet transcribed and verified); "
+            "use AUTOMATIC, ESPENAK_MEEUS_2006, STEPHENSON_ETC_2016 or STEPHENSON_ETC_2021"
+        );
         return NAN;
 
     default:
@@ -428,10 +518,16 @@ double internal_delta_t_ex_split(double jd1, double jd2, int model, char *error)
 
     if (!isfinite(dt)) {
         if (ctx->tidal_acceleration_unresolved) {
-            jme_set_error(error, "Historical Delta-T needs a lunar tidal acceleration: JPL has published no value for DE441 (Park et al. 2021); set a numeric value with jme_set_tid_acc");
+            jme_set_error(
+                error,
+                "Historical Delta-T needs a lunar tidal acceleration: JPL has published no value "
+                "for DE441 (Park et al. 2021); set a numeric value with jme_set_tid_acc"
+            );
             return NAN;
         }
-        if (error == 0 || error[0] == '\0') jme_set_error(error, "Delta-T date conversion failed");
+        if (error == 0 || error[0] == '\0') {
+            jme_set_error(error, "Delta-T date conversion failed");
+        }
         return NAN;
     }
     return dt;
@@ -439,7 +535,9 @@ double internal_delta_t_ex_split(double jd1, double jd2, int model, char *error)
 
 double jme_delta_t_ex(double jd_ut, int model, char *error)
 {
-    if (error != 0) error[0] = '\0';
+    if (error != 0) {
+        error[0] = '\0';
+    }
     if (!isfinite(jd_ut)) {
         jme_set_error(error, "Julian date for Delta-T must be finite");
         return NAN;
@@ -464,18 +562,48 @@ typedef struct jme_utc_offset_entry {
 } jme_utc_offset_entry;
 
 static const jme_utc_offset_entry jme_utc_offsets[] = {
-    {1960, 1, 1.4178180}, {1961, 1, 1.4228180}, {1961, 8, 1.3728180},
-    {1962, 1, 1.8458580}, {1963,11, 1.9458580}, {1964, 1, 3.2401300},
-    {1964, 4, 3.3401300}, {1964, 9, 3.4401300}, {1965, 1, 3.5401300},
-    {1965, 3, 3.6401300}, {1965, 7, 3.7401300}, {1965, 9, 3.8401300},
-    {1966, 1, 4.3131700}, {1968, 2, 4.2131700}, {1972, 1,10.0},
-    {1972, 7,11.0}, {1973, 1,12.0}, {1974, 1,13.0}, {1975, 1,14.0},
-    {1976, 1,15.0}, {1977, 1,16.0}, {1978, 1,17.0}, {1979, 1,18.0},
-    {1980, 1,19.0}, {1981, 7,20.0}, {1982, 7,21.0}, {1983, 7,22.0},
-    {1985, 7,23.0}, {1988, 1,24.0}, {1990, 1,25.0}, {1991, 1,26.0},
-    {1992, 7,27.0}, {1993, 7,28.0}, {1994, 7,29.0}, {1996, 1,30.0},
-    {1997, 7,31.0}, {1999, 1,32.0}, {2006, 1,33.0}, {2009, 1,34.0},
-    {2012, 7,35.0}, {2015, 7,36.0}, {2017, 1,37.0}
+    {1960, 1,  1.4178180},
+    {1961, 1,  1.4228180},
+    {1961, 8,  1.3728180},
+    {1962, 1,  1.8458580},
+    {1963, 11, 1.9458580},
+    {1964, 1,  3.2401300},
+    {1964, 4,  3.3401300},
+    {1964, 9,  3.4401300},
+    {1965, 1,  3.5401300},
+    {1965, 3,  3.6401300},
+    {1965, 7,  3.7401300},
+    {1965, 9,  3.8401300},
+    {1966, 1,  4.3131700},
+    {1968, 2,  4.2131700},
+    {1972, 1,  10.0     },
+    {1972, 7,  11.0     },
+    {1973, 1,  12.0     },
+    {1974, 1,  13.0     },
+    {1975, 1,  14.0     },
+    {1976, 1,  15.0     },
+    {1977, 1,  16.0     },
+    {1978, 1,  17.0     },
+    {1979, 1,  18.0     },
+    {1980, 1,  19.0     },
+    {1981, 7,  20.0     },
+    {1982, 7,  21.0     },
+    {1983, 7,  22.0     },
+    {1985, 7,  23.0     },
+    {1988, 1,  24.0     },
+    {1990, 1,  25.0     },
+    {1991, 1,  26.0     },
+    {1992, 7,  27.0     },
+    {1993, 7,  28.0     },
+    {1994, 7,  29.0     },
+    {1996, 1,  30.0     },
+    {1997, 7,  31.0     },
+    {1999, 1,  32.0     },
+    {2006, 1,  33.0     },
+    {2009, 1,  34.0     },
+    {2012, 7,  35.0     },
+    {2015, 7,  36.0     },
+    {2017, 1,  37.0     }
 };
 
 typedef struct jme_utc_drift_entry {
@@ -484,11 +612,20 @@ typedef struct jme_utc_drift_entry {
 } jme_utc_drift_entry;
 
 static const jme_utc_drift_entry jme_utc_drifts[] = {
-    {37300.0, 0.0012960}, {37300.0, 0.0012960}, {37300.0, 0.0012960},
-    {37665.0, 0.0011232}, {37665.0, 0.0011232},
-    {38761.0, 0.0012960}, {38761.0, 0.0012960}, {38761.0, 0.0012960},
-    {38761.0, 0.0012960}, {38761.0, 0.0012960}, {38761.0, 0.0012960},
-    {38761.0, 0.0012960}, {39126.0, 0.0025920}, {39126.0, 0.0025920}
+    {37300.0, 0.0012960},
+    {37300.0, 0.0012960},
+    {37300.0, 0.0012960},
+    {37665.0, 0.0011232},
+    {37665.0, 0.0011232},
+    {38761.0, 0.0012960},
+    {38761.0, 0.0012960},
+    {38761.0, 0.0012960},
+    {38761.0, 0.0012960},
+    {38761.0, 0.0012960},
+    {38761.0, 0.0012960},
+    {38761.0, 0.0012960},
+    {39126.0, 0.0025920},
+    {39126.0, 0.0025920}
 };
 
 #define JME_UTC_PRE_LEAP_DRIFT_COUNT (sizeof(jme_utc_drifts) / sizeof(jme_utc_drifts[0]))
@@ -499,7 +636,7 @@ static const jme_utc_drift_entry jme_utc_drifts[] = {
  * Whether a leap second occurs at the end of June 2027 is not yet known.
  * UPDATE PROCEDURE: see docs/TIME_SCALES.md ("Leap-second table update").
  */
-#define JME_UTC_VALID_UNTIL_YEAR 2027
+#define JME_UTC_VALID_UNTIL_YEAR  2027
 #define JME_UTC_VALID_UNTIL_MONTH 6
 
 int internal_tai_minus_utc(
@@ -522,18 +659,25 @@ int internal_tai_minus_utc(
     *tai_minus_utc = NAN;
 
     if (gregorian_year < 1960) {
-        jme_set_error(error, "UTC-to-TT conversion before 1960-01-01 is outside the realized UTC time scale");
+        jme_set_error(
+            error,
+            "UTC-to-TT conversion before 1960-01-01 is outside the realized UTC time scale"
+        );
         return JME_ERR;
     }
-    if (12 * gregorian_year + gregorian_month > 12 * JME_UTC_VALID_UNTIL_YEAR + JME_UTC_VALID_UNTIL_MONTH) {
-        jme_set_error(error, "UTC after 2027-06-30 is beyond the embedded leap-second table (IERS Bulletin C 72); future leap seconds are not predictable: use TT/TDB or update the table");
+    if (12 * gregorian_year + gregorian_month >
+        12 * JME_UTC_VALID_UNTIL_YEAR + JME_UTC_VALID_UNTIL_MONTH) {
+        jme_set_error(
+            error,
+            "UTC after 2027-06-30 is beyond the embedded leap-second table (IERS Bulletin C "
+            "72); future leap seconds are not predictable: use TT/TDB or update the table"
+        );
         return JME_ERR;
     }
-    if (gregorian_month < 1 || gregorian_month > 12
-        || gregorian_day < 1
-        || gregorian_day > jme_days_in_month(gregorian_year, gregorian_month, JME_CALENDAR_GREGORIAN)
-        || !isfinite(fraction_of_utc_day)
-        || fraction_of_utc_day < 0.0 || fraction_of_utc_day > 1.0) {
+    if (gregorian_month < 1 || gregorian_month > 12 || gregorian_day < 1 ||
+        gregorian_day >
+            jme_days_in_month(gregorian_year, gregorian_month, JME_CALENDAR_GREGORIAN) ||
+        !isfinite(fraction_of_utc_day) || fraction_of_utc_day < 0.0 || fraction_of_utc_day > 1.0) {
         jme_set_error(error, "UTC calendar date or day fraction is invalid");
         return JME_ERR;
     }
@@ -542,7 +686,9 @@ int internal_tai_minus_utc(
     index = sizeof(jme_utc_offsets) / sizeof(jme_utc_offsets[0]);
     while (index > 0) {
         const jme_utc_offset_entry *entry = &jme_utc_offsets[index - 1];
-        if (month_key >= 12 * entry->year + entry->month) break;
+        if (month_key >= 12 * entry->year + entry->month) {
+            break;
+        }
         index--;
     }
     if (index == 0) {
@@ -554,12 +700,15 @@ int internal_tai_minus_utc(
     *tai_minus_utc = jme_utc_offsets[index].tai_minus_utc_at_effective_month;
     if (index < JME_UTC_PRE_LEAP_DRIFT_COUNT) {
         double jd_midnight = jme_julian_day(
-            gregorian_year, gregorian_month, gregorian_day, 0.0, JME_CALENDAR_GREGORIAN
+            gregorian_year,
+            gregorian_month,
+            gregorian_day,
+            0.0,
+            JME_CALENDAR_GREGORIAN
         );
         mjd = jd_midnight - 2400000.5;
-        *tai_minus_utc +=
-            (mjd + fraction_of_utc_day - jme_utc_drifts[index].reference_mjd)
-            * jme_utc_drifts[index].rate_seconds_per_day;
+        *tai_minus_utc += (mjd + fraction_of_utc_day - jme_utc_drifts[index].reference_mjd) *
+                          jme_utc_drifts[index].rate_seconds_per_day;
     }
 
     return JME_OK;
@@ -576,14 +725,17 @@ static int jme_is_positive_leap_second_day(double jd_midnight)
         const jme_utc_offset_entry *next = &jme_utc_offsets[i];
         double effective_midnight;
 
-        if (fabs((next->tai_minus_utc_at_effective_month
-                  - prior->tai_minus_utc_at_effective_month) - 1.0) > 1.0e-12) {
+        if (fabs(
+                (next->tai_minus_utc_at_effective_month - prior->tai_minus_utc_at_effective_month) -
+                1.0
+            ) > 1.0e-12) {
             continue;
         }
-        effective_midnight = jme_julian_day(
-            next->year, next->month, 1, 0.0, JME_CALENDAR_GREGORIAN
-        );
-        if (jd_midnight + 1.0 == effective_midnight) return 1;
+        effective_midnight =
+            jme_julian_day(next->year, next->month, 1, 0.0, JME_CALENDAR_GREGORIAN);
+        if (jd_midnight + 1.0 == effective_midnight) {
+            return 1;
+        }
     }
     return 0;
 }
@@ -591,18 +743,25 @@ static int jme_is_positive_leap_second_day(double jd_midnight)
 int jme_leap_second_table_info(double *jd_utc_valid_until, double *last_tai_minus_utc, char *error)
 {
     const size_t count = sizeof(jme_utc_offsets) / sizeof(jme_utc_offsets[0]);
-    if (error != 0) error[0] = '\0';
+    if (error != 0) {
+        error[0] = '\0';
+    }
     if (jd_utc_valid_until == 0 && last_tai_minus_utc == 0) {
         jme_set_error(error, "At least one output is required");
         return JME_ERR;
     }
     if (jd_utc_valid_until != 0) {
         int y = JME_UTC_VALID_UNTIL_YEAR, m = JME_UTC_VALID_UNTIL_MONTH + 1;
-        if (m > 12) { m = 1; y++; }
+        if (m > 12) {
+            m = 1;
+            y++;
+        }
         /* First instant (UTC JD) NOT covered by the table. */
         *jd_utc_valid_until = jme_julian_day(y, m, 1, 0.0, JME_CALENDAR_GREGORIAN);
     }
-    if (last_tai_minus_utc != 0) *last_tai_minus_utc = jme_utc_offsets[count - 1].tai_minus_utc_at_effective_month;
+    if (last_tai_minus_utc != 0) {
+        *last_tai_minus_utc = jme_utc_offsets[count - 1].tai_minus_utc_at_effective_month;
+    }
     return JME_OK;
 }
 
@@ -627,7 +786,9 @@ int internal_utc_to_tt_split(
     double fraction;
     int gy, gm, gd;
 
-    if (error != 0) error[0] = '\0';
+    if (error != 0) {
+        error[0] = '\0';
+    }
     if (jd0_tt == 0 || fraction_tt == 0) {
         jme_set_error(error, "TT two-part Julian date outputs are required");
         return JME_ERR;
@@ -639,9 +800,8 @@ int internal_utc_to_tt_split(
         jme_set_error(error, "UTC calendar type is invalid");
         return JME_ERR;
     }
-    if (!jme_date_is_valid(year, month, day, calendar)
-        || hour < 0 || hour > 23 || minute < 0 || minute > 59
-        || !isfinite(second) || second < 0.0 || second >= 61.0) {
+    if (!jme_date_is_valid(year, month, day, calendar) || hour < 0 || hour > 23 || minute < 0 ||
+        minute > 59 || !isfinite(second) || second < 0.0 || second >= 61.0) {
         jme_set_error(error, "UTC calendar date or clock time is invalid");
         return JME_ERR;
     }
@@ -654,7 +814,10 @@ int internal_utc_to_tt_split(
 
     if (second >= 60.0) {
         if (hour != 23 || minute != 59 || !jme_is_positive_leap_second_day(jd_midnight)) {
-            jme_set_error(error, "Second 60 is valid only at an announced positive UTC leap second");
+            jme_set_error(
+                error,
+                "Second 60 is valid only at an announced positive UTC leap second"
+            );
             return JME_ERR;
         }
         utc_seconds = 86400.0 + (second - 60.0);
@@ -664,11 +827,8 @@ int internal_utc_to_tt_split(
         fraction_for_offset = utc_seconds / JME_SECONDS_PER_DAY;
     }
 
-    jme_reverse_julian_day(
-        jd_midnight, JME_CALENDAR_GREGORIAN, &gy, &gm, &gd, 0
-    );
-    if (internal_tai_minus_utc(
-            gy, gm, gd, fraction_for_offset, &tai_minus_utc, error) != JME_OK) {
+    jme_reverse_julian_day(jd_midnight, JME_CALENDAR_GREGORIAN, &gy, &gm, &gd, 0);
+    if (internal_tai_minus_utc(gy, gm, gd, fraction_for_offset, &tai_minus_utc, error) != JME_OK) {
         return JME_ERR;
     }
 
@@ -678,8 +838,7 @@ int internal_utc_to_tt_split(
      * directly to one large Julian-date double.
      */
     jd0 = floor(jd_midnight);
-    fraction = (jd_midnight - jd0)
-        + (utc_seconds + tai_minus_utc + 32.184) / JME_SECONDS_PER_DAY;
+    fraction = (jd_midnight - jd0) + (utc_seconds + tai_minus_utc + 32.184) / JME_SECONDS_PER_DAY;
     {
         double carry = floor(fraction);
         jd0 += carry;
@@ -699,7 +858,9 @@ int internal_ut_to_et(double jd_ut, double *jd_et, char *error)
 {
     double dt;
 
-    if (error != 0) error[0] = '\0';
+    if (error != 0) {
+        error[0] = '\0';
+    }
     if (jd_et == 0) {
         jme_set_error(error, "Terrestrial-time output is required");
         return JME_ERR;
@@ -712,7 +873,9 @@ int internal_ut_to_et(double jd_ut, double *jd_et, char *error)
 
     dt = jme_delta_t_ex(jd_ut, jme_context_deltat_model(), error);
     if (!isfinite(dt)) {
-        if (error == 0 || error[0] == '\0') jme_set_error(error, "Delta-T calculation failed");
+        if (error == 0 || error[0] == '\0') {
+            jme_set_error(error, "Delta-T calculation failed");
+        }
         return JME_ERR;
     }
 
@@ -736,7 +899,9 @@ int internal_tt_to_ut(double jd_tt, double *jd_ut, char *error)
     double ut;
     int i;
 
-    if (error != 0) error[0] = '\0';
+    if (error != 0) {
+        error[0] = '\0';
+    }
     if (jd_ut == 0) {
         jme_set_error(error, "UT output is required");
         return JME_ERR;
@@ -751,7 +916,9 @@ int internal_tt_to_ut(double jd_tt, double *jd_ut, char *error)
         double dt = jme_delta_t_ex(ut, jme_context_deltat_model(), error);
         double next;
         if (!isfinite(dt)) {
-            if (error == 0 || error[0] == '\0') jme_set_error(error, "Delta-T calculation failed");
+            if (error == 0 || error[0] == '\0') {
+                jme_set_error(error, "Delta-T calculation failed");
+            }
             return JME_ERR;
         }
         next = jd_tt - dt / JME_SECONDS_PER_DAY;
@@ -781,14 +948,19 @@ int jme_time_equ(double jd_ut, double *e, char *error)
         return JME_ERR;
     }
     *e = NAN;
-    if (internal_ut_to_et(jd_ut, &jd_et, error) != JME_OK) return JME_ERR;
+    if (internal_ut_to_et(jd_ut, &jd_et, error) != JME_OK) {
+        return JME_ERR;
+    }
 
     t = (jd_et - 2451545.0) / 36525.0;
     l0 = 280.46646 + 36000.76983 * t + 0.0003032 * t * t;
 
-    if (internal_calc_ut_positions(jd_ut, JME_BODY_SUN, JME_CALC_EQUATORIAL, sun_equ, error) != JME_OK) return JME_ERR;
-    if (jme_get_nutation(jd_et, jme_context_nutation_model(), &dpsi, &deps, error) != JME_OK
-        || jme_get_obliquity(jd_et, jme_context_obliquity_model(), &eps, error) != JME_OK) {
+    if (internal_calc_ut_positions(jd_ut, JME_BODY_SUN, JME_CALC_EQUATORIAL, sun_equ, error) !=
+        JME_OK) {
+        return JME_ERR;
+    }
+    if (jme_get_nutation(jd_et, jme_context_nutation_model(), &dpsi, &deps, error) != JME_OK ||
+        jme_get_obliquity(jd_et, jme_context_obliquity_model(), &eps, error) != JME_OK) {
         return JME_ERR;
     }
 
@@ -809,7 +981,9 @@ int jme_lmt_to_lat(double jd_lmt, double geo_lon, double *jd_lat, char *error)
         jme_set_error(error, "Local apparent time output is required");
         return JME_ERR;
     }
-    if (jme_time_equ(jd_ut, &e, error) != JME_OK) { return JME_ERR; }
+    if (jme_time_equ(jd_ut, &e, error) != JME_OK) {
+        return JME_ERR;
+    }
     *jd_lat = jd_lmt + e;
     return JME_OK;
 }
@@ -828,7 +1002,9 @@ int jme_lat_to_lmt(double jd_lat, double geo_lon, double *jd_lmt, char *error)
     for (i = 0; i < 8; i++) {
         double jd_ut = lmt - geo_lon / 360.0;
         double next_lmt;
-        if (jme_time_equ(jd_ut, &e, error) != JME_OK) { return JME_ERR; }
+        if (jme_time_equ(jd_ut, &e, error) != JME_OK) {
+            return JME_ERR;
+        }
         next_lmt = jd_lat - e;
         if (fabs(next_lmt - lmt) < 1.0e-12) {
             lmt = next_lmt;
@@ -872,10 +1048,8 @@ void jme_utc_time_zone(
     int d = day;
     double total_seconds;
 
-    if (!jme_date_is_valid(year, month, day, JME_CALENDAR_GREGORIAN)
-        || hour < 0 || hour > 23
-        || minute < 0 || minute > 59
-        || second < 0.0 || second >= 61.0) {
+    if (!jme_date_is_valid(year, month, day, JME_CALENDAR_GREGORIAN) || hour < 0 || hour > 23 ||
+        minute < 0 || minute > 59 || second < 0.0 || second >= 61.0) {
         if (out_year != 0) {
             *out_year = 0;
         }

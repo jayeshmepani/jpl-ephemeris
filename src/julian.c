@@ -19,10 +19,7 @@ int jme_calendar_is_leap_year(int year, int calendar)
 
 int jme_days_in_month(int year, int month, int calendar)
 {
-    static const int month_days[12] = {
-        31, 28, 31, 30, 31, 30,
-        31, 31, 30, 31, 30, 31
-    };
+    static const int month_days[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
     if (calendar != JME_CALENDAR_GREGORIAN && calendar != JME_CALENDAR_JULIAN) {
         return 0;
@@ -84,9 +81,8 @@ double jme_julian_day(int year, int month, int day, double hour, int calendar)
         b = 2 - a + (int)floor((double)a / 4.0);
     }
 
-    return floor(365.25 * (double)(y + 4716))
-        + floor(30.6001 * (double)(m + 1))
-        + (double)day + (double)b - 1524.5 + hour / 24.0;
+    return floor(365.25 * (double)(y + 4716)) + floor(30.6001 * (double)(m + 1)) + (double)day +
+           (double)b - 1524.5 + hour / 24.0;
 }
 
 int jme_day_of_week(double jd)
@@ -98,14 +94,7 @@ int jme_day_of_week(double jd)
     return dow;
 }
 
-void jme_reverse_julian_day(
-    double jd,
-    int calendar,
-    int *year,
-    int *month,
-    int *day,
-    double *hour
-)
+void jme_reverse_julian_day(double jd, int calendar, int *year, int *month, int *day, double *hour)
 {
     double z;
     double f;

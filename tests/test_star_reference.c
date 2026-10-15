@@ -14,8 +14,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define N(a) ((int)(sizeof(a) / sizeof((a)[0])))
-#define D2R 0.017453292519943295769236907692
+#define N(a)    ((int)(sizeof(a) / sizeof((a)[0])))
+#define D2R     0.017453292519943295769236907692
 #define TOL_MAS 0.02
 
 static double max_mas[2];
@@ -26,7 +26,11 @@ static double sep_mas(double a1, double d1, double a2, double d2)
     double u[3] = {cos(d1 * D2R) * cos(a1 * D2R), cos(d1 * D2R) * sin(a1 * D2R), sin(d1 * D2R)};
     double v[3] = {cos(d2 * D2R) * cos(a2 * D2R), cos(d2 * D2R) * sin(a2 * D2R), sin(d2 * D2R)};
     double c[3] = {u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]};
-    return atan2(sqrt(c[0] * c[0] + c[1] * c[1] + c[2] * c[2]), u[0] * v[0] + u[1] * v[1] + u[2] * v[2]) / D2R * 3.6e6;
+    return atan2(
+               sqrt(c[0] * c[0] + c[1] * c[1] + c[2] * c[2]),
+               u[0] * v[0] + u[1] * v[1] + u[2] * v[2]
+           ) /
+           D2R * 3.6e6;
 }
 
 static int check(int k, const char *what, const jme_star_fixture *f, int flags, const double *ref)
@@ -39,7 +43,9 @@ static int check(int k, const char *what, const jme_star_fixture *f, int flags, 
         return 1;
     }
     s = sep_mas(r[0], r[1], ref[0], ref[1]);
-    if (s > max_mas[k]) max_mas[k] = s;
+    if (s > max_mas[k]) {
+        max_mas[k] = s;
+    }
     if (!(s <= TOL_MAS)) {
         fprintf(stderr, "%s %s JD %.6f: offset %.4f mas\n", what, f->star, f->jd_tt, s);
         return 1;
@@ -57,8 +63,8 @@ int main(void)
         printf("skipped: needs CALCEPH and JME_TEST_JPL_KERNEL\n");
         return 77;
     }
-    if (jme_jpl_open(kernel, error) != JME_OK
-        || jme_set_astro_models_checked("IAU2006A;ENGINE=JPL", error) != JME_OK) {
+    if (jme_jpl_open(kernel, error) != JME_OK ||
+        jme_set_astro_models_checked("IAU2006A;ENGINE=JPL", error) != JME_OK) {
         fprintf(stderr, "setup failed: %s\n", error);
         return 1;
     }
@@ -68,6 +74,11 @@ int main(void)
         failures += check(1, "date", f, JME_CALC_EQUATORIAL, f->date);
     }
     jme_close();
-    printf("star_reference: %d places; max offsets icrs %.4f date %.4f mas\n", N(star_fixtures), max_mas[0], max_mas[1]);
+    printf(
+        "star_reference: %d places; max offsets icrs %.4f date %.4f mas\n",
+        N(star_fixtures),
+        max_mas[0],
+        max_mas[1]
+    );
     return failures == 0 ? 0 : 1;
 }

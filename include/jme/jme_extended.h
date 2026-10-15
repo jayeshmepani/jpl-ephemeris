@@ -440,8 +440,15 @@ typedef enum jme_time_scale {
  * leap-second days and is defined from 1960-01-01 until the leap-second table
  * expiry (see jme_leap_second_table_info). Returns JME_OK or JME_ERR.
  */
-int jme_time_scale_convert(double jd1, double jd2, int from_scale, int to_scale,
-    double *out1, double *out2, char *error);
+int jme_time_scale_convert(
+    double jd1,
+    double jd2,
+    int from_scale,
+    int to_scale,
+    double *out1,
+    double *out2,
+    char *error
+);
 const char *jme_time_scale_name(int scale);
 
 /*
@@ -453,10 +460,7 @@ const char *jme_time_scale_name(int scale);
 int jme_leap_second_table_info(double *jd_utc_valid_until, double *last_tai_minus_utc, char *error);
 
 /* Flags for jme_get_ayanamsa_ex2(). */
-typedef enum jme_ayanamsa_flags {
-    JME_AYANAMSA_MEAN = 0,
-    JME_AYANAMSA_TRUE = 1
-} jme_ayanamsa_flags;
+typedef enum jme_ayanamsa_flags { JME_AYANAMSA_MEAN = 0, JME_AYANAMSA_TRUE = 1 } jme_ayanamsa_flags;
 
 double jme_delta_t(double jd_ut);
 
@@ -467,7 +471,12 @@ double jme_delta_t_ex(double jd_ut, int model, char *error);
  * first day, last IERS-observed day and last predicted day (UTC Julian dates).
  * Update procedure: docs/TIME_SCALES.md.
  */
-int jme_delta_t_iers_table_info(double *jd_first, double *jd_last_observed, double *jd_last, char *error);
+int jme_delta_t_iers_table_info(
+    double *jd_first,
+    double *jd_last_observed,
+    double *jd_last,
+    char *error
+);
 
 int jme_get_obliquity(double jd_et, int model, double *eps, char *error);
 
@@ -492,8 +501,22 @@ int jme_get_ayanamsa_ex_ut(double jd_ut, int model, double *ayan, char *error);
  * receives the rate of the MEAN ayanamsa in degrees/day. jme_get_ayanamsa_ex()
  * returns the mean ayanamsa. See docs/AYANAMSA_MODELS.md.
  */
-int jme_get_ayanamsa_ex2(double jd_et, int model, int flags, double *ayan, double *rate, char *error);
-int jme_get_ayanamsa_ex2_ut(double jd_ut, int model, int flags, double *ayan, double *rate, char *error);
+int jme_get_ayanamsa_ex2(
+    double jd_et,
+    int model,
+    int flags,
+    double *ayan,
+    double *rate,
+    char *error
+);
+int jme_get_ayanamsa_ex2_ut(
+    double jd_ut,
+    int model,
+    int flags,
+    double *ayan,
+    double *rate,
+    char *error
+);
 
 /*
  * Planet-centre policy of the JPL engine (jme_calc and related functions).
@@ -531,7 +554,13 @@ typedef enum jme_engine_id {
  * is 1 when the JPL planet centre was replaced by its system barycentre
  * under JME_JPL_CENTER_BARYCENTER. Returns JME_OK or JME_ERR.
  */
-int jme_calc_resolve_engine(double jd_et, int body, int *engine_id, int *jpl_center_substituted, char *error);
+int jme_calc_resolve_engine(
+    double jd_et,
+    int body,
+    int *engine_id,
+    int *jpl_center_substituted,
+    char *error
+);
 
 /*
  * Validating setters. Unlike the legacy void setters (kept unchanged), these
@@ -586,21 +615,9 @@ double jme_degrees_difference_signed(double p1, double p2);
 
 int jme_double_to_long(double x);
 
-void jme_ecliptic_to_equatorial(
-    double lon,
-    double lat,
-    double eps,
-    double *ra,
-    double *dec
-);
+void jme_ecliptic_to_equatorial(double lon, double lat, double eps, double *ra, double *dec);
 
-void jme_equatorial_to_ecliptic(
-    double ra,
-    double dec,
-    double eps,
-    double *lon,
-    double *lat
-);
+void jme_equatorial_to_ecliptic(double ra, double dec, double eps, double *lon, double *lat);
 
 int jme_ecliptic_to_equatorial_rectangular_state(
     const double *ecliptic,
@@ -857,7 +874,13 @@ int jme_jpl_constant(const char *name, double *value, char *error);
 
 int jme_jpl_constant_count(char *error);
 
-int jme_jpl_constant_index(int index, char *name, unsigned int name_size, double *value, char *error);
+int jme_jpl_constant_index(
+    int index,
+    char *name,
+    unsigned int name_size,
+    double *value,
+    char *error
+);
 
 int jme_jpl_constant_vector(const char *name, double *values, int value_count, char *error);
 
@@ -1131,7 +1154,13 @@ int jme_moshier_planet_state(double jd_et, int body, double *results);
 int jme_eop_load_file(const char *path, char *error);
 void jme_eop_clear(void);
 int jme_eop_coverage(double *mjd_first, double *mjd_last, char *error);
-int jme_eop_polar_motion(double mjd, double *xp_arcsec, double *yp_arcsec, int *predicted, char *error);
+int jme_eop_polar_motion(
+    double mjd,
+    double *xp_arcsec,
+    double *yp_arcsec,
+    int *predicted,
+    char *error
+);
 void jme_set_polar_motion(int enabled);
 int jme_get_polar_motion(void);
 

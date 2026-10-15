@@ -4,7 +4,7 @@
 
 #define JME_DEG_TO_RAD 0.017453292519943295769236907684886127134428718885417
 #define JME_RAD_TO_DEG 57.295779513082320876798154814105170332405472466565
-#define JME_PI 3.1415926535897932384626433832795028841971693993751
+#define JME_PI         3.1415926535897932384626433832795028841971693993751
 
 static double atan2d(double y, double x)
 {
@@ -12,29 +12,48 @@ static double atan2d(double y, double x)
 }
 
 static void calc_ascmc(double ramc, double lat, double eps, double *ascmc);
-static int select_cusp_intersection(const double *v, double expected, double eps, double *longitude);
+static int
+select_cusp_intersection(const double *v, double expected, double eps, double *longitude);
 
 static int normalize_house_system(int house_system)
 {
     switch (house_system) {
-    case JME_HOUSE_EQUAL: return 'E';
-    case JME_HOUSE_VEHLOW_EQUAL: return 'V';
-    case JME_HOUSE_WHOLE_SIGN: return 'W';
-    case JME_HOUSE_PORPHYRIUS: return 'O';
-    case JME_HOUSE_PLACIDUS: return 'P';
-    case JME_HOUSE_KOCH: return 'K';
-    case JME_HOUSE_KRUSINSKI: return 'U';
-    case JME_HOUSE_APC: return 'Y';
-    case JME_HOUSE_SUNSHINE: return 'I';
-    case JME_HOUSE_REGIOMONTANUS: return 'R';
-    case JME_HOUSE_CAMPANUS: return 'C';
-    case JME_HOUSE_POLICH_PAGE: return 'T';
-    case JME_HOUSE_ALCABITIUS: return 'B';
-    case JME_HOUSE_MERIDIAN: return 'X';
-    case JME_HOUSE_MORINUS: return 'M';
-    case JME_HOUSE_AZIMUTHAL: return 'A';
-    case JME_HOUSE_HORIZONTAL: return 'A';
-    default: return house_system;
+    case JME_HOUSE_EQUAL:
+        return 'E';
+    case JME_HOUSE_VEHLOW_EQUAL:
+        return 'V';
+    case JME_HOUSE_WHOLE_SIGN:
+        return 'W';
+    case JME_HOUSE_PORPHYRIUS:
+        return 'O';
+    case JME_HOUSE_PLACIDUS:
+        return 'P';
+    case JME_HOUSE_KOCH:
+        return 'K';
+    case JME_HOUSE_KRUSINSKI:
+        return 'U';
+    case JME_HOUSE_APC:
+        return 'Y';
+    case JME_HOUSE_SUNSHINE:
+        return 'I';
+    case JME_HOUSE_REGIOMONTANUS:
+        return 'R';
+    case JME_HOUSE_CAMPANUS:
+        return 'C';
+    case JME_HOUSE_POLICH_PAGE:
+        return 'T';
+    case JME_HOUSE_ALCABITIUS:
+        return 'B';
+    case JME_HOUSE_MERIDIAN:
+        return 'X';
+    case JME_HOUSE_MORINUS:
+        return 'M';
+    case JME_HOUSE_AZIMUTHAL:
+        return 'A';
+    case JME_HOUSE_HORIZONTAL:
+        return 'A';
+    default:
+        return house_system;
     }
 }
 
@@ -49,7 +68,15 @@ static double clamp_sector(double sector)
     return sector;
 }
 
-static int gauquelin_sector_from_equatorial(double gst_deg, double ra, double dec, double geo_lon, double geo_lat, double *dgsect, char *error)
+static int gauquelin_sector_from_equatorial(
+    double gst_deg,
+    double ra,
+    double dec,
+    double geo_lon,
+    double geo_lat,
+    double *dgsect,
+    char *error
+)
 {
     double lst;
     double h;
@@ -58,7 +85,8 @@ static int gauquelin_sector_from_equatorial(double gst_deg, double ra, double de
     double nocturnal_arc;
     double fraction;
 
-    if (dgsect == 0 || !isfinite(ra) || !isfinite(dec) || !isfinite(geo_lon) || !isfinite(geo_lat)) {
+    if (dgsect == 0 || !isfinite(ra) || !isfinite(dec) || !isfinite(geo_lon) ||
+        !isfinite(geo_lat)) {
         jme_set_error(error, "Gauquelin semiarc inputs are invalid");
         return JME_ERR;
     }
@@ -137,7 +165,9 @@ static double right_ascension_from_ecliptic_longitude(double lon, double eps)
 static int placidus_dsa(double ra, double tan_lat, double tan_eps, double *dsa)
 {
     double arg = -sin(ra * JME_DEG_TO_RAD) * tan_lat * tan_eps;
-    if (!(arg >= -1.0 && arg <= 1.0)) return JME_ERR;
+    if (!(arg >= -1.0 && arg <= 1.0)) {
+        return JME_ERR;
+    }
     *dsa = acos(arg) * JME_RAD_TO_DEG;
     return JME_OK;
 }
@@ -156,12 +186,20 @@ static int placidus_cusp(double ramc, double lat, double eps, double fraction, d
     }
     for (i = 0; i < 200 && hi - lo > 0.0; i++) {
         double mid = 0.5 * (lo + hi);
-        if (mid == lo || mid == hi) break;
-        if (placidus_dsa(ramc + mid, tan_lat, tan_eps, &dsa) != JME_OK) return JME_ERR;
-        if (mid - fraction * dsa < 0.0) lo = mid; else hi = mid;
+        if (mid == lo || mid == hi) {
+            break;
+        }
+        if (placidus_dsa(ramc + mid, tan_lat, tan_eps, &dsa) != JME_OK) {
+            return JME_ERR;
+        }
+        if (mid - fraction * dsa < 0.0) {
+            lo = mid;
+        } else {
+            hi = mid;
+        }
     }
-    if (placidus_dsa(ramc + lo, tan_lat, tan_eps, &dsa) != JME_OK
-        || placidus_dsa(ramc + hi, tan_lat, tan_eps, &dsa) != JME_OK) {
+    if (placidus_dsa(ramc + lo, tan_lat, tan_eps, &dsa) != JME_OK ||
+        placidus_dsa(ramc + hi, tan_lat, tan_eps, &dsa) != JME_OK) {
         return JME_ERR;
     }
     *longitude = ecliptic_longitude_from_ra(jme_degree_normalize(ramc + 0.5 * (lo + hi)), eps);
@@ -175,7 +213,8 @@ static double regiomontanus_cusp(double ramc, double lat, double eps, double hou
     double e = eps * JME_DEG_TO_RAD;
     double p = lat * JME_DEG_TO_RAD;
     double numerator = sin(ram_p) / cos(e);
-    double denominator = cos(ram_p) - tan(e) * tan(p) * (cos(ram) * sin(ram_p) - sin(ram) * cos(ram_p));
+    double denominator =
+        cos(ram_p) - tan(e) * tan(p) * (cos(ram) * sin(ram_p) - sin(ram) * cos(ram_p));
 
     return jme_degree_normalize(atan2d(numerator, denominator));
 }
@@ -190,7 +229,8 @@ static double regiomontanus_cusp(double ramc, double lat, double eps, double hou
  */
 static double ascendant_from_ramc(double ramc, double lat, double eps);
 
-static double topocentric_cusp(double ramc, double lat, double eps, double house_offset, double pole_fraction)
+static double
+topocentric_cusp(double ramc, double lat, double eps, double house_offset, double pole_fraction)
 {
     double pole = atan(tan(lat * JME_DEG_TO_RAD) * pole_fraction) * JME_RAD_TO_DEG;
     return ascendant_from_ramc(jme_degree_normalize(ramc + house_offset - 90.0), pole, eps);
@@ -232,8 +272,12 @@ static void slerp_unit_vector(const double *a, const double *b, double fraction,
     double cb;
     int i;
 
-    if (dot > 1.0) { dot = 1.0; }
-    if (dot < -1.0) { dot = -1.0; }
+    if (dot > 1.0) {
+        dot = 1.0;
+    }
+    if (dot < -1.0) {
+        dot = -1.0;
+    }
 
     omega = acos(dot);
     so = sin(omega);
@@ -253,7 +297,8 @@ static void slerp_unit_vector(const double *a, const double *b, double fraction,
     normalize_vector(out);
 }
 
-static int meridian_projection_to_ecliptic(const double *point, double expected, double eps, double *longitude)
+static int
+meridian_projection_to_ecliptic(const double *point, double expected, double eps, double *longitude)
 {
     double ra;
     double lon1;
@@ -270,7 +315,10 @@ static int meridian_projection_to_ecliptic(const double *point, double expected,
     ra = atan2d(point[1], point[0]);
     lon1 = ecliptic_longitude_from_ra(ra, eps);
     lon2 = jme_degree_normalize(lon1 + 180.0);
-    *longitude = fabs(jme_degrees_difference_signed(lon1, expected)) <= fabs(jme_degrees_difference_signed(lon2, expected)) ? lon1 : lon2;
+    *longitude = fabs(jme_degrees_difference_signed(lon1, expected)) <=
+                         fabs(jme_degrees_difference_signed(lon2, expected))
+                     ? lon1
+                     : lon2;
     return JME_OK;
 }
 
@@ -285,7 +333,10 @@ static int select_cusp_intersection(const double *v, double expected, double eps
 
     lon1 = longitude_from_equatorial_vector(v, eps);
     lon2 = jme_degree_normalize(lon1 + 180.0);
-    *longitude = fabs(jme_degrees_difference_signed(lon1, expected)) <= fabs(jme_degrees_difference_signed(lon2, expected)) ? lon1 : lon2;
+    *longitude = fabs(jme_degrees_difference_signed(lon1, expected)) <=
+                         fabs(jme_degrees_difference_signed(lon2, expected))
+                     ? lon1
+                     : lon2;
     return JME_OK;
 }
 
@@ -296,7 +347,14 @@ static int select_cusp_intersection(const double *v, double expected, double eps
  * cusp 12, 120 = cusp 2, 150 = cusp 3). Of the two intersections the one on
  * the side of that prime-vertical point is the cusp.
  */
-static int campanus_cusp(double ramc, double lat, double eps, double house_offset, double expected, double *longitude)
+static int campanus_cusp(
+    double ramc,
+    double lat,
+    double eps,
+    double house_offset,
+    double expected,
+    double *longitude
+)
 {
     double elev = (90.0 - house_offset) * JME_DEG_TO_RAD;
     double r = ramc * JME_DEG_TO_RAD;
@@ -313,23 +371,40 @@ static int campanus_cusp(double ramc, double lat, double eps, double house_offse
     int i;
 
     (void)expected;
-    if (longitude == 0) return JME_ERR;
-    for (i = 0; i < 3; i++) pv[i] = east[i] * cos(elev) + zenith[i] * sin(elev);
+    if (longitude == 0) {
+        return JME_ERR;
+    }
+    for (i = 0; i < 3; i++) {
+        pv[i] = east[i] * cos(elev) + zenith[i] * sin(elev);
+    }
     n[0] = north[1] * pv[2] - north[2] * pv[1];
     n[1] = north[2] * pv[0] - north[0] * pv[2];
     n[2] = north[0] * pv[1] - north[1] * pv[0];
     /* ecliptic point (cos l, sin l cos e, sin l sin e) . n = 0 */
     a = n[0];
     b = n[1] * cos(e) + n[2] * sin(e);
-    if (!(fabs(a) + fabs(b) > 0.0)) return JME_ERR;
+    if (!(fabs(a) + fabs(b) > 0.0)) {
+        return JME_ERR;
+    }
     l = atan2(-a, b);
-    v[0] = cos(l); v[1] = sin(l) * cos(e); v[2] = sin(l) * sin(e);
-    if (v[0] * pv[0] + v[1] * pv[1] + v[2] * pv[2] < 0.0) l += 3.14159265358979323846264338327950288;
+    v[0] = cos(l);
+    v[1] = sin(l) * cos(e);
+    v[2] = sin(l) * sin(e);
+    if (v[0] * pv[0] + v[1] * pv[1] + v[2] * pv[2] < 0.0) {
+        l += 3.14159265358979323846264338327950288;
+    }
     *longitude = jme_degree_normalize(l * JME_RAD_TO_DEG);
     return JME_OK;
 }
 
-static int horizontal_cusp(double ramc, double lat, double eps, double house_offset, double expected, double *longitude)
+static int horizontal_cusp(
+    double ramc,
+    double lat,
+    double eps,
+    double house_offset,
+    double expected,
+    double *longitude
+)
 {
     double theta = (house_offset - 90.0) * JME_DEG_TO_RAD;
     double r = ramc * JME_DEG_TO_RAD;
@@ -398,8 +473,12 @@ static int horizontal_east_cusp(double ramc, double lat, double eps, double *lon
     if (!isfinite(norm) || norm <= 0.0 || longitude == 0) {
         return JME_ERR;
     }
-    if (inter[0] * east[0] + inter[1] * east[1] + inter[2] * east[2] < 0.0) norm = -norm;
-    for (i = 0; i < 3; i++) inter[i] /= norm;
+    if (inter[0] * east[0] + inter[1] * east[1] + inter[2] * east[2] < 0.0) {
+        norm = -norm;
+    }
+    for (i = 0; i < 3; i++) {
+        inter[i] /= norm;
+    }
     *longitude = longitude_from_equatorial_vector(inter, eps);
     return JME_OK;
 }
@@ -411,7 +490,13 @@ static double ascendant_from_ramc(double ramc, double lat, double eps)
     return local_ascmc[0];
 }
 
-static int previous_rising_ramc_for_longitude(double ramc, double lat, double eps, double longitude, double *rise_ramc)
+static int previous_rising_ramc_for_longitude(
+    double ramc,
+    double lat,
+    double eps,
+    double longitude,
+    double *rise_ramc
+)
 {
     double end = ramc;
     double step = 1.0;
@@ -435,7 +520,8 @@ static int previous_rising_ramc_for_longitude(double ramc, double lat, double ep
 
             for (j = 0; j < 60; j++) {
                 double mid = (lo + hi) / 2.0;
-                double fm = jme_degrees_difference_signed(ascendant_from_ramc(mid, lat, eps), longitude);
+                double fm =
+                    jme_degrees_difference_signed(ascendant_from_ramc(mid, lat, eps), longitude);
                 if (fabs(fm) < 1e-12 || fabs(hi - lo) < 1e-12) {
                     *rise_ramc = jme_degree_normalize(mid);
                     return JME_OK;
@@ -470,8 +556,14 @@ static int koch_cusps(double asc, double mc, double ramc, double lat, double eps
     double r3;
     double r2;
 
-    if (previous_rising_ramc_for_longitude(ramc, lat, eps, mc, &mc_rise) != JME_OK
-        || previous_rising_ramc_for_longitude(ramc, lat, eps, jme_degree_normalize(mc + 180.0), &ic_rise) != JME_OK) {
+    if (previous_rising_ramc_for_longitude(ramc, lat, eps, mc, &mc_rise) != JME_OK ||
+        previous_rising_ramc_for_longitude(
+            ramc,
+            lat,
+            eps,
+            jme_degree_normalize(mc + 180.0),
+            &ic_rise
+        ) != JME_OK) {
         return JME_ERR;
     }
 
@@ -502,7 +594,8 @@ static int koch_cusps(double asc, double mc, double ramc, double lat, double eps
     return JME_OK;
 }
 
-static int krusinski_cusps(double asc, double mc, double ramc, double lat, double eps, double *cusps)
+static int
+krusinski_cusps(double asc, double mc, double ramc, double lat, double eps, double *cusps)
 {
     double r = ramc * JME_DEG_TO_RAD;
     double p = lat * JME_DEG_TO_RAD;
@@ -522,10 +615,14 @@ static int krusinski_cusps(double asc, double mc, double ramc, double lat, doubl
     slerp_unit_vector(asc_vec, nadir, 2.0 / 3.0, p3);
 
     cusps[1] = asc;
-    if (meridian_projection_to_ecliptic(p2, jme_degree_normalize(asc + 30.0), eps, &cusps[2]) != JME_OK
-        || meridian_projection_to_ecliptic(p3, jme_degree_normalize(asc + 60.0), eps, &cusps[3]) != JME_OK
-        || meridian_projection_to_ecliptic(p11, jme_degree_normalize(mc + 30.0), eps, &cusps[11]) != JME_OK
-        || meridian_projection_to_ecliptic(p12, jme_degree_normalize(mc + 60.0), eps, &cusps[12]) != JME_OK) {
+    if (meridian_projection_to_ecliptic(p2, jme_degree_normalize(asc + 30.0), eps, &cusps[2]) !=
+            JME_OK ||
+        meridian_projection_to_ecliptic(p3, jme_degree_normalize(asc + 60.0), eps, &cusps[3]) !=
+            JME_OK ||
+        meridian_projection_to_ecliptic(p11, jme_degree_normalize(mc + 30.0), eps, &cusps[11]) !=
+            JME_OK ||
+        meridian_projection_to_ecliptic(p12, jme_degree_normalize(mc + 60.0), eps, &cusps[12]) !=
+            JME_OK) {
         return JME_ERR;
     }
 
@@ -603,7 +700,14 @@ static int apc_cusps(double asc, double mc, double ramc, double lat, double eps,
     return JME_OK;
 }
 
-static int north_point_projection_cusp(double ramc, double lat, double eps, const double *point, double expected, double *longitude)
+static int north_point_projection_cusp(
+    double ramc,
+    double lat,
+    double eps,
+    const double *point,
+    double expected,
+    double *longitude
+)
 {
     double r = ramc * JME_DEG_TO_RAD;
     double p = lat * JME_DEG_TO_RAD;
@@ -638,7 +742,8 @@ static int north_point_projection_cusp(double ramc, double lat, double eps, cons
     return select_cusp_intersection(inter, expected, eps, longitude);
 }
 
-static void equatorial_point_from_hour_angle(double ramc, double decl, double hour_angle, double *point)
+static void
+equatorial_point_from_hour_angle(double ramc, double decl, double hour_angle, double *point)
 {
     double ra = (ramc - hour_angle) * JME_DEG_TO_RAD;
     double d = decl * JME_DEG_TO_RAD;
@@ -648,7 +753,15 @@ static void equatorial_point_from_hour_angle(double ramc, double decl, double ho
     point[2] = sin(d);
 }
 
-static int sunshine_cusps(double asc, double mc, double ramc, double lat, double eps, double sun_decl, double *cusps)
+static int sunshine_cusps(
+    double asc,
+    double mc,
+    double ramc,
+    double lat,
+    double eps,
+    double sun_decl,
+    double *cusps
+)
 {
     double tan_lat = tan(lat * JME_DEG_TO_RAD);
     double tan_decl = tan(sun_decl * JME_DEG_TO_RAD);
@@ -716,7 +829,10 @@ static void calc_ascmc(double ramc, double lat, double eps, double *ascmc)
     ascmc[3] = jme_degree_normalize(asc + 180.0);
 
     /* Vertex */
-    vertex = atan2d(-cos(r + 90.0 * JME_DEG_TO_RAD), sin(r + 90.0 * JME_DEG_TO_RAD) * cos(e) - tan(l) * sin(e));
+    vertex = atan2d(
+        -cos(r + 90.0 * JME_DEG_TO_RAD),
+        sin(r + 90.0 * JME_DEG_TO_RAD) * cos(e) - tan(l) * sin(e)
+    );
     ascmc[4] = jme_degree_normalize(vertex);
 
     /* Equatorial Ascendant */
@@ -730,7 +846,15 @@ static void calc_ascmc(double ramc, double lat, double eps, double *ascmc)
     ascmc[9] = 0.0;
 }
 
-static int fill_house_cusps_from_angles(double asc, double mc, double ramc, double lat, double eps, int house_system, double *cusps)
+static int fill_house_cusps_from_angles(
+    double asc,
+    double mc,
+    double ramc,
+    double lat,
+    double eps,
+    int house_system,
+    double *cusps
+)
 {
     int i;
     int system = normalize_house_system(house_system);
@@ -754,36 +878,34 @@ static int fill_house_cusps_from_angles(double asc, double mc, double ramc, doub
             cusps[i] = jme_degree_normalize(asc - 15.0 + (i - 1) * 30.0);
         }
         return JME_OK;
-    case 'W':
-        {
-            double sign_start = floor(asc / 30.0) * 30.0;
-            for (i = 1; i <= 12; i++) {
-                cusps[i] = jme_degree_normalize(sign_start + (i - 1) * 30.0);
-            }
+    case 'W': {
+        double sign_start = floor(asc / 30.0) * 30.0;
+        for (i = 1; i <= 12; i++) {
+            cusps[i] = jme_degree_normalize(sign_start + (i - 1) * 30.0);
         }
+    }
         return JME_OK;
-    case 'O':
-        {
-            double ic = jme_degree_normalize(mc + 180.0);
-            double desc = jme_degree_normalize(asc + 180.0);
-            double q1 = jme_degrees_difference(ic, asc) / 3.0;
-            double q2 = jme_degrees_difference(desc, ic) / 3.0;
-            double q3 = jme_degrees_difference(mc, desc) / 3.0;
-            double q4 = jme_degrees_difference(asc, mc) / 3.0;
+    case 'O': {
+        double ic = jme_degree_normalize(mc + 180.0);
+        double desc = jme_degree_normalize(asc + 180.0);
+        double q1 = jme_degrees_difference(ic, asc) / 3.0;
+        double q2 = jme_degrees_difference(desc, ic) / 3.0;
+        double q3 = jme_degrees_difference(mc, desc) / 3.0;
+        double q4 = jme_degrees_difference(asc, mc) / 3.0;
 
-            cusps[1] = asc;
-            cusps[2] = jme_degree_normalize(asc + q1);
-            cusps[3] = jme_degree_normalize(asc + 2.0 * q1);
-            cusps[4] = ic;
-            cusps[5] = jme_degree_normalize(ic + q2);
-            cusps[6] = jme_degree_normalize(ic + 2.0 * q2);
-            cusps[7] = desc;
-            cusps[8] = jme_degree_normalize(desc + q3);
-            cusps[9] = jme_degree_normalize(desc + 2.0 * q3);
-            cusps[10] = mc;
-            cusps[11] = jme_degree_normalize(mc + q4);
-            cusps[12] = jme_degree_normalize(mc + 2.0 * q4);
-        }
+        cusps[1] = asc;
+        cusps[2] = jme_degree_normalize(asc + q1);
+        cusps[3] = jme_degree_normalize(asc + 2.0 * q1);
+        cusps[4] = ic;
+        cusps[5] = jme_degree_normalize(ic + q2);
+        cusps[6] = jme_degree_normalize(ic + 2.0 * q2);
+        cusps[7] = desc;
+        cusps[8] = jme_degree_normalize(desc + q3);
+        cusps[9] = jme_degree_normalize(desc + 2.0 * q3);
+        cusps[10] = mc;
+        cusps[11] = jme_degree_normalize(mc + q4);
+        cusps[12] = jme_degree_normalize(mc + 2.0 * q4);
+    }
         return JME_OK;
     case 'X':
         /*
@@ -813,34 +935,33 @@ static int fill_house_cusps_from_angles(double asc, double mc, double ramc, doub
             cusps[i] = jme_degree_normalize(atan2d(sin(a) * cos(e), cos(a)));
         }
         return JME_OK;
-    case 'P':
-        {
-            double c11, c12, c2, c3;
+    case 'P': {
+        double c11, c12, c2, c3;
 
-            if (placidus_cusp(ramc, lat, eps, 1.0 / 3.0, &c11) != JME_OK
-                || placidus_cusp(ramc, lat, eps, 2.0 / 3.0, &c12) != JME_OK
-                || placidus_cusp(ramc, lat, eps, -2.0 / 3.0, &c2) != JME_OK
-                || placidus_cusp(ramc, lat, eps, -1.0 / 3.0, &c3) != JME_OK) {
-                return JME_ERR;
-            }
-
-            /* The fraction -2/3 and -1/3 solutions are cusps 8 and 9;
-             * cusps 2 and 3 are their antipodes. */
-            c2 = jme_degree_normalize(c2 + 180.0);
-            c3 = jme_degree_normalize(c3 + 180.0);
-            cusps[1] = asc;
-            cusps[2] = c2;
-            cusps[3] = c3;
-            cusps[4] = jme_degree_normalize(mc + 180.0);
-            cusps[5] = jme_degree_normalize(c11 + 180.0);
-            cusps[6] = jme_degree_normalize(c12 + 180.0);
-            cusps[7] = jme_degree_normalize(asc + 180.0);
-            cusps[8] = jme_degree_normalize(c2 + 180.0);
-            cusps[9] = jme_degree_normalize(c3 + 180.0);
-            cusps[10] = mc;
-            cusps[11] = c11;
-            cusps[12] = c12;
+        if (placidus_cusp(ramc, lat, eps, 1.0 / 3.0, &c11) != JME_OK ||
+            placidus_cusp(ramc, lat, eps, 2.0 / 3.0, &c12) != JME_OK ||
+            placidus_cusp(ramc, lat, eps, -2.0 / 3.0, &c2) != JME_OK ||
+            placidus_cusp(ramc, lat, eps, -1.0 / 3.0, &c3) != JME_OK) {
+            return JME_ERR;
         }
+
+        /* The fraction -2/3 and -1/3 solutions are cusps 8 and 9;
+         * cusps 2 and 3 are their antipodes. */
+        c2 = jme_degree_normalize(c2 + 180.0);
+        c3 = jme_degree_normalize(c3 + 180.0);
+        cusps[1] = asc;
+        cusps[2] = c2;
+        cusps[3] = c3;
+        cusps[4] = jme_degree_normalize(mc + 180.0);
+        cusps[5] = jme_degree_normalize(c11 + 180.0);
+        cusps[6] = jme_degree_normalize(c12 + 180.0);
+        cusps[7] = jme_degree_normalize(asc + 180.0);
+        cusps[8] = jme_degree_normalize(c2 + 180.0);
+        cusps[9] = jme_degree_normalize(c3 + 180.0);
+        cusps[10] = mc;
+        cusps[11] = c11;
+        cusps[12] = c12;
+    }
         return JME_OK;
     case 'R':
         cusps[1] = asc;
@@ -858,43 +979,50 @@ static int fill_house_cusps_from_angles(double asc, double mc, double ramc, doub
         return JME_OK;
     case 'C':
         cusps[1] = asc;
-        if (campanus_cusp(ramc, lat, eps, 120.0, jme_degree_normalize(asc + 30.0), &cusps[2]) != JME_OK
-            || campanus_cusp(ramc, lat, eps, 150.0, jme_degree_normalize(asc + 60.0), &cusps[3]) != JME_OK
-            || campanus_cusp(ramc, lat, eps, 210.0, jme_degree_normalize(mc + 210.0), &cusps[5]) != JME_OK
-            || campanus_cusp(ramc, lat, eps, 240.0, jme_degree_normalize(mc + 240.0), &cusps[6]) != JME_OK
-            || campanus_cusp(ramc, lat, eps, 300.0, jme_degree_normalize(asc + 210.0), &cusps[8]) != JME_OK
-            || campanus_cusp(ramc, lat, eps, 330.0, jme_degree_normalize(asc + 240.0), &cusps[9]) != JME_OK
-            || campanus_cusp(ramc, lat, eps, 30.0, jme_degree_normalize(mc + 30.0), &cusps[11]) != JME_OK
-            || campanus_cusp(ramc, lat, eps, 60.0, jme_degree_normalize(mc + 60.0), &cusps[12]) != JME_OK) {
+        if (campanus_cusp(ramc, lat, eps, 120.0, jme_degree_normalize(asc + 30.0), &cusps[2]) !=
+                JME_OK ||
+            campanus_cusp(ramc, lat, eps, 150.0, jme_degree_normalize(asc + 60.0), &cusps[3]) !=
+                JME_OK ||
+            campanus_cusp(ramc, lat, eps, 210.0, jme_degree_normalize(mc + 210.0), &cusps[5]) !=
+                JME_OK ||
+            campanus_cusp(ramc, lat, eps, 240.0, jme_degree_normalize(mc + 240.0), &cusps[6]) !=
+                JME_OK ||
+            campanus_cusp(ramc, lat, eps, 300.0, jme_degree_normalize(asc + 210.0), &cusps[8]) !=
+                JME_OK ||
+            campanus_cusp(ramc, lat, eps, 330.0, jme_degree_normalize(asc + 240.0), &cusps[9]) !=
+                JME_OK ||
+            campanus_cusp(ramc, lat, eps, 30.0, jme_degree_normalize(mc + 30.0), &cusps[11]) !=
+                JME_OK ||
+            campanus_cusp(ramc, lat, eps, 60.0, jme_degree_normalize(mc + 60.0), &cusps[12]) !=
+                JME_OK) {
             return JME_ERR;
         }
         cusps[4] = jme_degree_normalize(mc + 180.0);
         cusps[7] = jme_degree_normalize(asc + 180.0);
         cusps[10] = mc;
         return JME_OK;
-    case 'B':
-        {
-            double asc_ra = right_ascension_from_ecliptic_longitude(asc, eps);
-            double desc_ra = jme_degree_normalize(asc_ra + 180.0);
-            double ic_ra = jme_degree_normalize(ramc + 180.0);
-            double q4 = jme_degrees_difference(asc_ra, ramc) / 3.0;
-            double q1 = jme_degrees_difference(ic_ra, asc_ra) / 3.0;
-            double q2 = jme_degrees_difference(desc_ra, ic_ra) / 3.0;
-            double q3 = jme_degrees_difference(ramc, desc_ra) / 3.0;
+    case 'B': {
+        double asc_ra = right_ascension_from_ecliptic_longitude(asc, eps);
+        double desc_ra = jme_degree_normalize(asc_ra + 180.0);
+        double ic_ra = jme_degree_normalize(ramc + 180.0);
+        double q4 = jme_degrees_difference(asc_ra, ramc) / 3.0;
+        double q1 = jme_degrees_difference(ic_ra, asc_ra) / 3.0;
+        double q2 = jme_degrees_difference(desc_ra, ic_ra) / 3.0;
+        double q3 = jme_degrees_difference(ramc, desc_ra) / 3.0;
 
-            cusps[1] = asc;
-            cusps[2] = ecliptic_longitude_from_ra(asc_ra + q1, eps);
-            cusps[3] = ecliptic_longitude_from_ra(asc_ra + 2.0 * q1, eps);
-            cusps[4] = jme_degree_normalize(mc + 180.0);
-            cusps[5] = ecliptic_longitude_from_ra(ic_ra + q2, eps);
-            cusps[6] = ecliptic_longitude_from_ra(ic_ra + 2.0 * q2, eps);
-            cusps[7] = jme_degree_normalize(asc + 180.0);
-            cusps[8] = ecliptic_longitude_from_ra(desc_ra + q3, eps);
-            cusps[9] = ecliptic_longitude_from_ra(desc_ra + 2.0 * q3, eps);
-            cusps[10] = mc;
-            cusps[11] = ecliptic_longitude_from_ra(ramc + q4, eps);
-            cusps[12] = ecliptic_longitude_from_ra(ramc + 2.0 * q4, eps);
-        }
+        cusps[1] = asc;
+        cusps[2] = ecliptic_longitude_from_ra(asc_ra + q1, eps);
+        cusps[3] = ecliptic_longitude_from_ra(asc_ra + 2.0 * q1, eps);
+        cusps[4] = jme_degree_normalize(mc + 180.0);
+        cusps[5] = ecliptic_longitude_from_ra(ic_ra + q2, eps);
+        cusps[6] = ecliptic_longitude_from_ra(ic_ra + 2.0 * q2, eps);
+        cusps[7] = jme_degree_normalize(asc + 180.0);
+        cusps[8] = ecliptic_longitude_from_ra(desc_ra + q3, eps);
+        cusps[9] = ecliptic_longitude_from_ra(desc_ra + 2.0 * q3, eps);
+        cusps[10] = mc;
+        cusps[11] = ecliptic_longitude_from_ra(ramc + q4, eps);
+        cusps[12] = ecliptic_longitude_from_ra(ramc + 2.0 * q4, eps);
+    }
         return JME_OK;
     case 'T':
         cusps[1] = asc;
@@ -923,10 +1051,40 @@ static int fill_house_cusps_from_angles(double asc, double mc, double ramc, doub
             return JME_ERR;
         }
         cusps[7] = jme_degree_normalize(cusps[1] + 180.0);
-        if (horizontal_cusp(ramc, lat, eps, 120.0, jme_degree_normalize(cusps[1] + jme_degrees_difference(mc + 180.0, cusps[1]) / 3.0), &cusps[2]) != JME_OK
-            || horizontal_cusp(ramc, lat, eps, 150.0, jme_degree_normalize(cusps[1] + 2.0 * jme_degrees_difference(mc + 180.0, cusps[1]) / 3.0), &cusps[3]) != JME_OK
-            || horizontal_cusp(ramc, lat, eps, 30.0, jme_degree_normalize(mc + jme_degrees_difference(cusps[1], mc) / 3.0), &cusps[11]) != JME_OK
-            || horizontal_cusp(ramc, lat, eps, 60.0, jme_degree_normalize(mc + 2.0 * jme_degrees_difference(cusps[1], mc) / 3.0), &cusps[12]) != JME_OK) {
+        if (horizontal_cusp(
+                ramc,
+                lat,
+                eps,
+                120.0,
+                jme_degree_normalize(cusps[1] + jme_degrees_difference(mc + 180.0, cusps[1]) / 3.0),
+                &cusps[2]
+            ) != JME_OK ||
+            horizontal_cusp(
+                ramc,
+                lat,
+                eps,
+                150.0,
+                jme_degree_normalize(
+                    cusps[1] + 2.0 * jme_degrees_difference(mc + 180.0, cusps[1]) / 3.0
+                ),
+                &cusps[3]
+            ) != JME_OK ||
+            horizontal_cusp(
+                ramc,
+                lat,
+                eps,
+                30.0,
+                jme_degree_normalize(mc + jme_degrees_difference(cusps[1], mc) / 3.0),
+                &cusps[11]
+            ) != JME_OK ||
+            horizontal_cusp(
+                ramc,
+                lat,
+                eps,
+                60.0,
+                jme_degree_normalize(mc + 2.0 * jme_degrees_difference(cusps[1], mc) / 3.0),
+                &cusps[12]
+            ) != JME_OK) {
             return JME_ERR;
         }
         cusps[4] = jme_degree_normalize(mc + 180.0);
@@ -947,7 +1105,14 @@ static int fill_house_cusps_from_angles(double asc, double mc, double ramc, doub
     }
 }
 
-int jme_houses(double jd_ut, double geo_lat, double geo_lon, int house_system, double *cusps, double *ascmc)
+int jme_houses(
+    double jd_ut,
+    double geo_lat,
+    double geo_lon,
+    int house_system,
+    double *cusps,
+    double *ascmc
+)
 {
     return jme_houses_ex(jd_ut, 0, geo_lat, geo_lon, house_system, cusps, ascmc);
 }
@@ -969,8 +1134,16 @@ int jme_houses(double jd_ut, double geo_lat, double geo_lon, int house_system, d
  * of date (true unless JME_CALC_NO_NUTATION) and, with JME_CALC_SIDEREAL,
  * the ayanamsa referred to the same equinox (else 0).
  */
-static int houses_frame(double jd_ut, int flags, double geo_lat, double geo_lon,
-    double *ramc, double *eps, double *aya, char *error)
+static int houses_frame(
+    double jd_ut,
+    int flags,
+    double geo_lat,
+    double geo_lon,
+    double *ramc,
+    double *eps,
+    double *aya,
+    char *error
+)
 {
     double jd_tt, gst, eps_mean, dpsi, deps;
     double nm[9];
@@ -984,21 +1157,40 @@ static int houses_frame(double jd_ut, int flags, double geo_lat, double geo_lon,
         jme_set_error(error, "Geographic latitude must be within [-90, 90] degrees");
         return JME_ERR;
     }
-    if (internal_ut_to_et(jd_ut, &jd_tt, error) != JME_OK) return JME_ERR;
-    if (internal_nutation_matrix(jd_tt, nm, &dpsi, &eps_mean, &deps, error) != JME_OK) return JME_ERR;
+    if (internal_ut_to_et(jd_ut, &jd_tt, error) != JME_OK) {
+        return JME_ERR;
+    }
+    if (internal_nutation_matrix(jd_tt, nm, &dpsi, &eps_mean, &deps, error) != JME_OK) {
+        return JME_ERR;
+    }
     *eps = apparent ? eps_mean + deps : eps_mean;
-    if (internal_sidereal_time_rad(jd_ut, jd_tt, apparent, &gst, error) != JME_OK) return JME_ERR;
+    if (internal_sidereal_time_rad(jd_ut, jd_tt, apparent, &gst, error) != JME_OK) {
+        return JME_ERR;
+    }
     *ramc = jme_degree_normalize(gst / JME_DEG_TO_RAD + geo_lon);
     *aya = 0.0;
     if (flags & JME_CALC_SIDEREAL) {
         double rate;
-        if (internal_context_ayanamsa(jd_tt, aya, &rate, error) != JME_OK) return JME_ERR;
-        if (apparent) *aya += dpsi;
+        if (internal_context_ayanamsa(jd_tt, aya, &rate, error) != JME_OK) {
+            return JME_ERR;
+        }
+        if (apparent) {
+            *aya += dpsi;
+        }
     }
     return JME_OK;
 }
 
-static int houses_compute(double jd_ut, int flags, double geo_lat, double geo_lon, int house_system, double *cusps, double *ascmc, char *error)
+static int houses_compute(
+    double jd_ut,
+    int flags,
+    double geo_lat,
+    double geo_lon,
+    int house_system,
+    double *cusps,
+    double *ascmc,
+    char *error
+)
 {
     double ramc, eps, aya = 0.0;
     double local_ascmc[10];
@@ -1009,51 +1201,85 @@ static int houses_compute(double jd_ut, int flags, double geo_lat, double geo_lo
         jme_set_error(error, "House cusp output is required");
         return JME_ERR;
     }
-    if (houses_frame(jd_ut, flags, geo_lat, geo_lon, &ramc, &eps, &aya, error) != JME_OK) return JME_ERR;
+    if (houses_frame(jd_ut, flags, geo_lat, geo_lon, &ramc, &eps, &aya, error) != JME_OK) {
+        return JME_ERR;
+    }
 
     calc_ascmc(ramc, geo_lat, eps, local_ascmc);
     if (flags & JME_CALC_SIDEREAL) {
         /* ascmc[0..5] are ecliptic longitudes; [6] ARMC and [7] obliquity are not. */
         for (i = 0; i <= 5; i++) {
-            if (isfinite(local_ascmc[i])) local_ascmc[i] = jme_degree_normalize(local_ascmc[i] - aya);
+            if (isfinite(local_ascmc[i])) {
+                local_ascmc[i] = jme_degree_normalize(local_ascmc[i] - aya);
+            }
         }
     }
     if (ascmc != 0) {
-        for (i = 0; i < 10; i++) ascmc[i] = local_ascmc[i];
+        for (i = 0; i < 10; i++) {
+            ascmc[i] = local_ascmc[i];
+        }
     }
 
     if (system == 'I') {
         double sun_equ[6];
         /* Apparent declination of the Sun (true equator of date). */
-        if (internal_calc_ut_positions(jd_ut, JME_BODY_SUN, JME_CALC_EQUATORIAL | (flags & JME_CALC_NO_NUTATION), sun_equ, error) != JME_OK) {
+        if (internal_calc_ut_positions(
+                jd_ut,
+                JME_BODY_SUN,
+                JME_CALC_EQUATORIAL | (flags & JME_CALC_NO_NUTATION),
+                sun_equ,
+                error
+            ) != JME_OK) {
             return JME_ERR;
         }
-        if (ascmc != 0) ascmc[9] = sun_equ[1];
+        if (ascmc != 0) {
+            ascmc[9] = sun_equ[1];
+        }
         /* Tropical angles are needed by the cusp construction. */
         calc_ascmc(ramc, geo_lat, eps, local_ascmc);
-        if (sunshine_cusps(local_ascmc[0], local_ascmc[1], ramc, geo_lat, eps, sun_equ[1], cusps) != JME_OK) {
+        if (sunshine_cusps(local_ascmc[0], local_ascmc[1], ramc, geo_lat, eps, sun_equ[1], cusps) !=
+            JME_OK) {
             jme_set_error(error, "Sunshine house cusps undefined for these inputs");
             return JME_ERR;
         }
     } else {
         calc_ascmc(ramc, geo_lat, eps, local_ascmc);
-        if (fill_house_cusps_from_angles(local_ascmc[0], local_ascmc[1], ramc, geo_lat, eps, house_system, cusps) != JME_OK) {
+        if (fill_house_cusps_from_angles(
+                local_ascmc[0],
+                local_ascmc[1],
+                ramc,
+                geo_lat,
+                eps,
+                house_system,
+                cusps
+            ) != JME_OK) {
             jme_set_error(error, "House cusps undefined for this system at this latitude");
             return JME_ERR;
         }
     }
     if (flags & JME_CALC_SIDEREAL) {
-        for (i = 1; i <= 12; i++) cusps[i] = jme_degree_normalize(cusps[i] - aya);
+        for (i = 1; i <= 12; i++) {
+            cusps[i] = jme_degree_normalize(cusps[i] - aya);
+        }
     }
     return JME_OK;
 }
 
-int jme_houses_ex(double jd_ut, int flags, double geo_lat, double geo_lon, int house_system, double *cusps, double *ascmc)
+int jme_houses_ex(
+    double jd_ut,
+    int flags,
+    double geo_lat,
+    double geo_lon,
+    int house_system,
+    double *cusps,
+    double *ascmc
+)
 {
     return houses_compute(jd_ut, flags, geo_lat, geo_lon, house_system, cusps, ascmc, 0);
 }
 
-double jme_house_pos(double armc, double geo_lat, double eps, int house_system, double *xpin, char *error)
+double
+jme_house_pos(double armc, double geo_lat, double eps, int house_system, double *xpin, char *error)
 {
     double ascmc[10];
     double cusps[13];
@@ -1083,14 +1309,24 @@ double jme_house_pos(double armc, double geo_lat, double eps, int house_system, 
     return 0.0;
 }
 
-int jme_houses_ex2(double jd_ut, int flags, double geo_lat, double geo_lon, int house_system, double *cusps, double *ascmc, double *cusps_speed, double *ascmc_speed)
+int jme_houses_ex2(
+    double jd_ut,
+    int flags,
+    double geo_lat,
+    double geo_lon,
+    int house_system,
+    double *cusps,
+    double *ascmc,
+    double *cusps_speed,
+    double *ascmc_speed
+)
 {
     /* Rates in degrees per day by the five-point central stencil
      * f' = [f(-2h) - 8 f(-h) + 8 f(h) - f(2h)] / (12 h), truncation O(h^4),
      * h = 1e-3 d. Angle differences are unwrapped relative to the centre. */
     static const double step = 1.0e-3;
-    static const double offs[4] = { -2.0, -1.0, 1.0, 2.0 };
-    static const double wts[4] = { 1.0, -8.0, 8.0, -1.0 };
+    static const double offs[4] = {-2.0, -1.0, 1.0, 2.0};
+    static const double wts[4] = {1.0, -8.0, 8.0, -1.0};
     double sc[4][13];
     double sa[4][10];
     double centre_cusps[13];
@@ -1101,19 +1337,44 @@ int jme_houses_ex2(double jd_ut, int flags, double geo_lat, double geo_lon, int 
     if (rc != JME_OK) {
         return rc;
     }
-    if (cusps_speed == 0 && ascmc_speed == 0) return JME_OK;
-    for (i = 0; i < 13; i++) centre_cusps[i] = cusps[i];
+    if (cusps_speed == 0 && ascmc_speed == 0) {
+        return JME_OK;
+    }
+    for (i = 0; i < 13; i++) {
+        centre_cusps[i] = cusps[i];
+    }
     if (ascmc != 0) {
-        for (i = 0; i < 10; i++) centre_ascmc[i] = ascmc[i];
-    } else if (jme_houses_ex(jd_ut, flags, geo_lat, geo_lon, house_system, centre_cusps, centre_ascmc) != JME_OK) {
+        for (i = 0; i < 10; i++) {
+            centre_ascmc[i] = ascmc[i];
+        }
+    } else if (
+        jme_houses_ex(jd_ut, flags, geo_lat, geo_lon, house_system, centre_cusps, centre_ascmc) !=
+        JME_OK
+    ) {
         return JME_ERR;
     }
     for (k = 0; k < 4; k++) {
-        if (jme_houses_ex(jd_ut + offs[k] * step, flags, geo_lat, geo_lon, house_system, sc[k], sa[k]) != JME_OK) {
+        if (jme_houses_ex(
+                jd_ut + offs[k] * step,
+                flags,
+                geo_lat,
+                geo_lon,
+                house_system,
+                sc[k],
+                sa[k]
+            ) != JME_OK) {
             /* A neighbouring instant is undefined (e.g. a polar transition):
              * the rate is not defined; report NaN rather than a false zero. */
-            if (cusps_speed != 0) for (i = 0; i < 13; i++) cusps_speed[i] = NAN;
-            if (ascmc_speed != 0) for (i = 0; i < 10; i++) ascmc_speed[i] = NAN;
+            if (cusps_speed != 0) {
+                for (i = 0; i < 13; i++) {
+                    cusps_speed[i] = NAN;
+                }
+            }
+            if (ascmc_speed != 0) {
+                for (i = 0; i < 10; i++) {
+                    ascmc_speed[i] = NAN;
+                }
+            }
             return JME_OK;
         }
     }
@@ -1121,7 +1382,9 @@ int jme_houses_ex2(double jd_ut, int flags, double geo_lat, double geo_lon, int 
         cusps_speed[0] = 0.0;
         for (i = 1; i <= 12; i++) {
             double acc = 0.0;
-            for (k = 0; k < 4; k++) acc += wts[k] * jme_degrees_difference_signed(sc[k][i], centre_cusps[i]);
+            for (k = 0; k < 4; k++) {
+                acc += wts[k] * jme_degrees_difference_signed(sc[k][i], centre_cusps[i]);
+            }
             cusps_speed[i] = acc / (12.0 * step);
         }
     }
@@ -1129,8 +1392,11 @@ int jme_houses_ex2(double jd_ut, int flags, double geo_lat, double geo_lon, int 
         for (i = 0; i < 10; i++) {
             double acc = 0.0;
             for (k = 0; k < 4; k++) {
-                if (i == 7 || i == 9) acc += wts[k] * (sa[k][i] - centre_ascmc[i]);
-                else acc += wts[k] * jme_degrees_difference_signed(sa[k][i], centre_ascmc[i]);
+                if (i == 7 || i == 9) {
+                    acc += wts[k] * (sa[k][i] - centre_ascmc[i]);
+                } else {
+                    acc += wts[k] * jme_degrees_difference_signed(sa[k][i], centre_ascmc[i]);
+                }
             }
             ascmc_speed[i] = acc / (12.0 * step);
         }
@@ -1138,7 +1404,14 @@ int jme_houses_ex2(double jd_ut, int flags, double geo_lat, double geo_lon, int 
     return JME_OK;
 }
 
-int jme_houses_armc(double armc, double geo_lat, double eps, int house_system, double *cusps, double *ascmc)
+int jme_houses_armc(
+    double armc,
+    double geo_lat,
+    double eps,
+    int house_system,
+    double *cusps,
+    double *ascmc
+)
 {
     double local_ascmc[10];
     double input_sun_decl = ascmc != 0 ? ascmc[9] : NAN;
@@ -1163,21 +1436,46 @@ int jme_houses_armc(double armc, double geo_lat, double eps, int house_system, d
         if (!isfinite(input_sun_decl)) {
             return JME_ERR;
         }
-        return sunshine_cusps(local_ascmc[0], local_ascmc[1], armc, geo_lat, eps, input_sun_decl, cusps);
+        return sunshine_cusps(
+            local_ascmc[0],
+            local_ascmc[1],
+            armc,
+            geo_lat,
+            eps,
+            input_sun_decl,
+            cusps
+        );
     }
 
-    return fill_house_cusps_from_angles(local_ascmc[0], local_ascmc[1], armc, geo_lat, eps, house_system, cusps);
+    return fill_house_cusps_from_angles(
+        local_ascmc[0],
+        local_ascmc[1],
+        armc,
+        geo_lat,
+        eps,
+        house_system,
+        cusps
+    );
 }
 
-int jme_houses_armc_ex2(double armc, double geo_lat, double eps, int house_system, double *cusps, double *ascmc, double *cusps_speed, double *ascmc_speed)
+int jme_houses_armc_ex2(
+    double armc,
+    double geo_lat,
+    double eps,
+    int house_system,
+    double *cusps,
+    double *ascmc,
+    double *cusps_speed,
+    double *ascmc_speed
+)
 {
     /* Derivatives with respect to ARMC (degrees per degree of ARMC) at fixed
      * latitude and obliquity, by the five-point central stencil with
      * h = 1e-3 degree (truncation O(h^4)). For the Sunshine system the
      * caller's solar declination in ascmc[9] is held fixed. */
     static const double step = 1.0e-3;
-    static const double offs[4] = { -2.0, -1.0, 1.0, 2.0 };
-    static const double wts[4] = { 1.0, -8.0, 8.0, -1.0 };
+    static const double offs[4] = {-2.0, -1.0, 1.0, 2.0};
+    static const double wts[4] = {1.0, -8.0, 8.0, -1.0};
     double sc[4][13];
     double sa[4][10];
     double centre_ascmc[10];
@@ -1185,20 +1483,39 @@ int jme_houses_armc_ex2(double armc, double geo_lat, double eps, int house_syste
     int i, k;
     int rc;
 
-    for (i = 0; i < 10; i++) centre_ascmc[i] = 0.0;
+    for (i = 0; i < 10; i++) {
+        centre_ascmc[i] = 0.0;
+    }
     centre_ascmc[9] = sun_decl;
     rc = jme_houses_armc(armc, geo_lat, eps, house_system, cusps, centre_ascmc);
-    if (ascmc != 0) for (i = 0; i < 10; i++) ascmc[i] = centre_ascmc[i];
+    if (ascmc != 0) {
+        for (i = 0; i < 10; i++) {
+            ascmc[i] = centre_ascmc[i];
+        }
+    }
     if (rc != JME_OK) {
         return rc;
     }
-    if (cusps_speed == 0 && ascmc_speed == 0) return JME_OK;
+    if (cusps_speed == 0 && ascmc_speed == 0) {
+        return JME_OK;
+    }
     for (k = 0; k < 4; k++) {
-        for (i = 0; i < 10; i++) sa[k][i] = 0.0;
+        for (i = 0; i < 10; i++) {
+            sa[k][i] = 0.0;
+        }
         sa[k][9] = sun_decl;
-        if (jme_houses_armc(armc + offs[k] * step, geo_lat, eps, house_system, sc[k], sa[k]) != JME_OK) {
-            if (cusps_speed != 0) for (i = 0; i < 13; i++) cusps_speed[i] = NAN;
-            if (ascmc_speed != 0) for (i = 0; i < 10; i++) ascmc_speed[i] = NAN;
+        if (jme_houses_armc(armc + offs[k] * step, geo_lat, eps, house_system, sc[k], sa[k]) !=
+            JME_OK) {
+            if (cusps_speed != 0) {
+                for (i = 0; i < 13; i++) {
+                    cusps_speed[i] = NAN;
+                }
+            }
+            if (ascmc_speed != 0) {
+                for (i = 0; i < 10; i++) {
+                    ascmc_speed[i] = NAN;
+                }
+            }
             return JME_OK;
         }
     }
@@ -1206,22 +1523,40 @@ int jme_houses_armc_ex2(double armc, double geo_lat, double eps, int house_syste
         cusps_speed[0] = 0.0;
         for (i = 1; i <= 12; i++) {
             double acc = 0.0;
-            for (k = 0; k < 4; k++) acc += wts[k] * jme_degrees_difference_signed(sc[k][i], cusps[i]);
+            for (k = 0; k < 4; k++) {
+                acc += wts[k] * jme_degrees_difference_signed(sc[k][i], cusps[i]);
+            }
             cusps_speed[i] = acc / (12.0 * step);
         }
     }
     if (ascmc_speed != 0) {
         for (i = 0; i < 10; i++) {
             double acc = 0.0;
-            if (i == 7 || i == 8 || i == 9) { ascmc_speed[i] = 0.0; continue; }
-            for (k = 0; k < 4; k++) acc += wts[k] * jme_degrees_difference_signed(sa[k][i], centre_ascmc[i]);
+            if (i == 7 || i == 8 || i == 9) {
+                ascmc_speed[i] = 0.0;
+                continue;
+            }
+            for (k = 0; k < 4; k++) {
+                acc += wts[k] * jme_degrees_difference_signed(sa[k][i], centre_ascmc[i]);
+            }
             ascmc_speed[i] = acc / (12.0 * step);
         }
     }
     return JME_OK;
 }
 
-int jme_gauquelin_sector(double jd_ut, int body, const char *starname, int flags, int imeth, double *geopos, double atpress, double attemp, double *dgsect, char *error)
+int jme_gauquelin_sector(
+    double jd_ut,
+    int body,
+    const char *starname,
+    int flags,
+    int imeth,
+    double *geopos,
+    double atpress,
+    double attemp,
+    double *dgsect,
+    char *error
+)
 {
     double prev_rise = 0.0;
     double next_rise = 0.0;
@@ -1246,7 +1581,9 @@ int jme_gauquelin_sector(double jd_ut, int body, const char *starname, int flags
     int sector_offset = 0;
     int rsmi_extra = 0;
 
-    if (dgsect != 0) { *dgsect = 0.0; }
+    if (dgsect != 0) {
+        *dgsect = 0.0;
+    }
     if (dgsect == 0 || geopos == 0) {
         jme_set_error(error, "Gauquelin sector output arguments are required");
         return JME_ERR;
@@ -1269,7 +1606,8 @@ int jme_gauquelin_sector(double jd_ut, int body, const char *starname, int flags
         int apparent = !(flags & JME_CALC_NO_NUTATION);
         int pflags = flags & (JME_CALC_TRUE_POSITION | JME_CALC_NO_NUTATION);
 
-        if (!isfinite(jd_ut) || !isfinite(geopos[0]) || !isfinite(geopos[1]) || geopos[1] < -90.0 || geopos[1] > 90.0) {
+        if (!isfinite(jd_ut) || !isfinite(geopos[0]) || !isfinite(geopos[1]) || geopos[1] < -90.0 ||
+            geopos[1] > 90.0) {
             jme_set_error(error, "Gauquelin sector inputs are invalid");
             return JME_ERR;
         }
@@ -1280,14 +1618,22 @@ int jme_gauquelin_sector(double jd_ut, int body, const char *starname, int flags
         } else if (internal_calc_ut_positions(jd_ut, body, pflags, pos, error) != JME_OK) {
             return JME_ERR;
         }
-        if (internal_ut_to_et(jd_ut, &jd_tt, error) != JME_OK
-            || internal_nutation_matrix(jd_tt, nm, &dpsi, &eps_mean, &deps, error) != JME_OK
-            || internal_sidereal_time_rad(jd_ut, jd_tt, apparent, &gst, error) != JME_OK) {
+        if (internal_ut_to_et(jd_ut, &jd_tt, error) != JME_OK ||
+            internal_nutation_matrix(jd_tt, nm, &dpsi, &eps_mean, &deps, error) != JME_OK ||
+            internal_sidereal_time_rad(jd_ut, jd_tt, apparent, &gst, error) != JME_OK) {
             return JME_ERR;
         }
         eps = apparent ? eps_mean + deps : eps_mean;
         jme_ecliptic_to_equatorial(pos[0], imeth == 0 ? pos[1] : 0.0, eps, &ra, &dec);
-        return gauquelin_sector_from_equatorial(gst * JME_RAD_TO_DEG, ra, dec, geopos[0], geopos[1], dgsect, error);
+        return gauquelin_sector_from_equatorial(
+            gst * JME_RAD_TO_DEG,
+            ra,
+            dec,
+            geopos[0],
+            geopos[1],
+            dgsect,
+            error
+        );
     }
 
     if (imeth == 2) {
@@ -1301,20 +1647,111 @@ int jme_gauquelin_sector(double jd_ut, int body, const char *starname, int flags
         rsmi_extra |= JME_RISE_NO_REFRACTION;
     }
 
-    rc_rise_prev = jme_rise_trans(day_start - 1.0, body, starname, flags, JME_RISE_RISE | rsmi_extra, geopos, atpress, attemp, &prev_rise, error);
-    rc_rise_next = jme_rise_trans(day_start, body, starname, flags, JME_RISE_RISE | rsmi_extra, geopos, atpress, attemp, &next_rise, error);
-    rc_set_prev = jme_rise_trans(day_start - 1.0, body, starname, flags, JME_RISE_SET | rsmi_extra, geopos, atpress, attemp, &prev_set, error);
-    rc_set_next = jme_rise_trans(day_start, body, starname, flags, JME_RISE_SET | rsmi_extra, geopos, atpress, attemp, &next_set, error);
-    rc_mc_prev = jme_rise_trans(day_start - 1.0, body, starname, flags, JME_RISE_MERIDIAN_TRANSIT, geopos, atpress, attemp, &prev_mc, error);
-    rc_mc_next = jme_rise_trans(day_start, body, starname, flags, JME_RISE_MERIDIAN_TRANSIT, geopos, atpress, attemp, &next_mc, error);
-    rc_ic_prev = jme_rise_trans(day_start - 1.0, body, starname, flags, JME_RISE_ANTI_MERIDIAN_TRANSIT, geopos, atpress, attemp, &prev_ic, error);
-    rc_ic_next = jme_rise_trans(day_start, body, starname, flags, JME_RISE_ANTI_MERIDIAN_TRANSIT, geopos, atpress, attemp, &next_ic, error);
+    rc_rise_prev = jme_rise_trans(
+        day_start - 1.0,
+        body,
+        starname,
+        flags,
+        JME_RISE_RISE | rsmi_extra,
+        geopos,
+        atpress,
+        attemp,
+        &prev_rise,
+        error
+    );
+    rc_rise_next = jme_rise_trans(
+        day_start,
+        body,
+        starname,
+        flags,
+        JME_RISE_RISE | rsmi_extra,
+        geopos,
+        atpress,
+        attemp,
+        &next_rise,
+        error
+    );
+    rc_set_prev = jme_rise_trans(
+        day_start - 1.0,
+        body,
+        starname,
+        flags,
+        JME_RISE_SET | rsmi_extra,
+        geopos,
+        atpress,
+        attemp,
+        &prev_set,
+        error
+    );
+    rc_set_next = jme_rise_trans(
+        day_start,
+        body,
+        starname,
+        flags,
+        JME_RISE_SET | rsmi_extra,
+        geopos,
+        atpress,
+        attemp,
+        &next_set,
+        error
+    );
+    rc_mc_prev = jme_rise_trans(
+        day_start - 1.0,
+        body,
+        starname,
+        flags,
+        JME_RISE_MERIDIAN_TRANSIT,
+        geopos,
+        atpress,
+        attemp,
+        &prev_mc,
+        error
+    );
+    rc_mc_next = jme_rise_trans(
+        day_start,
+        body,
+        starname,
+        flags,
+        JME_RISE_MERIDIAN_TRANSIT,
+        geopos,
+        atpress,
+        attemp,
+        &next_mc,
+        error
+    );
+    rc_ic_prev = jme_rise_trans(
+        day_start - 1.0,
+        body,
+        starname,
+        flags,
+        JME_RISE_ANTI_MERIDIAN_TRANSIT,
+        geopos,
+        atpress,
+        attemp,
+        &prev_ic,
+        error
+    );
+    rc_ic_next = jme_rise_trans(
+        day_start,
+        body,
+        starname,
+        flags,
+        JME_RISE_ANTI_MERIDIAN_TRANSIT,
+        geopos,
+        atpress,
+        attemp,
+        &next_ic,
+        error
+    );
 
-    if (rc_rise_prev != JME_OK || rc_rise_next != JME_OK
-        || rc_set_prev != JME_OK || rc_set_next != JME_OK
-        || rc_mc_prev != JME_OK || rc_mc_next != JME_OK
-        || rc_ic_prev != JME_OK || rc_ic_next != JME_OK) {
-        jme_set_error(error, "Gauquelin sector requires rise, set, upper transit, and lower transit events around the supplied time");
+    if (rc_rise_prev != JME_OK || rc_rise_next != JME_OK || rc_set_prev != JME_OK ||
+        rc_set_next != JME_OK || rc_mc_prev != JME_OK || rc_mc_next != JME_OK ||
+        rc_ic_prev != JME_OK || rc_ic_next != JME_OK) {
+        jme_set_error(
+            error,
+            "Gauquelin sector requires rise, set, upper transit, and lower "
+            "transit events around the supplied time"
+        );
         return JME_ERR;
     }
 
@@ -1358,8 +1795,12 @@ int jme_gauquelin_sector(double jd_ut, int body, const char *starname, int flags
     }
 
     fraction = (jd_ut - span_start) / (span_end - span_start);
-    if (fraction < 0.0) { fraction = 0.0; }
-    if (fraction >= 1.0) { fraction = 0.999999999; }
+    if (fraction < 0.0) {
+        fraction = 0.0;
+    }
+    if (fraction >= 1.0) {
+        fraction = 0.999999999;
+    }
 
     *dgsect = clamp_sector(1.0 + sector_offset + fraction * 9.0);
 
@@ -1394,19 +1835,34 @@ static int gauquelin_cusps(double ramc, double lat, double eps, double *cusps)
     int k;
 
     calc_ascmc(ramc, lat, eps, angles);
-    if (!isfinite(angles[0]) || !isfinite(angles[1])) return JME_ERR;
+    if (!isfinite(angles[0]) || !isfinite(angles[1])) {
+        return JME_ERR;
+    }
     cusps[0] = 0.0;
     cusps[1] = angles[0];
     cusps[10] = angles[1];
     for (k = 2; k <= 18; k++) {
-        if (k == 10) continue;
-        if (placidus_cusp(ramc, lat, eps, (double)(10 - k) / 9.0, &cusps[k]) != JME_OK) return JME_ERR;
+        if (k == 10) {
+            continue;
+        }
+        if (placidus_cusp(ramc, lat, eps, (double)(10 - k) / 9.0, &cusps[k]) != JME_OK) {
+            return JME_ERR;
+        }
     }
-    for (k = 1; k <= 18; k++) cusps[k + 18] = jme_degree_normalize(cusps[k] + 180.0);
+    for (k = 1; k <= 18; k++) {
+        cusps[k + 18] = jme_degree_normalize(cusps[k] + 180.0);
+    }
     return JME_OK;
 }
 
-int jme_houses_gauquelin_armc(double armc, double geo_lat, double eps, double *cusps, double *ascmc, char *error)
+int jme_houses_gauquelin_armc(
+    double armc,
+    double geo_lat,
+    double eps,
+    double *cusps,
+    double *ascmc,
+    char *error
+)
 {
     double local_ascmc[10];
     int i;
@@ -1415,23 +1871,37 @@ int jme_houses_gauquelin_armc(double armc, double geo_lat, double eps, double *c
         jme_set_error(error, "Gauquelin cusp output (37 doubles) is required");
         return JME_ERR;
     }
-    if (!isfinite(armc) || !isfinite(geo_lat) || !isfinite(eps) || geo_lat < -90.0 || geo_lat > 90.0) {
+    if (!isfinite(armc) || !isfinite(geo_lat) || !isfinite(eps) || geo_lat < -90.0 ||
+        geo_lat > 90.0) {
         jme_set_error(error, "Gauquelin sector inputs are invalid");
         return JME_ERR;
     }
     armc = jme_degree_normalize(armc);
     if (gauquelin_cusps(armc, geo_lat, eps, cusps) != JME_OK) {
-        jme_set_error(error, "Gauquelin sectors undefined at this latitude (circumpolar ecliptic points)");
+        jme_set_error(
+            error,
+            "Gauquelin sectors undefined at this latitude (circumpolar ecliptic points)"
+        );
         return JME_ERR;
     }
     if (ascmc != 0) {
         calc_ascmc(armc, geo_lat, eps, local_ascmc);
-        for (i = 0; i < 10; i++) ascmc[i] = local_ascmc[i];
+        for (i = 0; i < 10; i++) {
+            ascmc[i] = local_ascmc[i];
+        }
     }
     return JME_OK;
 }
 
-int jme_houses_gauquelin(double jd_ut, int flags, double geo_lat, double geo_lon, double *cusps, double *ascmc, char *error)
+int jme_houses_gauquelin(
+    double jd_ut,
+    int flags,
+    double geo_lat,
+    double geo_lon,
+    double *cusps,
+    double *ascmc,
+    char *error
+)
 {
     double ramc, eps, aya;
     int i;
@@ -1440,13 +1910,21 @@ int jme_houses_gauquelin(double jd_ut, int flags, double geo_lat, double geo_lon
         jme_set_error(error, "Gauquelin cusp output (37 doubles) is required");
         return JME_ERR;
     }
-    if (houses_frame(jd_ut, flags, geo_lat, geo_lon, &ramc, &eps, &aya, error) != JME_OK) return JME_ERR;
-    if (jme_houses_gauquelin_armc(ramc, geo_lat, eps, cusps, ascmc, error) != JME_OK) return JME_ERR;
+    if (houses_frame(jd_ut, flags, geo_lat, geo_lon, &ramc, &eps, &aya, error) != JME_OK) {
+        return JME_ERR;
+    }
+    if (jme_houses_gauquelin_armc(ramc, geo_lat, eps, cusps, ascmc, error) != JME_OK) {
+        return JME_ERR;
+    }
     if (flags & JME_CALC_SIDEREAL) {
-        for (i = 1; i <= 36; i++) cusps[i] = jme_degree_normalize(cusps[i] - aya);
+        for (i = 1; i <= 36; i++) {
+            cusps[i] = jme_degree_normalize(cusps[i] - aya);
+        }
         if (ascmc != 0) {
             for (i = 0; i <= 5; i++) {
-                if (isfinite(ascmc[i])) ascmc[i] = jme_degree_normalize(ascmc[i] - aya);
+                if (isfinite(ascmc[i])) {
+                    ascmc[i] = jme_degree_normalize(ascmc[i] - aya);
+                }
             }
         }
     }

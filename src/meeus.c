@@ -2,7 +2,7 @@
 #include "context.h"
 #include <math.h>
 
-#define JME_M_PI 3.1415926535897932384626433832795028841971693993751
+#define JME_M_PI       3.1415926535897932384626433832795028841971693993751
 #define JME_DEG_TO_RAD 0.017453292519943295769236907684886127134428718885417
 #define JME_RAD_TO_DEG 57.295779513082320876798154814105170332405472466565
 
@@ -39,7 +39,7 @@ static int meeus_sun_position(double jd_et, double *position)
 {
     double t = (jd_et - 2451545.0) / 36525.0;
     double l0, m, e, c, sun_lon, r;
-    double spherical[6] = {0,0,0,0,0,0};
+    double spherical[6] = {0, 0, 0, 0, 0, 0};
 
     if (position == 0) {
         return JME_ERR;
@@ -53,9 +53,9 @@ static int meeus_sun_position(double jd_et, double *position)
     l0 = jme_degree_normalize(l0);
     m = jme_degree_normalize(m);
 
-    c = (1.914602 - 0.004817 * t - 0.000014 * t * t) * sin(m * JME_DEG_TO_RAD)
-        + (0.019993 - 0.000101 * t) * sin(2.0 * m * JME_DEG_TO_RAD)
-        + 0.000289 * sin(3.0 * m * JME_DEG_TO_RAD);
+    c = (1.914602 - 0.004817 * t - 0.000014 * t * t) * sin(m * JME_DEG_TO_RAD) +
+        (0.019993 - 0.000101 * t) * sin(2.0 * m * JME_DEG_TO_RAD) +
+        0.000289 * sin(3.0 * m * JME_DEG_TO_RAD);
 
     sun_lon = l0 + c;
     r = (1.00014061 * (1.0 - e * e)) / (1.0 + e * cos((m + c) * JME_DEG_TO_RAD));
@@ -78,14 +78,16 @@ int jme_meeus_sun_state(double jd_et, double *results)
         return JME_ERR;
     }
 
-    for (i = 0; i < 6; i++) { results[i] = 0.0; }
+    for (i = 0; i < 6; i++) {
+        results[i] = 0.0;
+    }
 
     if (meeus_sun_position(jd_et, results) != JME_OK) {
         return JME_ERR;
     }
 
-    if (meeus_sun_position(jd_et - step, prev) == JME_OK
-        && meeus_sun_position(jd_et + step, next) == JME_OK) {
+    if (meeus_sun_position(jd_et - step, prev) == JME_OK &&
+        meeus_sun_position(jd_et + step, next) == JME_OK) {
         for (i = 0; i < 3; i++) {
             results[i + 3] = (next[i] - prev[i]) / (2.0 * step);
         }
@@ -99,18 +101,22 @@ static int meeus_moon_position(double jd_et, double *position)
     double t = (jd_et - 2451545.0) / 36525.0;
     double lp, d, m, mp, f, a1, a2, a3, e;
     double sl, sb, sr;
-    double spherical[6] = {0,0,0,0,0,0};
+    double spherical[6] = {0, 0, 0, 0, 0, 0};
 
     if (position == 0) {
         return JME_ERR;
     }
 
     /* Meeus Chapter 47 */
-    lp = 218.3164477 + 481267.88123421 * t - 0.0015786 * t * t + t * t * t / 538841.0 - t * t * t * t / 65194000.0;
-    d = 297.8501921 + 445267.1114034 * t - 0.0018819 * t * t + t * t * t / 545868.0 - t * t * t * t / 113065000.0;
+    lp = 218.3164477 + 481267.88123421 * t - 0.0015786 * t * t + t * t * t / 538841.0 -
+         t * t * t * t / 65194000.0;
+    d = 297.8501921 + 445267.1114034 * t - 0.0018819 * t * t + t * t * t / 545868.0 -
+        t * t * t * t / 113065000.0;
     m = 357.5291092 + 35999.0502909 * t - 0.0001536 * t * t + t * t * t / 24490000.0;
-    mp = 134.9633964 + 477198.8675055 * t + 0.0087414 * t * t + t * t * t / 69699.0 - t * t * t * t / 14712000.0;
-    f = 93.2720950 + 483202.0175233 * t - 0.0036539 * t * t - t * t * t / 3526000.0 + t * t * t * t / 863310000.0;
+    mp = 134.9633964 + 477198.8675055 * t + 0.0087414 * t * t + t * t * t / 69699.0 -
+         t * t * t * t / 14712000.0;
+    f = 93.2720950 + 483202.0175233 * t - 0.0036539 * t * t - t * t * t / 3526000.0 +
+        t * t * t * t / 863310000.0;
 
     a1 = 119.75 + 131.849 * t;
     a2 = 53.09 + 479264.290 * t;
@@ -125,29 +131,23 @@ static int meeus_moon_position(double jd_et, double *position)
     f = jme_degree_normalize(f);
 
     /* Sum of most significant terms for Moon */
-    sl = lp + 6.288774 * sin(mp * JME_DEG_TO_RAD)
-            + 1.274027 * sin((2.0 * d - mp) * JME_DEG_TO_RAD)
-            + 0.658311 * sin(2.0 * d * JME_DEG_TO_RAD)
-            + 0.213618 * sin(2.0 * mp * JME_DEG_TO_RAD)
-            - e * 0.185116 * sin(m * JME_DEG_TO_RAD)
-            + 0.114332 * sin(2.0 * f * JME_DEG_TO_RAD)
-            + 0.003958 * sin(a1 * JME_DEG_TO_RAD)
-            + 0.001962 * sin((lp - f) * JME_DEG_TO_RAD)
-            + 0.000318 * sin(a2 * JME_DEG_TO_RAD);
+    sl = lp + 6.288774 * sin(mp * JME_DEG_TO_RAD) +
+         1.274027 * sin((2.0 * d - mp) * JME_DEG_TO_RAD) +
+         0.658311 * sin(2.0 * d * JME_DEG_TO_RAD) + 0.213618 * sin(2.0 * mp * JME_DEG_TO_RAD) -
+         e * 0.185116 * sin(m * JME_DEG_TO_RAD) + 0.114332 * sin(2.0 * f * JME_DEG_TO_RAD) +
+         0.003958 * sin(a1 * JME_DEG_TO_RAD) + 0.001962 * sin((lp - f) * JME_DEG_TO_RAD) +
+         0.000318 * sin(a2 * JME_DEG_TO_RAD);
 
-    sb = 5.128122 * sin(f * JME_DEG_TO_RAD)
-            + 0.280602 * sin((mp + f) * JME_DEG_TO_RAD)
-            + 0.277693 * sin((mp - f) * JME_DEG_TO_RAD)
-            + 0.173237 * sin((2.0 * d - f) * JME_DEG_TO_RAD)
-            - 0.002235 * sin(lp * JME_DEG_TO_RAD)
-            + 0.000382 * sin(a3 * JME_DEG_TO_RAD)
-            + 0.000175 * sin((a1 - f) * JME_DEG_TO_RAD)
-            + 0.000175 * sin((a1 + f) * JME_DEG_TO_RAD);
+    sb = 5.128122 * sin(f * JME_DEG_TO_RAD) + 0.280602 * sin((mp + f) * JME_DEG_TO_RAD) +
+         0.277693 * sin((mp - f) * JME_DEG_TO_RAD) +
+         0.173237 * sin((2.0 * d - f) * JME_DEG_TO_RAD) - 0.002235 * sin(lp * JME_DEG_TO_RAD) +
+         0.000382 * sin(a3 * JME_DEG_TO_RAD) + 0.000175 * sin((a1 - f) * JME_DEG_TO_RAD) +
+         0.000175 * sin((a1 + f) * JME_DEG_TO_RAD);
 
-    sr = 385000.56 / 149597870.7  /* distance in AU */
-            - 20905.355 / 149597870.7 * cos(mp * JME_DEG_TO_RAD)
-            - 3699.111 / 149597870.7 * cos((2.0 * d - mp) * JME_DEG_TO_RAD)
-            - 2955.968 / 149597870.7 * cos(2.0 * d * JME_DEG_TO_RAD);
+    sr = 385000.56 / 149597870.7 /* distance in AU */
+         - 20905.355 / 149597870.7 * cos(mp * JME_DEG_TO_RAD) -
+         3699.111 / 149597870.7 * cos((2.0 * d - mp) * JME_DEG_TO_RAD) -
+         2955.968 / 149597870.7 * cos(2.0 * d * JME_DEG_TO_RAD);
 
     spherical[0] = jme_degree_normalize(sl);
     spherical[1] = sb;
@@ -167,14 +167,16 @@ int jme_meeus_moon_state(double jd_et, double *results)
         return JME_ERR;
     }
 
-    for (i = 0; i < 6; i++) { results[i] = 0.0; }
+    for (i = 0; i < 6; i++) {
+        results[i] = 0.0;
+    }
 
     if (meeus_moon_position(jd_et, results) != JME_OK) {
         return JME_ERR;
     }
 
-    if (meeus_moon_position(jd_et - step, prev) == JME_OK
-        && meeus_moon_position(jd_et + step, next) == JME_OK) {
+    if (meeus_moon_position(jd_et - step, prev) == JME_OK &&
+        meeus_moon_position(jd_et + step, next) == JME_OK) {
         for (i = 0; i < 3; i++) {
             results[i + 3] = (next[i] - prev[i]) / (2.0 * step);
         }
@@ -317,14 +319,16 @@ int jme_meeus_planet_state(double jd_et, int body, double *results)
         return JME_ERR;
     }
 
-    for (i = 0; i < 6; i++) { results[i] = 0.0; }
+    for (i = 0; i < 6; i++) {
+        results[i] = 0.0;
+    }
 
     if (meeus_planet_position(jd_et, body, results) != JME_OK) {
         return JME_ERR;
     }
 
-    if (meeus_planet_position(jd_et - step, body, prev) == JME_OK
-        && meeus_planet_position(jd_et + step, body, next) == JME_OK) {
+    if (meeus_planet_position(jd_et - step, body, prev) == JME_OK &&
+        meeus_planet_position(jd_et + step, body, next) == JME_OK) {
         for (i = 0; i < 3; i++) {
             results[i + 3] = (next[i] - prev[i]) / (2.0 * step);
         }

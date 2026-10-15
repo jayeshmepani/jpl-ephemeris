@@ -46,20 +46,29 @@ void jme_eop_clear(void)
     g_eop_count = 0;
 }
 
-static int field_to_double(const char *line, size_t len, size_t col_from, size_t col_to, double *out)
+static int
+field_to_double(const char *line, size_t len, size_t col_from, size_t col_to, double *out)
 {
     char buf[32];
     size_t n, i, k = 0;
     char *end;
-    if (len < col_to) return 0;
+    if (len < col_to) {
+        return 0;
+    }
     n = col_to - col_from + 1;
-    if (n >= sizeof(buf)) return 0;
+    if (n >= sizeof(buf)) {
+        return 0;
+    }
     for (i = 0; i < n; i++) {
         char c = line[col_from - 1 + i];
-        if (c != ' ' && c != '\t') buf[k++] = c;
+        if (c != ' ' && c != '\t') {
+            buf[k++] = c;
+        }
     }
     buf[k] = '\0';
-    if (k == 0) return 0;
+    if (k == 0) {
+        return 0;
+    }
     *out = strtod(buf, &end);
     return *end == '\0' && isfinite(*out);
 }
@@ -68,10 +77,18 @@ static int field_to_double(const char *line, size_t len, size_t col_from, size_t
 static int parse_finals(const char *line, size_t len, jme_eop_row *row)
 {
     double mjd, x, y;
-    if (len < 46 || line[6] != ' ' || line[15] != ' ') return 0;
-    if (!field_to_double(line, len, 8, 15, &mjd)) return 0;
-    if (line[16] != 'I' && line[16] != 'P') return -1;
-    if (!field_to_double(line, len, 19, 27, &x) || !field_to_double(line, len, 38, 46, &y)) return -1;
+    if (len < 46 || line[6] != ' ' || line[15] != ' ') {
+        return 0;
+    }
+    if (!field_to_double(line, len, 8, 15, &mjd)) {
+        return 0;
+    }
+    if (line[16] != 'I' && line[16] != 'P') {
+        return -1;
+    }
+    if (!field_to_double(line, len, 19, 27, &x) || !field_to_double(line, len, 38, 46, &y)) {
+        return -1;
+    }
     row->mjd = mjd;
     row->xp = x;
     row->yp = y;
@@ -86,17 +103,31 @@ static int parse_c04(const char *line, jme_eop_row *row)
     const char *p = line;
     char *end;
     while (*p != '\0' && n < 8) {
-        while (*p == ' ' || *p == '\t') p++;
-        if (*p == '\0' || *p == '\n' || *p == '\r') break;
+        while (*p == ' ' || *p == '\t') {
+            p++;
+        }
+        if (*p == '\0' || *p == '\n' || *p == '\r') {
+            break;
+        }
         v[n] = strtod(p, &end);
-        if (end == p) return 0;
-        if (mjd_index < 0 && memchr(p, '.', (size_t)(end - p)) != 0) mjd_index = n;
+        if (end == p) {
+            return 0;
+        }
+        if (mjd_index < 0 && memchr(p, '.', (size_t)(end - p)) != 0) {
+            mjd_index = n;
+        }
         n++;
         p = end;
-        if (*p != ' ' && *p != '\t' && *p != '\0' && *p != '\n' && *p != '\r') return 0;
+        if (*p != ' ' && *p != '\t' && *p != '\0' && *p != '\n' && *p != '\r') {
+            return 0;
+        }
     }
-    if (mjd_index < 3 || mjd_index + 2 >= n) return 0;
-    if (!(v[mjd_index] > 15000.0 && v[mjd_index] < 200000.0)) return 0;
+    if (mjd_index < 3 || mjd_index + 2 >= n) {
+        return 0;
+    }
+    if (!(v[mjd_index] > 15000.0 && v[mjd_index] < 200000.0)) {
+        return 0;
+    }
     row->mjd = v[mjd_index];
     row->xp = v[mjd_index + 1];
     row->yp = v[mjd_index + 2];
@@ -125,11 +156,20 @@ int jme_eop_load_file(const char *path, char *error)
         size_t len = strcspn(line, "\r\n");
         int r;
         line[len] = '\0';
-        if (len == 0 || line[0] == '#') continue;
+        if (len == 0 || line[0] == '#') {
+            continue;
+        }
         r = parse_finals(line, len, &row);
-        if (r < 0) { finals_ended = 1; continue; }
-        if (r == 0 && !parse_c04(line, &row)) continue;
-        if (finals_ended) continue;
+        if (r < 0) {
+            finals_ended = 1;
+            continue;
+        }
+        if (r == 0 && !parse_c04(line, &row)) {
+            continue;
+        }
+        if (finals_ended) {
+            continue;
+        }
         if (count > 0 && !(row.mjd > rows[count - 1].mjd)) {
             fclose(f);
             free(rows);
@@ -169,36 +209,59 @@ int jme_eop_coverage(double *mjd_first, double *mjd_last, char *error)
         jme_set_error(error, "No EOP data loaded (jme_eop_load_file)");
         return JME_ERR;
     }
-    if (mjd_first != 0) *mjd_first = g_eop_rows[0].mjd;
-    if (mjd_last != 0) *mjd_last = g_eop_rows[g_eop_count - 1].mjd;
+    if (mjd_first != 0) {
+        *mjd_first = g_eop_rows[0].mjd;
+    }
+    if (mjd_last != 0) {
+        *mjd_last = g_eop_rows[g_eop_count - 1].mjd;
+    }
     jme_set_error(error, "");
     return JME_OK;
 }
 
-int jme_eop_polar_motion(double mjd, double *xp_arcsec, double *yp_arcsec, int *predicted, char *error)
+int jme_eop_polar_motion(
+    double mjd,
+    double *xp_arcsec,
+    double *yp_arcsec,
+    int *predicted,
+    char *error
+)
 {
     size_t lo, hi, i0;
     int k, j;
     double x = 0.0, y = 0.0;
 
-    if (xp_arcsec != 0) *xp_arcsec = NAN;
-    if (yp_arcsec != 0) *yp_arcsec = NAN;
+    if (xp_arcsec != 0) {
+        *xp_arcsec = NAN;
+    }
+    if (yp_arcsec != 0) {
+        *yp_arcsec = NAN;
+    }
     if (g_eop_count == 0) {
         jme_set_error(error, "Polar motion requested but no EOP data loaded (jme_eop_load_file)");
         return JME_ERR;
     }
     if (!isfinite(mjd) || mjd < g_eop_rows[1].mjd || mjd > g_eop_rows[g_eop_count - 2].mjd) {
-        jme_set_error(error, "Date outside the loaded EOP coverage (two tabulated days needed on each side)");
+        jme_set_error(
+            error,
+            "Date outside the loaded EOP coverage (two tabulated days needed on each side)"
+        );
         return JME_ERR;
     }
     lo = 0;
     hi = g_eop_count - 1;
     while (hi - lo > 1) {
         size_t mid = (lo + hi) / 2;
-        if (g_eop_rows[mid].mjd <= mjd) lo = mid; else hi = mid;
+        if (g_eop_rows[mid].mjd <= mjd) {
+            lo = mid;
+        } else {
+            hi = mid;
+        }
     }
     /* lo: last row with mjd_row <= mjd; use rows lo-1 .. lo+2. */
-    if (lo + 2 >= g_eop_count) lo = g_eop_count - 3;
+    if (lo + 2 >= g_eop_count) {
+        lo = g_eop_count - 3;
+    }
     i0 = lo - 1;
     for (k = 1; k < 4; k++) {
         if (g_eop_rows[i0 + (size_t)k].mjd - g_eop_rows[i0 + (size_t)k - 1].mjd != 1.0) {
@@ -210,18 +273,24 @@ int jme_eop_polar_motion(double mjd, double *xp_arcsec, double *yp_arcsec, int *
         double w = 1.0;
         for (j = 0; j < 4; j++) {
             if (j != k) {
-                w *= (mjd - g_eop_rows[i0 + (size_t)j].mjd)
-                    / (g_eop_rows[i0 + (size_t)k].mjd - g_eop_rows[i0 + (size_t)j].mjd);
+                w *= (mjd - g_eop_rows[i0 + (size_t)j].mjd) /
+                     (g_eop_rows[i0 + (size_t)k].mjd - g_eop_rows[i0 + (size_t)j].mjd);
             }
         }
         x += w * g_eop_rows[i0 + (size_t)k].xp;
         y += w * g_eop_rows[i0 + (size_t)k].yp;
     }
-    if (xp_arcsec != 0) *xp_arcsec = x;
-    if (yp_arcsec != 0) *yp_arcsec = y;
+    if (xp_arcsec != 0) {
+        *xp_arcsec = x;
+    }
+    if (yp_arcsec != 0) {
+        *yp_arcsec = y;
+    }
     if (predicted != 0) {
         *predicted = 0;
-        for (k = 0; k < 4; k++) *predicted |= g_eop_rows[i0 + (size_t)k].predicted;
+        for (k = 0; k < 4; k++) {
+            *predicted |= g_eop_rows[i0 + (size_t)k].predicted;
+        }
     }
     jme_set_error(error, "");
     return JME_OK;
