@@ -1,6 +1,6 @@
 # Status And Design
 
-> **Status (jpl-ephemeris 1.1.1).** Current state of the areas most often
+> **Status (jpl-ephemeris 1.3.0).** Current state of the areas most often
 > asked about:
 >
 > * IAU 2000A nutation is implemented, as is IAU 2006/2000A with P03
