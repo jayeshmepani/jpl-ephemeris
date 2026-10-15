@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.21)
 
 project(jme
     VERSION 1.1.1
@@ -9,7 +9,8 @@ project(jme
 option(JME_BUILD_TESTS "Build C test programs" ON)
 option(JME_REQUIRE_CALCEPH "Fail configure when CALCEPH is not found" OFF)
 
-set(CMAKE_C_STANDARD 99)
+# ISO C17, published as ISO/IEC 9899:2018 (C18). CMake has no separate "18".
+set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 

@@ -1,0 +1,24 @@
+---
+Checks: >
+  -*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  cert-*,
+  -cert-err33-c,
+  clang-analyzer-*,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
+  concurrency-*,
+  misc-*,
+  -misc-no-recursion,
+  -misc-include-cleaner,
+  portability-*,
+  readability-*,
+  -readability-magic-numbers,
+  -readability-identifier-length,
+  -readability-identifier-naming,
+  -readability-function-cognitive-complexity,
+  -readability-implicit-bool-conversion
+WarningsAsErrors: ''
+HeaderFilterRegex: '(^|/)(include/jme/|src/)'
+ExcludeHeaderFilterRegex: '(^|/)src/erfa/'
+FormatStyle: file
