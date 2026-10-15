@@ -289,9 +289,16 @@ static double jme_profile_events_now_seconds(void)
 {
     struct timespec ts;
 
+    /* Android API 21 declares clock_gettime. timespec_get arrives at API 29. */
+#if defined(__ANDROID__) && (!defined(__ANDROID_API__) || __ANDROID_API__ < 29)
+    if (clock_gettime(CLOCK_REALTIME, &ts) != 0) {
+        return 0.0;
+    }
+#else
     if (timespec_get(&ts, TIME_UTC) != TIME_UTC) {
         return 0.0;
     }
+#endif
     return (double)ts.tv_sec + ((double)ts.tv_nsec / 1000000000.0);
 }
 
