@@ -7,14 +7,14 @@
 help:
 	@printf '%s\n' \
 		'make build            configure and build with CMake (ISO C17 / C18)' \
-		'make test             build, then ctest' \
+		'make test             build with tests enabled, then ctest' \
 		'make c17-all          read-only format, warnings, clang-tidy, cppcheck' \
 		'make c17-format       list files that differ from .clang-format' \
 		'make c17-format-fix   apply .clang-format' \
 		'make c17-warn         syntax-check first-party C with -std=c17' \
 		'make c17-tidy         clang-tidy report' \
 		'make c17-cppcheck     cppcheck report (cppcheck standard c11)' \
-		'make c17-fix          braces, literal suffix, redundant flow, else-after-return' \
+		'make c17-fix          braces, literal suffix, redundant flow, else-after-return (until stable)' \
 		'make c17-spatch       Coccinelle dry run' \
 		'make c17-spatch-apply Coccinelle rewrite'
 
@@ -22,7 +22,9 @@ build:
 	cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 	cmake --build build
 
-test: build
+test:
+	cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DJME_BUILD_TESTS=ON
+	cmake --build build
 	ctest --test-dir build --output-on-failure
 
 c17-all:
