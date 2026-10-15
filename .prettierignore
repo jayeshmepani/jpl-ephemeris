@@ -1,0 +1,6 @@
+node_modules/
+assets/vendor/
+**/*.min.js
+**/*.min.css
+.playwright-mcp/
+package-lock.json
