@@ -1513,6 +1513,24 @@ static int rise_trans_search(
         return JME_ERR;
     }
 
+    /*
+     * DISC_BOTTOM and HINDU_RISING select a different limb/depression model
+     * that this engine does not implement.  Refuse them instead of silently
+     * returning the default upper-limb event.  FIXED_DISC_SIZE is already the
+     * behaviour of this fixed-h0 search.
+     */
+    if (rsmi & (JME_RISE_DISC_BOTTOM | JME_RISE_HINDU_RISING)) {
+        jme_set_error(
+            error,
+            "JME_RISE_DISC_BOTTOM and JME_RISE_HINDU_RISING are unsupported; "
+            "use the default upper-limb model or JME_RISE_DISC_CENTER"
+        );
+        if (g_profile_events_enabled) {
+            g_profile_rise_trans_calls += 1ULL;
+            g_profile_rise_trans_seconds += (jme_profile_events_now_seconds() - search_t0);
+        }
+        return JME_ERR;
+    }
     if (body == JME_BODY_SUN || body == JME_BODY_MOON) {
         h0 = -0.8333; /* Includes semi-diameter */
     }

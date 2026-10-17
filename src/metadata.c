@@ -1,6 +1,9 @@
 #include "jme/jme.h"
 
+#include <stdio.h>
 #include <string.h>
+
+#include "jme_tls.h"
 
 typedef struct jme_name_entry {
     int id;
@@ -31,19 +34,54 @@ static const jme_name_entry body_names[] = {
     {JME_BODY_URANUS_BARYCENTER,       "Uranus Barycenter"      },
     {JME_BODY_NEPTUNE_BARYCENTER,      "Neptune Barycenter"     },
     {JME_BODY_PLUTO_BARYCENTER,        "Pluto Barycenter"       },
+    {JME_BODY_ALTJIRA,                 "Altjira"                },
+    {JME_BODY_AMYCUS,                  "Amycus"                 },
+    {JME_BODY_ARROKOTH,                "Arrokoth"               },
+    {JME_BODY_ASBOLUS,                 "Asbolus"                },
+    {JME_BODY_ASTEROID_001,            "Asteroid 001"           },
+    {JME_BODY_ASTEROID_002,            "Asteroid 002"           },
+    {JME_BODY_ASTEROID_003,            "Asteroid 003"           },
+    {JME_BODY_ASTEROID_004,            "Asteroid 004"           },
+    {JME_BODY_ASTEROID_005,            "Asteroid 005"           },
+    {JME_BODY_ASTEROID_006,            "Asteroid 006"           },
+    {JME_BODY_ASTEROID_007,            "Asteroid 007"           },
+    {JME_BODY_ASTEROID_008,            "Asteroid 008"           },
+    {JME_BODY_ASTEROID_009,            "Asteroid 009"           },
+    {JME_BODY_ASTEROID_010,            "Asteroid 010"           },
+    {JME_BODY_ASTEROID_011,            "Asteroid 011"           },
+    {JME_BODY_ASTEROID_012,            "Asteroid 012"           },
+    {JME_BODY_BIENOR,                  "Bienor"                 },
+    {JME_BODY_BORASISI,                "Borasisi"               },
     {JME_BODY_CERES,                   "Ceres"                  },
-    {JME_BODY_PALLAS,                  "Pallas"                 },
-    {JME_BODY_JUNO,                    "Juno"                   },
-    {JME_BODY_VESTA,                   "Vesta"                  },
+    {JME_BODY_CHARIKLO,                "Chariklo"               },
     {JME_BODY_CHIRON,                  "Chiron"                 },
-    {JME_BODY_PHOLUS,                  "Pholus"                 },
+    {JME_BODY_CRANTOR,                 "Crantor"                },
+    {JME_BODY_CYLLARUS,                "Cyllarus"               },
+    {JME_BODY_DEUCALION,               "Deucalion"              },
+    {JME_BODY_ECHECLUS,                "Echeclus"               },
+    {JME_BODY_ELATUS,                  "Elatus"                 },
     {JME_BODY_ERIS,                    "Eris"                   },
-    {JME_BODY_MAKEMAKE,                "Makemake"               },
+    {JME_BODY_GONGGONG,                "Gonggong"               },
     {JME_BODY_HAUMEA,                  "Haumea"                 },
-    {JME_BODY_SEDNA,                   "Sedna"                  },
-    {JME_BODY_QUAOAR,                  "Quaoar"                 },
+    {JME_BODY_HUYA,                    "Huya"                   },
+    {JME_BODY_HYLONOME,                "Hylonome"               },
+    {JME_BODY_IXION,                   "Ixion"                  },
+    {JME_BODY_JUNO,                    "Juno"                   },
+    {JME_BODY_MAKEMAKE,                "Makemake"               },
+    {JME_BODY_NESSUS,                  "Nessus"                 },
+    {JME_BODY_OKYRHOE,                 "Okyrhoe"                },
     {JME_BODY_ORCUS,                   "Orcus"                  },
-    {JME_BODY_VARUNA,                  "Varuna"                 }
+    {JME_BODY_PALLAS,                  "Pallas"                 },
+    {JME_BODY_PELOPS,                  "Pelops"                 },
+    {JME_BODY_PHOLUS,                  "Pholus"                 },
+    {JME_BODY_QUAOAR,                  "Quaoar"                 },
+    {JME_BODY_RHADAMANTHUS,            "Rhadamanthus"           },
+    {JME_BODY_SALACIA,                 "Salacia"                },
+    {JME_BODY_SEDNA,                   "Sedna"                  },
+    {JME_BODY_THEREUS,                 "Thereus"                },
+    {JME_BODY_TYTHONUS,                "Tythonus"               },
+    {JME_BODY_VARUNA,                  "Varuna"                 },
+    {JME_BODY_VESTA,                   "Vesta"                  }
 };
 
 static void copy_string(char *dst, const char *src)
@@ -67,12 +105,41 @@ static void copy_string(char *dst, const char *src)
 
 const char *jme_body_name(int body)
 {
+    static JME_THREAD_LOCAL char generated_name[32];
     size_t i;
 
     for (i = 0; i < sizeof(body_names) / sizeof(body_names[0]); i++) {
         if (body_names[i].id == body) {
             return body_names[i].name;
         }
+    }
+
+    if (body <= JME_BODY_ASTEROID_013 && body >= JME_BODY_ASTEROID_110) {
+        snprintf(
+            generated_name,
+            sizeof(generated_name),
+            "Asteroid %03d",
+            JME_BODY_ASTEROID_013 - body + 13
+        );
+        return generated_name;
+    }
+    if (body <= JME_BODY_COMET_001 && body >= JME_BODY_COMET_060) {
+        snprintf(
+            generated_name,
+            sizeof(generated_name),
+            "Comet %03d",
+            JME_BODY_COMET_001 - body + 1
+        );
+        return generated_name;
+    }
+    if (body <= JME_BODY_MINOR_PLANET_001 && body >= JME_BODY_MINOR_PLANET_060) {
+        snprintf(
+            generated_name,
+            sizeof(generated_name),
+            "Minor Planet %03d",
+            JME_BODY_MINOR_PLANET_001 - body + 1
+        );
+        return generated_name;
     }
 
     return "Unknown";
@@ -131,6 +198,8 @@ int jme_body_naif_id(int body)
 int jme_body_id_from_name(const char *name)
 {
     size_t i;
+    int number;
+    char tail;
 
     if (name == 0) {
         return JME_ERR;
@@ -140,6 +209,16 @@ int jme_body_id_from_name(const char *name)
         if (strcmp(body_names[i].name, name) == 0) {
             return body_names[i].id;
         }
+    }
+
+    if (sscanf(name, "Asteroid %d%c", &number, &tail) == 1 && number >= 13 && number <= 110) {
+        return JME_BODY_ASTEROID_013 - (number - 13);
+    }
+    if (sscanf(name, "Comet %d%c", &number, &tail) == 1 && number >= 1 && number <= 60) {
+        return JME_BODY_COMET_001 - (number - 1);
+    }
+    if (sscanf(name, "Minor Planet %d%c", &number, &tail) == 1 && number >= 1 && number <= 60) {
+        return JME_BODY_MINOR_PLANET_001 - (number - 1);
     }
 
     return JME_ERR;
@@ -170,6 +249,34 @@ const char *jme_house_system_name(int house_system)
         return "Krusinski";
     case 'T':
         return "Polich/Page";
+    case JME_HOUSE_ALCABITIUS:
+        return "Alcabitius";
+    case JME_HOUSE_APC:
+        return "APC";
+    case JME_HOUSE_CAMPANUS:
+        return "Campanus";
+    case JME_HOUSE_EQUAL:
+        return "Equal";
+    case JME_HOUSE_GAUQUELIN:
+        return "Gauquelin 36 sectors";
+    case JME_HOUSE_KOCH:
+        return "Koch";
+    case JME_HOUSE_KRUSINSKI:
+        return "Krusinski";
+    case JME_HOUSE_MERIDIAN:
+        return "Meridian";
+    case JME_HOUSE_MORINUS:
+        return "Morinus";
+    case JME_HOUSE_PLACIDUS:
+        return "Placidus";
+    case JME_HOUSE_POLICH_PAGE:
+        return "Polich/Page";
+    case JME_HOUSE_PORPHYRIUS:
+        return "Porphyrius";
+    case JME_HOUSE_REGIOMONTANUS:
+        return "Regiomontanus";
+    case JME_HOUSE_WHOLE_SIGN:
+        return "Whole Sign";
     case 'V':
     case JME_HOUSE_VEHLOW_EQUAL:
         return "Vehlow Equal";

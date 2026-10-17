@@ -352,6 +352,8 @@ void jme_set_ephemeris_path(const char *path)
 {
     jme_context *ctx = jme_get_context();
     jme_set_string(ctx->ephemeris_path, sizeof(ctx->ephemeris_path), path);
+    /* The resolved kernel path may change, so force a lazy re-open. */
+    jme_jpl_close();
 }
 
 const char *jme_jpl_file(void)

@@ -1,6 +1,6 @@
 # Status And Design
 
-> **Status (jpl-ephemeris 1.3.0).** Current state of the areas most often
+> **Status (jpl-ephemeris 2.0.0).** Current state of the areas most often
 > asked about:
 >
 > * IAU 2000A nutation is implemented, as is IAU 2006/2000A with P03
@@ -12,7 +12,9 @@
 > * Gauquelin sectors have a 36-cusp API (`jme_houses_gauquelin`), certified
 >   in `houses_reference`.
 > * Eclipse and occultation contacts use astrometric geometry
->   (`ACCURACY.md` §5.1).
+>   (`ACCURACY.md` §5.1). Eclipse search/circumstance functions return a
+>   `JME_ECLIPSE_*` classification on success (not `JME_OK`); see
+>   `API_REFERENCE.md` “Event Return Values and Search Filters”.
 > * ΔT defaults to AUTOMATIC (IERS table, then SMHZ 2016/2021 and
 >   Espenak–Meeus). MS2004 is available from its published Table 1 with
 >   the authors' linear interpolation. SM1984 and S1997 are refused with an
@@ -155,13 +157,10 @@ No remaining work is known inside the current raw JPL/CALCEPH boundary listed ab
 
 Remaining work is above the JPL boundary, not inside kernel access:
 
-- full apparent geocentric reduction pipeline using JPL vectors
-- full topocentric reduction pipeline using JPL vectors
-- aberration, light-deflection, and time-scale policy validation
-- full physical ephemeris attributes built from JPL states
-- full eclipse circumstances and locality algorithms built from JPL states
-- full rise/set/transit model breadth built from JPL states
+- independent reference certification depth for the apparent/topocentric/event pipelines (the pipelines themselves are implemented and described in `ACCURACY.md`)
 - asteroid/comet catalog loading beyond direct kernel target IDs
+- satellite-kernel management for planet centres beyond the `JPL_CENTER=BARYCENTER` opt-in
+- broader physical ephemeris attributes (rotation axis, central meridian)
 
 ## Compatibility Surface
 
@@ -177,11 +176,12 @@ Current native hardening:
 - Frame-bias model state is now consumed by the equatorial reduction pipeline. IAU 2000/2006 bias uses the fixed MHB2000/Chapront frame-bias angles before precession in planet, fixed-star, and topocentric event reductions; `JME_MODEL_BIAS_NONE` remains an identity transform.
 - Direct public contracts now assert that `jme_moshier_planet_state` succeeds for supported planet bodies and rejects unsupported ones, and that `jme_meeus_planet_state` does the same for its supported-body subset. That is a contract check, not a precision certification.
 - Engine selection is now a C-library feature. Wrappers can select the calculation engine by calling `jme_set_astro_models("ENGINE=JPL", 0)`, `jme_set_astro_models("ENGINE=MOSHIER", 0)`, or `jme_set_astro_models("ENGINE=VSOP_ELP_MEEUS", 0)`. If no explicit engine token is set, the library reads `JME_ENGINE` values `JPL`, `MOSHIER`, `VSOP_ELP_MEEUS`, or `ANALYTICAL`; otherwise it defaults to `AUTO`.
-- `ENGINE=JPL` is strict: if no CALCEPH kernel is open or the requested JPL state fails, `jme_calc` returns `JME_ERR` instead of silently using analytical fallback. `ENGINE=MOSHIER` and `ENGINE=VSOP_ELP_MEEUS` skip JPL even if a kernel is available.
+- Extended body IDs use a JME-private negative range (-1000 through -1265), separate from core body IDs and external ephemeris numbering schemes. Every named extended body has a deterministic display name. Targets without an engine/kernel mapping return `JME_ERR`. This is the main ABI-affecting correction in 2.0.0.
+- `ENGINE=JPL` is strict: if the configured kernel cannot be opened or the requested JPL state fails, `jme_calc` returns `JME_ERR` instead of silently using analytical fallback. The high-level path opens the kernel selected by `jme_set_jpl_file()` lazily (resolving a relative name against `jme_set_ephemeris_path()`); low-level `jme_jpl_*` calls still require `jme_jpl_open()`. `ENGINE=MOSHIER` and `ENGINE=VSOP_ELP_MEEUS` skip JPL even if a kernel is available.
 - The public calculation pipeline now also has a direct regression that exercises a non-JPL analytic fallback body path (`JME_BODY_PLUTO`) and requires finite output, which helps guard the VSOP/Moshier/Meeus selection stack without overstating numerical certification.
 - The same regression now checks rectangular and distance-unit flag behavior for the fallback Pluto path, so the public contract is not only "finite" but also flag-consistent.
 - The public calculation regression also checks velocity-per-second conversion for a representative analytic body, so rectangular velocity scaling is covered too.
-- The no-kernel analytical fallback order in `jme_calc` is now explicit and tested: `AUTO` tries JPL first and then analytical fallback; `MOSHIER` uses Moshier-first planets; `VSOP_ELP_MEEUS` uses VSOP87 before Meeus for planets. The Moon uses ELP2000 first, then Meeus for the geocentric lunar state, and combines that with the selected analytical Earth heliocentric state. `tests/test_analytical_validation.c` checks that Moshier mode matches direct Moshier planet output for Mercury, Earth, and Pluto across multiple dates, that Moshier-mode Moon output matches direct ELP2000 Moon plus Moshier Earth, and that VSOP/ELP/Meeus mode selects VSOP87 for Mercury and Meeus for Pluto.
+- The no-kernel analytical fallback order in `jme_calc` is explicit and tested: `AUTO` tries JPL first and then analytical fallback; `MOSHIER` uses Moshier planets and Moshier lunar theory; `VSOP_ELP_MEEUS` uses VSOP87 for Mercury–Neptune/Earth, Moshier plan404 for Pluto, and ELP 2000-82B for the Moon. The Moon state combines the selected lunar theory with the same engine's Earth heliocentric state. `tests/test_analytical_validation.c` checks that Moshier mode matches direct Moshier planet output for Mercury, Earth, and Pluto across multiple dates, that Moshier-mode Moon output matches the Moshier lunar state plus Moshier Earth, and that VSOP/ELP/Meeus mode selects VSOP87 for Mercury and ELP 2000-82B for the Moon.
 - NASA/JPL Horizons observer ecliptic regression is now included for 2026-05-22 00:00 UTC geocentric Sun and Moon apparent ecliptic-of-date longitude/latitude. This external check found that no-kernel analytical fallback output was being returned in a J2000 ecliptic frame while user-facing `jme_calc` output was documented as date-frame apparent ecliptic. `src/calc.c` now converts analytical J2000 ecliptic vectors into the public reduction pipeline before final output. Current deltas against Horizons quantity 31 are about `0.0071°` for the Sun longitude and `0.0076°` for the Moon longitude in no-kernel Moshier/ELP fallback mode.
 - The external Horizons screen is now broader than the original Sun/Moon regression. `tests/test_analytical_validation.c` also checks geocentric apparent ecliptic-of-date longitude/latitude for Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune, and Pluto at `2000-01-01 00:00 UTC`, `2026-05-22 00:00 UTC`, and `2050-01-01 00:00 UTC` under both `ENGINE=MOSHIER` and `ENGINE=VSOP_ELP_MEEUS`. Current observed deltas stay within the declared tolerances of `0.02°/0.02°` for Moshier mode and `0.03°/0.02°` for VSOP/ELP/Meeus mode.
 - The same contract block now checks `jme_calc_pctr()` for the Mercury/Sun difference contract using the same ET timescale, and also checks spherical conversion, radians, sidereal longitude, null-output rejection, unsupported body/center rejection, and distance-unit scaling against the direct heliocentric Mercury vector norm.
@@ -196,7 +196,7 @@ Current native hardening:
 - The analytical validation suite also checks direct public state production for representative Moshier, VSOP87, and Meeus bodies at J2000 so the stack remains callable as state providers, not just through derived-element paths.
 - `jme_houses_ex2` and `jme_houses_armc_ex2` compute finite cusp and angle speeds by central difference instead of returning zero arrays.
 - `jme_pheno` and `jme_pheno_ut` return phase angle, illuminated fraction, elongation, apparent diameter, magnitude, internal distance fields, light-time, apparent radius, phase defect, and bright-limb position angle.
-- `jme_rise_trans` supports refined rise, set, meridian transit, anti-meridian transit, civil/nautical/astronomical twilight horizons, disc-center horizon handling, and no-refraction mode. The rise/transit altitude path now uses the public topocentric equatorial calculation pipeline directly, avoiding mixed-frame rectangular corrections. Contract tests independently recompute returned altitude and hour-angle roots for Sun, Moon, Mars, and Sirius plus invalid/no-event paths.
+- `jme_rise_trans` supports refined rise, set, meridian transit, anti-meridian transit, civil/nautical/astronomical twilight horizons, disc-center horizon handling, and no-refraction mode. The rise/transit altitude path uses the public topocentric equatorial calculation pipeline directly, avoiding mixed-frame rectangular corrections. `JME_RISE_DISC_BOTTOM` and `JME_RISE_HINDU_RISING` are refused with an explicit error because this engine does not provide their limb/depression models; `JME_RISE_FIXED_DISC_SIZE` matches the fixed-horizon search. Contract tests independently recompute returned altitude and hour-angle roots for Sun, Moon, Mars, and Sirius plus invalid/no-event paths.
 - Solar, lunar, and heliocentric longitude crossings plus lunar node crossings refine roots instead of returning coarse scan midpoints.
 - Lunar node/apside helpers return bounded lunar mean node, true node, mean apogee, and focal-point longitude contracts.
 - Orbital-element derivation now returns a fuller derived set from the current state vector, including eccentric anomaly, mean anomaly, mean motion, period, perihelion/aphelion distance, and related longitudes.
@@ -205,7 +205,7 @@ Current native hardening:
 
 Known limits:
 
-- Astro model selection has real canonical state and is consumed by reduction paths. Frame bias now has none plus IAU 2000/2006 paths, obliquity has IAU 1980 plus corrected IAU 2006/P03 polynomial coverage, precession has IAU 1976 and P03/IAU 2006-family matrix paths, nutation has closed IAU 1980 plus IAU 2000B paths with explicit IAU 2000A rejection, and sidereal time has IAU 1976/default plus IAU 2006 paths. Remaining model-specific formula gaps are future-extension items rather than silent approximations in the current public contract.
+- Astro model selection has real canonical state and is consumed by reduction paths. Frame bias has none plus IAU 2000/2006 paths; obliquity has IAU 1980, IAU 2000 and IAU 2006/P03 paths; precession has IAU 1976, IAU 2000, IAU 2006/P03, Laskar 1986 and Vondrák 2011 paths; nutation has IAU 1980, IAU 2000A, IAU 2000B and IAU 2006/2000A (P03) paths; sidereal time has IAU 1976/default and IAU 2006 paths. Remaining model-specific formula gaps are future-extension items rather than silent approximations in the current public contract.
 - Solar eclipse search/circumstance behavior is closed for the current JME-native contract. The suite covers total, annular, hybrid, and partial global known-value regressions, visible local circumstance/search cases, backward global search, ordered outer contacts, centrality classification, non-eclipse rejection, and null-output/geopos rejection. The current API intentionally does not overclaim second/third contacts where the solver returns zero.
 - Solar partial-only global circumstances no longer report negative magnitude from geocentric apparent separation; `jme_sol_eclipse_where()` now derives the circumstance fields at the returned shadow-surface location, and 2022-10-25 is covered as a partial solar known-value regression.
 - Global lunar eclipse search/circumstance behavior is closed for JME-native behavior: total, partial, and penumbral eclipse regressions are covered against external known-value maxima/magnitudes, backward search works, non-eclipse instants reject, and null-output paths are tested.
@@ -280,14 +280,14 @@ Known remaining Moshier work:
 - verify provenance and license notes for every imported Moshier table/source file
 - expand known-value tests per body beyond the current representative element and fallback-order tests
 - add date-range/domain documentation
-- integrate lunar Moshier latitude/radius tables if they are intended as a lunar fallback
-- decide whether `src/moshier_full.c` is transitional source material or production source
+- certify the Moshier lunar tables (already used by `ENGINE=MOSHIER` and `ENGINE=AUTO`) against independent lunar references
+- keep `src/moshier_full.c` as production source and document its build/optimisation policy
 
 Next certification steps for Moshier:
 
 - keep `jme_moshier_planet_state` closed under the public API contract
 - do not call the whole Moshier theory “zero-error precision-certified”
-- next exact-closeout work is dense per-body known-value validation, date-range documentation, optional lunar-table integration, and clear production-source decisions
+- next exact-closeout work is dense per-body and lunar known-value validation, date-range documentation, and a documented production-source policy for `src/moshier_full.c`
 
 ## VSOP87
 
@@ -313,7 +313,6 @@ Implemented/callable:
 Source material currently present:
 
 - `src/vsop87.c` (JME evaluator)
-- `src/vsop87.h`
 - `src/vsop87a_data.inc` (generated by `tools/gen_vsop87a.py` from the official IMCCE files in `tools/data/vsop87/`)
 
 Current validation status:
@@ -348,13 +347,12 @@ What is real today:
 - The ELP2000-82B source tree is present in the repo.
 - `jme_elp2000_moon_state` is callable and returns a Moon state from the imported source.
 - The wrapper converts position units into the project API surface and exposes a non-zero derived velocity.
-- The high-level no-kernel Moon fallback uses ELP2000 as the first lunar state source and combines it with the selected analytical Earth heliocentric state.
+- `ENGINE=VSOP_ELP_MEEUS` uses ELP2000 as its lunar state source and combines it with the selected analytical Earth heliocentric state; `ENGINE=MOSHIER` and `ENGINE=AUTO` use the Moshier lunar theory instead.
 
 Model-wide claims not made by this direct API closure:
 
 - full precision certification across date ranges
 - final output-contract closure for frame, epoch, units, and derivative semantics
-- optional lunar Moshier integration policy, if the project decides Moshier Moon tables should become a production lunar fallback
 
 Callable symbol:
 
@@ -377,13 +375,13 @@ Known remaining ELP2000 work:
 - expand known-value lunar tests across date ranges and source variants
 - validate all correction terms intended for production use
 - document date range and expected numerical precision
-- decide whether to add Moshier Moon tables as a production fallback between ELP2000 and Meeus
+- keep the Moshier lunar theory as the MOSHIER/AUTO lunar path and certify it separately
 
 Next certification steps for ELP2000:
 
 - keep `jme_elp2000_moon_state` closed under the public API contract
 - do not mark the whole ELP2000 theory as all-date zero-error certified
-- next exact-closeout work is broader lunar known-value validation, explicit frame/unit/velocity contract definition, and optional Moshier Moon production-policy decisions
+- next exact-closeout work is broader lunar known-value validation and explicit frame/unit/velocity contract definition
 
 ## Meeus
 
@@ -444,7 +442,7 @@ Next certification steps for Meeus:
 
 The project currently has all 225 public `jme_*` functions declared and defined. Some functions are complete utilities or complete JPL-boundary functions. Some are partial high-level algorithms. Some are explicit error-returning contracts.
 
-Examples of implemented-but-not-yet-complete high-level areas:
+Examples of high-level areas whose JME-native contract is implemented but whose independent reference certification remains shallower than the certified families:
 
 - `jme_sol_eclipse_where`
 - `jme_sol_eclipse_how` exact circumstances
@@ -482,19 +480,19 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File tests\test_symbol_coverage.ps1
 
 Current verified results:
 
-- normal Linux build with `JME_BUILD_TESTS=ON` and CALCEPH: `24/24` CTest tests passed
+- normal Linux build with `JME_BUILD_TESTS=ON` and no CALCEPH: `25/25` non-matrix tests passed; the five kernel-reference tests skipped with code 77
 - CALCEPH-enabled Linux runtime subset with real `de440s.bsp`, text constants, binary PCK orientation, version, and angular-momentum fixture files: `3/3` tests passed for `jpl_runtime`, `analytical_validation`, and `extra_contract`
+- `engine_matrix` is a forensic 225-function × 3-engine audit and is intentionally not used as a numeric pass/fail gate
 - symbol coverage: `225/225` functions defined and directly tested, `478` constants tracked
 
 ## Next Work Order
 
 Recommended continuation order:
 
-1. Expand dense known-value validation for Moshier, VSOP87, ELP2000, and Meeus beyond the current representative cases.
-2. Decide whether Moshier Moon tables should become a production lunar fallback, then integrate and test them if yes.
-3. Add explicit frame/unit/date-range precision documentation for each analytical family.
-4. Continue closing the remaining reference rows: full numeric ayanamsa model breadth.
-5. Update `docs/API_REFERENCE.md`, `docs/VALIDATION_AND_COVERAGE.md`, and this file after each completed family.
+1. Expand dense known-value validation for Moshier, VSOP87, ELP2000, and Meeus beyond the current representative cases, including the Moshier lunar path.
+2. Add explicit frame/unit/date-range precision documentation for each analytical family.
+3. Continue closing the remaining reference rows: full numeric ayanamsa model breadth.
+4. Update `docs/API_REFERENCE.md`, `docs/VALIDATION_AND_COVERAGE.md`, and this file after each completed family.
 
 ---
 
@@ -617,7 +615,7 @@ ctest --test-dir build -R engine_matrix --output-on-failure
 
 ## Interpreting Differences
 
-The summary CSV reports per-function engine status plus raw-output hashes and pairwise relations.
+The summary CSV reports per-function engine status plus observable hashes and pairwise relations. The hash is computed over the canonical result record (output values, status, and buffers), excluding per-run timing, the engine state, and the engine label. `IDENTICAL_OBSERVABLE` means those canonical records match. The matrix is a forensic audit, not a numeric pass/fail gate; unadapted functions are emitted as `SKIPPED_WITH_REASON`.
 
 It also includes per-engine elapsed time columns:
 
@@ -627,13 +625,15 @@ It also includes per-engine elapsed time columns:
 
 Typical relations:
 
-- `IDENTICAL_RAW`
+- `IDENTICAL_OBSERVABLE`
 - `ERROR_ONE_SIDE`
 - `ERROR_ALL`
 - `SKIPPED`
 - `DIFFERENT_STRUCTURE`
 
 The current runner preserves raw outputs first. Numeric-difference extraction can be extended later without changing the lossless per-engine records.
+
+For a focused smoke run, set `JME_MATRIX_ONLY` to a regular expression over function names and `JME_MATRIX_OUT` to a separate output directory, for example `JME_MATRIX_ONLY='^jme_eop_' JME_MATRIX_OUT=/tmp/jme-matrix ./tools/run_engine_matrix.sh`. The inventory count is still validated against the headers.
 
 ## Real JPL Kernels
 
@@ -1334,7 +1334,7 @@ This engine is not a wrapper and does not expose historical third-party function
 | `jme_*` functions | Public C API |
 | `JME_*` constants | Public C constants and enums |
 | JPL/CALCEPH-backed calls | Primary numerical ephemeris path |
-| Independent analytical modules | Future fallback and cross-check paths |
+| Independent analytical modules | Implemented fallback and cross-check paths |
 
 ## Coverage Rule
 
@@ -1458,4 +1458,4 @@ $env:JME_TEST_JPL_KERNEL = "E:\jme-kernels\de440s.bsp"
 ctest --test-dir build-vcpkg -C Debug --output-on-failure
 ```
 
-The local verified setup used CALCEPH `4.0.5` through vcpkg and NASA/JPL `de440s.bsp`.
+The local vcpkg verification used CALCEPH `4.0.5`; CI builds CALCEPH `5.0.1` (see `.github/workflows/ci.yml`). Both are supported, and `THIRD_PARTY_NOTICES.md` records both versions. The kernel used in either case is NASA/JPL `de440s.bsp`.

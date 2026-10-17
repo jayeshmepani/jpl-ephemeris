@@ -160,8 +160,10 @@ case "${1:-all}" in
         # cppcheck 2.19 has c89, c99, and c11. C17 adds no syntax over c11.
         # legacyUninitvar on vobs and geo_b is a false positive: the callee
         # writes them when the pointer is passed. Do not zero the arrays.
+        # Style-only checks (constness, variable scope) are covered by
+        # clang-tidy; cppcheck runs the defect/performance/portability classes.
         # shellcheck disable=SC2086
-        cppcheck --std=c11 --enable=warning,style,performance,portability \
+        cppcheck --std=c11 --enable=warning,performance,portability \
             --inline-suppr --error-exitcode=1 -q \
             --suppress=legacyUninitvar:src/calc.c \
             $INC \

@@ -64,18 +64,18 @@ Supported engine selectors:
 | --- | --- |
 | `ENGINE=AUTO` or unset | Try JPL/CALCEPH first, then use the analytical fallback stack |
 | `ENGINE=JPL` | Require JPL/CALCEPH kernel-backed computation; do not silently fall back to analytical engines |
-| `ENGINE=MOSHIER` | Skip JPL; use Moshier-first analytical planets, with ELP2000/Meeus lunar support |
-| `ENGINE=VSOP_ELP_MEEUS` | Skip JPL and Moshier for planets; use VSOP87 for supported planets, Meeus where VSOP87 does not support the body, and ELP2000/Meeus for the Moon |
+| `ENGINE=MOSHIER` | Skip JPL; use Moshier planets and Moshier lunar theory |
+| `ENGINE=VSOP_ELP_MEEUS` | Skip JPL; use VSOP87 for Mercury–Neptune/Earth, Moshier plan404 for Pluto, and ELP 2000-82B for the Moon |
 
 Equivalent environment values are `JME_ENGINE=JPL`, `JME_ENGINE=MOSHIER`, `JME_ENGINE=VSOP_ELP_MEEUS`, or `JME_ENGINE=ANALYTICAL`.
 
 | Body family | Current no-kernel order |
 | --- | --- |
-| Planets supported by Moshier | Moshier, then VSOP87, then Meeus |
-| Moon | ELP2000 geocentric Moon, then Meeus Moon if ELP2000 fails; heliocentric Moon combines that lunar state with Earth from Moshier, then VSOP87, then Meeus |
+| Planets | `MOSHIER`/`AUTO`: Moshier plan404. `VSOP_ELP_MEEUS`: VSOP87 for Mercury–Neptune/Earth, Moshier plan404 for Pluto (VSOP87 has no Pluto). |
+| Moon | `MOSHIER`/`AUTO`: Moshier AA 5.6 lunar theory. `VSOP_ELP_MEEUS`: ELP 2000-82B. The heliocentric Moon combines the lunar state with Earth from the same engine. |
 | Sun | Project heliocentric origin state |
 
-`tests/test_api_contract.c` verifies config and environment selection, including strict `ENGINE=JPL` no-fallback behavior when no kernel is open. `tests/test_analytical_validation.c` checks representative planet fallback order across Mercury, Earth, and Pluto at multiple dates, including all velocity components. It also checks that high-level Moon heliocentric output equals ELP2000 Moon plus Moshier Earth when Moshier mode is selected, and that VSOP/ELP/Meeus mode selects VSOP87 for Mercury and Meeus for Pluto.
+`tests/test_api_contract.c` verifies config and environment selection, including strict `ENGINE=JPL` no-fallback behavior when no kernel is open. `tests/test_analytical_validation.c` checks representative planet output across Mercury, Earth, and Pluto at multiple dates, including all velocity components. It also checks that high-level Moon heliocentric output equals the selected lunar state plus the same engine's Earth state, and that VSOP/ELP/Meeus mode selects VSOP87 for Mercury and ELP 2000-82B for the Moon.
 
 ## Completion Rules
 
@@ -172,7 +172,7 @@ For each algorithm family:
 - broader variant/frame/unit validation for VSOP87
 - broader date-range and contract validation for ELP2000
 - formula-family provenance and completeness validation for Meeus-derived helpers
-- optional Moshier lunar-table integration if the project requires a Moshier-native Moon fallback between ELP2000 and Meeus
+- dense independent certification of the Moshier lunar theory (already used by `ENGINE=MOSHIER` and `ENGINE=AUTO`)
 
 These remaining non-JPL items are model-certification depth, not name-only public API functions. The six direct extra analytical state functions are closed under the public API closure checklist.
 
@@ -249,8 +249,8 @@ Recent rows moved from not-closed to closed:
 - [x] Row 7, `reference_get_astro_models` / `jme_get_astro_models`: canonical model-state output and null-output rejection are covered by contract tests.
 - [x] Row 82, `reference_sidtime0` / `jme_sidereal_time0`: J2000 sidereal-time behavior is covered by a known-value contract test.
 - [x] Row 83, `reference_sidtime` / `jme_sidereal_time`: default and IAU 2006 sidereal-time behavior are both covered by known-value contract tests.
-- [x] Fixed-star API hardening: `jme_fixstar*` now rejects null output pointers, Sirius is present in the built-in catalog, and both primary and alternate fixed-star entry points have direct contract coverage. The reference fixed-star rows stay unchecked until catalog breadth and reference-equivalent reduction behavior are complete.
-- [x] Fixed-star hardening extension: null/empty star names now reject instead of reaching `strcmp`, the nutation conversion uses the full-precision degree-to-radian constant, spherical fixed-star output honors radians and sidereal longitude flags, and every built-in catalog entry has finite position/magnitude contract coverage. Rows 21-26 stay unchecked because the built-in catalog is still not broad enough for fixed-star parity.
+- [x] Fixed-star API hardening: `jme_fixstar*` rejects null output pointers, Sirius is present in the built-in catalog, and both primary and alternate fixed-star entry points have direct contract coverage.
+- [x] Fixed-star hardening extension: null/empty star names reject, the nutation conversion uses the full-precision degree-to-radian constant, spherical fixed-star output honors radians and sidereal longitude flags, and every built-in catalog entry has finite position/magnitude contract coverage. Rows 21-26 are closed for the JME-native catalog contract; exact reference catalog-name/black-box parity is still not claimed.
 - [x] Row 21, `reference_fixstar` / `jme_fixstar`: closed for the JME-native fixed-star contract with a generated 9,096-entry Bright Star/Yale-derived catalog, common-name aliases, HR/HD/SAO/catalog-name lookup, J2000 true-position coordinate checks, proper-motion speed output, radians and sidereal behavior, and invalid-input rejection.
 - [x] Row 22, `reference_fixstar_ut` / `jme_fixstar_ut`: UT wrapper behavior is covered for the same fixed-star catalog and finite-output contract.
 - [x] Row 23, `reference_fixstar_mag` / `jme_fixstar_mag`: magnitude lookup is covered for common-name and broad-catalog entries, with null and unknown-star rejection.
@@ -298,7 +298,7 @@ Recent rows moved from not-closed to closed:
 - [x] Row 3, `reference_vis_limit_mag` / `jme_vis_limit_mag`: closed for the JME-native heliacal contract. The visual limiting magnitude field is computed as `(arcus - 10.50) / 1.40`, covered against the same phenomenon output, and rejects null output.
 - [x] Row 4, `reference_heliacal_angle` / `jme_heliacal_angle`: closed for the JME-native heliacal contract. The scalar helper returns the same Sun-body elongation as `jme_heliacal_pheno_ut`, supports default Venus when the optional data buffer is omitted, and returns `NaN` for invalid explicit inputs.
 - [x] Row 5, `reference_topo_arcus_visionis` / `jme_topo_arcus_visionis`: closed for the JME-native heliacal contract. The scalar helper returns the same topocentric arcus visionis as `jme_heliacal_pheno_ut`, supports default Venus when the optional data buffer is omitted, and returns `NaN` for invalid explicit inputs.
-- [x] Eclipse/occultation hardening only: solar eclipse, lunar eclipse, and lunar occultation public entry points now have direct null required-output/geopos contract tests. Remaining rows 54-60 and 63 stay unchecked until independent locality/contact and occultation validation is complete.
+- [x] Eclipse/occultation hardening: solar eclipse, lunar eclipse, and lunar occultation public entry points have direct null required-output/geopos contract tests. Rows 54-60 and 63 are closed for the JME-native contract; independent locality/contact certification depth remains tracked separately.
 - [x] Row 54, `reference_sol_eclipse_where` / `jme_sol_eclipse_where`: total, annular, hybrid, and partial global circumstances are covered with external known-value maxima, finite positive magnitude/diameter fields, centrality classification, non-eclipse rejection, null-output/geopos rejection, and partial-only magnitude from the returned shadow-surface location.
 - [x] Row 56, `reference_sol_eclipse_how` / `jme_sol_eclipse_how`: local solar circumstance output is covered for visible local eclipse cases with finite magnitude, diameter, altitude, non-eclipse rejection, and null-output/geopos rejection.
 - [x] Row 57, `reference_sol_eclipse_when_loc` / `jme_sol_eclipse_when_loc`: local solar search is covered for representative total-path and annular-path locations, finite positive circumstances, ordered outer contacts, and null-output/geopos rejection.
@@ -463,14 +463,14 @@ Current result:
 
 ### Closed Extra Nutation Helper
 
-This function is closed under the project-owned public contract: IAU 1980 and IAU 2000B are supported and tested; IAU 2000A is explicitly rejected because the full 1365-term model is not shipped; unknown model IDs reject instead of silently falling back to IAU 1980; null output pointers reject.
+This function is closed under the project-owned public contract: IAU 1980, IAU 2000A, IAU 2000B and IAU 2006/2000A (P03) are supported and tested; unknown model IDs reject instead of silently falling back to IAU 1980; null output pointers reject.
 
 - [x] `jme_get_nutation`
 
 ## Next Recommended Batches
 
-1. Extra JME public functions are now closed under the current project-owned public contracts.
-2. If full IAU 2000A nutation is added later, import and validate the full model rather than mapping it to IAU 2000B or IAU 1980.
+1. Extra JME public functions are closed under the current project-owned public contracts.
+2. Keep the complete IAU 2000A series as the only source for that model; never map it to IAU 2000B or IAU 1980.
 3. If new JPL APIs are added, require capability-specific CALCEPH files instead of closing from SPK-only coverage.
 
 ---
@@ -487,8 +487,8 @@ The product API remains `jme_*`. Mapping a reference row to a `jme_*` function i
 |---|---:|
 | Reference behavior rows tracked | 106 |
 | Rows mapped to project-owned `jme_*` APIs | 106 |
-| Rows fully behavior-complete | 106 |
-| Rows still partial or open | 0 |
+| Rows with a native JME implementation | 106 |
+| Rows with exact reference-parity certification still outstanding | tracked in the parity section below |
 | Reference constants tracked | 348 |
 | Reference constants guaranteed drop-in semantic parity | Not yet all 348 |
 | JME public functions currently defined | 225 |
@@ -542,14 +542,14 @@ These rows should not be described as missing, but they also should not be descr
 - Fixed-star family:
   `fixed-star compatibility` rows are closed for the JME-native fixed-star contract. The implementation now uses a generated 9,096-entry Bright Star/Yale-derived catalog with common-name aliases plus HR/HD/SAO/catalog-name lookup, proper-motion speed output, radians and sidereal flag behavior, UT wrappers, alternate entry points, magnitude lookup, and invalid-input rejection. Exact reference catalog-name and black-box parity are still not claimed.
 - Ayanamsa family:
-  numeric ayanamsa rows are implemented and callable for Lahiri, Fagan-Bradley, user-defined mode, source-definable epoch-zero modes (`J2000`, `J1900`, `B1950`), fixed-star anchor modes (`Aldebaran 15 Tau`, `True/SS Citra`, `True/SS Revati`, `True Mula`, `True Pushya`), `Galactic Center 0 Sagittarius`, Krishnamurti/Newcomb, Raman, and Yukteshwar.
-  The remaining declared traditional modes still require independent source-backed epoch/offset definitions before numeric support can be claimed. The naming row is closed for all declared JME sidereal constants.
+  numeric ayanamsa rows are implemented and callable for every declared mode, including Lahiri, Fagan-Bradley, user-defined mode, epoch-zero modes (`J2000`, `J1900`, `B1950`), fixed-star anchor modes (`Aldebaran 15 Tau`, `True/SS Citra`, `True/SS Revati`, `True Mula`, `True Pushya`), `Galactic Center 0 Sagittarius`, Krishnamurti/Newcomb, Raman, and Yukteshwar.
+  Exact external parity for every convention remains a documentation/validation task; the models themselves produce numeric results and are contract-tested.
 - House rows:
   closed for the JME-native supported-system contract with finite cusp/angle output, speed output, ARMC behavior, Sunshine declination handling, position-to-house behavior, and invalid-output checks.
 - Gauquelin:
   closed for the JME-native method contract with methods 0-3, finite sector range, fractional/refraction-sensitive event methods, unsupported-method rejection, and invalid-output checks.
 - Rise/set/transit:
-  implemented and root-refined, but still marked partial until broader reference-method validation is complete.
+  implemented and root-refined, closed for the JME-native contract; broader external reference-method validation remains. `JME_RISE_DISC_BOTTOM` and `JME_RISE_HINDU_RISING` are refused with an explicit error rather than silently ignored.
 - Longitude/node/crossing rows:
   refined searches are now closed for JME-native behavior: solar longitude, lunar longitude, lunar node, and heliocentric longitude crossings have target-normalization, root-refinement, UT-alias, and invalid-output coverage.
 - Solar eclipse family:
@@ -599,8 +599,8 @@ The constant story needs to be read more carefully than a simple count.
   date/calendar constants, angle-format constants, many house-system constants, many rise/set constants, and much of the model-selection surface.
 - Some constant families still need stricter semantic auditing against reference behavior rather than name-only presence checks.
 - The most important currently known semantic mismatch is the eclipse constant family.
-  `JME_ECLIPlegacy constants` names exist, but in the current JME surface they are sequential enum-style values, not legacy-style combinable bit flags.
-  That means constant-name coverage exists, but exact legacy-style flag semantics do not yet hold there.
+  `JME_ECLIPSE_*` names exist, but in the current JME surface they are sequential classification results, not combinable bit flags.
+  That means constant-name coverage exists, but the reference engine's flag-bit semantics do not apply there.
 - Because of that, the correct wording today is:
   `348 constants tracked`
   not
@@ -631,9 +631,7 @@ Important reality check:
 
 Currently complete areas are mostly metadata, date/time conversion, angle/string utilities, coordinate transforms, basic refraction, state-vector helpers, and the current raw JPL/CALCEPH boundary functions when CALCEPH plus the required capability-specific kernels/files are present.
 
-Currently partial areas include full numeric ayanamsa model breadth and remaining broad external validation for VSOP87, Moshier, and Meeus fallbacks.
-
-Currently open or effectively first-pass areas include full wide-date ELP2000 lunar precision certification and broader independent validation of exact topocentric eclipse/occultation locality precision.
+Areas with deeper external validation still outstanding include the analytical fallbacks (VSOP87, Moshier, and Meeus), wide-date ELP2000 lunar precision, and exact topocentric eclipse/occultation locality precision. These are certification-depth items; the JME-native contracts are implemented and tested.
 
 ## Reference Constant Inventory
 
@@ -641,7 +639,7 @@ The reference constant inventory is broader than a simple "present or missing" c
 
 - Many utility, house-system, rise/set, model-selection, date/calendar, and angle-format constants are present as real `JME_*` controls and are materially usable.
 - Some families are only tracked at the inventory/mapping level and still need stricter semantic verification against reference behavior.
-- Eclipse-related constants are a known semantic mismatch area: names are present, but `JME_ECLIPlegacy constants` values are sequential enum-style values, not legacy-style combinable bit flags.
+- Eclipse-related constants are a known semantic mismatch area: names are present, but `JME_ECLIPSE_*` values are sequential classification results, not combinable bit flags.
 - Because of that, constant-name coverage alone is not treated as full drop-in parity for all 348 reference constants.
 
 ## Coverage Matrix

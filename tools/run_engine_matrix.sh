@@ -12,7 +12,7 @@ if [[ "${1:-}" == "--build-dir" ]]; then
   BUILD_DIR="$2"
 fi
 
-OUT_DIR="$BUILD_DIR/differential_engine_matrix"
+OUT_DIR="${JME_MATRIX_OUT:-$BUILD_DIR/differential_engine_matrix}"
 RAW_DIR="$OUT_DIR/engine_matrix.raw"
 PROBE="$BUILD_DIR/jme_call_probe"
 KERNEL_PATH="${JME_TEST_JPL_KERNEL:-$ROOT/data/jpl/de440s.bsp}"
@@ -42,6 +42,13 @@ if len(funcs) != 225:
     raise SystemExit(f"expected 225 functions, discovered {len(funcs)}")
 if len(constants) != 478:
     raise SystemExit(f"expected 478 constants, discovered {len(constants)}")
+
+total_funcs = len(funcs)
+only = os.environ.get("JME_MATRIX_ONLY")
+if only:
+    funcs = [fn for fn in funcs if re.search(only, fn)]
+    if not funcs:
+        raise SystemExit(f"JME_MATRIX_ONLY matched no function: {only!r}")
 
 full_jsonl = out_dir / "engine_matrix.full.jsonl"
 summary_csv = out_dir / "engine_matrix.summary.csv"
@@ -73,7 +80,16 @@ for fn in funcs:
             raw_text = json.dumps(payload, separators=(",", ":"))
         raw_file.write_text(raw_text + "\n")
         data = json.loads(raw_text)
-        data["_raw_sha256"] = hashlib.sha256(raw_text.encode("utf-8")).hexdigest()
+        # Hash the observable record, not run-specific timing or the engine
+        # selector. IDENTICAL_OBSERVABLE compares this canonical record.
+        canonical = {
+            key: value
+            for key, value in data.items()
+            if key not in ("timing", "engine_state", "engine")
+        }
+        data["_observable_sha256"] = hashlib.sha256(
+            json.dumps(canonical, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        ).hexdigest()
         rec["engines"][engine] = data
     rows.append(rec)
 
@@ -86,8 +102,8 @@ def relation(a, b):
         return "ERROR_ALL"
     if sa != "OK" or sb != "OK":
         return "ERROR_ONE_SIDE"
-    if a["_raw_sha256"] == b["_raw_sha256"]:
-        return "IDENTICAL_RAW"
+    if a["_observable_sha256"] == b["_observable_sha256"]:
+        return "IDENTICAL_OBSERVABLE"
     return "DIFFERENT_STRUCTURE"
 
 def timing_ns(rec):
@@ -126,7 +142,7 @@ with summary_csv.open("w", newline="", encoding="utf-8") as fh:
             ej.get("fixture_id") or em.get("fixture_id") or ev.get("fixture_id") or "",
             ej.get("status", ""), em.get("status", ""), ev.get("status", ""),
             timing_ns(ej), timing_ns(em), timing_ns(ev),
-            ej["_raw_sha256"], em["_raw_sha256"], ev["_raw_sha256"],
+            ej["_observable_sha256"], em["_observable_sha256"], ev["_observable_sha256"],
             relation(ej, em), relation(ej, ev), relation(em, ev),
             "", "", ej.get("reason", "") or em.get("reason", "") or ev.get("reason", "")
         ])
@@ -141,7 +157,7 @@ for row in rows:
     if any(s.startswith("SKIPPED") for s in statuses):
         skipped += 1
     elif all(s == "OK" for s in statuses):
-        if len({row["engines"][e]["_raw_sha256"] for e in engines}) == 1:
+        if len({row["engines"][e]["_observable_sha256"] for e in engines}) == 1:
             identical_all += 1
     else:
         errored += 1
@@ -157,7 +173,7 @@ slowest.sort(reverse=True)
 
 with diff_md.open("w", encoding="utf-8") as fh:
     fh.write("# Engine Differential Matrix\n\n")
-    fh.write(f"- discovered function count: `{len(funcs)}`\n")
+    fh.write(f"- discovered function count: `{total_funcs}`\n")
     fh.write(f"- tested function count: `{len(rows)}`\n")
     fh.write(f"- skipped function rows: `{skipped}`\n")
     fh.write(f"- rows with one or more engine errors: `{errored}`\n")
@@ -179,8 +195,9 @@ with diff_md.open("w", encoding="utf-8") as fh:
     fh.write("\n## Notes\n\n")
     fh.write("- `ENGINE=JPL` is strict. In this build, JPL-mode success depends on CALCEPH availability plus a real kernel.\n")
     fh.write("- Unadapted functions are still emitted as rows with `SKIPPED_WITH_REASON`.\n")
+    fh.write("- Observable hashes exclude run-specific timing, engine state and the engine label; `IDENTICAL_OBSERVABLE` compares the remaining canonical records.\n")
 
-print(f"discovered function count: {len(funcs)}")
+print(f"discovered function count: {total_funcs}")
 print(f"tested function count: {len(rows)}")
 print(f"skipped function count: {skipped}")
 print(f"output directory: {out_dir}")

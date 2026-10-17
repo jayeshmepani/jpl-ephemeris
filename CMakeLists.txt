@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 project(jme
-    VERSION 1.3.0
+    VERSION 2.0.0
     DESCRIPTION "Independent JPL/Moshier ephemeris engine in C"
     LANGUAGES C
 )

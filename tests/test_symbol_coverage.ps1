@@ -19,8 +19,7 @@ $testText = (
 $projectText = (
     Get-ChildItem -Path $root -Recurse -File |
         Where-Object {
-            $_.FullName -notmatch '[/\\]build[/\\]' -and
-            $_.FullName -notmatch '[/\\]\.git[/\\]' -and
+            $_.FullName -notmatch '[/\\](build|build-[^/\\]+|node_modules|\.git|\.venv|dist|coverage)[/\\]' -and
             $_.Extension -in @(".c", ".h", ".md", ".ps1", ".txt")
         } |
         ForEach-Object { Get-Content -Raw $_.FullName }
@@ -86,8 +85,8 @@ foreach ($bytes in $forbiddenBytes) {
     }
 }
 
-if ($jmeConstants.Count -lt 348) {
-    throw "JME constants below target: $($jmeConstants.Count)"
+if ($jmeConstants.Count -ne 478) {
+    throw "JME constants count changed: expected 478, found $($jmeConstants.Count)"
 }
 
 Write-Output "jme_functions_total=$($jmeFunctions.Count)"

@@ -27,11 +27,46 @@ The two public headers contain 480 `JME_*` names. 478 of those are public consta
 
 Numeric calculation APIs return their computed binary64 values; they do not apply display rounding. Functions whose names explicitly request a rounded or formatted representation are presentation helpers and are separate from the underlying numeric calculations. The speed-of-light conversion to AU/day is derived from the defined SI speed-of-light, day-length, and astronomical-unit constants instead of a shorter decimal literal.
 
-`jme_delta_t_ex` implements `JME_TIME_DELTAT_AUTOMATIC` (default: IERS finals2000A observed and predicted values, Stephenson–Morrison–Hohenkerk 2021 revision before them, Espenak–Meeus 2006 after them), `JME_MODEL_DELTAT_STEPHENSON_ETC_2016` and `JME_MODEL_DELTAT_ESPENAK_MEEUS_2006`. The identifiers for Stephenson–Morrison 1984, Stephenson 1997 and Stephenson–Morrison 2004 are not backed by transcribed and verified primary tables; requests for them return `NAN` and an explicit error instead of silently calculating another model under the wrong name. `jme_set_delta_t_userdef(seconds)` sets a constant Delta-T (a non-finite value clears it). See `TIME_SCALES.md`. A non-finite Julian date is rejected before calendar conversion.
+`jme_delta_t_ex` implements `JME_TIME_DELTAT_AUTOMATIC` (default: IERS finals2000A observed and predicted values, Stephenson–Morrison–Hohenkerk 2021 revision before them, Espenak–Meeus 2006 after them), `JME_MODEL_DELTAT_STEPHENSON_ETC_2016`, `JME_MODEL_DELTAT_STEPHENSON_ETC_2021`, `JME_MODEL_DELTAT_ESPENAK_MEEUS_2006` and `JME_MODEL_DELTAT_MS2004_TABLE1_LINEAR`. The identifiers for Stephenson–Morrison 1984, Stephenson 1997 and Stephenson–Morrison 2004 are not backed by transcribed and verified primary tables; requests for them return `NAN` and an explicit error instead of silently calculating another model under the wrong name. `jme_set_delta_t_userdef(seconds)` sets a constant Delta-T (a non-finite value clears it). See `TIME_SCALES.md`. A non-finite Julian date is rejected before calendar conversion.
 
 High-level calculation inputs named `jd_et` are TT. JPL kernels use native TDB or TCB, so the core now converts TT to kernel-native time with ERFA's Fairhead–Bretagnon TDB−TT series and, where required, the IAU 2006 TDB→TCB relation. Low-level `jme_jpl_*` numeric APIs accept their opened kernel's native time scale; split-date entry points preserve the two-part date. UTC calendar entry points perform UTC→TAI→TT conversion, including pre-1972 UTC rate adjustments and validation of `23:59:60`, before converting to the kernel scale. The embedded UTC table is supported through 2027-06-30 (IERS Bulletin C 72) because future leap seconds are unknowable in advance; later UTC calendar dates fail explicitly until the IERS table is updated. Apparent fixed-star calculations apply aberration using the observer state selected by the engine policy. Automatic mode may use the analytical backend when a usable JPL barycentric state is unavailable; explicit JPL mode returns an error rather than silently omitting aberration. The analytical observer velocity is transformed into the same J2000 equatorial frame as the stellar direction before applying the correction.
 
 The internal UT-to-TT conversion routine is shared by status-returning UT wrappers, so an unsupported Delta-T model or non-finite date is returned as an error before downstream calculations. Scalar APIs without a status return use `NAN` when that conversion cannot be completed. Direct status-returning numeric APIs also reject non-finite TT Julian dates before entering model-specific branches. The TT input to APIs whose parameter is named `jd_et` is interpreted as Terrestrial Time in this engine.
+
+## Event Return Values and Search Filters
+
+The eclipse search and circumstance functions return a `JME_ECLIPSE_*` classification on success, not `JME_OK`:
+
+| Function | Successful return |
+|---|---|
+| `jme_sol_eclipse_when_glob` | `JME_ECLIPSE_SOLAR_TOTAL`, `_ANNULAR`, `_HYBRID` or `_PARTIAL` |
+| `jme_sol_eclipse_where`, `jme_sol_eclipse_how`, `jme_sol_eclipse_when_loc` | `JME_ECLIPSE_SOLAR_TOTAL`, `_ANNULAR` or `_PARTIAL` |
+| `jme_lun_eclipse_when`, `jme_lun_eclipse_how`, `jme_lun_eclipse_when_loc` | `JME_ECLIPSE_LUNAR_TOTAL`, `_PARTIAL` or `_PENUMBRAL` |
+| `jme_lun_occult_when_loc`, `jme_lun_occult_when_glob`, `jme_lun_occult_where` | `JME_OK` (status only) |
+
+Failure is always `JME_ERR` (-1). Test `rc < 0`, not `rc != JME_OK`, for these calls.
+
+The `epheflag` argument of `jme_sol_eclipse_when_glob` and the `iflag` argument of `jme_lun_eclipse_when` are eclipse-type filters (`0` = any, or one of the corresponding `JME_ECLIPSE_*` values), not `JME_CALC_*` flags. `jme_lun_occult_when_glob` currently ignores its `iflag`. The `flags` argument of the high-level eclipse/occultation searches is reserved; their geometry uses astrometric places (light time and deflection, no aberration), while visibility altitudes use complete apparent places.
+
+Output layouts:
+
+| Function | `tret` | `attr` |
+|---|---|---|
+| `jme_sol_eclipse_when_glob` | `[0]`/`[1]` greatest eclipse, `[2]`/`[3]` P1/P4, `[4]`/`[5]` U1/U4, `[6]`/`[7]` central-line begin/end, `[8]`/`[9]` hybrid transitions | — |
+| `jme_sol_eclipse_when_loc` | `[0]` local maximum, `[2]`/`[3]` C1/C4, `[4]`/`[5]` C2/C3 | `[0]` magnitude, `[1]` obscuration, `[2]` separation, `[3]`/`[4]` solar/lunar diameter, `[5]`/`[6]` Sun/Moon altitude, `[7]` central, `[8]` visible, `[9]` maximum visible |
+| `jme_lun_eclipse_when` | `[0]`/`[1]` greatest eclipse, `[2]`/`[3]` P1/P4, `[4]`/`[5]` U1/U4, `[6]`/`[7]` U2/U3 | — |
+| `jme_lun_eclipse_when_loc` | as `jme_lun_eclipse_when`, plus `[8]`/`[9]` visible interval | `[0]` umbral magnitude, `[1]` penumbral magnitude, `[2]` offset, `[3]`/`[4]` shadow radii, `[5]` axis distance, `[7]` altitude, `[8]` visible, `[9]` visible hours |
+| `jme_lun_occult_when_glob` | `[0]` greatest, `[2]`/`[3]` first/last, `[4]`/`[5]` total phase, `[6]`/`[7]` central phase | — |
+
+## Kernel Path and Extended Body IDs
+
+`jme_set_jpl_file(path)` stores the kernel path and closes any open kernel. The high-level JPL path opens it lazily on the next calculation, resolving a relative name against `jme_set_ephemeris_path(dir)`; `jme_jpl_open()` opens immediately. `jme_set_ephemeris_path()` closes an open kernel so the new directory is used.
+
+Extended-body IDs use JME's private range from -1000 through -1265, separate from core body IDs and external ephemeris body-numbering schemes. An extended body that the loaded engine/kernel cannot provide returns `JME_ERR`; it never aliases a core body.
+
+`jme_body_name()` returns library-owned text. Generated names for Asteroid 013..110, Comet 001..060, and Minor Planet 001..060 use a thread-local buffer that is overwritten by the next generated name returned on the same thread. Copy the text if it must outlive that call.
+
+This is a 2.0.0 correction: historical extended IDs overlapped core body IDs and external body-numbering ranges. Code that relied on the old integer values must use the named constants instead.
 
 ## Current Public Functions
 

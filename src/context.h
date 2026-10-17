@@ -198,6 +198,12 @@ int internal_tt_split_to_jpl_time_split(
     double *fraction_native,
     char *error
 );
+/*
+ * Open the kernel selected by jme_set_jpl_file() if it is not open yet.
+ * The high-level calculation path calls this lazily; the low-level jme_jpl_*
+ * entry points still require an explicit jme_jpl_open().
+ */
+int internal_jpl_ensure_open(char *error);
 int internal_jpl_body_state_tt(
     double jd_tt,
     int target_body,

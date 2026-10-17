@@ -413,6 +413,8 @@ static int do_probe(const char *function_name, const char *engine, const char *k
     double results[32];
     double results2[32];
     double geopos[3] = {fx->lon, fx->lat, fx->altitude_m};
+    int int_out1 = 0;
+    int int_out2 = 0;
     int i;
 
     memset(errbuf, SENTINEL_BYTE, sizeof(errbuf));
@@ -1449,8 +1451,8 @@ static int do_probe(const char *function_name, const char *engine, const char *k
                 &saved_errno,
                 &results[0],
                 &results[1],
-                &((int *)results2)[0],
-                &((int *)results2)[1],
+                &int_out1,
+                &int_out2,
                 errbuf
             );
         } else if (strcmp(function_name, "jme_jpl_orientation_record_count") == 0) {
@@ -1466,7 +1468,7 @@ static int do_probe(const char *function_name, const char *engine, const char *k
                 &results[0],
                 &results[1],
                 &saved_errno,
-                &((int *)results2)[0],
+                &int_out1,
                 errbuf
             );
         } else if (strcmp(function_name, "jme_jpl_body_state") == 0) {
@@ -1893,6 +1895,57 @@ static int do_probe(const char *function_name, const char *engine, const char *k
         end_record(out);
         return 0;
     }
+    if (strncmp(function_name, "jme_eop_", 8) == 0 ||
+        strcmp(function_name, "jme_set_polar_motion") == 0 ||
+        strcmp(function_name, "jme_get_polar_motion") == 0) {
+        const char *eop_path = "tests/fixtures/eop_finals2000A_excerpt.txt";
+        char eop_error[ERRBUF_SIZE] = "";
+        double first_mjd = NAN, last_mjd = NAN;
+        double xp = NAN, yp = NAN;
+        int predicted = -1;
+        int eop_rc = JME_OK;
+        int ok = 1;
+
+        if (strcmp(function_name, "jme_eop_load_file") == 0) {
+            eop_rc = jme_eop_load_file(eop_path, eop_error);
+            ok = eop_rc == JME_OK;
+        } else if (strcmp(function_name, "jme_eop_clear") == 0) {
+            jme_eop_clear();
+        } else if (strcmp(function_name, "jme_eop_coverage") == 0) {
+            ok = jme_eop_load_file(eop_path, eop_error) == JME_OK;
+            eop_rc = jme_eop_coverage(&first_mjd, &last_mjd, eop_error);
+            ok = ok && eop_rc == JME_OK;
+        } else if (strcmp(function_name, "jme_eop_polar_motion") == 0) {
+            ok = jme_eop_load_file(eop_path, eop_error) == JME_OK;
+            eop_rc = jme_eop_polar_motion(58846.0, &xp, &yp, &predicted, eop_error);
+            ok = ok && eop_rc == JME_OK;
+        } else if (strcmp(function_name, "jme_set_polar_motion") == 0) {
+            jme_set_polar_motion(1);
+        } else if (strcmp(function_name, "jme_get_polar_motion") == 0) {
+            eop_rc = jme_get_polar_motion();
+        } else {
+            eop_rc = JME_ERR;
+            ok = 0;
+            snprintf(eop_error, sizeof(eop_error), "unknown EOP probe function");
+        }
+
+        begin_record(out, function_name, engine, fx->id, "engine_invariant");
+        fprintf(out, "\"status\":\"%s\",", ok ? "OK" : "ERROR");
+        print_int_obj(out, "return_code", eop_rc, 1);
+        print_string_bytes_obj(out, "error_buffer", eop_error, sizeof(eop_error), 1);
+        if (strcmp(function_name, "jme_eop_coverage") == 0) {
+            print_double_obj(out, "first_mjd", first_mjd, 1);
+            print_double_obj(out, "last_mjd", last_mjd, 1);
+        } else if (strcmp(function_name, "jme_eop_polar_motion") == 0) {
+            print_double_obj(out, "xp_arcsec", xp, 1);
+            print_double_obj(out, "yp_arcsec", yp, 1);
+            print_int_obj(out, "predicted", predicted, 1);
+        }
+        print_int_obj(out, "polar_motion_enabled", jme_get_polar_motion(), 0);
+        end_record(out);
+        return 0;
+    }
+
     if (strcmp(function_name, "jme_sol_eclipse_where") == 0 ||
         strcmp(function_name, "jme_sol_eclipse_how") == 0 ||
         strcmp(function_name, "jme_sol_eclipse_when_loc") == 0 ||

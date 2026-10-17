@@ -66,6 +66,8 @@ https://github.com/jayeshmepani/jpl-ephemeris/releases/tag/jpl-kernels
 jme_set_jpl_file("path/to/de440s.bsp");
 ```
 
+The high-level engine opens this kernel lazily on the first calculation; a relative name is resolved against `jme_set_ephemeris_path()`. Low-level `jme_jpl_*` calls still require `jme_jpl_open()`.
+
 ## Engine Selection
 
 Wrappers should not reimplement backend selection. Configure the C library directly:

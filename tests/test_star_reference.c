@@ -23,9 +23,12 @@ static double max_mas[2];
 /* angle between two directions, robust at all separations (atan2 form) */
 static double sep_mas(double a1, double d1, double a2, double d2)
 {
-    double u[3] = {cos(d1 * D2R) * cos(a1 * D2R), cos(d1 * D2R) * sin(a1 * D2R), sin(d1 * D2R)};
-    double v[3] = {cos(d2 * D2R) * cos(a2 * D2R), cos(d2 * D2R) * sin(a2 * D2R), sin(d2 * D2R)};
-    double c[3] = {u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]};
+    const double u[3] =
+        {cos(d1 * D2R) * cos(a1 * D2R), cos(d1 * D2R) * sin(a1 * D2R), sin(d1 * D2R)};
+    const double v[3] =
+        {cos(d2 * D2R) * cos(a2 * D2R), cos(d2 * D2R) * sin(a2 * D2R), sin(d2 * D2R)};
+    const double c[3] =
+        {u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]};
     return atan2(
                sqrt(c[0] * c[0] + c[1] * c[1] + c[2] * c[2]),
                u[0] * v[0] + u[1] * v[1] + u[2] * v[2]

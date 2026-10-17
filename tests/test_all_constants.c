@@ -497,7 +497,7 @@ int main(void)
     assert(JME_CALC_XYZ == 4);
     assert(JME_CALC_RADIANS == 8);
     assert(fabs(JME_SECONDS_PER_DAY - 86400.0) < 1e-9);
-    assert(strcmp(JME_VERSION, "1.3.0") == 0);
+    assert(strcmp(JME_VERSION, "2.0.0") == 0);
 
     printf("All constants verified successfully.\n");
     return 0;

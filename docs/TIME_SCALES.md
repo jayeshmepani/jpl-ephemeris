@@ -1,6 +1,6 @@
 # Time scales, ΔT and leap seconds
 
-## 1. Scales and conversions (`src/timescale.c`, `jme_time_convert`)
+## 1. Scales and conversions (`src/timescale.c`, `jme_time_scale_convert`)
 
 All conversions work on **two-part Julian dates** (d1 + d2), so the
 sub-microsecond resolution of binary64 is kept over the whole range.

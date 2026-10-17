@@ -13,6 +13,8 @@
 #define M_PI 3.141592653589793238462643383279502884
 #endif
 
+static char thread_failure_marker = 1;
+
 #define ASSERT_TRUE(expr)                                                                          \
     do {                                                                                           \
         if (!(expr)) {                                                                             \
@@ -546,19 +548,19 @@ static void *extra_thread_worker(void *arg)
 
         if (jme_meeus_planet_state(jd, JME_BODY_MARS, state) != JME_OK ||
             !finite_values(state, 6)) {
-            return (void *)1;
+            return (void *)&thread_failure_marker;
         }
         if (jme_moshier_planet_state(jd, JME_BODY_JUPITER, state) != JME_OK ||
             !finite_values(state, 6)) {
-            return (void *)1;
+            return (void *)&thread_failure_marker;
         }
         if (jme_vsop87_planet_state(jd, JME_BODY_VENUS, state) != JME_OK ||
             !finite_values(state, 6)) {
-            return (void *)1;
+            return (void *)&thread_failure_marker;
         }
         if (jme_get_obliquity(jd, JME_MODEL_OBL_IAU_2006, &eps, error) != JME_OK ||
             !isfinite(eps)) {
-            return (void *)1;
+            return (void *)&thread_failure_marker;
         }
     }
     return 0;

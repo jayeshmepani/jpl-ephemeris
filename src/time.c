@@ -553,7 +553,7 @@ double jme_delta_t_ex(double jd_ut, int model, char *error)
  * UTC -> TAI data and drift expressions follow the published ERFA/SOFA
  * eraDat model, adapted to JME's status/error contract. ERFA is BSD-3-Clause;
  * see THIRD_PARTY_NOTICES.md. The embedded offset table is confirmed through
- * 2026-12-31 and must be updated after any new IERS announcement.
+ * 2027-06-30 and must be updated after any new IERS announcement.
  */
 typedef struct jme_utc_offset_entry {
     int year;

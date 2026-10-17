@@ -104,8 +104,8 @@ static int test_state_and_matrix_math(void)
     double round_trip[6] = {0.0};
     double invalid_spherical[6] = {0.0, 0.0, -1.0, 0.0, 0.0, 0.0};
     double invalid_rectangular[6] = {0.0};
-    double state_a[6] = {1.0, 2.0, 2.0, 0.1, -0.2, 0.2};
-    double state_b[6] = {-0.5, 4.0, 1.0, -0.4, 0.3, 0.0};
+    const double state_a[6] = {1.0, 2.0, 2.0, 0.1, -0.2, 0.2};
+    const double state_b[6] = {-0.5, 4.0, 1.0, -0.4, 0.3, 0.0};
     double out[6] = {0.0};
     double km_state[6] = {0.0};
     double m[9];

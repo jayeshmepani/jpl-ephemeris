@@ -126,10 +126,10 @@ See `TIME_SCALES.md`.
 | Event | Construction | Verification |
 |---|---|---|
 | Rise, set, transit | Illinois refinement to 1e−10 d on full topocentric apparent places with refraction (`riseset_reference`) | Skyfield, 320 events: worst 0.16 ms |
-| Solar eclipses, global | Generalised Besselian elements: WGS84 3-D observer, P1/P4, U1/U4, C1/C2, hybrid transitions | NASA canon (10 eclipses): within 0.5 s and 0.1° |
+| Solar eclipses, global | Generalised Besselian elements: WGS84 3-D observer, P1/P4, U1/U4, C1/C2, hybrid transitions | NASA canon (10 eclipses): observed within 0.5 s (2 s test tolerance) and 0.1° |
 | Solar eclipses, local | Per-instant topocentric radii; contacts by root finding | Same contact code as local occultations (certified above) |
-| Lunar eclipses | Danjon shadow: Earth radius at latitude 45° (0.998340 a), shadow radii enlarged by 1/85 | NASA canon (228 eclipses, 2001–2100): greatest eclipse 2.3 s, magnitude 0.0008 |
-| Occultations of planets and stars by the Moon (`occult_reference`) | Generalised Besselian construction (§5.1). Stars use a cylinder shadow; local contacts by Illinois root finding | Independent Skyfield + DE440s generator (27 local, 8 global): local contacts 0.08 ms; global P1/P4 7.9 ms |
+| Lunar eclipses | Danjon shadow: Earth radius at latitude 45° (0.998340 a), shadow radii enlarged by 1/85 | NASA canon (228 eclipses, 2001–2100): greatest eclipse 2.3 s, magnitude 0.0007 |
+| Occultations of planets and stars by the Moon (`occult_reference`) | Generalised Besselian construction (§5.1). Stars use a cylinder shadow; local contacts by Illinois root finding | Independent Skyfield + DE440s generator (27 local, 8 global): local contacts 0.08 ms; global P1/P4 7.9 ms (test tolerances 2/10/50 ms) |
 | Houses (`houses_reference`) | Closed forms from the house definitions | Independent vector geometry, 2354 sets: 2.3e−13° |
 
 ### 5.1 Contact geometry for eclipses and occultations

@@ -4,6 +4,7 @@
 #include "context.h"
 #include "erfa/jme_erfa.h"
 
+#include <ctype.h>
 #include <stddef.h>
 #include <string.h>
 #include <math.h>
@@ -71,6 +72,70 @@ static double jme_jpl_day_floor(double jd_time)
 {
     return isfinite(jd_time) ? floor(jd_time) : NAN;
 }
+
+#ifdef JME_HAVE_CALCEPH
+static int jme_jpl_path_is_absolute(const char *path)
+{
+#ifdef _WIN32
+    if (path[0] == '/' || path[0] == '\\') {
+        return 1;
+    }
+    return isalpha((unsigned char)path[0]) && path[1] == ':' && (path[2] == '/' || path[2] == '\\');
+#else
+    return path[0] == '/';
+#endif
+}
+
+/*
+ * Resolve a kernel path against the configured ephemeris directory. An
+ * absolute path (or an empty directory) is copied unchanged; a relative name
+ * is joined to the ephemeris path. Paths that do not fit are rejected.
+ */
+static int jme_jpl_resolve_path(const char *path, char *out, size_t out_size, char *error)
+{
+    jme_context *ctx = jme_get_context();
+    const char *file = (path != 0 && path[0] != '\0') ? path : ctx->jpl_file;
+    size_t dir_len;
+    size_t file_len;
+    size_t need;
+    int add_separator;
+    char last;
+
+    if (out == 0 || out_size == 0) {
+        jme_set_error(error, "JPL kernel path buffer is required");
+        return JME_ERR;
+    }
+    out[0] = '\0';
+    if (file == 0 || file[0] == '\0') {
+        jme_set_error(error, "JPL kernel path is empty (call jme_set_jpl_file or jme_jpl_open)");
+        return JME_ERR;
+    }
+    if (jme_jpl_path_is_absolute(file) || ctx->ephemeris_path[0] == '\0') {
+        if (strlen(file) >= out_size) {
+            jme_set_error(error, "JPL kernel path exceeds the supported length");
+            return JME_ERR;
+        }
+        jme_set_string(out, out_size, file);
+        return JME_OK;
+    }
+
+    dir_len = strlen(ctx->ephemeris_path);
+    file_len = strlen(file);
+    last = dir_len > 0 ? ctx->ephemeris_path[dir_len - 1] : '\0';
+    add_separator = dir_len > 0 && last != '/' && last != '\\';
+    need = dir_len + (size_t)add_separator + file_len + 1;
+    if (need > out_size) {
+        jme_set_error(error, "JPL kernel path exceeds the supported length");
+        return JME_ERR;
+    }
+    memcpy(out, ctx->ephemeris_path, dir_len);
+    if (add_separator) {
+        out[dir_len++] = '/';
+    }
+    memcpy(out + dir_len, file, file_len + 1);
+    return JME_OK;
+}
+#endif
 
 static void jme_zero_state(double *state)
 {
@@ -166,15 +231,10 @@ void jme_jpl_close(void)
 int jme_jpl_open(const char *path, char *error)
 {
 #ifdef JME_HAVE_CALCEPH
-    const char *resolved_path = path;
+    char resolved_path[JME_PATH_MAX];
     jme_context *ctx = jme_get_context();
 
-    if (resolved_path == 0 || resolved_path[0] == '\0') {
-        resolved_path = ctx->jpl_file;
-    }
-
-    if (resolved_path == 0 || resolved_path[0] == '\0') {
-        jme_set_error(error, "JPL kernel path is empty");
+    if (jme_jpl_resolve_path(path, resolved_path, sizeof resolved_path, error) != JME_OK) {
         return JME_ERR;
     }
 
@@ -192,11 +252,27 @@ int jme_jpl_open(const char *path, char *error)
     }
 
     jme_set_string(g_kernel_path, sizeof(g_kernel_path), resolved_path);
-    jme_set_string(ctx->jpl_file, sizeof(ctx->jpl_file), resolved_path);
+    /* Keep the configured name relative when the caller supplied one. */
+    if (path != 0 && path[0] != '\0') {
+        jme_set_string(ctx->jpl_file, sizeof(ctx->jpl_file), path);
+    }
 
     return JME_OK;
 #else
     (void)path;
+    jme_set_error(error, "CALCEPH support is unavailable in this build");
+    return JME_ERR;
+#endif
+}
+
+int internal_jpl_ensure_open(char *error)
+{
+#ifdef JME_HAVE_CALCEPH
+    if (g_kernel != 0) {
+        return JME_OK;
+    }
+    return jme_jpl_open(0, error);
+#else
     jme_set_error(error, "CALCEPH support is unavailable in this build");
     return JME_ERR;
 #endif
@@ -1272,6 +1348,9 @@ int internal_jpl_body_state_tt_offset(
     jme_zero_state(state);
     if (!isfinite(jd_tt) || !isfinite(offset_days)) {
         jme_set_error(error, "TT Julian date must be finite");
+        return JME_ERR;
+    }
+    if (internal_jpl_ensure_open(error) != JME_OK) {
         return JME_ERR;
     }
     jd0_tt = floor(jd_tt);

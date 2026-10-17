@@ -1,6 +1,7 @@
 #include <jme/jme.h>
 
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,6 +14,8 @@
 #include <pthread.h>
 #define JME_HAS_PTHREAD 1
 #endif
+
+static char thread_failure_marker = 1;
 
 #define ASSERT_TRUE(expr)                                                                          \
     do {                                                                                           \
@@ -125,6 +128,7 @@ static int test_malformed_inputs_and_null_contracts(void)
     double ascmc[10];
     double tret[20];
     double attr[20];
+    int continuous = 0;
 
     ASSERT_ERR(jme_calc(2451545.0, 999999, 0, values, error));
     ASSERT_ERR(jme_calc(2451545.0, JME_BODY_SUN, 0, 0, error));
@@ -216,7 +220,7 @@ static int test_malformed_inputs_and_null_contracts(void)
     ASSERT_ERR(jme_get_ayanamsa_ex(2451545.0, -999, values, error));
     ASSERT_ERR(jme_get_ayanamsa_ex(2451545.0, JME_SIDEREAL_LAHIRI, 0, error));
     ASSERT_ERR(jme_time_equ(2451545.0, 0, error));
-    ASSERT_ERR(jme_jpl_current_file_data(0, 0, &values[0], &values[1], (int *)&values[2], error));
+    ASSERT_ERR(jme_jpl_current_file_data(0, 0, &values[0], &values[1], &continuous, error));
 
     return 0;
 }
@@ -354,17 +358,17 @@ static void *thread_worker(void *arg)
         double jd = 2451545.0 + (double)((index * 250) + i);
         if (jme_calc(jd, JME_BODY_MARS, JME_CALC_SPEED, out, error) != JME_OK ||
             !finite_array(out, 6)) {
-            return (void *)1;
+            return (void *)&thread_failure_marker;
         }
         if (jme_get_ayanamsa_ex(jd, JME_SIDEREAL_LAHIRI, out, error) != JME_OK ||
             !isfinite(out[0])) {
-            return (void *)1;
+            return (void *)&thread_failure_marker;
         }
         if (jme_fixstar("Sirius", jd, 0, out, error) != JME_OK || !finite_array(out, 3)) {
-            return (void *)1;
+            return (void *)&thread_failure_marker;
         }
         if (!isfinite(jme_sidereal_time(jd))) {
-            return (void *)1;
+            return (void *)&thread_failure_marker;
         }
     }
     return 0;
