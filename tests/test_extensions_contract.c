@@ -257,7 +257,7 @@ static void test_jpl_lazy_open_contract(void)
                 jme_set_jpl_file(filename);
                 jme_set_astro_models("ENGINE=JPL", 0);
                 CHECK(
-                    jme_calc_ut(2451545.0, JME_BODY_MARS, 0, results, error) == JME_OK,
+                    jme_calc_ut(2451545.0, JME_BODY_MARS_BARYCENTER, 0, results, error) == JME_OK,
                     "relative kernel path opens lazily for high-level JPL calculations"
                 );
                 for (i = 0; i < 3; i++) {
@@ -267,12 +267,12 @@ static void test_jpl_lazy_open_contract(void)
 
                 jme_set_ephemeris_path("/tmp/jme-contract-kernels-missing");
                 CHECK(
-                    jme_calc_ut(2451545.0, JME_BODY_MARS, 0, results, error) == JME_ERR,
+                    jme_calc_ut(2451545.0, JME_BODY_MARS_BARYCENTER, 0, results, error) == JME_ERR,
                     "changing the ephemeris directory re-resolves a configured relative kernel"
                 );
                 jme_set_ephemeris_path(directory);
                 CHECK(
-                    jme_calc_ut(2451545.0, JME_BODY_MARS, 0, results, error) == JME_OK,
+                    jme_calc_ut(2451545.0, JME_BODY_MARS_BARYCENTER, 0, results, error) == JME_OK,
                     "restoring the ephemeris directory reopens the relative kernel"
                 );
             }
